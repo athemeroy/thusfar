@@ -1,0 +1,12 @@
+.source-preview { display: grid; gap: 14px; padding: 4px 0 20px; }
+.source-preview-location { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.source-preview-content { border-left: 2px solid var(--zhu); padding: 4px 0 4px 16px; }
+.source-preview-content:empty { display: none; }
+.source-preview-paragraph { margin: 0 0 12px; font-family: var(--body); line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.source-preview-paragraph:last-child { margin-bottom: 0; }
+.source-preview-paragraph mark { background: var(--zhu-soft); color: inherit; border-radius: 2px; }
+.source-preview-status { margin: 0; color: var(--ink-2); font-size: 12px; line-height: 1.7; }
+.source-preview-loading, .source-preview-error { margin: 0 0 12px; line-height: 1.7; }
+.source-preview-actions { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 6px; }
+.source-preview-actions .btn { min-height: 44px; white-space: normal; text-align: center; }
+@media (max-width: 600px) { .source-preview-actions .btn { flex: 1 1 140px; min-height: 48px; } }

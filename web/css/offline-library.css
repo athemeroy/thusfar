@@ -1,0 +1,44 @@
+.offline-library { max-width: 1120px; padding-top: calc(26px + var(--safe-t)); }
+.offline-library-back { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); min-height: 44px; font-size: 13px; text-decoration: none; }
+.offline-library svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.offline-library-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 20px 0 26px; }
+.offline-library-header h1 { margin: 6px 0 10px; font: 600 clamp(30px,5vw,42px)/1.3 var(--serif); }
+.offline-library-header p { margin: 0; color: var(--ink-2); font-size: 14px; }
+.offline-library-header .offline-library-eyebrow { color: var(--zhu); font: 600 11px/1.5 var(--sans); letter-spacing: .1em; }
+.offline-library-notice { padding: 12px 16px; border-left: 3px solid var(--zhu); background: var(--paper-2); color: var(--ink-2); font-size: 13px; line-height: 1.8; }
+.offline-library-capacity { margin: 22px 0 26px; }
+.offline-library-summary { font: 600 18px/1.6 var(--serif); margin: 0 0 6px; }
+.offline-library-storage { font-size: 12px; color: var(--ink-3); line-height: 1.8; margin: 0; }
+.offline-library-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.offline-library-tabs { display: flex; gap: 6px; }
+.offline-library-tabs button { padding: 12px 16px; border-radius: 6px; min-height: 44px; color: var(--ink-2); font-size: 14px; }
+.offline-library-tabs button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.offline-library-controls input { padding: 12px 14px; min-height: 46px; width: min(320px,100%); border: 1px solid var(--rule); border-radius: 7px; background: var(--sheet); }
+.offline-library-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.offline-book { padding: 24px; border: 1px solid var(--rule); background: var(--sheet); border-radius: 5px 18px 18px 5px; min-width: 0; }
+.offline-book-heading { display: flex; gap: 16px; align-items: center; }
+.offline-book-heading h2 { margin: 0 0 5px; font: 600 20px/1.5 var(--serif); overflow-wrap: anywhere; }
+.offline-book-seal { flex-shrink: 0; width: 42px; height: 56px; border: 1px solid var(--zhu-line); color: var(--zhu); display: grid; place-items: center; font: 23px/1 var(--serif); }
+.offline-book-author, .offline-book-stamp { margin: 0; font-size: 12px; line-height: 1.7; color: var(--ink-3); }
+.offline-book-state { margin: 18px 0 5px; color: var(--ink-2); font-size: 13px; line-height: 1.8; }
+.offline-book-check, .offline-book-message { margin: 8px 0 0; font-size: 12px; line-height: 1.8; color: var(--zhu); }
+.offline-book-check:empty, .offline-book-message:empty, .offline-book-stamp:empty { display: none; }
+.offline-book progress { display: block; width: 100%; height: 6px; margin-top: 16px; accent-color: var(--zhu); }
+.offline-book progress[hidden] { display: none; }
+.offline-book-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 20px; }
+.offline-book-actions .btn { min-height: 44px; text-decoration: none; font-size: 13px; }
+.offline-book-remove { min-height: 44px; padding: 8px 0; font-size: 12px; color: var(--ink-3); text-decoration: underline; text-underline-offset: 4px; }
+.offline-book button:disabled { opacity: .5; cursor: default; }
+.offline-library-empty { grid-column: 1/-1; text-align: center; border: 1px dashed var(--rule); border-radius: 12px; padding: 45px 20px; }
+.offline-library-empty h2 { font: 600 22px/1.5 var(--serif); }
+.offline-library-empty p { color: var(--ink-2); font-size: 14px; margin-bottom: 22px; }
+.offline-library-footer { margin-top: 35px; border-top: 1px solid var(--rule); padding-top: 22px; font-size: 12px; line-height: 1.9; color: var(--ink-3); }
+@media (max-width: 650px) {
+  .offline-library { padding: calc(18px + var(--safe-t)) 20px calc(24px + var(--safe-b)); }
+  .offline-library-header { display: block; }
+  .offline-library-header > .btn { margin-top: 18px; }
+  .offline-library-list { grid-template-columns: 1fr; gap: 16px; }
+  .offline-library-controls input { width: 100%; }
+  .offline-book { padding: 20px; }
+  .offline-book-actions .btn { min-height: 48px; }
+}

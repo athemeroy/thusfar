@@ -1,0 +1,248 @@
+{
+ "book": "红楼梦（维基文库 120 回汇校本：前八十回庚辰本、后四十回程甲本）",
+ "frozen": "2026-09-19，在运行任何流水线之前写定；只来自原著常识并在原文中核对回数，之后不修改",
+ "rule": "chapter = 该事实在原文中第一次成立的回数。在第 chapter 回开始之前的任何位置，人物卡（身份、小传、档案、经历、关系）都不得出现该事实；第 chapter+2 回结束时应当能看到（敏感度）。",
+ "probes": [
+  {
+   "id": "d-jiarui",
+   "kind": "death",
+   "person": [
+    "贾瑞",
+    "贾天祥"
+   ],
+   "chapter": 12,
+   "verify": "贾天祥正照风月鉴"
+  },
+  {
+   "id": "d-qinkeqing",
+   "kind": "death",
+   "person": [
+    "秦可卿",
+    "秦氏",
+    "蓉大奶奶"
+   ],
+   "chapter": 13,
+   "verify": "东府蓉大奶奶没了"
+  },
+  {
+   "id": "d-linruhai",
+   "kind": "death",
+   "person": [
+    "林如海"
+   ],
+   "chapter": 14,
+   "verify": "林姑老爷.{0,20}(没了|去世|辞世)|林如海.{0,20}(捐馆|去世)"
+  },
+  {
+   "id": "d-qinzhong",
+   "kind": "death",
+   "person": [
+    "秦钟",
+    "秦鲸卿"
+   ],
+   "chapter": 16,
+   "verify": "秦鲸卿夭逝黄泉路"
+  },
+  {
+   "id": "d-jinchuan",
+   "kind": "death",
+   "person": [
+    "金钏",
+    "金钏儿"
+   ],
+   "chapter": 32,
+   "verify": "金钏儿.{0,30}(投井|死了)"
+  },
+  {
+   "id": "d-jiajing",
+   "kind": "death",
+   "person": [
+    "贾敬"
+   ],
+   "chapter": 63,
+   "verify": "(老爷|贾敬).{0,20}宾天"
+  },
+  {
+   "id": "d-yousanjie",
+   "kind": "death",
+   "person": [
+    "尤三姐"
+   ],
+   "chapter": 66,
+   "verify": "耻情归地府"
+  },
+  {
+   "id": "d-youerjie",
+   "kind": "death",
+   "person": [
+    "尤二姐",
+    "尤二姨"
+   ],
+   "chapter": 69,
+   "verify": "吞生金自逝"
+  },
+  {
+   "id": "d-qingwen",
+   "kind": "death",
+   "person": [
+    "晴雯"
+   ],
+   "chapter": 77,
+   "verify": "抱屈夭风流"
+  },
+  {
+   "id": "d-yuanchun",
+   "kind": "death",
+   "person": [
+    "贾元春",
+    "元春",
+    "元妃",
+    "贵妃娘娘"
+   ],
+   "chapter": 95,
+   "verify": "元妃.{0,30}(薨|逝)"
+  },
+  {
+   "id": "d-daiyu",
+   "kind": "death",
+   "person": [
+    "林黛玉",
+    "黛玉",
+    "林姑娘",
+    "颦儿"
+   ],
+   "chapter": 98,
+   "verify": "魂归离恨天"
+  },
+  {
+   "id": "d-xiajingui",
+   "kind": "death",
+   "person": [
+    "夏金桂"
+   ],
+   "chapter": 103,
+   "verify": "金桂自焚身"
+  },
+  {
+   "id": "d-yingchun",
+   "kind": "death",
+   "person": [
+    "贾迎春",
+    "迎春",
+    "二姑娘"
+   ],
+   "chapter": 109,
+   "verify": "迎女返真元"
+  },
+  {
+   "id": "d-jiamu",
+   "kind": "death",
+   "person": [
+    "贾母",
+    "史太君",
+    "老太太",
+    "老祖宗"
+   ],
+   "chapter": 110,
+   "verify": "史太君寿终归地府"
+  },
+  {
+   "id": "d-yuanyang",
+   "kind": "death",
+   "person": [
+    "鸳鸯"
+   ],
+   "chapter": 111,
+   "verify": "鸳鸯女殉主登太虚"
+  },
+  {
+   "id": "d-zhaoyiniang",
+   "kind": "death",
+   "person": [
+    "赵姨娘"
+   ],
+   "chapter": 112,
+   "verify": "赵妾赴冥曹"
+  },
+  {
+   "id": "d-xifeng",
+   "kind": "death",
+   "person": [
+    "王熙凤",
+    "凤姐",
+    "凤姐儿",
+    "琏二奶奶"
+   ],
+   "chapter": 114,
+   "verify": "王熙凤历幻返金陵"
+  },
+  {
+   "id": "m-jialian-youerjie",
+   "kind": "marriage",
+   "person": [
+    "贾琏",
+    "琏二爷"
+   ],
+   "other": [
+    "尤二姐",
+    "尤二姨"
+   ],
+   "chapter": 65,
+   "verify": "贾二舍偷娶尤二姨"
+  },
+  {
+   "id": "m-xuepan-xiajingui",
+   "kind": "marriage",
+   "person": [
+    "薛蟠",
+    "呆霸王"
+   ],
+   "other": [
+    "夏金桂"
+   ],
+   "chapter": 79,
+   "verify": "薛文龙悔娶河东狮"
+  },
+  {
+   "id": "m-baoyu-baochai",
+   "kind": "marriage",
+   "person": [
+    "贾宝玉",
+    "宝玉",
+    "宝二爷"
+   ],
+   "other": [
+    "薛宝钗",
+    "宝钗",
+    "宝姑娘"
+   ],
+   "chapter": 97,
+   "verify": "薛宝钗出闺成大礼"
+  },
+  {
+   "id": "f-chaojia",
+   "kind": "fate",
+   "person": [
+    "贾珍",
+    "贾赦"
+   ],
+   "chapter": 105,
+   "words": "抄家|查抄|抄没|锦衣",
+   "verify": "锦衣军查抄宁国府"
+  },
+  {
+   "id": "f-tanchun",
+   "kind": "fate",
+   "person": [
+    "贾探春",
+    "探春",
+    "三姑娘"
+   ],
+   "chapter": 100,
+   "words": "远嫁|出嫁|和番|许配",
+   "verify": "悲远嫁宝玉感离情"
+  }
+ ],
+ "death_words": "死|去世|身亡|亡故|病故|病逝|夭|殁|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|薨|殒|没了|丧|捐馆|宾天",
+ "marriage_words": "妻|夫|成亲|成婚|完婚|拜堂|娶|嫁|过门|圆房|姨奶奶|二房"
+}

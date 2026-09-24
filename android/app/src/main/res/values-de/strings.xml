@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">Thusfar</string>
+    <string name="app_name_debug" formatted="false">Thusfar (Test)</string>
+    <string name="processing_channel" formatted="false">Buchverarbeitung</string>
+    <string name="preparing_processing" formatted="false">Buchverarbeitung wird vorbereitet</string>
+    <string name="books_readable" formatted="false">Bücher können weiterhin gelesen werden</string>
+    <string name="book_fallback" formatted="false">Dieses Buch</string>
+    <string name="checking_details" formatted="false">Informationen prüfen</string>
+    <string name="segment_progress" formatted="false">Abschnitt {done}/{total}</string>
+    <string name="processing_book" formatted="false">„{title}“ wird verarbeitet</string>
+    <string name="no_browser" formatted="false">Kein Browser verfügbar</string>
+    <string name="pick_title" formatted="false">Wählen Sie ein Buch oder ein exportiertes Backup aus</string>
+    <string name="no_picker" formatted="false">Kein Dateiselektor verfügbar</string>
+    <string name="unsupported_save" formatted="false">Das Speichern dieser Adresse wird nicht unterstützt</string>
+    <string name="save_busy" formatted="false">Bitte schließen Sie zuerst das Speichern der aktuellen Datei ab</string>
+    <string name="file_too_large" formatted="false">Die Datei ist zu groß. Bitte exportieren Sie sie in einem Computerbrowser</string>
+    <string name="no_saver" formatted="false">Keine App zum Speichern der Datei verfügbar</string>
+    <string name="local_start_failed" formatted="false">Lokale Bibliothek konnte nicht gestartet werden</string>
+    <string name="invalid_destination" formatted="false">Ungültiger Speicherort</string>
+    <string name="saving" formatted="false">Speichern, bitte lassen Sie die Anwendung geöffnet</string>
+    <string name="saved" formatted="false">Am ausgewählten Ort gespeichert</string>
+    <string name="save_failed" formatted="false">Speichern fehlgeschlagen. Prüfe Verbindung, Anmeldung und freien Speicherplatz und versuche es erneut.</string>
+</resources>

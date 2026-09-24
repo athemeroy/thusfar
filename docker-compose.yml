@@ -1,0 +1,14 @@
+# docker compose up -d   →   http://localhost:18770
+services:
+  thusfar:
+    build: .
+    ports:
+      - "18770:18770"
+    env_file:
+      - path: .env          # copy .env.example to .env and add a model key
+        required: false
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data        # your books and their graphs stay on your disk
+    restart: unless-stopped

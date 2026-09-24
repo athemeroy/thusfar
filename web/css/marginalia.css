@@ -1,0 +1,40 @@
+.marginalia-cue { text-decoration:underline dashed color-mix(in srgb,var(--zhu) 62%,transparent);text-decoration-thickness:1px;text-underline-offset:.22em;cursor:pointer; }
+.marginalia-cue:hover,.marginalia-cue:focus-visible { text-decoration-color:var(--zhu);outline:none; }
+.ai-underline { padding-bottom:.08em;background:linear-gradient(transparent 72%,color-mix(in srgb,var(--zhu) 38%,transparent) 72%);border-radius:2px; }
+.marginalia-hint { position:absolute;right:var(--mx);bottom:12px;z-index:8;color:var(--ink-2);font:12px/1.5 var(--kai); }
+.marginalia-hint[hidden],.marginalia-scrim[hidden],.marginalia-drawer[hidden] { display:none; }
+.marginalia-scrim { position:absolute;inset:0;z-index:18;width:100%;height:100%;background:transparent;touch-action:manipulation; }
+.marginalia-drawer { position:absolute;left:50%;bottom:0;z-index:19;transform:translateX(-50%);width:min(620px,100%);max-height:min(65vh,590px);overflow:auto;overscroll-behavior:contain;padding:0 24px calc(24px + var(--safe-b));border:1px solid var(--rule);border-bottom:0;border-radius:18px 18px 0 0;background:var(--sheet);box-shadow:0 -18px 55px #160f092b;touch-action:pan-y; }
+.marginalia-drawer-grip { width:38px;height:4px;margin:10px auto 19px;border-radius:8px;background:var(--paper-3); }
+.marginalia-drawer header { display:flex;align-items:center;justify-content:space-between;gap:12px; }
+.marginalia-drawer-kicker { color:var(--zhu);font:600 11px/1.5 var(--sans);letter-spacing:.16em; }
+.marginalia-drawer-close { min-height:36px;padding:4px 2px;color:var(--ink-3);font:13px/1.5 var(--sans); }
+.marginalia-drawer h2 { margin:3px 0 8px;color:var(--ink);font:600 24px/1.35 var(--kai);letter-spacing:.02em; }
+.marginalia-drawer-body { margin-top:12px;border-top:1px solid var(--rule); }
+.marginalia-drawer-wait,.marginalia-drawer-error { margin:23px 0;color:var(--ink-2);font:14px/1.8 var(--sans); }
+.marginalia-drawer-error { color:var(--zhu); }
+.marginalia-drawer-comment { padding:20px 0 8px;border-bottom:1px solid var(--rule); }
+.marginalia-drawer-byline { display:flex;align-items:baseline;gap:9px;color:var(--ink-3);font:12px/1.5 var(--sans); }
+.marginalia-drawer-byline b { color:var(--zhu);font-weight:650; }
+.marginalia-drawer-comment p { margin:10px 0 12px;color:var(--ink);font:18px/1.8 var(--serif); }
+.marginalia-drawer-save,.marginalia-drawer-remix { min-height:38px;padding:4px 0;color:var(--zhu);font:13px/1.5 var(--sans); }
+.marginalia-drawer footer { display:flex;justify-content:flex-end; }
+.marginalia-composer header { display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.marginalia-composer { position:absolute;z-index:15;left:50%;bottom:calc(18px + var(--safe-b));width:min(520px,calc(100% - 28px));transform:translateX(-50%);padding:16px;background:var(--sheet);border:1px solid var(--rule);border-radius:16px;box-shadow:0 18px 60px #160f0938; }
+.marginalia-composer[hidden] { display:none; }
+.marginalia-composer header b { font:600 15px/1.4 var(--sans); }
+.marginalia-composer blockquote { margin:12px 0;padding:9px 12px;border-left:2px solid var(--zhu);color:var(--ink-2);font:14px/1.65 var(--serif);max-height:7em;overflow:auto; }
+.marginalia-personas { display:flex;flex-wrap:wrap;gap:7px; }
+.marginalia-personas button { padding:7px 12px;border:1px solid var(--rule);border-radius:18px;color:var(--ink-2);font-size:13px; }
+.marginalia-personas button.on { color:var(--zhu);border-color:var(--zhu);background:var(--zhu-soft); }
+.marginalia-compose-actions { display:flex;align-items:center;gap:12px;margin-top:12px; }
+.marginalia-compose-status { flex:1;margin:0;font-size:12px; }
+.ai-comments-setting label { display:flex;flex-direction:column;gap:3px; }
+.ai-comments-setting label small { font-weight:400;max-width:250px;line-height:1.45; }
+.ai-voice-setting { align-items:flex-start;flex-direction:column; }
+.ai-voice-setting .chips { width:100%;flex-wrap:wrap; }
+.ai-comment-action { color:var(--zhu);border-color:color-mix(in srgb,var(--zhu) 36%,var(--rule)); }
+@media (max-width:759px) {
+  .marginalia-drawer { max-height:70vh;padding-right:20px;padding-left:20px; }
+  .marginalia-composer { bottom:calc(10px + var(--safe-b)); }
+}

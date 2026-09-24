@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">页读</string>
+    <string name="app_name_debug">页读（测试）</string>
+    <string name="processing_channel">书籍整理</string>
+    <string name="preparing_processing">正在准备整理书籍</string>
+    <string name="books_readable">书籍仍可继续阅读</string>
+    <string name="book_fallback">这本书</string>
+    <string name="checking_details">正在核对资料</string>
+    <string name="segment_progress" formatted="false">第 {done}/{total} 段</string>
+    <string name="processing_book" formatted="false">正在整理《{title}》</string>
+    <string name="no_browser">没有可用的浏览器</string>
+    <string name="pick_title">选择书籍或导出的备份</string>
+    <string name="no_picker">没有可用的文件选择器</string>
+    <string name="unsupported_save">不支持保存这个地址</string>
+    <string name="save_busy">请先完成当前文件的保存</string>
+    <string name="file_too_large">文件过大，请在电脑浏览器中导出</string>
+    <string name="no_saver">没有可用的文件保存器</string>
+    <string name="local_start_failed">本地书房启动失败</string>
+    <string name="invalid_destination">文件保存地址无效</string>
+    <string name="saving">正在保存，请保持应用打开</string>
+    <string name="saved">已保存到所选位置</string>
+    <string name="save_failed">保存失败，请检查网络、登录状态和可用空间后重试</string>
+</resources>

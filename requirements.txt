@@ -1,0 +1,16 @@
+# The reader and the pipeline need nothing but the Python standard library (3.11+).
+# That is on purpose: a project people are meant to run themselves should not start with a
+# dependency tree. `python3 -m server.app` works on a clean install.
+#
+# The optional extras below are only for training and serving a judge of your own
+# (docs/LOCAL-JUDGE.md). Install them in a separate virtualenv:
+#
+#   python3 -m venv .venv-judge && .venv-judge/bin/pip install -r requirements.txt
+#
+# torch>=2.4          Apple Silicon works through MPS; CUDA and CPU work too
+# transformers>=5.0
+# gliclass>=0.2       the open zero-shot classifier we fine-tune
+# accelerate
+#
+# Running the browser tests additionally needs:
+# playwright

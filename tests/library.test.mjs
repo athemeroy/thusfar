@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import { readingProgress, normalizeLibrary, continueBook, libraryBooks, libraryCounts, resumeReceipts } from '../web/js/library.js';
+const book = { id: 'one', title: '清晨的书', author: 'Author One', progress: { pos: 300, pct: 30, t: 200 }, added: 100 };
+assert.equal(readingProgress(book, { pos: 100, pct: 10, updatedAt: 100000, dirty: false }).pct, 30, 'remote progress wins over old synchronized local cache');
+assert.equal(readingProgress(book, { pos: 20, pct: 2, updatedAt: 100000, dirty: true }).pct, 2, 'unsynchronized rewind must remain visible even when server timestamp is later');
+assert.equal(readingProgress(book, { pos: 20, pct: 2, updatedAt: 250000, dirty: false }).local, true);
+assert.equal(readingProgress(book, { pos: -10, pct: 90, updatedAt: 250000, dirty: true }).local, false);
+assert.equal(readingProgress({ progress: { pct: 99.999, pos: 999 } }).state, 'reading', '99.999 percent is not complete');
+assert.equal(readingProgress({ progress: { pct: 100, pos: 999 } }).state, 'finished');
+assert.equal(readingProgress({}).state, 'unread');
+const rows = normalizeLibrary([book, { id: 'two', title: 'Second book', author: '作者甲', progress: { pct: 100, pos: 1000, t: 900 }, offline: true }, { id: 'three', title: 'Unread book', added: 500 }, { id: 'four', title: 'Last resumed', progress: { pct: 1, pos: 1, t: 100 } }],
+  (id) => id === 'four' ? { pos: 10, pct: 10, dirty: true, updatedAt: 300000, conflict: { t: 400 } } : null);
+assert.equal(continueBook(rows).id, 'four', 'resume follows latest reader activity rather than imported or completed books');
+assert.equal(rows[3].reading.conflict, true);
+assert.equal(libraryBooks(rows, { query: '  ＡＵＴＨＯＲ   one  ' })[0].id, 'one', 'search normalizes fullwidth/case and combines terms');
+assert.equal(libraryBooks(rows, { query: '作者甲' })[0].id, 'two');
+assert.deepEqual(libraryBooks(rows, { filter: 'downloaded' }).map(b => b.id), ['two']);
+assert.deepEqual(libraryBooks(rows, { filter: 'unread' }).map(b => b.id), ['three']);
+assert.deepEqual(libraryBooks(rows, { filter: 'reading', sort: 'progress' }).map(b => b.id), ['one', 'four']);
+assert.deepEqual(libraryCounts(rows), { all: 4, reading: 2, unread: 1, finished: 1, downloaded: 1 });
+assert.equal(continueBook(rows.filter(b => b.reading.state !== 'reading')), null);
+assert.equal(resumeReceipts({}).length, 0);
+const receipts = resumeReceipts([{ key: 'a', name: 'a.epub', state: 'uploading' }, { key: 'b', name: 'b.json', state: 'done', bookId: 'safe-id' }, { key: 'c', name: 'c', state: 'done', bookId: '../unsafe' }]);
+assert.equal(receipts[0].state, 'interrupted', 'a browser reload cannot claim that an unacknowledged import failed or succeeded');
+assert.equal(receipts[1].bookId, 'safe-id'); assert.equal(receipts[2].bookId, null);
+assert.equal(resumeReceipts(Array.from({length: 120}, (_, i) => ({key: String(i), name:'a'}))).length, 100);
+console.log('library tests passed: timestamp-correct local rewind/resume, reading states, multilingual search, filter/sort, interrupted import recovery');

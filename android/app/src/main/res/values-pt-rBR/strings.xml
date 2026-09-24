@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">Thusfar</string>
+    <string name="app_name_debug" formatted="false">Thusfar (Teste)</string>
+    <string name="processing_channel" formatted="false">Processamento de livros</string>
+    <string name="preparing_processing" formatted="false">Preparando o processamento do livro</string>
+    <string name="books_readable" formatted="false">Os livros ainda podem ser lidos</string>
+    <string name="book_fallback" formatted="false">Este livro</string>
+    <string name="checking_details" formatted="false">Verificação de informações</string>
+    <string name="segment_progress" formatted="false">Seção {done}/{total}</string>
+    <string name="processing_book" formatted="false">Processando “{title}”</string>
+    <string name="no_browser" formatted="false">Nenhum navegador disponível</string>
+    <string name="pick_title" formatted="false">Selecione um livro ou backup exportado</string>
+    <string name="no_picker" formatted="false">Nenhum seletor de arquivo disponível</string>
+    <string name="unsupported_save" formatted="false">Salvar este endereço não é suportado</string>
+    <string name="save_busy" formatted="false">Por favor, conclua primeiro o salvamento do arquivo atual</string>
+    <string name="file_too_large" formatted="false">O arquivo é muito grande, exporte-o em um navegador de computador</string>
+    <string name="no_saver" formatted="false">Nenhum aplicativo disponível para salvar o arquivo</string>
+    <string name="local_start_failed" formatted="false">Não foi possível iniciar a biblioteca local</string>
+    <string name="invalid_destination" formatted="false">Local de salvamento inválido</string>
+    <string name="saving" formatted="false">Salvando, por favor mantenha o aplicativo aberto</string>
+    <string name="saved" formatted="false">Salvo no local selecionado</string>
+    <string name="save_failed" formatted="false">Não foi possível salvar. Confira a conexão, o login e o espaço livre e tente novamente.</string>
+</resources>

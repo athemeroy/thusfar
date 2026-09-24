@@ -1,0 +1,8 @@
+.git
+android
+data
+tests
+testsets
+docs
+*.md
+.env

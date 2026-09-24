@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4efe4;color:#2a251e;font:16px/1.8 serif;text-align:center}b{display:block;font-size:26px;letter-spacing:.1em;margin-bottom:8px}</style></head>
+<body><div><b id="brand">Thusfar</b><span id="message"></span></div>
+<script>
+const copy = {
+  'zh-CN': ['页读', '正在启动本地书房，请稍候。'],
+  en: ['Thusfar', 'Starting your local library. Please wait.'],
+  es: ['Thusfar', 'Iniciando tu biblioteca local. Espera un momento.'],
+  fr: ['Thusfar', 'Ouverture de votre bibliothèque locale. Veuillez patienter.'],
+  de: ['Thusfar', 'Deine lokale Bibliothek wird gestartet. Bitte warte.'],
+  'pt-BR': ['Thusfar', 'Iniciando sua biblioteca local. Aguarde.'],
+  ja: ['Thusfar', '端末内の書斎を起動しています。しばらくお待ちください。'],
+  ko: ['Thusfar', '기기 내 서재를 시작하고 있습니다. 잠시 기다려 주세요.'],
+};
+let chosen = window.YeduApp?.getAppLanguage?.() || 'auto';
+if (chosen === 'auto') chosen = navigator.language || 'en';
+if (!copy[chosen]) chosen = Object.keys(copy).find(code => code.split('-')[0] === chosen.split('-')[0]) || 'en';
+document.documentElement.lang = chosen;
+document.getElementById('brand').textContent = copy[chosen][0];
+document.getElementById('message').textContent = copy[chosen][1];
+</script></body></html>

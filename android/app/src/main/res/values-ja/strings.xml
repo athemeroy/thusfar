@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">Thusfar</string>
+    <string name="app_name_debug" formatted="false">Thusfar（テスト）</string>
+    <string name="processing_channel" formatted="false">書籍の整理</string>
+    <string name="preparing_processing" formatted="false">書籍の整理を準備しています</string>
+    <string name="books_readable" formatted="false">整理中も読書を続けられます</string>
+    <string name="book_fallback" formatted="false">この本</string>
+    <string name="checking_details" formatted="false">資料を確認しています</string>
+    <string name="segment_progress" formatted="false">{done}/{total} セクション</string>
+    <string name="processing_book" formatted="false">『{title}』を整理しています</string>
+    <string name="no_browser" formatted="false">利用できるブラウザーがありません</string>
+    <string name="pick_title" formatted="false">本または書き出したバックアップを選択</string>
+    <string name="no_picker" formatted="false">利用できるファイル選択アプリがありません</string>
+    <string name="unsupported_save" formatted="false">このアドレスは保存できません</string>
+    <string name="save_busy" formatted="false">先に現在のファイルの保存を完了してください</string>
+    <string name="file_too_large" formatted="false">ファイルが大きすぎます。パソコンのブラウザーから書き出してください</string>
+    <string name="no_saver" formatted="false">利用できる保存先アプリがありません</string>
+    <string name="local_start_failed" formatted="false">端末内の書斎を起動できませんでした</string>
+    <string name="invalid_destination" formatted="false">保存先が無効です</string>
+    <string name="saving" formatted="false">保存しています。アプリを開いたままにしてください</string>
+    <string name="saved" formatted="false">選択した場所に保存しました</string>
+    <string name="save_failed" formatted="false">保存に失敗しました。通信、ログイン状態、空き容量を確認して再試行してください</string>
+</resources>

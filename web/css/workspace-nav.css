@@ -1,0 +1,24 @@
+.workspace-nav { max-width: 1220px; margin: auto; padding: calc(18px + var(--safe-t)) 40px 0; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.workspace-wordmark { display: flex; align-items: center; gap: 10px; font: 600 21px/1.5 var(--serif); text-decoration: none; color: var(--ink); white-space: nowrap; }
+.brand-mark { width: 39px; height: 39px; flex: none; display: inline-grid; place-items: center; border-radius: 10px; background: var(--zhu); color: #fff8ee; font: 400 26px/1 var(--kai); box-shadow: 0 5px 13px rgba(92,36,20,.14); }
+.workspace-wordmark .brand-mark { width: 31px; height: 31px; border-radius: 8px; font-size: 20px; }
+.workspace-tabs { display: flex; gap: 4px; }
+.workspace-tabs a { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 46px; padding: 0 14px; border-radius: 8px; font: 13px/1.4 var(--sans); color: var(--ink-2); text-decoration: none; }
+.workspace-tabs a[aria-current="page"] { color: var(--zhu); background: var(--zhu-light, var(--paper-2)); box-shadow: inset 0 -2px var(--zhu); }
+.workspace-tabs a:hover { background: var(--paper-2); }
+.workspace-tabs svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.workspace-tabs a:focus-visible { outline: 2px solid var(--zhu); outline-offset: 2px; }
+.workspace-settings-link { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--rule); color: var(--ink-2); }
+.workspace-settings-link[aria-current="page"] { color: var(--zhu); border-color: var(--zhu-line); }
+.workspace-settings-link svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.workspace-content > .reading-home { padding-top: 30px; }
+@media (max-width: 600px) {
+  .workspace-nav { position: fixed; z-index: 30; bottom: 0; left: 0; right: 0; padding: 5px 8px calc(5px + var(--safe-b)); border-top: 1px solid var(--rule); background: var(--sheet); box-shadow: 0 -6px 25px -20px var(--ink); }
+  .workspace-wordmark { display: none; }
+  .workspace-settings-link { display: none; }
+  .workspace-tabs { width: 100%; gap: 0; }
+  .workspace-tabs a { flex: 1; min-width: 0; flex-direction: column; gap: 3px; padding: 7px 2px; min-height: 53px; font-size: 11px; }
+  .workspace-tabs a[aria-current="page"] { box-shadow: inset 0 2px var(--zhu); }
+  .workspace-content { padding-bottom: calc(82px + var(--safe-b)); }
+  .workspace-content > .reading-home { padding-top: calc(16px + var(--safe-t)); }
+}

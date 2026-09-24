@@ -1,0 +1,63 @@
+plugins {
+    id 'com.android.application'
+    id 'com.chaquo.python'
+}
+
+chaquopy {
+    defaultConfig {
+        version '3.11'
+        buildPython(System.getenv('YEDU_BUILD_PYTHON') ?: 'python3.11')
+        // run.py hashes a neighboring source file; both packages need real paths.
+        extractPackages('pipeline', 'server', 'web')
+    }
+    sourceSets {
+        main {
+            srcDir '../..'
+            include 'android_bootstrap.py', 'pipeline/**', 'server/**', 'web/**'
+            exclude '**/__pycache__/**', '**/*.pyc', 'web/download/**'
+        }
+    }
+}
+android {
+    namespace 'com.yedu.zhupi'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.yedu.zhupi'
+        minSdk 26
+        targetSdk 35
+        versionCode 10
+        versionName '1.7.1'
+        ndk { abiFilters 'arm64-v8a', 'x86_64' }
+        manifestPlaceholders = [appLabel: '@string/app_name']
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    // release signing is optional: point YEDU_SIGNING_STORE at your keystore and
+    // YEDU_SIGNING_PASSWORD_FILE at a file holding its password (alias 'yedu'); keys never live in the repository
+    def keyPath = System.getenv('YEDU_SIGNING_STORE') ?: ''
+    def passwordPath = System.getenv('YEDU_SIGNING_PASSWORD_FILE') ?: ''
+    def hasSigning = keyPath && passwordPath && file(keyPath).isFile() && file(passwordPath).isFile()
+    if (hasSigning) {
+        signingConfigs {
+            release {
+                storeFile file(keyPath)
+                storePassword file(passwordPath).text.trim()
+                keyAlias 'yedu'
+                keyPassword file(passwordPath).text.trim()
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            // Device feasibility tests must not replace the installed release app.
+            applicationIdSuffix '.standaloneprobe'
+            manifestPlaceholders = [appLabel: '@string/app_name_debug']
+        }
+        release {
+            minifyEnabled false
+            if (hasSigning) signingConfig signingConfigs.release
+        }
+    }
+}

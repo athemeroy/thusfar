@@ -1,0 +1,17 @@
+{
+  "book": "儒林外史（维基文库 56 回）",
+  "frozen": "2026-09-19，在运行任何流水线之前写定；只收录在原文中确认了回数的事件，不确定的（牛布衣、鲍文卿之死、周进中举）未收录",
+  "rule": "同《红楼梦》探针：第 chapter 回开始前不得出现，第 chapter+2 回结束时应能看到。",
+  "probes": [
+    {"id": "f-fanjin-juren", "kind": "fate", "person": ["范进"], "chapter": 3, "words": "中举|中了举|举人|中了", "verify": "噫！好了！我中了"},
+    {"id": "d-fan-mother", "kind": "death", "person": ["范母", "范老太太", "老太太", "范进母亲", "范进的母亲"], "chapter": 4, "verify": "老太太淹淹一息，归天去了"},
+    {"id": "f-zhaoshi-fuzheng", "kind": "fate", "person": ["赵氏", "赵新娘"], "chapter": 5, "words": "扶正|正室|填房|正妻", "verify": "扶正做个填房"},
+    {"id": "d-yanjiansheng", "kind": "death", "person": ["严监生", "严致和", "严二老官"], "chapter": 6, "verify": "两茎灯草"},
+    {"id": "m-kuang-zheng", "kind": "marriage", "person": ["匡超人", "匡迥"], "other": ["郑"], "chapter": 19, "verify": "匡超人请进新房，见新娘"},
+    {"id": "m-kuang-second", "kind": "marriage", "person": ["匡超人", "匡迥"], "other": ["外甥女", "李给谏"], "chapter": 20, "verify": "外甥女嫁与匡超人"},
+    {"id": "d-wangjia-nver", "kind": "death", "person": ["王家女儿", "鲍廷玺的妻子", "鲍廷玺之妻"], "chapter": 26, "verify": "那王家女儿怀著身子，要分娩﹔不想养不下来，死了"},
+    {"id": "d-wang-sanguniang", "kind": "death", "person": ["三姑娘", "王三姑娘", "王玉辉的女儿", "王玉辉之女"], "chapter": 48, "verify": "三姑娘饿了八日，在今日午时去世了"}
+  ],
+  "death_words": "死|去世|身亡|亡故|病故|病逝|夭|殁|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|薨|殒|没了|丧|捐馆|宾天|殉",
+  "marriage_words": "妻|夫|成亲|成婚|完婚|拜堂|娶|嫁|过门|圆房|姨奶奶|二房|招亲|入赘"
+}

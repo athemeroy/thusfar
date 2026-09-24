@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">Thusfar</string>
+    <string name="app_name_debug" formatted="false">Thusfar (Test)</string>
+    <string name="processing_channel" formatted="false">Traitement des livres</string>
+    <string name="preparing_processing" formatted="false">Préparation du traitement du livre</string>
+    <string name="books_readable" formatted="false">Les livres peuvent toujours être lus</string>
+    <string name="book_fallback" formatted="false">Ce livre</string>
+    <string name="checking_details" formatted="false">Vérification des informations</string>
+    <string name="segment_progress" formatted="false">Section {done}/{total}</string>
+    <string name="processing_book" formatted="false">Traitement de « {title} »</string>
+    <string name="no_browser" formatted="false">Aucun navigateur disponible</string>
+    <string name="pick_title" formatted="false">Sélectionnez un livre ou une sauvegarde exportée</string>
+    <string name="no_picker" formatted="false">Aucun sélecteur de fichier disponible</string>
+    <string name="unsupported_save" formatted="false">L\'enregistrement de cette adresse n\'est pas pris en charge</string>
+    <string name="save_busy" formatted="false">Veuillez d\'abord terminer la sauvegarde du fichier actuel.</string>
+    <string name="file_too_large" formatted="false">Le fichier est trop volumineux, veuillez l\'exporter dans un navigateur d\'ordinateur</string>
+    <string name="no_saver" formatted="false">Aucune application disponible pour enregistrer le fichier</string>
+    <string name="local_start_failed" formatted="false">Impossible de démarrer la bibliothèque locale</string>
+    <string name="invalid_destination" formatted="false">Emplacement d’enregistrement invalide</string>
+    <string name="saving" formatted="false">Sauvegarde, veuillez garder l\'application ouverte</string>
+    <string name="saved" formatted="false">Enregistré à l\'emplacement sélectionné</string>
+    <string name="save_failed" formatted="false">Enregistrement impossible. Vérifiez la connexion, la session et l’espace disponible, puis réessayez.</string>
+</resources>

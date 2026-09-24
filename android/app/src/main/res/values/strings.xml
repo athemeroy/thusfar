@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">Thusfar</string>
+    <string name="app_name_debug" formatted="false">Thusfar (Test)</string>
+    <string name="processing_channel" formatted="false">Book processing</string>
+    <string name="preparing_processing" formatted="false">Preparing book processing</string>
+    <string name="books_readable" formatted="false">You can keep reading</string>
+    <string name="book_fallback" formatted="false">This book</string>
+    <string name="checking_details" formatted="false">Checking details</string>
+    <string name="segment_progress" formatted="false">Section {done}/{total}</string>
+    <string name="processing_book" formatted="false">Processing “{title}”</string>
+    <string name="no_browser" formatted="false">No browser available</string>
+    <string name="pick_title" formatted="false">Select a book or exported backup</string>
+    <string name="no_picker" formatted="false">No file picker available</string>
+    <string name="unsupported_save" formatted="false">Saving this address is not supported</string>
+    <string name="save_busy" formatted="false">Please complete the saving of the current file first</string>
+    <string name="file_too_large" formatted="false">File too large. Export from a desktop browser.</string>
+    <string name="no_saver" formatted="false">No app available to save the file</string>
+    <string name="local_start_failed" formatted="false">Could not start the local library</string>
+    <string name="invalid_destination" formatted="false">Invalid save location</string>
+    <string name="saving" formatted="false">Saving, please keep the application open</string>
+    <string name="saved" formatted="false">Saved to selected location</string>
+    <string name="save_failed" formatted="false">Could not save. Check your connection, sign-in and free space, then try again.</string>
+</resources>

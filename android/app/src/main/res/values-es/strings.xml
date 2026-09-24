@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">Thusfar</string>
+    <string name="app_name_debug" formatted="false">Thusfar (Prueba)</string>
+    <string name="processing_channel" formatted="false">Procesamiento de libros</string>
+    <string name="preparing_processing" formatted="false">Preparando el procesamiento del libro</string>
+    <string name="books_readable" formatted="false">Los libros todavía se pueden leer</string>
+    <string name="book_fallback" formatted="false">Este libro</string>
+    <string name="checking_details" formatted="false">Comprobación de información</string>
+    <string name="segment_progress" formatted="false">Sección {done}/{total}</string>
+    <string name="processing_book" formatted="false">Procesando «{title}»</string>
+    <string name="no_browser" formatted="false">No hay navegador disponible</string>
+    <string name="pick_title" formatted="false">Seleccione un libro o copia de seguridad exportada</string>
+    <string name="no_picker" formatted="false">No hay selector de archivos disponible</string>
+    <string name="unsupported_save" formatted="false">No se admite guardar esta dirección</string>
+    <string name="save_busy" formatted="false">Primero complete el guardado del archivo actual</string>
+    <string name="file_too_large" formatted="false">El archivo es demasiado grande, expórtelo en el navegador de una computadora</string>
+    <string name="no_saver" formatted="false">No hay ninguna aplicación para guardar el archivo</string>
+    <string name="local_start_failed" formatted="false">No se pudo abrir la biblioteca local</string>
+    <string name="invalid_destination" formatted="false">La ubicación para guardar no es válida</string>
+    <string name="saving" formatted="false">Guardando, por favor mantenga la aplicación abierta</string>
+    <string name="saved" formatted="false">Guardado en la ubicación seleccionada</string>
+    <string name="save_failed" formatted="false">No se pudo guardar. Comprueba la conexión, el inicio de sesión y el espacio disponible, e inténtalo de nuevo.</string>
+</resources>

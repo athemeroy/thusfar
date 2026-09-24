@@ -1,0 +1,26 @@
+{
+  "contract": "latest explicit nonempty roles per canonical unordered pair and optional family; preserve ended transitions and chronological history",
+  "cases": [
+    {"name":"relation_transition", "cutoff":50, "records":[
+      {"t":"person","p":0,"id":"P1","name":"A"}, {"t":"person","p":0,"id":"P2","name":"B"},
+      {"t":"rel","p":10,"a":"P1","b":"P2","a_is":"friend","b_is":"friend","status":"new"},
+      {"t":"rel","p":20,"a":"P1","b":"P2","a_is":"friend","b_is":"friend","status":"new"},
+      {"t":"rel","p":30,"a":"P1","b":"P2","a_is":"husband","b_is":"wife","status":"new"}
+    ], "expected_rels":[{"a":"P1","b":"P2","a_is":"husband","b_is":"wife","status":"new"}]},
+    {"name":"reverse_direction_partial_end", "cutoff":50, "records":[
+      {"t":"person","p":0,"id":"P1","name":"A"}, {"t":"person","p":0,"id":"P2","name":"B"},
+      {"t":"rel","p":10,"a":"P2","b":"P1","a_is":"wife","b_is":"husband","status":"new"},
+      {"t":"rel","p":40,"a":"P1","b":"P2","status":"ended"}
+    ], "expected_rels":[{"a":"P1","b":"P2","a_is":"husband","b_is":"wife","status":"ended"}]},
+    {"name":"future_transition_excluded", "cutoff":25, "records":[
+      {"t":"person","p":0,"id":"P1","name":"A"}, {"t":"person","p":0,"id":"P2","name":"B"},
+      {"t":"rel","p":10,"a":"P1","b":"P2","a_is":"friend","b_is":"friend","status":"new"},
+      {"t":"rel","p":30,"a":"P1","b":"P2","a_is":"husband","b_is":"wife","status":"new"}
+    ], "expected_rels":[{"a":"P1","b":"P2","a_is":"friend","b_is":"friend","status":"new"}]},
+    {"name":"family_independence", "cutoff":50, "records":[
+      {"t":"person","p":0,"id":"P1","name":"A"}, {"t":"person","p":0,"id":"P2","name":"B"},
+      {"t":"rel","p":10,"a":"P1","b":"P2","family":"kin","a_is":"brother","b_is":"sister","status":"new"},
+      {"t":"rel","p":20,"a":"P1","b":"P2","family":"work","a_is":"manager","b_is":"employee","status":"new"}
+    ], "expected_rels":[{"a":"P1","b":"P2","family":"kin","a_is":"brother","b_is":"sister","status":"new"},{"a":"P1","b":"P2","family":"work","a_is":"manager","b_is":"employee","status":"new"}]}
+  ]
+}

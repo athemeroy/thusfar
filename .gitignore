@@ -1,0 +1,25 @@
+# books, their knowledge graphs and everything the pipeline produces stay on your machine
+data/
+testsets/*/*.txt
+
+# filled-in secrets — .env.example is the one that is committed
+.env
+secrets.env
+*.key
+*.jks
+*.keystore
+
+# build output
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+web/download/
+*.apk
+
+__pycache__/
+*.pyc
+*.tmp
+.pytest_cache/
+.venv*/
+.DS_Store

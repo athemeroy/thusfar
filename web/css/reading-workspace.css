@@ -1,0 +1,53 @@
+/* The reader's own work, set in the same paper and vermilion vocabulary. */
+.reader-menu-handle { position:absolute;bottom:calc(5px + var(--safe-b));left:50%;transform:translateX(-50%);z-index:6;display:flex;align-items:center;gap:5px;min-height:36px;padding:4px 12px;color:var(--ink-3);font:12px var(--kai);border-radius:20px;background:var(--paper);touch-action:manipulation; }
+.reader-menu-handle svg { width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5; }
+.reader.ui .reader-menu-handle,.reader.selecting .reader-menu-handle { visibility:hidden; }
+.selection-tools { position:absolute;bottom:calc(6px + var(--safe-b));left:8px;right:8px;z-index:12;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:var(--sheet);border:1px solid var(--rule);box-shadow:0 6px 24px #0002;border-radius:12px;font-size:12px;touch-action:manipulation; }
+.selection-tools[hidden] { display:none; }
+.selection-tools .btn { padding:9px 12px;flex-shrink:0; }
+.selecting .stage { touch-action:pan-y; }
+.selecting .flow,.selecting .flow * { user-select:text;-webkit-user-select:text;touch-action:pan-y; }
+.selecting .flow .nm { box-shadow:none;pointer-events:none; }
+.selecting .flow ::selection { background:var(--zhu-soft); }
+.notebook-actions { display:flex;flex-wrap:wrap;gap:10px;margin:14px 0; }
+.notebook-scope { display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-3);margin:14px 0;min-height:32px; }
+.notebook-scope input { width:auto; }
+.notebook-status .linkish { margin-left:8px; }
+.notebook-card { border-top:1px solid var(--rule);padding:18px 0; }
+.note-source { color:var(--zhu);font:13px var(--kai);min-height:32px;text-align:left; }
+.notebook-card blockquote,.note-quote { border-left:2px solid var(--zhu-line);margin:10px 0 12px;padding:6px 0 6px 14px;font:16px/1.85 var(--serif);color:var(--ink-2);white-space:pre-wrap;overflow-wrap:anywhere; }
+.note-thought { white-space:pre-wrap;font:15px/1.7 var(--kai);overflow-wrap:anywhere; }
+.note-tools { display:flex;gap:18px;align-items:center; }
+.note-tools button { min-height:40px; }
+.note-editor,.notebook-export { width:100%;min-height:180px;resize:vertical;padding:14px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font:16px/1.8 var(--kai); }
+.notebook-export-actions { display:flex;flex-wrap:wrap;gap:14px;align-items:center;border-top:1px solid var(--rule);padding-top:20px;margin-top:20px; }
+.notebook-empty b { display:block;font-size:22px;margin-bottom:12px; }
+.notebook-empty { font-size:14px; }
+.companion-intro { font:16px/1.9 var(--kai);color:var(--ink-2); }
+.companion-cards { display:grid;gap:10px;margin:22px 0; }
+.companion-card { display:flex;align-items:center;gap:14px;padding:18px 12px;border:1px solid var(--rule);border-radius:8px;text-align:left; }
+.companion-card:hover { background:var(--paper-2); }
+.companion-card svg { width:24px;height:24px;fill:none;stroke:var(--zhu);stroke-width:1.5;flex-shrink:0; }
+.companion-card svg:last-child { width:16px;stroke:var(--ink-3); }
+.companion-card span { flex:1; }
+.companion-card b { display:block;font:600 18px var(--serif);margin-bottom:7px; }
+.companion-card small { display:block;color:var(--ink-3);font:13px/1.6 var(--kai); }
+.companion-own .btn { margin:0 8px 10px 0; }
+.manual-form { display:grid; gap:14px; margin:14px 0 24px; }
+.manual-form label { display:grid; gap:6px; font:600 13px/1.5 var(--sans); color:var(--ink-2); }
+.manual-form input,.manual-form select,.manual-form textarea { width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--rule); border-radius:10px; background:var(--paper); color:var(--ink); font-size:16px; }
+.manual-form textarea { resize:vertical; line-height:1.6; }
+.manual-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.manual-entry { grid-template-columns:1fr auto; border-bottom:1px solid var(--rule); }
+.manual-entry p { margin:4px 0 0; overflow-wrap:anywhere; }
+.book-management { margin-top:18px;min-height:44px; }
+.flow:not([lang^="zh"]):not([lang^="ja"]):not([lang^="ko"]) { text-align:start;text-justify:auto;hyphens:auto; }
+.flow:not([lang^="zh"]):not([lang^="ja"]):not([lang^="ko"]) .ch-open h2 { letter-spacing:0; }
+@media (max-width:400px) { .selection-tools { gap:4px; }.selection-tools span { max-width:95px; }.notebook-actions .btn { flex:1;justify-content:center;padding:10px; } }
+
+.back-chip { white-space:nowrap;min-height:38px; }
+.back-chip svg { width:17px;height:17px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round; }
+.reader.ui .back-chip { bottom:calc(135px + var(--safe-b)); }
+
+.notebook-filter { width:100%;min-height:44px;padding:11px 13px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font:15px var(--kai); }
+.notebook-filter:focus-visible { outline:2px solid var(--zhu);outline-offset:2px; }

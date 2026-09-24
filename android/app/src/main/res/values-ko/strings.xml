@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" formatted="false">Thusfar</string>
+    <string name="app_name_debug" formatted="false">Thusfar (테스트)</string>
+    <string name="processing_channel" formatted="false">책 정리</string>
+    <string name="preparing_processing" formatted="false">책 정리를 준비하고 있습니다</string>
+    <string name="books_readable" formatted="false">정리 중에도 계속 읽을 수 있습니다</string>
+    <string name="book_fallback" formatted="false">이 책</string>
+    <string name="checking_details" formatted="false">자료를 확인하고 있습니다</string>
+    <string name="segment_progress" formatted="false">{done}/{total} 구간</string>
+    <string name="processing_book" formatted="false">『{title}』 정리 중</string>
+    <string name="no_browser" formatted="false">사용할 수 있는 브라우저가 없습니다</string>
+    <string name="pick_title" formatted="false">책 또는 내보낸 백업 선택</string>
+    <string name="no_picker" formatted="false">사용할 수 있는 파일 선택 앱이 없습니다</string>
+    <string name="unsupported_save" formatted="false">이 주소는 저장할 수 없습니다</string>
+    <string name="save_busy" formatted="false">현재 파일의 저장을 먼저 완료하세요</string>
+    <string name="file_too_large" formatted="false">파일이 너무 큽니다. 컴퓨터 브라우저에서 내보내세요</string>
+    <string name="no_saver" formatted="false">사용할 수 있는 파일 저장 앱이 없습니다</string>
+    <string name="local_start_failed" formatted="false">기기 내 서재를 시작하지 못했습니다</string>
+    <string name="invalid_destination" formatted="false">저장 위치가 올바르지 않습니다</string>
+    <string name="saving" formatted="false">저장 중입니다. 앱을 열어 두세요</string>
+    <string name="saved" formatted="false">선택한 위치에 저장했습니다</string>
+    <string name="save_failed" formatted="false">저장하지 못했습니다. 네트워크, 로그인 상태 및 여유 공간을 확인한 후 다시 시도하세요</string>
+</resources>
