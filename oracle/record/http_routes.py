@@ -217,7 +217,7 @@ def substitute(text: str, references: dict[str, str]) -> str:
     return text
 
 
-def run_once(data: Path, bid: str) -> list[dict]:
+def run_once(data: Path, bid: str, *, case_builder=route_cases) -> list[dict]:
     books = data / 'books'
     previous = dict(os.environ)
     os.environ.update(DATA_DIR=str(data), WEB_DIR=str(ROOT / 'web'), AUTO_PROCESS='0',
@@ -252,7 +252,7 @@ def run_once(data: Path, bid: str) -> list[dict]:
         with LoopbackOnly():
             conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=30)
             try:
-                for case in route_cases(book):
+                for case in case_builder(book):
                     if case['id'] == 'book-process-post':
                         # A fixed fake key makes this route exercise the successful body-discard
                         # path. The worker thread is never started, and the key is not recorded.

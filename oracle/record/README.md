@@ -125,8 +125,9 @@ validation failures. Each pass hard-links the same baseline files so inode-based
 values stay stable. It freezes the server clock, keeps the original response version and
 time fields, and replaces only the random session cookie value with `<session>`; cookie
 attributes remain. The companion `-report.json` records that normalization. Routes that
-require a real model are currently represented by their validation/error responses; a later
-cassette-backed pass can add successful model responses.
+require a real model are represented in this baseline by validation/error responses. A
+separate synthetic interface fixture exercises successful `/who`, `/ask`, and `/marginalia`
+responses without claiming that its generated text came from DeepSeek or classifier.dev.
 Reuse one persistent `--baseline` path across separate invocations; moving it to another
 filesystem can change inode-derived revision values.
 
@@ -134,9 +135,25 @@ filesystem can change inode-derived revision values.
 $PY311 -m oracle.record.http_routes oracle/corpus/snapshots/aq_complete \
   --baseline /tmp/thusfar-http-aq-baseline \
   --out oracle/goldens/http/aq_complete.jsonl
+$PY311 -m oracle.record.http_model_synthetic oracle/corpus/snapshots/aq_complete \
+  --baseline /tmp/thusfar-http-model-synthetic-baseline \
+  --out oracle/goldens/http/aq_model_synthetic.jsonl
 node oracle/record/fold.mjs oracle/corpus/snapshots/aq_complete \
   oracle/goldens/books/aq_complete/fold.jsonl
 ```
+
+`http_model_synthetic.py` passes each HTTP request through the real Python route handler and
+real model client serialization/parsing. Its only substitution is the outbound opener: exact
+`.invalid` model and classifier URLs return labeled in-memory responses. The client key loader
+accepts only an in-memory fixture key and cannot read an ambient secret; the classifier path
+has no Authorization header. Unknown prompts, URLs, models, thinking modes, or extra model
+calls fail closed. The fixture records one successful person resolution, one complete SSE
+answer with a supported guard verdict, and a manual generated comment plus its cached reply.
+It freezes the clock, reuses the same persistent hard-linked source baseline, verifies exact
+HTTP status/body contracts, and compares both HTTP bytes and sanitized model request hashes
+twice. Its report says `source: synthetic in-memory transport`; it is not a live model
+cassette or proof of model answer quality. Genuine model-backed route responses remain pending
+until matching live wire cassettes cover these calls.
 
 The Node command imports the actual `web/js/kg.js`, calls `KG.world(cutoff)` at 20 evenly
 spaced cutoffs, and records people, relations, events, recaps, canonical identities, ranking,
