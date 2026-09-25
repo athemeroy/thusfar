@@ -141,7 +141,7 @@ def link_segment(kg, seg: dict, local: dict, context_text: str, scope_start: int
     weak_idx: dict[str, set] = {}
     all_names: list[tuple[str, str]] = []
     for pid, p in cast.items():
-        for n in p['aliases'] | {p['name']}:
+        for n in sorted(p['aliases'] | {p['name']}):
             by_name.setdefault(n, set()).add(pid)
             all_names.append((n, pid))
             for s in short_forms(n):

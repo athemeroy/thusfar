@@ -26,14 +26,21 @@ def probe():
         'name': 'Alex', 'aliases': {'Alex'}, 'weak': set(),
         'first': 0, 'mentions': 1, 'gender': '',
     } for i in range(1, 8)}
+    cast['P1']['aliases'].update({'Aaron', 'Alder', 'Alice', 'Alpha'})
     kg = SimpleNamespace(people=cast, canon=lambda pid: pid, k=1)
     captured = []
+    name_index = []
 
     def fake_judge(questions, *_args):
         captured.append(questions[0][2])
         return {'1': {'choice': 'new', 'p': 1.0}}
 
+    def capture_name_index(_kg, _person, by_name):
+        name_index.extend(by_name)
+        return None
+
     with patch('pipeline.link._ask_jev', side_effect=fake_judge), \
+         patch('pipeline.link._resolve_hint', side_effect=capture_name_index), \
          patch('pipeline.link.verify_names', return_value=({}, {})):
         link_segment(kg, {}, {'people': [{'id': '1', 'name': 'Alex', 'names': []}]}, 'Alex')
 
@@ -78,7 +85,7 @@ def probe():
         retrieved = ask.retrieve(None, {}, question, [], 80000)
     return {
         'proper': proper, 'classic': classic,
-        'candidates': captured[0], 'pairs': pairs,
+        'candidates': captured[0], 'name_index': name_index, 'pairs': pairs,
         'dossier_keys': list(dossiers),
         'scrubbed': event['text'],
         'retrieved_offsets': [row['o'] for row in retrieved],

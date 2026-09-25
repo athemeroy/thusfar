@@ -32,6 +32,8 @@ class HashSeedDeterminismTests(unittest.TestCase):
                 self.assertEqual(actual['classic'], 'Alice')
                 self.assertEqual(actual['candidates'],
                                  ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'])
+                self.assertEqual(actual['name_index'],
+                                 ['Aaron', 'Alder', 'Alex', 'Alice', 'Alpha'])
                 self.assertEqual(actual['scrubbed'], '甲某人开始行动')
                 self.assertEqual(actual['pairs'][0], ['P2', 'P1'])
                 self.assertEqual(actual['dossier_keys'],
