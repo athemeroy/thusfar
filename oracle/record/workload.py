@@ -74,9 +74,10 @@ def main() -> None:
                 budget = tape.budget_summary()
                 print(f'cassette {args.mode}: {tape.count} responses; '
                       f'model attempts={tape.attempts["model"]}; JEV attempts={tape.attempts["jev"]}; '
-                      f'actual model cost=¥{budget["actual_cny"]:.6f}; '
+                      f'configured-rate token estimate=¥{budget["configured_rate_estimate_cny"]:.6f}; '
                       f'cumulative guarded charge=¥{budget["charged_cny"]:.6f}; '
-                      f'usage unavailable={budget["usage_unavailable"]}')
+                      f'usage unavailable={budget["usage_unavailable"]}; '
+                      'actual gateway bill requires a provider receipt')
     finally:
         for key, value in previous.items():
             if value is None:

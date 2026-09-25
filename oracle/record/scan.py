@@ -11,6 +11,13 @@ from .common import UnsafeValue, assert_public, known_secrets
 
 def inspect_value(value, secrets: tuple[str, ...], path: Path) -> None:
     if isinstance(value, dict):
+        if 'request_sha256' in value and isinstance(value.get('attempts'), list):
+            attempts = value['attempts']
+            if any(isinstance(attempt, dict) and attempt.get('kind') == 'pending'
+                   for attempt in attempts):
+                raise UnsafeValue(f'unfinished cassette request in {path}')
+            if len(attempts) > 1 and any(attempt != attempts[0] for attempt in attempts[1:]):
+                raise UnsafeValue(f'ambiguous repeated cassette request in {path}')
         for key, item in value.items():
             if key.lower() in ('authorization', 'proxy-authorization', 'x-api-key', 'x-goog-api-key'):
                 raise UnsafeValue(f'authentication header in {path}')

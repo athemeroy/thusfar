@@ -24,7 +24,8 @@ from pipeline.models import PRICES
 _SAFE_HEADERS = ('accept', 'content-type')
 _REPLY_HEADERS = ('content-type', 'content-encoding', 'retry-after')
 _SECRET_QUERY = ('key', 'token', 'secret', 'password', 'authorization')
-_MODEL_PRICE = PRICES['deepseek-flash']['price']
+_CONFIGURED_PRICE = PRICES['deepseek-flash']['price']
+_GUARD_PRICE = tuple(2 * value for value in _CONFIGURED_PRICE)
 
 
 def request_envelope(request, secrets: tuple[str, ...]) -> dict:
@@ -113,6 +114,28 @@ class CassetteStore:
             finally:
                 fcntl.flock(handle, fcntl.LOCK_UN)
 
+    @contextmanager
+    def _tape_lock(self):
+        self.directory.mkdir(parents=True, exist_ok=True)
+        with (self.directory / '.tape.lock').open('a') as handle:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle, fcntl.LOCK_UN)
+
+    def _reserve_slot(self, envelope: dict) -> int:
+        path = self.path(envelope)
+        with self._tape_lock():
+            tape = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {
+                'schema': 1, 'request_sha256': path.stem, 'request': envelope, 'attempts': []}
+            if tape['request'] != envelope:
+                raise ValueError('cassette digest collision or changed request')
+            slot = len(tape['attempts'])
+            tape['attempts'].append({'kind': 'pending'})
+            write_json(path, tape)
+            return slot
+
     @staticmethod
     def _upper_bound(envelope: dict) -> float:
         body = json.loads(envelope['body_utf8'])
@@ -122,9 +145,9 @@ class CassetteStore:
         # A token cannot represent less than one UTF-8 byte. The extra 2048 tokens cover
         # gateway chat framing; the 10% margin covers small accounting differences.
         prompt_upper = len(envelope['body_utf8'].encode('utf-8')) + 2048
-        return round((prompt_upper * _MODEL_PRICE[0] + cap * _MODEL_PRICE[1]) / 1_000_000 * 1.1, 9)
+        return round((prompt_upper * _GUARD_PRICE[0] + cap * _GUARD_PRICE[1]) / 1_000_000 * 1.1, 9)
 
-    def reserve_live(self, kind: str, envelope: dict) -> str | None:
+    def reserve_live(self, kind: str, envelope: dict) -> tuple[str | None, int]:
         with self.lock:
             limit = self.limits[kind]
             if limit is not None and self.attempts[kind] >= limit:
@@ -142,8 +165,9 @@ class CassetteStore:
                                               'reserved_cny': upper,
                                               'charged_cny': upper,
                                               'state': 'reserved'})
+            slot = self._reserve_slot(envelope)
             self.attempts[kind] += 1
-            return reservation
+            return reservation, slot
 
     @staticmethod
     def _stream_usage(attempt: dict) -> tuple[int, int] | None:
@@ -180,24 +204,29 @@ class CassetteStore:
                 entry['state'] = 'usage_unavailable'
                 return
             prompt, completion = usage
-            actual = round((prompt * _MODEL_PRICE[0] + completion * _MODEL_PRICE[1]) / 1_000_000, 9)
+            configured = round((prompt * _CONFIGURED_PRICE[0] +
+                                completion * _CONFIGURED_PRICE[1]) / 1_000_000, 9)
+            guarded = round((prompt * _GUARD_PRICE[0] + completion * _GUARD_PRICE[1]) / 1_000_000, 9)
             entry.update(state='completed', prompt_tokens=prompt,
-                         completion_tokens=completion, actual_cny=actual,
-                         charged_cny=max(actual, 0.0))
-            if actual > entry['reserved_cny']:
+                         completion_tokens=completion,
+                         configured_rate_estimate_cny=configured,
+                         guarded_usage_cny=guarded,
+                         charged_cny=guarded)
+            if guarded > entry['reserved_cny']:
                 entry['state'] = 'over_upper_bound'
                 overrun = True
         if overrun:
-            raise RuntimeError('model bill exceeded cassette preflight reservation')
+            raise RuntimeError('model token usage exceeded cassette preflight reservation')
 
     def budget_summary(self) -> dict:
         path = self.directory / 'budget-ledger.json'
         if not path.exists():
-            return {'actual_cny': 0.0, 'charged_cny': 0.0, 'model_attempts': 0,
+            return {'configured_rate_estimate_cny': 0.0, 'charged_cny': 0.0, 'model_attempts': 0,
                     'usage_unavailable': 0}
         ledger = json.loads(path.read_text(encoding='utf-8'))
         entries = ledger['entries']
-        return {'actual_cny': round(sum(row.get('actual_cny', 0) for row in entries), 9),
+        return {'configured_rate_estimate_cny': round(sum(row.get('configured_rate_estimate_cny', 0)
+                                                          for row in entries), 9),
                 'charged_cny': round(sum(row['charged_cny'] for row in entries), 9),
                 'model_attempts': len(entries),
                 'usage_unavailable': sum(row['state'] != 'completed' for row in entries)}
@@ -205,7 +234,7 @@ class CassetteStore:
     def path(self, envelope: dict) -> Path:
         return self.directory / (digest(envelope) + '.json')
 
-    def append(self, envelope: dict, attempt: dict) -> None:
+    def append(self, envelope: dict, attempt: dict, slot: int | None = None) -> None:
         # Search the full serialized record, including raw response chunks, for known secrets.
         assert_public(canonical(attempt), self.secrets)
         if 'chunks_base64' in attempt:
@@ -215,12 +244,19 @@ class CassetteStore:
             raw = base64.b64decode(attempt['body_base64'], validate=True)
             assert_public(raw.decode('utf-8', 'replace'), self.secrets)
         path = self.path(envelope)
-        with self.lock:
+        with self.lock, self._tape_lock():
             tape = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {
                 'schema': 1, 'request_sha256': path.stem, 'request': envelope, 'attempts': []}
             if tape['request'] != envelope:
                 raise ValueError('cassette digest collision or changed request')
-            tape['attempts'].append(attempt)
+            if slot is None:
+                if attempt.get('source') != 'synthetic':
+                    raise ValueError('live cassette response has no initiation slot')
+                tape['attempts'].append(attempt)
+            else:
+                if not 0 <= slot < len(tape['attempts']) or tape['attempts'][slot] != {'kind': 'pending'}:
+                    raise ValueError('cassette initiation slot is absent or already settled')
+                tape['attempts'][slot] = attempt
             write_json(path, tape)
             self.count += 1
 
@@ -231,19 +267,25 @@ class CassetteStore:
         tape = json.loads(path.read_text(encoding='utf-8'))
         if tape.get('request') != envelope or tape.get('request_sha256') != path.stem:
             raise ValueError(f'cassette integrity check failed: {path.name}')
+        attempts = tape.get('attempts') or []
+        if any(attempt.get('kind') == 'pending' for attempt in attempts):
+            raise RuntimeError(f'cassette has unfinished live requests: sha256={path.stem}')
+        if len(attempts) > 1 and any(attempt != attempts[0] for attempt in attempts[1:]):
+            raise RuntimeError(f'cassette has ambiguous repeated request: sha256={path.stem}')
         with self.lock:
             index = self.offsets.get(path.stem, 0)
-            if index >= len(tape['attempts']):
+            if index >= len(attempts):
                 raise RuntimeError(f'cassette exhausted: sha256={path.stem}, attempts={index}')
             self.offsets[path.stem] = index + 1
             self.count += 1
-        return tape['attempts'][index]
+        return attempts[index]
 
 
 class RecordingResponse:
-    def __init__(self, actual, store: CassetteStore, envelope: dict, reservation: str | None):
+    def __init__(self, actual, store: CassetteStore, envelope: dict,
+                 reservation: str | None, slot: int):
         self.actual, self.store, self.envelope = actual, store, envelope
-        self.reservation = reservation
+        self.reservation, self.slot = reservation, slot
         self.headers = actual.headers
         self.status = getattr(actual, 'status', None)
         self.attempt = {'kind': 'response', 'status': self.status, 'headers': reply_headers(actual.headers),
@@ -257,7 +299,7 @@ class RecordingResponse:
         try:
             self.actual.__exit__(exc_type, exc, tb)
         finally:
-            self.store.append(self.envelope, self.attempt)
+            self.store.append(self.envelope, self.attempt, self.slot)
             self.store.settle_live(self.reservation, self.attempt)
 
     def _read(self, method: str, size: int = -1):
@@ -341,7 +383,7 @@ class CassetteOpener:
                                              message_headers(attempt['headers']), io.BytesIO(body))
             raise_replayed(attempt['error'])
         kind = live_request_allowed(envelope, request)
-        reservation = self.store.reserve_live(kind, envelope)
+        reservation, slot = self.store.reserve_live(kind, envelope)
         try:
             actual = self.actual_factory().open(request, timeout=timeout)
         except urllib.error.HTTPError as exc:
@@ -350,16 +392,16 @@ class CassetteOpener:
             attempt = {'kind': 'http_error', 'status': exc.code, 'reason': str(exc.reason),
                        'headers': reply_headers(exc.headers),
                        'body_base64': base64.b64encode(body).decode('ascii')}
-            self.store.append(envelope, attempt)
+            self.store.append(envelope, attempt, slot)
             self.store.settle_live(reservation, attempt)
             raise urllib.error.HTTPError(envelope['url'], exc.code, exc.reason, exc.headers,
                                          io.BytesIO(body)) from None
         except (urllib.error.URLError, TimeoutError, ConnectionError, OSError) as exc:
             attempt = {'kind': 'error', 'error': {'type': type(exc).__name__, 'message': str(exc)}}
-            self.store.append(envelope, attempt)
+            self.store.append(envelope, attempt, slot)
             self.store.settle_live(reservation, attempt)
             raise
-        return RecordingResponse(actual, self.store, envelope, reservation)
+        return RecordingResponse(actual, self.store, envelope, reservation, slot)
 
 
 @contextmanager
