@@ -156,6 +156,7 @@ final class PyCompat {
   }
 
   static BigInt _asBigInt(Object value) {
+    if (value is bool) return BigInt.from(value ? 1 : 0);
     if (value is BigInt) return value;
     if (value is int) return BigInt.from(value);
     throw ArgumentError.value(value, 'value', 'Expected a Python integer');
@@ -314,14 +315,14 @@ final class PyCompat {
       final BigInt left = a is int ? BigInt.from(a) : a! as BigInt;
       if (b is int || b is BigInt) {
         final BigInt right = b is int ? BigInt.from(b) : b! as BigInt;
-        return left.compareTo(right);
+        return left.compareTo(right).sign;
       }
       if (b is double) {
         if (b.isNaN) return 0;
         if (b == double.infinity) return -1;
         if (b == double.negativeInfinity) return 1;
         final (BigInt numerator, BigInt denominator) = _floatRatio(b);
-        return (left * denominator).compareTo(numerator);
+        return (left * denominator).compareTo(numerator).sign;
       }
     }
     if (a is double && (b is int || b is BigInt)) return -compare(b, a);

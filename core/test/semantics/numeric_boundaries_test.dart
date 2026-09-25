@@ -12,6 +12,12 @@ Object parseNumber(List<Object?> pair) {
   return BigInt.parse(raw);
 }
 
+Object parseInteger(String raw) {
+  if (raw == 'True') return true;
+  if (raw == 'False') return false;
+  return BigInt.parse(raw);
+}
+
 Object? evaluate(Map<String, Object?> item) {
   switch (item['op']) {
     case 'round':
@@ -27,13 +33,13 @@ Object? evaluate(Map<String, Object?> item) {
       );
     case 'floor_div':
       return PyCompat.floorDiv(
-        BigInt.parse(item['left']! as String),
-        BigInt.parse(item['right']! as String),
+        parseInteger(item['left']! as String),
+        parseInteger(item['right']! as String),
       ).toString();
     case 'modulo':
       return PyCompat.modulo(
-        BigInt.parse(item['left']! as String),
-        BigInt.parse(item['right']! as String),
+        parseInteger(item['left']! as String),
+        parseInteger(item['right']! as String),
       ).toString();
     case 'round_floor_div':
       return PyCompat.floorDiv(

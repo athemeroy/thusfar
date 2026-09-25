@@ -15,6 +15,10 @@ def value(kind: str, text: str):
     return float(text) if kind == "float" else int(text)
 
 
+def integer(text: str):
+    return text == "True" if text in ("True", "False") else int(text)
+
+
 def cases():
     rows = []
     for operation in ("round", "truncate"):
@@ -31,17 +35,25 @@ def cases():
     for left, right in (("9223372036854775807", "9.223372036854776e18"),
                         ("-9223372036854775808", "-9.223372036854776e18"),
                         ("100000000000000000000", "1e20"),
-                        ("100000000000000000001", "1e20")):
+                        ("100000000000000000001", "1e20"),
+                        ("100000000000000000000", "0.0"),
+                        ("-100000000000000000000", "0.0")):
         rows.append({"op": "compare", "left": ["int", left],
                      "right": ["float", right]})
         rows.append({"op": "compare", "left": ["float", right],
                      "right": ["int", left]})
+    for left, right in (("100000000000000000000", "0"),
+                        ("-100000000000000000000", "0")):
+        rows.append({"op": "compare", "left": ["int", left],
+                     "right": ["int", right]})
     for operation in ("floor_div", "modulo"):
         for left, right in (("-9223372036854775808", "-1"),
                             ("-9223372036854775808", "3"),
                             ("9223372036854775807", "-3"),
                             ("9223372036854775808", "3"),
                             ("100000000000000000000", "9223372036854775808")):
+            rows.append({"op": operation, "left": left, "right": right})
+        for left, right in (("True", "2"), ("3", "True"), ("False", "2")):
             rows.append({"op": operation, "left": left, "right": right})
     rows.append({"op": "round_floor_div", "value": "1e20", "right": "3"})
     for raw in ("9223372036854775808", "-9223372036854775809",
@@ -61,9 +73,9 @@ def cases():
                 right = value(*row["right"])
                 row["expected"] = (left > right) - (left < right)
             elif operation == "floor_div":
-                row["expected"] = str(int(row["left"]) // int(row["right"]))
+                row["expected"] = str(integer(row["left"]) // integer(row["right"]))
             elif operation == "modulo":
-                row["expected"] = str(int(row["left"]) % int(row["right"]))
+                row["expected"] = str(integer(row["left"]) % integer(row["right"]))
             elif operation == "round_floor_div":
                 row["expected"] = str(round(float(row["value"])) // int(row["right"]))
             elif operation == "json_int":
