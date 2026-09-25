@@ -98,18 +98,41 @@ Use `--resume-existing` with the same source, working directory, cassette direct
 mode to continue an interrupted live run. It checks the source hash, receipt, and cassette
 ledger before doing paid work. A pending request requires reconciliation first.
 
+### Audit a live tape without replaying or paying
+
+`verify_live_cassettes.py` reads an existing tape and prints one JSON summary containing only
+counts, configured-rate estimates, the cumulative guarded charge, and a SHA-256 tree
+fingerprint. It accepts only exact `deepseek-flash+nothink` streaming request envelopes at the
+approved gateway and keyless `classifier.dev` envelopes. It rejects authentication fields,
+known credentials (including decoded response chunks), pending or ambiguous attempts,
+unmatched ledger entries, usage/price mismatches, and charges above the stored ceiling of at
+most ¥1. It makes no model or network call and changes no tape file. Save its output outside
+the cassette directory to compare a later audit with `--expect-report`:
+
+```bash
+$PY311 -m oracle.record.verify_live_cassettes /path/to/live-cassettes \
+  > /tmp/thusfar-live-audit.json
+$PY311 -m oracle.record.verify_live_cassettes /path/to/live-cassettes \
+  --expect-report /tmp/thusfar-live-audit.json
+```
+
+The configured and guarded prices are local estimates. A provider receipt is required to
+confirm the actual account charge, and a structurally valid tape alone cannot prove who
+served the original response.
+
 ## Book artifacts, HTTP routes, and browser fold
 
-`artifacts.py --mode historical-cache` freezes the two 1.7.x public-domain snapshots directly,
+`artifacts.py --mode historical-cache` freezes the two 1.7.x cached snapshots directly,
 with their original model names in `provenance.json`. It never presents cached Gemini or Terra
 outputs as DeepSeek wire replies. Once actual DeepSeek cassettes exist, `--mode cassette-replay`
 copies a source book and runs each pass in a separate Python interpreter so global JEV counts,
 rate state, and circuit breakers start clean. Both modes publish `book.json`, `work/**`,
 `kg.json`, `mentions/**`, and `status.json` only if every normalized file is byte-identical.
-The normalizer removes only fields that
-represent elapsed or wall clock time (`updated`, `started`, `finished`, `created`, `exported`,
-`_secs`, `_ttft`, `seconds`, `timing`). All other fields, list order, and file presence remain
-part of the comparison.
+The normalizer removes fields that represent elapsed or wall clock time (`updated`, `started`,
+`finished`, `created`, `exported`, `_secs`, `_ttft`, `seconds`, `timing`) and the runtime retry
+duration at precisely `status.json:usage.jev.retry_wait_seconds` and
+`work/usage.json:jev.retry_wait_seconds`. It retains same-named fields elsewhere. All other
+fields, list order, and file presence remain part of the comparison.
 
 ```bash
 $PY311 -m oracle.record.artifacts oracle/corpus/snapshots/aq_complete \
