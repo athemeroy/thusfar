@@ -1,5 +1,5 @@
 // Generated from docs/port/inventory.json by core/tool/generate_ported_tests.py.
-// Skipped failing callbacks are unported assertions, not translations.
+// Some callbacks contain translated assertions but remain skipped until their Dart owners exist.
 import 'package:test/test.dart';
 import 'package:thusfar_core/src/py/py_json.dart';
 
