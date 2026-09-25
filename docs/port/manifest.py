@@ -107,15 +107,19 @@ def check() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--init", action="store_true")
-    parser.add_argument("--check", action="store_true")
+    actions = parser.add_mutually_exclusive_group(required=True)
+    actions.add_argument("--init", action="store_true")
+    actions.add_argument("--check", action="store_true")
+    actions.add_argument("--list-pending", action="store_true")
     args = parser.parse_args()
-    if args.init == args.check:
-        parser.error("Choose exactly one of --init or --check")
     if args.init:
         initialize()
     else:
         check()
+        if args.list_pending:
+            for row in parse()["functions"]:
+                if row["status"] == "pending_port":
+                    print(f"{row['stage']} {row['id']}: {row['reason']}")
 
 
 if __name__ == "__main__":

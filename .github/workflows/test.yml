@@ -6,12 +6,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
+        with: { python-version: '3.11' }
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - name: Python tests (standard library only, no network)
         run: python -m unittest discover -s tests -p 'test*.py' -v
+      - name: A0 oracle and port ledgers
+        run: |
+          python docs/port/generate_inventory.py --check
+          python docs/port/manifest.py --list-pending
+          python core/tool/generate_ported_tests.py --check
+          python oracle/corpus/build.py --verify
       - name: JavaScript tests
         run: for f in tests/*.test.mjs; do node "$f"; done
       - name: Interface translations
         run: python scripts/check_i18n.py
+      - uses: dart-lang/setup-dart@v1
+        with: { sdk: stable }
+      - name: Dart dependencies
+        working-directory: core
+        run: dart pub get --enforce-lockfile
+      - name: Dart static analysis
+        working-directory: core
+        run: dart analyze --fatal-infos --fatal-warnings
+      - name: Dart semantic and port tests
+        working-directory: core
+        run: dart test --reporter=json > dart-test-events.jsonl
+      - name: Dart test counts
+        working-directory: core
+        run: |
+          python - <<'PY'
+          import json
+          from collections import Counter
+          with open('dart-test-events.jsonl', encoding='utf-8') as source:
+              events = [json.loads(line) for line in source]
+          counts = Counter(event['result'] for event in events if event.get('type') == 'testDone')
+          print(dict(counts))
+          assert counts['failure'] == counts['error'] == 0
+          PY
