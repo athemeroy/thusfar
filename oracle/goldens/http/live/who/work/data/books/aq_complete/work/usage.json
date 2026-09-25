@@ -1,0 +1,20 @@
+{
+ "prompt": 42587,
+ "completion": 16077,
+ "jev_calls": 56,
+ "llm_calls": 21,
+ "by_model": {
+  "gemini-2.5-flash-lite": {
+   "calls": 21,
+   "prompt": 42587,
+   "completion": 16077
+  }
+ },
+ "jev": {
+  "calls": 76,
+  "chars": 455571,
+  "questions": 471,
+  "paid_chars": 410825,
+  "passage_chars": 7200
+ }
+}
