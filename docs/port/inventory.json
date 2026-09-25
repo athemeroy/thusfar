@@ -25,7 +25,7 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -803,7 +803,7 @@
         "dict 顺序",
         "len",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -1333,7 +1333,7 @@
         "pipeline.kg.KG.commit"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -1555,7 +1555,7 @@
         "pipeline.run.Runner.__init__"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -1828,7 +1828,7 @@
         "len",
         "str.strip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序",
         "正则"
       ],
@@ -1922,7 +1922,7 @@
       "danger_semantics": [
         "dict 顺序",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序"
       ],
       "mutates_state": true,
@@ -1953,7 +1953,7 @@
       ],
       "callers": [],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -2881,7 +2881,7 @@
         "len",
         "str.lstrip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序",
         "浮点"
       ],
@@ -3568,7 +3568,7 @@
         "pipeline.llm.chat"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -3617,7 +3617,7 @@
         "model",
         "seconds"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_reply_seconds.get"
       ],
@@ -3626,9 +3626,10 @@
         "pipeline.llm.chat"
       ],
       "danger_semantics": [
-        "切片"
+        "切片",
+        "可见状态原位修改"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -3998,9 +3999,10 @@
         "pipeline.llm.jev_free"
       ],
       "danger_semantics": [
+        "可见状态原位修改",
         "时间"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -4012,7 +4014,7 @@
       "line_count": 3,
       "scope_kind": "module",
       "parameters": [],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "JEV_STATS.get"
       ],
@@ -4022,8 +4024,10 @@
         "pipeline.llm.jev_free",
         "pipeline.llm.jev_local"
       ],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改"
+      ],
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -4086,7 +4090,7 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -4133,7 +4137,7 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间"
       ],
       "mutates_state": true,
@@ -4157,7 +4161,7 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -4190,7 +4194,7 @@
       "danger_semantics": [
         "int 转换",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间",
         "浮点"
       ],
@@ -4344,12 +4348,13 @@
         "dict 顺序",
         "int 转换",
         "len",
+        "可见状态原位修改",
         "时间",
         "正文长度疑似",
         "浮点",
         "随机数"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -4461,9 +4466,10 @@
         "dict 顺序",
         "len",
         "str.rstrip",
+        "可见状态原位修改",
         "浮点"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -4547,10 +4553,11 @@
         "int 转换",
         "len",
         "切片",
+        "可见状态原位修改",
         "时间",
         "随机数"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -4624,9 +4631,10 @@
       "danger_semantics": [
         "JSON 序列化",
         "JSON 解析",
+        "可见状态原位修改",
         "哈希"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -4809,7 +4817,7 @@
         "dict 顺序",
         "len",
         "str.strip",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -5175,7 +5183,7 @@
         "pipeline.parse.parse_epub"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -5216,7 +5224,7 @@
         "len",
         "str.lstrip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "正文长度疑似"
       ],
       "mutates_state": true,
@@ -5247,7 +5255,7 @@
         "pipeline.parse.DocParser.handle_starttag"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -5295,7 +5303,7 @@
         "int 转换",
         "len",
         "str.strip",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "正则"
       ],
       "mutates_state": true,
@@ -5338,7 +5346,7 @@
         "len",
         "str.strip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "正则"
       ],
       "mutates_state": true,
@@ -5375,7 +5383,7 @@
       "callers": [],
       "danger_semantics": [
         "dict 顺序",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -5410,7 +5418,7 @@
       ],
       "danger_semantics": [
         "str.strip",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -5442,7 +5450,7 @@
       ],
       "callers": [],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -5550,7 +5558,7 @@
         "opf_dir",
         "manifest"
       ],
-      "category": "纯函数",
+      "category": "文件读写",
       "calls": [
         "<BoolOp>.endswith",
         "<BoolOp>.split",
@@ -5598,7 +5606,7 @@
         "ol",
         "depth"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "_local",
@@ -5619,8 +5627,10 @@
       "callers": [
         "pipeline.parse._toc.walk@L259"
       ],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改"
+      ],
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -5635,7 +5645,7 @@
         "node",
         "depth"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_local",
         "_ref",
@@ -5655,8 +5665,10 @@
       "callers": [
         "pipeline.parse._toc.walk@L291"
       ],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改"
+      ],
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -6415,7 +6427,7 @@
       ],
       "danger_semantics": [
         "Unicode 编码",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -6918,7 +6930,7 @@
       "danger_semantics": [
         "JSON 解析",
         "len",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7133,7 +7145,7 @@
         "pipeline.run.Runner.process"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7220,7 +7232,7 @@
       ],
       "danger_semantics": [
         "JSON 解析",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7260,7 +7272,7 @@
       "danger_semantics": [
         "JSON 解析",
         "切片",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7299,7 +7311,7 @@
       ],
       "danger_semantics": [
         "JSON 解析",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7331,7 +7343,7 @@
       "danger_semantics": [
         "JSON 解析",
         "int 转换",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7453,7 +7465,7 @@
       "danger_semantics": [
         "JSON 解析",
         "len",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -7523,7 +7535,7 @@
         "int 转换",
         "len",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "哈希",
         "排序",
         "时间",
@@ -7561,7 +7573,7 @@
       ],
       "danger_semantics": [
         "JSON 解析",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序"
       ],
       "mutates_state": true,
@@ -7629,7 +7641,7 @@
       ],
       "danger_semantics": [
         "dict 顺序",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7818,7 +7830,7 @@
         "dict 顺序",
         "len",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间",
         "浮点"
       ],
@@ -7931,7 +7943,7 @@
         "pipeline.run.Runner.run2"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -7976,7 +7988,7 @@
       ],
       "danger_semantics": [
         "JSON 解析",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -8032,7 +8044,7 @@
       "danger_semantics": [
         "str.strip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -8098,7 +8110,7 @@
       ],
       "danger_semantics": [
         "JSON 解析",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -8176,7 +8188,7 @@
         "int 转换",
         "str.strip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -8236,7 +8248,7 @@
       "danger_semantics": [
         "str.strip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "正则",
         "浮点"
       ],
@@ -8317,7 +8329,7 @@
         "//",
         "JSON 解析",
         "len",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -8383,7 +8395,7 @@
         "dict 顺序",
         "len",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序"
       ],
       "mutates_state": true,
@@ -8615,7 +8627,7 @@
         "JSON 解析",
         "dict 顺序",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序",
         "浮点"
       ],
@@ -8678,7 +8690,7 @@
         "len",
         "str.split",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序",
         "浮点"
       ],
@@ -8780,7 +8792,7 @@
       "danger_semantics": [
         "dict 顺序",
         "len",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "浮点"
       ],
       "mutates_state": true,
@@ -8821,7 +8833,7 @@
       "danger_semantics": [
         "dict 顺序",
         "切片",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -8887,7 +8899,7 @@
         "dict 顺序",
         "len",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间"
       ],
       "mutates_state": true,
@@ -9207,7 +9219,7 @@
         "dict 顺序",
         "int 转换",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "哈希",
         "排序"
       ],
@@ -9248,7 +9260,7 @@
         "pipeline.run.Runner.add_support"
       ],
       "danger_semantics": [
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序"
       ],
       "mutates_state": true,
@@ -9389,7 +9401,7 @@
         "len",
         "str.lstrip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序",
         "正则",
         "浮点"
@@ -9440,7 +9452,7 @@
         "//",
         "len",
         "切片",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -9520,7 +9532,7 @@
         "str.split",
         "str.strip",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间",
         "正则",
         "正文长度疑似",
@@ -9591,7 +9603,7 @@
         "len",
         "str.split",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间",
         "浮点"
       ],
@@ -9653,7 +9665,7 @@
       ],
       "danger_semantics": [
         "dict 顺序",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "正则",
         "浮点"
       ],
@@ -9720,7 +9732,7 @@
       "danger_semantics": [
         "//",
         "len",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -9805,7 +9817,7 @@
         "len",
         "str.split",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间",
         "浮点"
       ],
@@ -9837,8 +9849,10 @@
         "pipeline.run.Runner.relation_memory"
       ],
       "callers": [],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改"
+      ],
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -9879,7 +9893,7 @@
       ],
       "danger_semantics": [
         "len",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序"
       ],
       "mutates_state": true,
@@ -10296,7 +10310,7 @@
       "danger_semantics": [
         "dict 顺序",
         "len",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "正文长度疑似"
       ],
       "mutates_state": true,
@@ -10377,7 +10391,7 @@
         "server.app.Handler.upload"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -10445,7 +10459,7 @@
         "int 转换",
         "len",
         "str.strip",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "正则"
       ],
       "mutates_state": true,
@@ -10575,7 +10589,7 @@
         "server.app.Handler.do_PUT"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -10609,7 +10623,7 @@
         "len",
         "str.isdigit",
         "str.strip",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -10845,12 +10859,13 @@
         "int 转换",
         "len",
         "str.strip",
+        "可见状态原位修改",
         "排序",
         "时间",
         "正则",
         "浮点"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -10905,7 +10920,7 @@
         "server.app.Handler.route"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -11465,7 +11480,7 @@
       "danger_semantics": [
         "str.strip",
         "切片",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -11512,7 +11527,7 @@
         "stamp",
         "gz"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "_static_cache.get",
         "_static_cache.move_to_end",
@@ -11528,9 +11543,10 @@
       ],
       "danger_semantics": [
         "len",
+        "可见状态原位修改",
         "正文长度疑似"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -11545,7 +11561,7 @@
         "d",
         "log"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_pos_cache.get",
         "_pos_cache.move_to_end",
@@ -11558,9 +11574,10 @@
         "server.app.Handler.kg"
       ],
       "danger_semantics": [
-        "len"
+        "len",
+        "可见状态原位修改"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -11662,7 +11679,7 @@
       ],
       "danger_semantics": [
         "int 转换",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -11779,8 +11796,10 @@
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改"
+      ],
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -11849,7 +11868,7 @@
       "parameters": [
         "d"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_index.pop",
         "str"
@@ -11858,8 +11877,10 @@
       "callers": [
         "server.app.Handler.route"
       ],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改"
+      ],
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -11874,7 +11895,7 @@
         "d",
         "book"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "<BinOp>.stat",
         "_index.get",
@@ -11898,9 +11919,10 @@
         "Unicode 编码",
         "dict 顺序",
         "len",
+        "可见状态原位修改",
         "正文长度疑似"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -11960,7 +11982,7 @@
         "pos",
         "k"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "Counter",
         "_bigrams",
@@ -12370,7 +12392,7 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -12431,7 +12453,7 @@
       ],
       "danger_semantics": [
         "dict 顺序",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间"
       ],
       "mutates_state": true,
@@ -12533,7 +12555,7 @@
         "dict 顺序",
         "int 转换",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "时间"
       ],
       "mutates_state": true,
@@ -12575,7 +12597,7 @@
       "danger_semantics": [
         "dict 顺序",
         "切片",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "排序",
         "时间"
       ],
@@ -12874,8 +12896,10 @@
       "callers": [
         "server.marginalia.respond"
       ],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改"
+      ],
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -12909,9 +12933,10 @@
         "%",
         "int 转换",
         "len",
-        "切片"
+        "切片",
+        "可见状态原位修改"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {
@@ -14021,7 +14046,7 @@
       "danger_semantics": [
         "dict 顺序",
         "int 转换",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -14062,7 +14087,7 @@
       "danger_semantics": [
         "%",
         "len",
-        "参数/对象原位修改",
+        "可见状态原位修改",
         "哈希"
       ],
       "mutates_state": true,
@@ -14107,7 +14132,7 @@
       "danger_semantics": [
         "JSON 解析",
         "len",
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -14137,7 +14162,7 @@
         "server.storage.JsonCache.get"
       ],
       "danger_semantics": [
-        "参数/对象原位修改"
+        "可见状态原位修改"
       ],
       "mutates_state": true,
       "status": "未开始"
@@ -14645,7 +14670,7 @@
       "parameters": [
         "r"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "apply",
         "defaultdict",
@@ -14666,9 +14691,10 @@
         "server.temporal.fold.apply"
       ],
       "danger_semantics": [
-        "dict 顺序"
+        "dict 顺序",
+        "可见状态原位修改"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "status": "未开始"
     },
     {

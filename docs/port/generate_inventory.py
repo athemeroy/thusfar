@@ -19,7 +19,7 @@ OUTPUT_JSON = ROOT / "docs/port/inventory.json"
 FUNCTION_NODES = (ast.FunctionDef, ast.AsyncFunctionDef)
 SCOPE_NODES = FUNCTION_NODES + (ast.ClassDef,)
 TEXT_NAMES = {"text", "body", "part", "content", "chapter", "line", "word", "sentence", "quote", "snippet", "raw", "source", "s"}
-FILE_METHODS = {"open", "read_text", "read_bytes", "write_text", "write_bytes", "mkdir", "unlink", "rmdir", "rename", "replace", "touch", "iterdir", "glob", "rglob", "exists", "is_file", "is_dir", "is_symlink", "stat", "lstat"}
+FILE_METHODS = {"open", "read", "read_text", "read_bytes", "write_text", "write_bytes", "mkdir", "unlink", "rmdir", "rename", "replace", "touch", "iterdir", "glob", "rglob", "exists", "is_file", "is_dir", "is_symlink", "stat", "lstat"}
 FILE_CALLS = {"open", "ZipFile", "NamedTemporaryFile", "TemporaryDirectory", "mkstemp", "mkdtemp", "copy", "copy2", "copyfile", "rmtree", "move"}
 ORCHESTRATION_CALLS = {"ThreadPoolExecutor", "Lock", "RLock", "Event", "Semaphore", "BoundedSemaphore", "Thread", "Process", "Popen", "sleep", "acquire", "release", "submit", "shutdown", "is_set"}
 MUTATING_METHODS = {"append", "extend", "insert", "update", "pop", "popitem", "clear", "add", "remove", "discard", "setdefault", "sort", "reverse", "move_to_end", "commit", "merge", "apply", "add_recap"}
@@ -144,22 +144,50 @@ def root_name(node: ast.AST) -> str | None:
     return node.id if isinstance(node, ast.Name) else None
 
 
+def local_names(node: ast.FunctionDef | ast.AsyncFunctionDef) -> set[str]:
+    names: set[str] = set()
+
+    class Visitor(ast.NodeVisitor):
+        def visit_FunctionDef(self, inner: ast.FunctionDef) -> None:
+            names.add(inner.name)
+
+        def visit_AsyncFunctionDef(self, inner: ast.AsyncFunctionDef) -> None:
+            names.add(inner.name)
+
+        def visit_ClassDef(self, inner: ast.ClassDef) -> None:
+            names.add(inner.name)
+
+        def visit_Name(self, inner: ast.Name) -> None:
+            if isinstance(inner.ctx, ast.Store):
+                names.add(inner.id)
+
+    visitor = Visitor()
+    for statement in node.body:
+        visitor.visit(statement)
+    return names
+
+
 class BodyAnalyzer(ast.NodeVisitor):
     """Visit one function body; a nested definition belongs to its own row."""
 
-    def __init__(self, module: str, parameters: set[str]) -> None:
+    def __init__(self, module: str, parameters: set[str], locals_: set[str], imports: set[str]) -> None:
         self.module = module
         self.parameters = parameters
+        self.locals = locals_
+        self.import_names = imports
         self.calls: list[tuple[str, int]] = []
         self.dangers: set[str] = set()
         self.local_imports: dict[str, str] = {}
         self.mutates_state = False
 
+    def _is_state_root(self, name: str | None) -> bool:
+        return name is not None and (name in self.parameters or name not in self.locals | self.import_names | set(self.local_imports))
+
     def _check_target(self, node: ast.AST) -> None:
         if isinstance(node, (ast.Tuple, ast.List)):
             for part in node.elts:
                 self._check_target(part)
-        elif isinstance(node, (ast.Attribute, ast.Subscript)) and root_name(node) in self.parameters:
+        elif isinstance(node, (ast.Attribute, ast.Subscript)) and self._is_state_root(root_name(node)):
             self.mutates_state = True
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -199,7 +227,7 @@ class BodyAnalyzer(ast.NodeVisitor):
         name = call_name(node.func)
         self.calls.append((name, node.lineno))
         base = name.split(".")[-1]
-        if isinstance(node.func, ast.Attribute) and base in MUTATING_METHODS and root_name(node.func.value) in self.parameters:
+        if isinstance(node.func, ast.Attribute) and base in MUTATING_METHODS and self._is_state_root(root_name(node.func.value)):
             self.mutates_state = True
         if name.startswith("re.") or base in {"finditer", "findall", "fullmatch"} or (base in {"match", "search", "sub"} and "RE" in name):
             self.dangers.add("正则")
@@ -318,14 +346,14 @@ def analyze_functions(trees: dict[str, ast.Module], entries: list[Entry]) -> Non
     imports = {module: imports_of(tree, module) for module, tree in trees.items()}
     by_id = {e.id: e for e in entries}
     for e in entries:
-        visitor = BodyAnalyzer(e.module, {arg.arg for arg in (*e.node.args.posonlyargs, *e.node.args.args, *e.node.args.kwonlyargs)})
+        visitor = BodyAnalyzer(e.module, {arg.arg for arg in (*e.node.args.posonlyargs, *e.node.args.args, *e.node.args.kwonlyargs)}, local_names(e.node), set(imports[e.module]))
         for stmt in e.node.body:
             visitor.visit(stmt)
         e.call_expressions = {name for name, _ in visitor.calls}
         e.dangers = visitor.dangers
         e.mutates_state = visitor.mutates_state
         if e.mutates_state:
-            e.dangers.add("参数/对象原位修改")
+            e.dangers.add("可见状态原位修改")
         for name, line in visitor.calls:
             target = resolve_call(name, line, e, {**imports[e.module], **visitor.local_imports}, by_name, class_names)
             if target:
@@ -359,7 +387,7 @@ def test_entries(function_by_name: dict[str, list[Entry]], class_names: set[str]
         for e in functions:
             if not e.node.name.startswith("test_"):
                 continue
-            visitor = BodyAnalyzer(e.module, {arg.arg for arg in (*e.node.args.posonlyargs, *e.node.args.args, *e.node.args.kwonlyargs)})
+            visitor = BodyAnalyzer(e.module, {arg.arg for arg in (*e.node.args.posonlyargs, *e.node.args.args, *e.node.args.kwonlyargs)}, local_names(e.node), set(aliases))
             for stmt in e.node.body:
                 visitor.visit(stmt)
             targets: set[str] = set()
