@@ -16,13 +16,13 @@ assertions have passed in Dart. The separate A0 semantic tests live in
 `core/test/semantics/` and are outside this frozen count.
 
 The nine exceptions are the three `test_export_exact_context.py` assertions
-for `scripts.export_judge_data` and the six `test_release.py` assertions for
-`scripts.build_release`. Those scripts are Python data/release tools with no
-Dart production replacement named in PLAN.md. Their test names are retained
-here for accounting, with `scope_exception` status. Before closing A0.6 or C,
-decide whether to keep their Python oracle tests, replace the tooling, or give
-the equivalent contract another owner; do not relabel their skips as translated
-tests.
+for the offline teacher-data exporter and the six `test_release.py` assertions
+for the old Python/Web release builder. Their exact assertions, replacement
+owners, and closure checks are recorded in
+[`docs/port/TEST-PORT-SCOPE.md`](../../../docs/port/TEST-PORT-SCOPE.md).
+These assignments do not count as translated or passing Dart assertions.
+`PLAN.md` A0.6 still requires a stage decision for all nine; no automatic
+exception has been granted. Do not relabel their skips as translated tests.
 
 When an owner module is ported, replace the failing Dart callback with the
 Python test's actual setup and assertions, backed by deterministic fixtures or
@@ -36,6 +36,7 @@ From the repository root:
 
 ```sh
 python3 core/tool/generate_ported_tests.py --check
+python3 docs/port/check_test_scope.py
 cd core
 dart analyze --fatal-infos --fatal-warnings test/ported
 dart test test/ported

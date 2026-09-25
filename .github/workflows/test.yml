@@ -18,6 +18,7 @@ jobs:
           python docs/port/regex_audit.py --check
           python docs/port/manifest.py --list-pending
           python core/tool/generate_ported_tests.py --check
+          python docs/port/check_test_scope.py
           python oracle/corpus/build.py --verify
           python oracle/corpus/annotate_snapshot.py --verify
           python -m oracle.semantics.regex_python
