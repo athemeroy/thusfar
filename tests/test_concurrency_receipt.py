@@ -10,6 +10,7 @@ class ConcurrencyReceiptTests(unittest.TestCase):
     def setUp(self):
         self.receipt = json.loads(GOLDEN.read_text())
         self.reference = self.receipt['runs'][0]['artifact_sha256']
+        self.cassette_tree = self.receipt['cassette_tree_sha256']
 
     def test_four_independent_replays_match_committed_receipt(self):
         self.assertEqual(build_receipt(), self.receipt)
@@ -20,7 +21,7 @@ class ConcurrencyReceiptTests(unittest.TestCase):
         for changed in (runs[:-1], runs[:3] + [runs[0]], list(reversed(runs))):
             with self.subTest(changed=changed[0]['workers']):
                 with self.assertRaisesRegex(ValueError, 'all four independent runs'):
-                    validate_runs(changed, self.reference)
+                    validate_runs(changed, self.reference, self.cassette_tree)
 
     def test_changed_or_missing_artifacts_are_rejected(self):
         for artifact in ('kg.json', 'status.json', 'work/usage.json'):
@@ -32,7 +33,13 @@ class ConcurrencyReceiptTests(unittest.TestCase):
                     runs[1]['artifact_sha256'][artifact] = '0' * 64
                 with self.subTest(artifact=artifact, remove=remove):
                     with self.assertRaisesRegex(ValueError, 'full committed artifact set'):
-                        validate_runs(runs, self.reference)
+                        validate_runs(runs, self.reference, self.cassette_tree)
+
+    def test_an_unreviewed_cassette_tree_is_rejected(self):
+        runs = copy.deepcopy(self.receipt['runs'])
+        runs[2]['cassette_tree_sha256'] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'same reviewed cassette tree'):
+            validate_runs(runs, self.reference, self.cassette_tree)
 
 
 if __name__ == '__main__':

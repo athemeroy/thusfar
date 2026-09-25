@@ -14,6 +14,7 @@ from .artifacts import one_pass, snapshot, stage_book
 from .common import canonical, require_reference_runtime, write_json
 from .resume import file_hashes
 from .verify_book_artifacts import verify_book
+from .verify_live_cassettes import verify as verify_cassettes
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'oracle/corpus/snapshots/aq_complete'
@@ -24,9 +25,19 @@ WORKERS = (1, 12)
 SEEDS = ('1', '982451653')
 
 
+def code_hashes() -> tuple[dict[str, str], dict[str, str]]:
+    production = sorted([*ROOT.glob('pipeline/*.py'), *ROOT.glob('server/*.py')])
+    recorder = [ROOT / 'oracle/record' / name for name in (
+        'artifacts.py', 'cassettes.py', 'common.py', 'concurrency.py', 'functions.py',
+        'resume.py', 'verify_book_artifacts.py', 'verify_live_cassettes.py')]
+    return tuple({path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+                  for path in paths} for paths in (production, recorder))
+
+
 def capture(workers: int, output: Path) -> None:
     if workers not in WORKERS:
         raise ValueError('only the baseline and production default are covered')
+    audit = verify_cassettes(CASSETTES)
     with tempfile.TemporaryDirectory(prefix='thusfar-concurrency-pass-') as scratch:
         temporary = Path(scratch)
         book = temporary / 'book'
@@ -38,16 +49,21 @@ def capture(workers: int, output: Path) -> None:
         if tuple(state.get(key) for key in ('state', 'done', 'total', 'frontier')) != \
                 ('done', 9, 9, 21733):
             raise ValueError('concurrency replay did not complete Aq')
-        write_json(output, {'workers': workers, 'artifact_sha256': hashes})
+        if verify_cassettes(CASSETTES) != audit:
+            raise ValueError('cassette tree changed during concurrency replay')
+        write_json(output, {'workers': workers, 'artifact_sha256': hashes,
+                            'cassette_tree_sha256': audit['tape_tree_sha256']})
 
 
-def validate_runs(runs: list[dict], reference: dict[str, str]) -> None:
+def validate_runs(runs: list[dict], reference: dict[str, str], cassette_tree: str) -> None:
     expected = [(seed, workers) for seed in SEEDS for workers in WORKERS]
     if [(run.get('hash_seed'), run.get('workers')) for run in runs] != expected:
         raise ValueError('concurrency receipt must contain all four independent runs')
     for run in runs:
-        if set(run) != {'hash_seed', 'workers', 'artifact_sha256'}:
+        if set(run) != {'hash_seed', 'workers', 'artifact_sha256', 'cassette_tree_sha256'}:
             raise ValueError('unexpected concurrency receipt fields')
+        if run['cassette_tree_sha256'] != cassette_tree:
+            raise ValueError('concurrency replay did not use the same reviewed cassette tree')
         if run['artifact_sha256'] != reference:
             raise ValueError('concurrency replay differs from the full committed artifact set')
 
@@ -55,12 +71,14 @@ def validate_runs(runs: list[dict], reference: dict[str, str]) -> None:
 def build_receipt() -> dict:
     require_reference_runtime()
     original = file_hashes(SOURCE)
+    original_code = code_hashes()
     manifest = json.loads((ROOT / 'oracle/corpus/manifest.json').read_text())['files']
     expected = {name.removeprefix('snapshots/aq_complete/'): entry['sha256']
                 for name, entry in manifest.items() if name.startswith('snapshots/aq_complete/')}
     if original != expected:
         raise ValueError('Aq source differs from its corpus manifest')
     verify_book(REFERENCE)
+    audit = verify_cassettes(CASSETTES)
     reference = json.loads((REFERENCE / 'provenance.json').read_text())['artifact_sha256']
     runs = []
     with tempfile.TemporaryDirectory(prefix='thusfar-concurrency-verify-') as scratch:
@@ -75,16 +93,18 @@ def build_receipt() -> dict:
                 if result.returncode:
                     raise RuntimeError(f'offline Aq replay failed for seed {seed}, workers {workers}')
                 runs.append({'hash_seed': seed, **json.loads(output.read_text())})
-    validate_runs(runs, reference)
+    validate_runs(runs, reference, audit['tape_tree_sha256'])
+    if verify_cassettes(CASSETTES) != audit:
+        raise ValueError('cassette tree changed between concurrency replays')
     if file_hashes(SOURCE) != original:
         raise ValueError('concurrency replay changed its source fixture')
-    source_paths = sorted([*ROOT.glob('pipeline/*.py'), *ROOT.glob('server/*.py')])
+    if code_hashes() != original_code:
+        raise ValueError('controlling code changed between concurrency replays')
     return {'schema': 1, 'source': 'Python 1.7.5 Aq; offline cassette replay',
             'scope': 'Aq only; no default-concurrency claim for the other four books',
             'source_sha256': original,
-            'production_sha256': {path.relative_to(ROOT).as_posix():
-                                  hashlib.sha256(path.read_bytes()).hexdigest()
-                                  for path in source_paths},
+            'cassette_tree_sha256': audit['tape_tree_sha256'],
+            'production_sha256': original_code[0], 'recorder_sha256': original_code[1],
             'artifact_count': len(reference), 'runs': runs}
 
 

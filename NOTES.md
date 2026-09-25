@@ -2,6 +2,22 @@
 
 更新：2026-09-26。每条按症状 → 原因 → 修法记录；未解决的问题明确留在 `STATUS.md`。
 
+## HTTP worker replay needs the same cache policy as the full book
+
+- Symptom: the first real thread-worker HTTP replay consumed all 103 recorded
+  attempts and reached done 9/9, but missed 72 JEV cache artifacts.
+- Cause: the recorder disabled `JUDGE_CACHE`, as needed for new live HTTP prompt
+  captures. The fresh full-book fixture instead writes those cache files.
+- Fix: use a fresh book with `JUDGE_CACHE=1` for the offline worker lifecycle.
+  All 154 artifact hashes then match. Keep the complete file-set assertion so
+  successful HTTP responses and matching reading results cannot hide missing
+  caches. No production behavior or golden artifact expectation was changed.
+- Teardown review: on an HTTP failure, the worker must stop and fully join while
+  cassette and network guards are still installed. A timed join after restoring
+  the transport could leave a background worker outside the recorder. The
+  lifecycle context now joins inside the guards, with the outer isolated-process
+  timeout handling a stuck replay; an exception-path regression checks exit order.
+
 ## Default concurrency evidence must state its book scope
 
 - Symptom: the previous default-worker comparison for Aq existed only as a
@@ -12,6 +28,9 @@
   independent hash seeds. All 154 artifacts match the existing full-book golden,
   including paid/free usage and the complete file set. The committed receipt
   and CI rerun explicitly limit this result to Aq; the other books remain open.
+- Review correction: bind the audited tape tree and controlling recorder sources,
+  and check the tree before/after every process. Artifact equality alone did not
+  establish that all processes used the same reviewed tape contents.
 
 ## Paused continuation preserves results but changes free-JEV telemetry
 

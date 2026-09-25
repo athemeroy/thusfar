@@ -36,6 +36,7 @@ jobs:
           python -m oracle.record.verify_folds
           python -m oracle.record.resume --verify
           python -m oracle.record.concurrency --verify
+          python -m oracle.record.http_process_replay --verify
       - name: A0 function golden replay against committed bytes (offline)
         run: |
           output=$(mktemp -d)

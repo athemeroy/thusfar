@@ -11,6 +11,10 @@ status; only the shared book recorder's documented time fields are removed.
 The source fixture is checked against the corpus manifest before the runs and
 must remain unchanged afterwards. The receipt also binds all production Python
 modules, source file hashes, process configurations, and resulting file hashes.
+It also binds the controlling recorder sources and audited cassette tree. Each
+child and the parent audit that tree before and after replay; all four children
+must report the same tape fingerprint. Any new live recording requires an
+explicit reviewed refresh of this receipt.
 
 The observed result is stored in `oracle/goldens/concurrency/aq.json`. CI reruns
 the comparison and requires the exact committed receipt. Regression tests reject
