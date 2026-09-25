@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 68,
-    "pending_port": 94,
+    "translated_skipped": 75,
+    "pending_port": 87,
     "scope_exception": 9
   },
   "tests": [
@@ -748,8 +748,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'nothing about a person before they enter'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'nothing about a person before they enter'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
     },
     {
       "id": "tests.test_kg.KGTest.test_early_events_belong_to_the_identity_the_reader_knows",
@@ -769,8 +772,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'early events belong to the identity the reader knows'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'early events belong to the identity the reader knows'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
     },
     {
       "id": "tests.test_kg.KGTest.test_revealed_name_not_used_before_the_reveal",
@@ -790,8 +796,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'revealed name not used before the reveal'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'revealed name not used before the reveal'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
     },
     {
       "id": "tests.test_kg.KGTest.test_merge_links_the_two_records",
@@ -811,8 +820,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'merge links the two records'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'merge links the two records'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
     },
     {
       "id": "tests.test_kg.KGTest.test_generic_title_needs_a_decision",
@@ -834,8 +846,11 @@
       "direct_targets": [
         "pipeline.kg.KG.__init__"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__ is pending (A2, A4, A6); required to check 'generic title needs a decision'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__ is pending (A2, A4, A6); required to check 'generic title needs a decision'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
     },
     {
       "id": "tests.test_kg.KGTest.test_mentions_are_positioned_on_the_text",
@@ -855,8 +870,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'mentions are positioned on the text'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'mentions are positioned on the text'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
     },
     {
       "id": "tests.test_kg.TextTest.test_generic_reveal_keeps_old_label_only_before_the_reveal",
@@ -880,8 +898,11 @@
         "pipeline.kg.generic_word",
         "server.temporal.fold"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__, pipeline.kg.generic_word, server.temporal.fold is pending (A2, A4, A6); required to check 'generic reveal keeps old label only before the reveal'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__, pipeline.kg.generic_word, server.temporal.fold is pending (A2, A4, A6); required to check 'generic reveal keeps old label only before the reveal'.",
+      "contract_owners": [
+        "tests.test_kg.generic_reveal_merge_setup"
+      ]
     },
     {
       "id": "tests.test_kg.TextTest.test_zh_punctuation",
