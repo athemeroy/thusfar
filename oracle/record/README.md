@@ -172,8 +172,8 @@ CI audits the checked-in `oracle/cassettes/live` directory against the safe, cou
 `artifacts.py --mode historical-cache` freezes the surviving historical 1.7.x 阿Q cached
 snapshot directly, with its original model name in `provenance.json`. The rights-unverified
 Bovary translation and its derived goldens were removed from the tracked tree. The recorder
-never presents cached Gemini 2.5 Flash Lite output as DeepSeek wire replies. Once actual
-DeepSeek cassettes exist, `--mode cassette-replay`
+never presents cached Gemini 2.5 Flash Lite output as DeepSeek wire replies. For the
+checked-in DeepSeek cassettes, `--mode cassette-replay`
 copies a source book and runs each pass in a separate Python interpreter so global JEV counts,
 rate state, and circuit breakers start clean. Both modes publish `book.json`, `work/**`,
 `kg.json`, `mentions/**`, and `status.json` only if every normalized file is byte-identical.
