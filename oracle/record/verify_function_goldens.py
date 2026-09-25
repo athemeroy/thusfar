@@ -28,8 +28,8 @@ RECORDING_INPUT_PATTERNS = (
     'oracle/record/expected_rejections.json', 'oracle/record/live-a0-audit.json',
     'oracle/corpus/*.py', 'oracle/corpus/manifest.json',
     'oracle/corpus/books/**/*', 'oracle/corpus/synthetic/**/*',
-    'oracle/corpus/snapshots/**/*', 'oracle/cassettes/live/**/*',
-    'oracle/cassettes/synthetic/**/*', 'oracle/semantics/**/*',
+    'oracle/corpus/snapshots/**/*', 'oracle/cassettes/live/**/*.json',
+    'oracle/cassettes/synthetic/**/*.json', 'oracle/semantics/**/*',
     'docs/port/inventory.json', 'scripts/*.py', 'web/**/*',
     # These are unittest inputs, not the ordinary function outputs being verified.
     'oracle/goldens/parsed/**/*', 'oracle/goldens/special/**/*',

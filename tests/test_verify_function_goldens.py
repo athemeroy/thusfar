@@ -175,6 +175,9 @@ class FunctionGoldenVerifierTests(unittest.TestCase):
             extra.write_text('def test_extra(): pass\n')
             with self.assertRaisesRegex(ValueError, 'recording input paths or content tree SHA'):
                 _verify(root)
+            extra.unlink()
+            (root / 'inputs/oracle/cassettes/live/.budget.lock').write_text('runtime lock\n')
+            self.assertEqual(_verify(root)['samples'], 2)
 
 
 if __name__ == '__main__':
