@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 22,
-    "pending_port": 140,
+    "translated_skipped": 26,
+    "pending_port": 136,
     "scope_exception": 9
   },
   "tests": [
@@ -1397,8 +1397,8 @@
         "A2"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse is pending (A2); required to check 'preface does not swallow numbered parts'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_notebooks_and_narrative_frames_are_chapters",
@@ -1413,8 +1413,8 @@
         "A2"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse is pending (A2); required to check 'notebooks and narrative frames are chapters'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_named_upper_middle_lower_parts_preserve_offsets",
@@ -1431,8 +1431,8 @@
       "direct_targets": [
         "pipeline.parse.u16"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse.u16 is pending (A2); required to check 'named upper middle lower parts preserve offsets'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_chinese_headings_keep_their_existing_structure",
@@ -1447,8 +1447,8 @@
         "A2"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse is pending (A2); required to check 'chinese headings keep their existing structure'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_relation_status_survives_conversion_and_kg",
