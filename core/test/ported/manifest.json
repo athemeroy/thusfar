@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 56,
-    "pending_port": 106,
+    "translated_skipped": 68,
+    "pending_port": 94,
     "scope_exception": 9
   },
   "tests": [
@@ -1036,8 +1036,8 @@
         "server.manual_entities.restore",
         "server.manual_entities.rows"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.manual_entities.apply, server.manual_entities.restore, server.manual_entities.rows is pending (A6); required to check 'utf16 anchor and versions do not spoil earlier pages'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
     },
     {
       "id": "tests.test_manual_entities.ManualRules.test_existing_visible_name_is_not_duplicated",
@@ -1054,8 +1054,8 @@
       "direct_targets": [
         "server.manual_entities.apply"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.manual_entities.apply is pending (A6); required to check 'existing visible name is not duplicated'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
     },
     {
       "id": "tests.test_manual_entities.ManualRules.test_name_must_be_in_already_read_source",
@@ -1072,8 +1072,8 @@
       "direct_targets": [
         "server.manual_entities.apply"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.manual_entities.apply is pending (A6); required to check 'name must be in already read source'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
     },
     {
       "id": "tests.test_manual_entities.ManualRules.test_inline_mentions_preserve_generated_names_and_utf16_positions",
@@ -1106,8 +1106,8 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.manual_entities is pending (A6); required to check 'manual endpoint cutoff retry export and delete'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
     },
     {
       "id": "tests.test_marginalia.MarginaliaHTTP.test_distinct_prefetch_pages_run_concurrently_and_keep_both_cache_rows",
@@ -1364,8 +1364,8 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.notebook is pending (A6); required to check 'idempotency conflict and independent notes'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_notebook.NotebookHTTP.test_anchors_reject_fabricated_quote_surrogate_split_and_future_bounds",
@@ -1384,8 +1384,8 @@
         "server.app.cached_json",
         "server.app.wjson"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.cached_json, server.app.wjson is pending (A6); required to check 'anchors reject fabricated quote surrogate split and future bounds'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_notebook.NotebookHTTP.test_export_import_preserves_notes_and_refuses_different_personal_records",
@@ -1401,8 +1401,8 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.notebook is pending (A6); required to check 'export import preserves notes and refuses different personal records'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_notebook.NotebookHTTP.test_delete_tombstone_markdown_and_book_removal_preserve_personal_data",
@@ -1418,8 +1418,8 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.notebook is pending (A6); required to check 'delete tombstone markdown and book removal preserve personal data'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_preface_does_not_swallow_numbered_parts",
@@ -2552,8 +2552,8 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app is pending (A6); required to check 'order receipt conflict and no progress inference'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_reading_list.ReadingListHTTP.test_concurrent_reorders_have_exactly_one_winner",
@@ -2568,8 +2568,8 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app is pending (A6); required to check 'concurrent reorders have exactly one winner'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_reading_list.ReadingListHTTP.test_unavailable_slots_preserved_but_new_hidden_or_missing_books_rejected",
@@ -2586,8 +2586,8 @@
       "direct_targets": [
         "server.app.wjson"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.wjson is pending (A6); required to check 'unavailable slots preserved but new hidden or missing books rejected'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_reading_list.ReadingListHTTP.test_bad_payload_never_creates_state",
@@ -2602,8 +2602,8 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app is pending (A6); required to check 'bad payload never creates state'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
     },
     {
       "id": "tests.test_release.ReleaseBoundary.test_verified_snapshot_reused_and_data_credentials_excluded",
