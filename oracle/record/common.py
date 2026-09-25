@@ -22,7 +22,8 @@ class ObjectView:
     fields: frozenset[str]
 
 
-_SECRET_NAME = re.compile(r'(?:^|_)(?:api_?key|password|passcode|secret|token|authorization|cookie)(?:$|_)', re.I)
+_SECRET_NAME = re.compile(r'(?:^|_)(?:api_?key|key|password|passcode|secret|token|authorization|cookie)(?:$|_)', re.I)
+_SECRET_FIELD_NAME = re.compile(r'(?:^|_)(?:api_?key|password|passcode|secret|token|authorization|cookie)(?:$|_)', re.I)
 _SECRET_LITERAL = re.compile(r'(?i)\b(?:bearer\s+|sk-)[A-Za-z0-9_\-]{12,}')
 
 
@@ -85,7 +86,7 @@ def encode(value: object, secrets: tuple[str, ...] = (), seen: set[int] | None =
             return {'$set': items}
         if isinstance(value, dict):
             for key in value:
-                if isinstance(key, str) and _SECRET_NAME.search(key):
+                if isinstance(key, str) and _SECRET_FIELD_NAME.search(key):
                     raise UnsafeValue('credential field was rejected')
             if all(isinstance(key, str) for key in value):
                 return {key: encode(item, secrets, seen) for key, item in value.items()}
