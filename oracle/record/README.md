@@ -14,21 +14,24 @@ types carry tags (`$tuple`, `$set`, `$map`, `$bytes`, `$xml`, `$path`). Unsuppor
 counted in `record-report.json`, never silently discarded. Duplicate inputs with different
 outputs are reported as non-deterministic and receive no golden file.
 
-The committed ordinary goldens came from two independent Python 3.11.13 runs at source
-commit `796b9016d33e7b05ccee59ef0828ec51b9b784ac`. They used different hash seeds and
-the same checked-in Aq wire tape. Both runs passed 287 Python tests, completed the 9-segment
-offline book replay, and produced byte-identical output trees. The complete workload is:
+The committed ordinary goldens came from two independent Python 3.11.13 runs at frozen
+input commit `1f532d942b7c1c2d4a1cdcaed4e8825056749b34`. They used hash seeds 1 and 2
+and the checked-in wire tape. Each passed 298 Python tests, replayed all 9 阿Q segments and
+the first of 25 French segments offline, and produced a byte-identical output tree. The
+complete workload is:
 
 ```bash
 PY311=/home/dev/.local/share/uv/python/cpython-3.11.13-linux-x86_64-gnu/bin/python3.11
 env PYTHONHASHSEED=1 $PY311 -m oracle.record.functions \
   --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
   --replay-book oracle/corpus/snapshots/aq_complete \
+  --replay-french-prefix \
   --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
   --maximum 200 --out /tmp/thusfar-functions-pass-1
 env PYTHONHASHSEED=2 $PY311 -m oracle.record.functions \
   --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
   --replay-book oracle/corpus/snapshots/aq_complete \
+  --replay-french-prefix \
   --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
   --maximum 200 --out /tmp/thusfar-functions-pass-2
 diff -rq /tmp/thusfar-functions-pass-1 /tmp/thusfar-functions-pass-2
@@ -49,19 +52,31 @@ ordinary pure-function goldens. The two-pass provenance declares this explicit t
 SHA-256 over files sorted by POSIX relative path, feeding each UTF-8 path, one NUL byte, and
 the raw 32-byte SHA-256 digest of that file's bytes. The tree includes 120 ordinary function
 JSONL files plus `record-report.json`, and excludes special goldens and provenance itself.
-The current result is 120 ordinary functions, 4,652 samples, and 44 tagged exception outputs;
+The current result is 120 ordinary functions, 4,783 samples, and 44 tagged exception outputs;
 both passes produced tree SHA-256
-`2ef15bffba67e7fd74fac8e97951bbc282d250ff2cfc0b4986f709c75b837d14`.
+`90cbb0cbe27a2b084f66ae3d0f2b6b5f25f4e974a317f19f1b81a452f3bfd67c`.
+Provenance also names the exact 1,601 recording input paths and their SHA-256 content tree,
+`b83e6d8daf3497d0e871728cbfe1b055481c1b467a71453eb42f0efb65e5d880`.
+That tree includes Python source and tests, inventory, manual cases, corpus, cassettes,
+recorder scripts, and other fixtures read by the test suite. It excludes the ordinary
+function output tree, Dart files, and STATUS/NOTES. The verifier recalculates both trees
+and rejects changed, added, or removed inputs. The source commit records the freeze point;
+the content tree is the actual drift check, so later documentation-only commits do not
+invalidate the evidence. CI additionally replays the complete workload once with its
+network guard and compares the resulting ordinary tree SHA with this committed provenance.
 Run `--tree-sha` after both passes match to calculate the value before writing provenance;
 the default command checks the declared digest and inventory against the checked-in files.
 
 ```bash
 $PY311 -m oracle.record.verify_function_goldens --tree-sha
+$PY311 -m oracle.record.verify_function_goldens --input-tree > /tmp/thusfar-function-inputs.json
 $PY311 -m oracle.record.verify_function_goldens
 ```
 
-The checked-in tape covers Aq's complete book replay. Other books require matching request
-cassettes before they can be included in the same offline function workload. Use
+The checked-in tape covers 阿Q's complete book replay and the first French segment.
+`--replay-french-prefix` stages the verified public-domain French parser fixture and enforces
+a fresh, single-worker, one-segment replay. Jekyll has only 19 of 20 segments recorded;
+Japanese and 儒林外史 have no model-backed segment. Use
 `--book-start fresh` for a new book and `--book-start resume` for a 1.7.x partial snapshot.
 
 ## Model and free JEV cassettes
@@ -154,9 +169,11 @@ CI audits the checked-in `oracle/cassettes/live` directory against the safe, cou
 
 ## Book artifacts, HTTP routes, and browser fold
 
-`artifacts.py --mode historical-cache` freezes the two 1.7.x cached snapshots directly,
-with their original model names in `provenance.json`. It never presents cached Gemini or Terra
-outputs as DeepSeek wire replies. Once actual DeepSeek cassettes exist, `--mode cassette-replay`
+`artifacts.py --mode historical-cache` freezes the surviving historical 1.7.x 阿Q cached
+snapshot directly, with its original model name in `provenance.json`. The rights-unverified
+Bovary translation and its derived goldens were removed from the tracked tree. The recorder
+never presents cached Gemini 2.5 Flash Lite output as DeepSeek wire replies. Once actual
+DeepSeek cassettes exist, `--mode cassette-replay`
 copies a source book and runs each pass in a separate Python interpreter so global JEV counts,
 rate state, and circuit breakers start clean. Both modes publish `book.json`, `work/**`,
 `kg.json`, `mentions/**`, and `status.json` only if every normalized file is byte-identical.
