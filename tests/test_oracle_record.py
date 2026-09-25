@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from oracle.record.cassettes import CassetteStore, install, request_envelope
-from oracle.record.common import UnsafeValue, canonical, known_secrets, require_reference_runtime
+from oracle.record.common import UnsafeValue, canonical, encode, known_secrets, require_reference_runtime
 from oracle.record.functions import LoopbackOnly
 from oracle.record.scan import scan
 from oracle.record.workload import prepare_working_book
@@ -127,6 +127,8 @@ class OracleRecordSafety(unittest.TestCase):
                 path.write_text(json.dumps({'chunks_base64': [base64.b64encode(fake.encode()).decode()]}))
                 with self.assertRaises(UnsafeValue):
                     scan(Path(tmp))
+            with self.assertRaises(UnsafeValue):
+                encode(b'prefix:' + fake.encode() + b':suffix', secrets)
 
     def test_peak_rate_ledger_is_cumulative_across_store_restarts(self):
         with tempfile.TemporaryDirectory(prefix='thusfar-budget-test-') as tmp:

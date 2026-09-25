@@ -69,6 +69,11 @@ def encode(value: object, secrets: tuple[str, ...] = (), seen: set[int] | None =
             return {'$float': 'inf' if value > 0 else '-inf'}
         return value
     if isinstance(value, bytes):
+        # Base64 would hide a credential from a text-only check until the final tree scan.
+        # Reject the raw value before any transient golden is written.
+        if any(secret.encode('utf-8') in value for secret in secrets):
+            raise UnsafeValue('credential-like bytes were rejected')
+        assert_public(value.decode('utf-8', 'replace'), secrets)
         return {'$bytes': base64.b64encode(value).decode('ascii')}
     if isinstance(value, Path):
         path = str(value)
