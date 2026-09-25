@@ -5,8 +5,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Parser and special golden provenance records this exact Python patch version.
       - uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
+        with: { python-version: '3.11.13' }
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
       - name: Python tests (standard library only, no network)
@@ -23,6 +24,11 @@ jobs:
           python -m oracle.record.scan oracle
       - name: JavaScript tests
         run: for f in tests/*.test.mjs; do node "$f"; done
+      - name: A0 reproducible goldens
+        run: |
+          python -m oracle.record.special --verify
+          python -m oracle.record.parse_books --verify
+          python -m oracle.record.verify_folds
       - name: Interface translations
         run: python scripts/check_i18n.py
       - uses: dart-lang/setup-dart@v1
