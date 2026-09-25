@@ -73,11 +73,14 @@ $PY311 -m oracle.record.verify_function_goldens --input-tree > /tmp/thusfar-func
 $PY311 -m oracle.record.verify_function_goldens
 ```
 
-The checked-in tape covers 阿Q's complete book replay and the first French segment.
-`--replay-french-prefix` stages the verified public-domain French parser fixture and enforces
-a fresh, single-worker, one-segment replay. Jekyll has only 19 of 20 segments recorded;
-Japanese and 儒林外史 have no model-backed segment. Use
+The checked-in tape covers 阿Q's complete book replay, the first French segment, and the
+first 19 Jekyll segments. `--replay-french-prefix` and `--replay-jekyll-prefix` stage their
+verified public-domain parser fixtures and enforce fresh, single-worker replay at those
+published limits. Include the Jekyll flag when regenerating the function goldens; the
+two-pass commands above document the earlier committed tree. Japanese and 儒林外史 have no
+model-backed segment. Use
 `--book-start fresh` for a new book and `--book-start resume` for a 1.7.x partial snapshot.
+The paused 阿Q continuation has its own offline verification in [RESUME.md](RESUME.md).
 
 ## Model and free JEV cassettes
 

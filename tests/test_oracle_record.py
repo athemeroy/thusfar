@@ -256,6 +256,26 @@ class OracleRecordSafety(unittest.TestCase):
         self.assertTrue(all(all(value == 'deepseek-flash+nothink' for value in row.values())
                             for row in seen))
 
+    def test_published_prefix_stages_verified_french_and_jekyll_only(self):
+        from oracle.record import functions
+        seen = []
+
+        def fake_replay(source, cassettes, start, concurrency, limit):
+            self.assertTrue((source / 'book.json').is_file())
+            self.assertTrue((source / 'source.txt').is_file())
+            seen.append((source.name, cassettes, start, concurrency, limit))
+
+        tape = Path('/tmp/fixture-prefix-tape')
+        with patch('oracle.record.functions.run_book_replay', fake_replay):
+            functions.run_french_prefix(tape, 1)
+            functions.run_jekyll_prefix(tape, 1)
+            with self.assertRaisesRegex(ValueError, 'requires concurrency 1'):
+                functions.run_jekyll_prefix(tape, 12)
+            with self.assertRaisesRegex(ValueError, 'unknown published'):
+                functions.run_published_prefix('bovary', tape, 1)
+        self.assertEqual(seen, [('french', tape, 'fresh', 1, 1),
+                                ('jekyll', tape, 'fresh', 1, 19)])
+
     def test_reference_runtime_requires_python_311_and_unicode_14(self):
         require_reference_runtime()
         with patch('oracle.record.common.sys', types.SimpleNamespace(version_info=(3, 13))):

@@ -368,15 +368,47 @@ def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int,
                     os.environ[name] = value
 
 
-def run_french_prefix(cassettes: Path, concurrency: int) -> None:
-    """Replay only the one published French segment from verified parser inputs."""
+_PUBLISHED_PREFIXES = {
+    'french': ('french_partial_deepseek', 1),
+    'jekyll': ('jekyll_partial_deepseek', 19),
+}
+
+
+def run_published_prefix(book_id: str, cassettes: Path, concurrency: int) -> None:
+    """Replay a fixed, published public-domain prefix from verified parser inputs."""
+    if book_id not in _PUBLISHED_PREFIXES:
+        raise ValueError('unknown published public-domain prefix')
     if concurrency != 1:
-        raise ValueError('French prefix function replay requires concurrency 1')
+        raise ValueError('published prefix function replay requires concurrency 1')
     from .stage_corpus import stage_public_book
-    with tempfile.TemporaryDirectory(prefix='thusfar-oracle-function-french-') as tmp:
-        source = Path(tmp) / 'french'
-        stage_public_book('french', source)
-        run_book_replay(source, cassettes, 'fresh', concurrency=1, limit=1)
+    artifact_name, limit = _PUBLISHED_PREFIXES[book_id]
+    artifact = ROOT / 'oracle/goldens/books' / artifact_name / 'provenance.json'
+    if artifact.is_symlink() or not artifact.is_file():
+        raise ValueError(f'{book_id} published prefix provenance is missing or linked')
+    published = json.loads(artifact.read_text(encoding='utf-8'))
+    if (published.get('source') != 'deepseek-flash+nothink cassette replay'
+            or published.get('source_snapshot') != book_id
+            or published.get('book_start') != 'fresh'
+            or published.get('concurrency') != 1
+            or published.get('partial_limit') != limit
+            or published.get('passes', 0) < 2):
+        raise ValueError(f'{book_id} prefix lacks two-pass cassette replay provenance')
+    with tempfile.TemporaryDirectory(prefix=f'thusfar-oracle-function-{book_id}-') as tmp:
+        source = Path(tmp) / book_id
+        staged = stage_public_book(book_id, source)
+        source_proof = published.get('source_fixture') or {}
+        if any(source_proof.get(key) != staged[key]
+               for key in ('book_id', 'source_sha256', 'book_json_sha256')):
+            raise ValueError(f'{book_id} parser source differs from the published prefix')
+        run_book_replay(source, cassettes, 'fresh', concurrency=1, limit=limit)
+
+
+def run_french_prefix(cassettes: Path, concurrency: int) -> None:
+    run_published_prefix('french', cassettes, concurrency)
+
+
+def run_jekyll_prefix(cassettes: Path, concurrency: int) -> None:
+    run_published_prefix('jekyll', cassettes, concurrency)
 
 
 def main() -> int:
@@ -391,6 +423,8 @@ def main() -> int:
     parser.add_argument('--replay-book', type=Path, action='append', default=[])
     parser.add_argument('--replay-french-prefix', action='store_true',
                         help='replay the checked-in French source through its single taped segment')
+    parser.add_argument('--replay-jekyll-prefix', action='store_true',
+                        help='replay the checked-in Jekyll source through its 19 taped segments')
     parser.add_argument('--cassettes', type=Path, default=ROOT / 'oracle/cassettes')
     parser.add_argument('--book-start', choices=('fresh', 'resume'), default='fresh')
     parser.add_argument('--concurrency', type=int, default=12)
@@ -399,10 +433,11 @@ def main() -> int:
     args = parser.parse_args()
     if args.maximum < 1 or args.maximum > 200:
         parser.error('--maximum must be between 1 and 200')
-    if args.replay_french_prefix and (args.book_start != 'fresh' or args.concurrency != 1):
-        parser.error('--replay-french-prefix requires --book-start fresh --concurrency 1')
+    if (args.replay_french_prefix or args.replay_jekyll_prefix) and \
+            (args.book_start != 'fresh' or args.concurrency != 1):
+        parser.error('published prefix replays require --book-start fresh --concurrency 1')
     if not any((args.unittest, args.corpus, args.manual, args.script,
-                args.replay_book, args.replay_french_prefix)):
+                args.replay_book, args.replay_french_prefix, args.replay_jekyll_prefix)):
         parser.error('choose at least one workload')
     if args.out.exists() and any(args.out.iterdir()):
         parser.error('--out must be empty to prevent stale goldens from a previous run')
@@ -432,6 +467,9 @@ def main() -> int:
             if args.replay_french_prefix:
                 collector.phase = 'book-replay-french-prefix'
                 run_french_prefix(args.cassettes, args.concurrency)
+            if args.replay_jekyll_prefix:
+                collector.phase = 'book-replay-jekyll-prefix'
+                run_jekyll_prefix(args.cassettes, args.concurrency)
     finally:
         sys.settrace(old_trace)
         threading.settrace(old_thread_trace)
