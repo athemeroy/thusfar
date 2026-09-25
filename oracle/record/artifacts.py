@@ -148,7 +148,7 @@ def replay(source: Path, cassette_dir: Path, out: Path, start: str, repeat: int,
         provenance = {
             'schema': 1, 'source': 'deepseek-flash+nothink cassette replay',
             'source_snapshot': fixture['book_id'] if fixture else source.name,
-            'book_start': start,
+            'book_start': start, 'concurrency': concurrency,
             'passes': repeat, 'artifact_sha256': reference,
             'normalizations': sorted(_TIME_KEYS) + [
                 f'{artifact}:{".".join(path)}' for artifact, path in sorted(_RUNTIME_TIME_PATHS)]}
