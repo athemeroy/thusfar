@@ -7062,7 +7062,7 @@
       "module": "pipeline.run",
       "qualified_name": "wjson",
       "source": "pipeline/run.py",
-      "line": 57,
+      "line": 58,
       "line_count": 7,
       "scope_kind": "module",
       "parameters": [
@@ -7123,7 +7123,7 @@
       "module": "pipeline.run",
       "qualified_name": "log",
       "source": "pipeline/run.py",
-      "line": 66,
+      "line": 67,
       "line_count": 2,
       "scope_kind": "module",
       "parameters": [
@@ -7166,7 +7166,7 @@
       "module": "pipeline.run",
       "qualified_name": "settle_rewrites",
       "source": "pipeline/run.py",
-      "line": 146,
+      "line": 147,
       "line_count": 20,
       "scope_kind": "module",
       "parameters": [
@@ -7206,7 +7206,7 @@
       "module": "pipeline.run",
       "qualified_name": "drop_unsupported",
       "source": "pipeline/run.py",
-      "line": 171,
+      "line": 172,
       "line_count": 14,
       "scope_kind": "module",
       "parameters": [
@@ -7242,7 +7242,7 @@
       "module": "pipeline.run",
       "qualified_name": "attr_facts",
       "source": "pipeline/run.py",
-      "line": 187,
+      "line": 188,
       "line_count": 8,
       "scope_kind": "module",
       "parameters": [
@@ -7272,7 +7272,7 @@
       "module": "pipeline.run",
       "qualified_name": "check_attrs",
       "source": "pipeline/run.py",
-      "line": 197,
+      "line": 198,
       "line_count": 2,
       "scope_kind": "module",
       "parameters": [
@@ -7303,7 +7303,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.__init__",
       "source": "pipeline/run.py",
-      "line": 202,
+      "line": 203,
       "line_count": 68,
       "scope_kind": "method",
       "parameters": [
@@ -7386,7 +7386,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.checkpoint",
       "source": "pipeline/run.py",
-      "line": 271,
+      "line": 272,
       "line_count": 3,
       "scope_kind": "method",
       "parameters": [
@@ -7415,7 +7415,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.await_future",
       "source": "pipeline/run.py",
-      "line": 275,
+      "line": 276,
       "line_count": 9,
       "scope_kind": "method",
       "parameters": [
@@ -7447,7 +7447,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.close",
       "source": "pipeline/run.py",
-      "line": 285,
+      "line": 286,
       "line_count": 4,
       "scope_kind": "method",
       "parameters": [
@@ -7472,7 +7472,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.seg_path",
       "source": "pipeline/run.py",
-      "line": 291,
+      "line": 292,
       "line_count": 2,
       "scope_kind": "method",
       "parameters": [
@@ -7500,7 +7500,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.recap_path",
       "source": "pipeline/run.py",
-      "line": 294,
+      "line": 295,
       "line_count": 2,
       "scope_kind": "method",
       "parameters": [
@@ -7527,7 +7527,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.bio_path",
       "source": "pipeline/run.py",
-      "line": 297,
+      "line": 298,
       "line_count": 2,
       "scope_kind": "method",
       "parameters": [
@@ -7552,7 +7552,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.chapter_name",
       "source": "pipeline/run.py",
-      "line": 300,
+      "line": 301,
       "line_count": 3,
       "scope_kind": "method",
       "parameters": [
@@ -7581,7 +7581,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.count",
       "source": "pipeline/run.py",
-      "line": 304,
+      "line": 305,
       "line_count": 11,
       "scope_kind": "method",
       "parameters": [
@@ -7617,7 +7617,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.cached_generation",
       "source": "pipeline/run.py",
-      "line": 316,
+      "line": 317,
       "line_count": 12,
       "scope_kind": "method",
       "parameters": [
@@ -7663,7 +7663,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.queue_final",
       "source": "pipeline/run.py",
-      "line": 329,
+      "line": 330,
       "line_count": 16,
       "scope_kind": "method",
       "parameters": [
@@ -7708,7 +7708,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.execute_final",
       "source": "pipeline/run.py",
-      "line": 346,
+      "line": 347,
       "line_count": 21,
       "scope_kind": "method",
       "parameters": [
@@ -7750,7 +7750,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.acknowledge_final_cache",
       "source": "pipeline/run.py",
-      "line": 368,
+      "line": 369,
       "line_count": 10,
       "scope_kind": "method",
       "parameters": [
@@ -7791,7 +7791,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.resume_final_jobs",
       "source": "pipeline/run.py",
-      "line": 379,
+      "line": 380,
       "line_count": 8,
       "scope_kind": "method",
       "parameters": [
@@ -7825,7 +7825,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.earlier_saga",
       "source": "pipeline/run.py",
-      "line": 388,
+      "line": 389,
       "line_count": 5,
       "scope_kind": "method",
       "parameters": [
@@ -7854,7 +7854,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.verified_summary",
       "source": "pipeline/run.py",
-      "line": 395,
+      "line": 396,
       "line_count": 8,
       "scope_kind": "method",
       "parameters": [
@@ -7885,7 +7885,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.quarantined",
       "source": "pipeline/run.py",
-      "line": 404,
+      "line": 405,
       "line_count": 2,
       "scope_kind": "method",
       "parameters": [
@@ -7918,7 +7918,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.restore_quality_retry_context",
       "source": "pipeline/run.py",
-      "line": 407,
+      "line": 408,
       "line_count": 11,
       "scope_kind": "method",
       "parameters": [
@@ -7956,7 +7956,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.prepare_quality_retry",
       "source": "pipeline/run.py",
-      "line": 419,
+      "line": 420,
       "line_count": 65,
       "scope_kind": "method",
       "parameters": [
@@ -8031,7 +8031,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.finish_quality_retry",
       "source": "pipeline/run.py",
-      "line": 485,
+      "line": 486,
       "line_count": 11,
       "scope_kind": "method",
       "parameters": [
@@ -8068,7 +8068,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.notify",
       "source": "pipeline/run.py",
-      "line": 497,
+      "line": 498,
       "line_count": 11,
       "scope_kind": "method",
       "parameters": [
@@ -8104,7 +8104,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.status",
       "source": "pipeline/run.py",
-      "line": 509,
+      "line": 510,
       "line_count": 5,
       "scope_kind": "method",
       "parameters": [
@@ -8139,8 +8139,8 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._status",
       "source": "pipeline/run.py",
-      "line": 515,
-      "line_count": 12,
+      "line": 516,
+      "line_count": 16,
       "scope_kind": "method",
       "parameters": [
         "self",
@@ -8151,6 +8151,7 @@
       ],
       "category": "并发与编排",
       "calls": [
+        "copy.deepcopy",
         "getattr",
         "len",
         "p.get",
@@ -8183,7 +8184,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.publish",
       "source": "pipeline/run.py",
-      "line": 528,
+      "line": 533,
       "line_count": 3,
       "scope_kind": "method",
       "parameters": [
@@ -8212,7 +8213,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._publish",
       "source": "pipeline/run.py",
-      "line": 532,
+      "line": 537,
       "line_count": 33,
       "scope_kind": "method",
       "parameters": [
@@ -8262,7 +8263,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.process",
       "source": "pipeline/run.py",
-      "line": 567,
+      "line": 572,
       "line_count": 95,
       "scope_kind": "method",
       "parameters": [
@@ -8343,7 +8344,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.process.who_of",
       "source": "pipeline/run.py",
-      "line": 640,
+      "line": 645,
       "line_count": 5,
       "scope_kind": "nested",
       "parameters": [
@@ -8377,7 +8378,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._describe_factory",
       "source": "pipeline/run.py",
-      "line": 663,
+      "line": 668,
       "line_count": 9,
       "scope_kind": "method",
       "parameters": [
@@ -8406,7 +8407,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._describe_factory.describe",
       "source": "pipeline/run.py",
-      "line": 666,
+      "line": 671,
       "line_count": 5,
       "scope_kind": "nested",
       "parameters": [
@@ -8436,7 +8437,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.apply",
       "source": "pipeline/run.py",
-      "line": 673,
+      "line": 678,
       "line_count": 11,
       "scope_kind": "method",
       "parameters": [
@@ -8474,7 +8475,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.recap",
       "source": "pipeline/run.py",
-      "line": 686,
+      "line": 691,
       "line_count": 21,
       "scope_kind": "method",
       "parameters": [
@@ -8521,7 +8522,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._chapter_recap_job",
       "source": "pipeline/run.py",
-      "line": 708,
+      "line": 713,
       "line_count": 28,
       "scope_kind": "method",
       "parameters": [
@@ -8581,7 +8582,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.saga_path",
       "source": "pipeline/run.py",
-      "line": 737,
+      "line": 742,
       "line_count": 2,
       "scope_kind": "method",
       "parameters": [
@@ -8606,7 +8607,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.saga",
       "source": "pipeline/run.py",
-      "line": 740,
+      "line": 745,
       "line_count": 13,
       "scope_kind": "method",
       "parameters": [
@@ -8650,7 +8651,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._saga_job",
       "source": "pipeline/run.py",
-      "line": 754,
+      "line": 759,
       "line_count": 40,
       "scope_kind": "method",
       "parameters": [
@@ -8732,7 +8733,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._recap_job",
       "source": "pipeline/run.py",
-      "line": 795,
+      "line": 800,
       "line_count": 34,
       "scope_kind": "method",
       "parameters": [
@@ -8796,7 +8797,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.dedupe_path",
       "source": "pipeline/run.py",
-      "line": 831,
+      "line": 836,
       "line_count": 2,
       "scope_kind": "method",
       "parameters": [
@@ -8820,7 +8821,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.dedupe",
       "source": "pipeline/run.py",
-      "line": 834,
+      "line": 839,
       "line_count": 39,
       "scope_kind": "method",
       "parameters": [
@@ -8880,7 +8881,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._dedupe_candidates",
       "source": "pipeline/run.py",
-      "line": 874,
+      "line": 879,
       "line_count": 75,
       "scope_kind": "method",
       "parameters": [
@@ -8948,7 +8949,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._dedupe_candidates.names",
       "source": "pipeline/run.py",
-      "line": 888,
+      "line": 893,
       "line_count": 2,
       "scope_kind": "nested",
       "parameters": [
@@ -8973,7 +8974,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._dedupe_candidates.words",
       "source": "pipeline/run.py",
-      "line": 909,
+      "line": 914,
       "line_count": 7,
       "scope_kind": "nested",
       "parameters": [
@@ -9011,7 +9012,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._text_around",
       "source": "pipeline/run.py",
-      "line": 950,
+      "line": 955,
       "line_count": 12,
       "scope_kind": "method",
       "parameters": [
@@ -9046,7 +9047,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._dedupe_ask",
       "source": "pipeline/run.py",
-      "line": 963,
+      "line": 968,
       "line_count": 21,
       "scope_kind": "method",
       "parameters": [
@@ -9085,7 +9086,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.consolidate",
       "source": "pipeline/run.py",
-      "line": 986,
+      "line": 991,
       "line_count": 20,
       "scope_kind": "method",
       "parameters": [
@@ -9138,7 +9139,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.rate_importance",
       "source": "pipeline/run.py",
-      "line": 1007,
+      "line": 1012,
       "line_count": 46,
       "scope_kind": "method",
       "parameters": [
@@ -9198,7 +9199,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.settle_attrs",
       "source": "pipeline/run.py",
-      "line": 1054,
+      "line": 1059,
       "line_count": 45,
       "scope_kind": "method",
       "parameters": [
@@ -9264,7 +9265,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._dossiers",
       "source": "pipeline/run.py",
-      "line": 1100,
+      "line": 1105,
       "line_count": 28,
       "scope_kind": "method",
       "parameters": [
@@ -9306,7 +9307,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._bio_job",
       "source": "pipeline/run.py",
-      "line": 1129,
+      "line": 1134,
       "line_count": 26,
       "scope_kind": "method",
       "parameters": [
@@ -9369,7 +9370,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._apply_bios",
       "source": "pipeline/run.py",
-      "line": 1156,
+      "line": 1161,
       "line_count": 17,
       "scope_kind": "method",
       "parameters": [
@@ -9411,7 +9412,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.run",
       "source": "pipeline/run.py",
-      "line": 1175,
+      "line": 1180,
       "line_count": 65,
       "scope_kind": "method",
       "parameters": [
@@ -9480,7 +9481,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.local_path",
       "source": "pipeline/run.py",
-      "line": 1242,
+      "line": 1247,
       "line_count": 2,
       "scope_kind": "method",
       "parameters": [
@@ -9506,7 +9507,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.scope_start",
       "source": "pipeline/run.py",
-      "line": 1245,
+      "line": 1250,
       "line_count": 6,
       "scope_kind": "method",
       "parameters": [
@@ -9536,7 +9537,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.cast_hint",
       "source": "pipeline/run.py",
-      "line": 1252,
+      "line": 1257,
       "line_count": 11,
       "scope_kind": "method",
       "parameters": [
@@ -9578,7 +9579,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.relation_memory",
       "source": "pipeline/run.py",
-      "line": 1264,
+      "line": 1269,
       "line_count": 41,
       "scope_kind": "method",
       "parameters": [
@@ -9627,7 +9628,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.relation_context",
       "source": "pipeline/run.py",
-      "line": 1306,
+      "line": 1311,
       "line_count": 25,
       "scope_kind": "method",
       "parameters": [
@@ -9669,7 +9670,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.support_items",
       "source": "pipeline/run.py",
-      "line": 1332,
+      "line": 1337,
       "line_count": 26,
       "scope_kind": "method",
       "parameters": [
@@ -9721,7 +9722,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._valid_support",
       "source": "pipeline/run.py",
-      "line": 1360,
+      "line": 1365,
       "line_count": 8,
       "scope_kind": "method",
       "parameters": [
@@ -9754,7 +9755,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._pending_support",
       "source": "pipeline/run.py",
-      "line": 1369,
+      "line": 1374,
       "line_count": 47,
       "scope_kind": "method",
       "parameters": [
@@ -9818,7 +9819,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._merge_support",
       "source": "pipeline/run.py",
-      "line": 1417,
+      "line": 1422,
       "line_count": 15,
       "scope_kind": "method",
       "parameters": [
@@ -9860,7 +9861,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.name_relations",
       "source": "pipeline/run.py",
-      "line": 1433,
+      "line": 1438,
       "line_count": 21,
       "scope_kind": "method",
       "parameters": [
@@ -9912,7 +9913,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.add_relations",
       "source": "pipeline/run.py",
-      "line": 1455,
+      "line": 1460,
       "line_count": 99,
       "scope_kind": "method",
       "parameters": [
@@ -10008,7 +10009,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.add_support",
       "source": "pipeline/run.py",
-      "line": 1555,
+      "line": 1560,
       "line_count": 23,
       "scope_kind": "method",
       "parameters": [
@@ -10059,7 +10060,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._local_job",
       "source": "pipeline/run.py",
-      "line": 1579,
+      "line": 1584,
       "line_count": 79,
       "scope_kind": "method",
       "parameters": [
@@ -10145,7 +10146,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.link",
       "source": "pipeline/run.py",
-      "line": 1659,
+      "line": 1664,
       "line_count": 50,
       "scope_kind": "method",
       "parameters": [
@@ -10216,7 +10217,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.verify_critical",
       "source": "pipeline/run.py",
-      "line": 1710,
+      "line": 1715,
       "line_count": 44,
       "scope_kind": "method",
       "parameters": [
@@ -10280,7 +10281,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.verify_critical.known",
       "source": "pipeline/run.py",
-      "line": 1744,
+      "line": 1749,
       "line_count": 3,
       "scope_kind": "nested",
       "parameters": [
@@ -10308,7 +10309,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.mark_titles",
       "source": "pipeline/run.py",
-      "line": 1755,
+      "line": 1760,
       "line_count": 16,
       "scope_kind": "method",
       "parameters": [
@@ -10354,7 +10355,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.run2",
       "source": "pipeline/run.py",
-      "line": 1772,
+      "line": 1777,
       "line_count": 101,
       "scope_kind": "method",
       "parameters": [
@@ -10443,7 +10444,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner.run2.submit_upto",
       "source": "pipeline/run.py",
-      "line": 1811,
+      "line": 1816,
       "line_count": 18,
       "scope_kind": "nested",
       "parameters": [
@@ -10486,7 +10487,7 @@
       "module": "pipeline.run",
       "qualified_name": "Runner._maybe_recap",
       "source": "pipeline/run.py",
-      "line": 1874,
+      "line": 1879,
       "line_count": 25,
       "scope_kind": "method",
       "parameters": [
@@ -10532,7 +10533,7 @@
       "module": "pipeline.run",
       "qualified_name": "run_book",
       "source": "pipeline/run.py",
-      "line": 1901,
+      "line": 1906,
       "line_count": 47,
       "scope_kind": "module",
       "parameters": [
@@ -10601,7 +10602,7 @@
       "module": "pipeline.run",
       "qualified_name": "main",
       "source": "pipeline/run.py",
-      "line": 1950,
+      "line": 1955,
       "line_count": 18,
       "scope_kind": "module",
       "parameters": [],

@@ -13,6 +13,7 @@ Usage: python -m pipeline.run data/books/<id> [--model deepseek-flash+nothink] [
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import math
 import threading
@@ -507,19 +508,23 @@ class Runner:
             wjson(path, state, compact=False)
 
     def status(self, state: str, done: int, error: str | None = None):
-        self.usage['jev'] = dict(JEV_STATS)      # the judge is billed on input: count calls and payload
         seg = self.segs[done - 1] if done else None
-        with self.status_lock:
+        with self.lock, self.status_lock:
+            self.usage['jev'] = dict(JEV_STATS)  # judge calls and payload in this process
             self._status(state, done, seg, error)
 
     def _status(self, state, done, seg, error):
+        # A guard can finish after the last model call persisted its usage.
+        # Flush the same snapshot at every progress boundary, including a partial run.
+        usage = copy.deepcopy(self.usage)
+        wjson(self.usage_path, usage, compact=False)
         wjson(self.root / 'status.json', {
             'state': state, 'done': done, 'total': len(self.segs),
             'frontier': seg['o1'] if seg else 0,
             'body_start': self.segs[0]['o0'] if self.segs else 0,
             'body_end': self.segs[-1]['o1'] if self.segs else 0,
             'model': self.model, 'people': sum(1 for p in self.kg.people.values() if not p.get('merged_into')),
-            'updated': time.time(), 'error': error, 'usage': self.usage,
+            'updated': time.time(), 'error': error, 'usage': usage,
             'refused': sorted(getattr(self, 'refused', set())),
             'quality': {'state': 'pending' if getattr(self, 'quality_pending', set()) else 'verified',
                         'pending': sorted(getattr(self, 'quality_pending', set()))},
