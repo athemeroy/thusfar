@@ -78,9 +78,9 @@
       }
     },
     "bovary_partial": {
-      "origin": "local 1.7.x library/bovary-terra",
+      "origin": "local 1.7.x library/bovary-terra; Chinese translation credited to 李健吾 with publisher front matter",
       "state": "paused",
-      "rights": "public-domain source text; historical model output",
+      "rights": "redistribution unverified; private local compatibility fixture; replace with verifiably public-domain source before open-source publication",
       "personal_data": false
     },
     "aq_notebook_overlay": {

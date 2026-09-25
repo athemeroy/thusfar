@@ -44,8 +44,13 @@ timestamps and generated images, so their bytes rebuild identically.
 `snapshots/aq_complete/` and `snapshots/bovary_partial/` are frozen copies of
 actual 1.7.x data directories from the local library. The former is completed;
 the latter is paused after 20 of 73 segments and retains its partial `work/`
-cache. They contain only public-domain book text and historical generated
-artifacts. The capture allowlist includes `book.json`, `kg.json`, `status.json`,
+cache. The 阿Q text is public domain. The Bovary snapshot contains a Chinese
+translation credited to 李健吾 and publisher front matter; redistribution rights
+for this edition have **not** been verified. It is a private local compatibility
+fixture, and its current bytes must be replaced with a verifiably public-domain
+paused source before open-source publication. The original French novel's
+copyright status does not establish the translation's status. The capture
+allowlist includes `book.json`, `kg.json`, `status.json`,
 available `source.txt`, and JSON files under `work/` and `mentions/`. It excludes
 personal shelf metadata, runtime logs, PID/lock files, settings, and notebooks.
 All copied bytes were scanned for common key and credential formats; the
@@ -100,7 +105,8 @@ Review a source and its rights before updating a pinned hash. To deliberately
 recapture the two local snapshots, also pass
 `--snapshot-root /path/to/1.7.x/books`; this replaces the checked-in copies
 with the selected source IDs. Do not recapture from a library containing
-private notes or a different book edition. The normal build also regenerates
+private notes or a different book edition. Review source rights independently
+before any redistribution. The normal build also regenerates
 `aq_annotated/` through the isolated 1.7.5 HTTP route. To rebuild only that
 snapshot after reviewing its provenance, run
 `python3 oracle/corpus/annotate_snapshot.py --write`; replacing changed bytes

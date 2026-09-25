@@ -338,7 +338,7 @@ def write_manifest() -> None:
         "snapshots": {
             "aq_complete": {"origin": "local 1.7.x library/e3f53d01f830aedf", "state": "done", "rights": "public-domain source text; historical model output", "personal_data": False},
             "aq_annotated": {"origin": "isolated aq_complete copy; synthetic fixture note persisted by actual Python 1.7.5 HTTP notebook PUT with fixed clock", "state": "done with 1 API-written note", "rights": "public-domain source text; historical model output; MIT fixture note", "personal_data": False, "api_code_sha256": api_code_sha256()},
-            "bovary_partial": {"origin": "local 1.7.x library/bovary-terra", "state": "paused", "rights": "public-domain source text; historical model output", "personal_data": False},
+            "bovary_partial": {"origin": "local 1.7.x library/bovary-terra; Chinese translation credited to 李健吾 with publisher front matter", "state": "paused", "rights": "redistribution unverified; private local compatibility fixture; replace with verifiably public-domain source before open-source publication", "personal_data": False},
             "aq_notebook_overlay": {"origin": "synthetic note on real 阿Q snapshot", "state": "synthetic", "rights": "MIT (this repository)", "personal_data": False},
         },
         "files": files,
@@ -402,7 +402,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--verify", action="store_true", help="check all shipped files without network or writes")
     parser.add_argument("--source-dir", type=Path, help="directory holding the five pinned upstream downloads")
-    parser.add_argument("--snapshot-root", type=Path, help="capture two public-domain books from a local 1.7.x library")
+    parser.add_argument("--snapshot-root", type=Path, help="capture selected local 1.7.x snapshots; review redistribution rights")
     args = parser.parse_args()
     if args.verify:
         verify()
