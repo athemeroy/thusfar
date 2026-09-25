@@ -190,7 +190,12 @@ class _Fragment extends StatelessWidget {
         cuts.where((int x) => x >= 0 && x <= text.length).toList()..sort();
     final List<InlineSpan> children = <InlineSpan>[];
     if (shift > 0) {
-      children.add(WidgetSpan(alignment: PlaceholderAlignment.middle, child: SizedBox(width: indentWidth(spec), height: 1)));
+      children.add(
+        WidgetSpan(
+          alignment: PlaceholderAlignment.middle,
+          child: SizedBox(width: indentWidth(spec), height: 1),
+        ),
+      );
     }
     for (int i = 0; i + 1 < points.length; i++) {
       final int a = points[i];

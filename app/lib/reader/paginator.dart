@@ -134,7 +134,10 @@ class Paginator {
           : TextSpan(
               style: spec.body,
               children: <InlineSpan>[
-                WidgetSpan(alignment: PlaceholderAlignment.middle, child: SizedBox(width: indentWidth(spec), height: 1)),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: SizedBox(width: indentWidth(spec), height: 1),
+                ),
                 TextSpan(text: b.text),
               ],
             ),
@@ -145,7 +148,10 @@ class Paginator {
     );
     if (!heading) {
       tp.setPlaceholderDimensions(<PlaceholderDimensions>[
-        PlaceholderDimensions(size: Size(indentWidth(spec), 1), alignment: PlaceholderAlignment.middle),
+        PlaceholderDimensions(
+          size: Size(indentWidth(spec), 1),
+          alignment: PlaceholderAlignment.middle,
+        ),
       ]);
     }
     tp.layout(minWidth: spec.width, maxWidth: spec.width);
@@ -337,4 +343,3 @@ class Paginator {
     return base + ((offset - ch.o0) / charsPerPage()).floor();
   }
 }
-

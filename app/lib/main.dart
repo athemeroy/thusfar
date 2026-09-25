@@ -1,9 +1,8 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
 
 import 'data/backup.dart';
 import 'data/library.dart';
@@ -24,7 +23,9 @@ Future<void> main() async {
   // Same private directory the 1.7.x app used: files/yedu.
   final Directory root = override.isNotEmpty
       ? Directory(override)
-      : Directory('${(await getApplicationSupportDirectory()).path}/yedu');
+      : Directory(
+          '${await const MethodChannel('thusfar/paths').invokeMethod<String>('filesDir')}/yedu',
+        );
   root.createSync(recursive: true);
   final AppModel model = AppModel(root);
   await model.library.scan();
@@ -220,7 +221,14 @@ class _HomeShellState extends State<HomeShell> {
       } else if (backupsOnly) {
         item.error = '这不是页读的备份文件（.yedu.json）';
       } else if (lower.endsWith('.txt') || lower.endsWith('.epub')) {
-        item.error = '这一版的 TXT/EPUB 解析器还在移植，先用备份导入';
+        item.progress = 0.3;
+        setState(() {});
+        final ImportResult r = await importBookFile(m.library, f.name, bytes);
+        item
+          ..error = r.error
+          ..bookId = r.id
+          ..existed = r.existed
+          ..progress = 1;
       } else {
         item.error = '支持 TXT、EPUB';
       }
