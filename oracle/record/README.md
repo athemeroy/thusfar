@@ -198,6 +198,17 @@ twice. Its report says `source: synthetic in-memory transport`; it is not a live
 cassette or proof of model answer quality. Genuine model-backed route responses remain pending
 until matching live wire cassettes cover these calls.
 
+`http_edges_synthetic.py` adds 18 explicitly synthetic HTTP branch cases to the 60 route
+baseline and four model-success cases: a successful settings probe plus 401/timeout replies,
+future-question refusal, a guard-withheld answer, automatic marginalia and its cache hit,
+validation and missing-resource errors, admission 429s, an incomplete-body 408, passcode
+rejection, and nonlocal settings access. Its transport accepts only reviewed `.invalid`
+requests and in-memory replies; the 429 and 408 cases exercise the real loopback handler.
+`tests/test_http_edges_synthetic.py` re-records in two separate Python 3.11 processes and
+compares exact bytes with `oracle/goldens/http/aq_edges_synthetic.jsonl` and its report.
+The total is 82 cases across 27 reported route families, but live provider-backed success
+answers and long-running worker success remain outside this synthetic evidence.
+
 The Node command imports the actual `web/js/kg.js`, calls `KG.world(cutoff)` at 20 evenly
 spaced cutoffs, and records people, relations, events, recaps, canonical identities, ranking,
 and per-person relations.
