@@ -13,7 +13,7 @@
 | 排序 | Python `sorted` 稳定、比较 key 元组时逐元素按码点/数字比较；Dart 的默认排序和字符串顺序不可直接代用。 | Dart 显式附原索引保证相等 key 的顺序；`general.jsonl` 的 `compare/stable_sort` 加 `numeric_boundaries.jsonl` 的带符号零、NaN、64 位边界混合比较在两边运行。 | 各业务 `key=`、`reverse=` 与不支持的混合类型须随函数 golden 核对；Python 对 NaN 不给出全序，不能把该比较器当全序使用。 |
 | 字典顺序 | Python 3.11 `dict` 保留首次插入位置，覆盖已有 key 不改变位置；Dart `HashMap` 不保证顺序。 | 使用 `LinkedHashMap`；`general.jsonl` 的 `ordered_map` 在两边运行，`PyJson` 对无序 `HashMap` 明确拒绝。 | 各持久化字典的插入顺序仍需整书及接口 golden 证明。 |
 | 时间与随机 | Python `time.time/monotonic` 与 `random.random` 直接读取全局状态会使重试及输出不稳定。 | 核心接口接受 `ClockSource/RandomSource`；`oracle/semantics/determinism.jsonl` 由固定时钟和抖动录制四种 `Retry-After`，Python 和 Dart 测试读取同样的预期。 | A3 业务模型客户端要真正使用注入接口；录制中的导出时间、Cookie 需在复跑中验证稳定。 |
-| 并发完成顺序 | Python `ThreadPoolExecutor` 工作完成时序不固定；`ex.map` 和逐索引取 `Future.result` 仍按输入顺序发出。Dart `Future.wait` 也按输入列表发出。 | Python `test_executor_map_publishes_in_input_order` 用事件迫使第二项先完成；Dart `determinism_test.dart` 用两个 `Completer` 反序完成，同测输出 `[0,1]`。A0.5 已在 Python 给同位点 finalization 稳定排序，并在跨章读取新上下文前等待当前章后台任务；受控测试验证两种流程和续跑。 | 整书 cassette 回放两次的逐字节比较尚未完成，最终确定性仍要靠正式录制证明。 |
+| 并发完成顺序 | Python `ThreadPoolExecutor` 工作完成时序不固定；`ex.map` 和逐索引取 `Future.result` 仍按输入顺序发出。Dart `Future.wait` 也按输入列表发出。 | Python `test_executor_map_publishes_in_input_order` 用事件迫使第二项先完成；Dart `determinism_test.dart` 用两个 `Completer` 反序完成，同测输出 `[0,1]`。A0.5 已在 Python 给同位点 finalization 稳定排序，并在跨章读取新上下文前等待当前章后台任务；受控测试验证两种流程和续跑。阿Q 9/9 段与 Jekyll 19/20 段的同配置离线回放均已两遍逐字节一致；函数级录制还以两种 `PYTHONHASHSEED`、相同阿Q录音带双遍逐字节一致。 | Jekyll 20/20 和其余三本公开书仍缺完整真实录音带；Jekyll 的并发度 12 会生成现有录音带没有的前瞻请求，不能把并发度 1 的结果当作默认并发度验收。A5 的 Dart 调度仍须逐字段对照。 |
 
 ## 用例运行方式
 
