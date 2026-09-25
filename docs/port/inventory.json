@@ -28,6 +28,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -66,6 +68,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -104,9 +108,12 @@
         "pipeline.run.Runner.__init__"
       ],
       "danger_semantics": [
-        "切片"
+        "切片",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -144,6 +151,8 @@
         "Unicode 编码"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -178,6 +187,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -212,6 +223,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -246,6 +259,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -283,6 +298,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -324,6 +341,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -351,6 +370,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -387,6 +408,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -425,6 +448,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -457,9 +482,16 @@
       "callers": [],
       "danger_semantics": [
         "排序",
-        "浮点"
+        "浮点",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "describe",
+        "offsets",
+        "seg_text"
+      ],
       "status": "未开始"
     },
     {
@@ -507,6 +539,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -547,6 +581,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -575,6 +611,8 @@
         "dict 顺序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -598,6 +636,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -632,6 +672,8 @@
         "dict 顺序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -667,6 +709,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -696,6 +740,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -745,6 +791,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -807,6 +855,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -834,6 +884,8 @@
         "dict 顺序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -866,6 +918,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -905,6 +959,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -942,6 +998,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -981,6 +1039,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1017,6 +1077,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1057,6 +1119,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1082,6 +1146,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1120,6 +1186,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1148,6 +1216,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1178,6 +1248,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1219,6 +1291,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1250,6 +1324,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1284,6 +1360,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1311,6 +1389,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1336,6 +1416,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1367,6 +1449,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1397,6 +1481,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1437,6 +1523,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1465,6 +1553,8 @@
         "Unicode 编码"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1496,6 +1586,8 @@
         "Unicode 编码"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1530,6 +1622,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1558,6 +1652,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1586,6 +1682,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1620,6 +1718,8 @@
         "str.strip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1647,6 +1747,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1669,6 +1771,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1730,6 +1834,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1833,6 +1939,8 @@
         "正则"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1847,15 +1955,22 @@
         "x",
         "p"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "early_id.get",
         "intro.get"
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "early_id",
+        "intro"
+      ],
       "status": "未开始"
     },
     {
@@ -1870,15 +1985,21 @@
         "text",
         "p"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "text.replace",
         "text.replace(...).replace"
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "reveals"
+      ],
       "status": "未开始"
     },
     {
@@ -1926,6 +2047,8 @@
         "排序"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1956,6 +2079,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -1995,6 +2120,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2032,9 +2159,12 @@
         "dict 顺序",
         "len",
         "切片",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2062,6 +2192,8 @@
         "str.isdigit"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2102,6 +2234,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2145,6 +2279,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2181,6 +2317,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2194,7 +2332,7 @@
       "parameters": [
         "book"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "book.get",
         "book_lang",
@@ -2210,8 +2348,12 @@
         "pipeline.local.build",
         "pipeline.run.Runner.add_relations"
       ],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "环境变量"
+      ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2225,7 +2367,7 @@
       "parameters": [
         "book"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "card_lang"
       ],
@@ -2242,6 +2384,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2267,6 +2411,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2280,7 +2426,7 @@
       "parameters": [
         "book"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "book_lang",
         "card_lang"
@@ -2294,6 +2440,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2307,7 +2455,7 @@
       "parameters": [
         "book"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "book_lang",
         "card_lang"
@@ -2323,6 +2471,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2357,6 +2507,8 @@
         "str.lstrip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2398,6 +2550,8 @@
         "str.strip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2437,6 +2591,8 @@
         "str.strip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2470,6 +2626,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2496,6 +2654,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2528,6 +2688,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2569,6 +2731,8 @@
         "str.lstrip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2597,6 +2761,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2622,6 +2788,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2661,6 +2829,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2753,6 +2923,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2766,7 +2938,7 @@
       "parameters": [
         "names"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "len",
         "out.add",
@@ -2775,9 +2947,14 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "len"
+        "len",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "all_names"
+      ],
       "status": "未开始"
     },
     {
@@ -2813,6 +2990,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2886,6 +3065,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2911,6 +3092,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2959,6 +3142,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -2972,7 +3157,7 @@
       "parameters": [
         "c"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "locals_by_id.get",
@@ -2987,9 +3172,15 @@
       "callers": [],
       "danger_semantics": [
         "切片",
-        "排序"
+        "排序",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "cast",
+        "locals_by_id"
+      ],
       "status": "未开始"
     },
     {
@@ -3054,6 +3245,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3067,7 +3260,7 @@
       "parameters": [
         "name"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "Path",
         "Path(...).exists",
@@ -3091,9 +3284,12 @@
       ],
       "danger_semantics": [
         "切片",
-        "正则"
+        "正则",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3105,7 +3301,7 @@
       "line_count": 5,
       "scope_kind": "module",
       "parameters": [],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "os.environ.get",
         "urllib.request.ProxyHandler",
@@ -3118,8 +3314,12 @@
         "pipeline.llm.jev_free",
         "pipeline.llm.jev_local"
       ],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "环境变量"
+      ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3158,6 +3358,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3171,7 +3373,7 @@
       "parameters": [
         "seconds"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "ValueError",
         "_deadline.get",
@@ -3190,6 +3392,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3201,7 +3405,7 @@
       "line_count": 8,
       "scope_kind": "module",
       "parameters": [],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "DeadlineExceeded",
         "_deadline.get",
@@ -3219,6 +3423,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3232,7 +3438,7 @@
       "parameters": [
         "seconds"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_remaining",
         "min"
@@ -3248,6 +3454,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3278,6 +3486,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3308,6 +3518,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3322,7 +3534,7 @@
         "response",
         "limit"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "LLMError",
         "_remaining",
@@ -3343,6 +3555,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3356,7 +3570,7 @@
       "parameters": [
         "response"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "_chunks",
@@ -3374,6 +3588,8 @@
         "JSON 解析"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3387,7 +3603,7 @@
       "parameters": [
         "response"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_chunks",
         "pending.split"
@@ -3402,6 +3618,8 @@
         "str.split"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3415,7 +3633,7 @@
       "parameters": [
         "model"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.split",
         "_env",
@@ -3432,9 +3650,12 @@
       ],
       "danger_semantics": [
         "str.split",
-        "str.strip"
+        "str.strip",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3448,7 +3669,7 @@
       "parameters": [
         "model"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.split",
         "_env",
@@ -3467,6 +3688,8 @@
         "str.strip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3480,7 +3703,7 @@
       "parameters": [
         "protocol"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "DEFAULT_BASE.get",
         "_env",
@@ -3494,6 +3717,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3513,7 +3738,7 @@
         "temperature",
         "variant"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "base_for",
@@ -3534,6 +3759,8 @@
         "str.rstrip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3571,6 +3798,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3584,7 +3813,7 @@
       "parameters": [
         "model"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_reply_seconds.get",
         "float",
@@ -3600,9 +3829,12 @@
       ],
       "danger_semantics": [
         "len",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3630,6 +3862,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3718,9 +3952,12 @@
         "切片",
         "时间",
         "浮点",
+        "环境变量",
         "随机数"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3752,6 +3989,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3790,6 +4029,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3819,6 +4060,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3865,9 +4108,12 @@
         "JSON 序列化",
         "dict 顺序",
         "len",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3898,6 +4144,8 @@
         "dict 顺序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3911,7 +4159,7 @@
       "parameters": [
         "headers"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.get",
         "float",
@@ -3931,6 +4179,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -3946,7 +4196,7 @@
         "attempt",
         "cap"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "_retry_hint",
         "float",
@@ -3963,9 +4213,12 @@
       ],
       "danger_semantics": [
         "浮点",
+        "环境变量",
         "随机数"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4003,6 +4256,8 @@
         "时间"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4028,6 +4283,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4067,6 +4324,8 @@
         "dict 顺序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4094,6 +4353,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4107,7 +4368,7 @@
       "parameters": [
         "self"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "time.time"
       ],
@@ -4117,6 +4378,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4141,6 +4404,8 @@
         "时间"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4165,6 +4430,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4196,9 +4463,12 @@
         "切片",
         "可见状态原位修改",
         "时间",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4237,6 +4507,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4265,6 +4537,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4352,9 +4626,12 @@
         "时间",
         "正文长度疑似",
         "浮点",
+        "环境变量",
         "随机数"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4370,7 +4647,7 @@
         "questions",
         "answers"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "Path",
         "a.get",
@@ -4402,9 +4679,12 @@
         "Unicode 编码",
         "dict 顺序",
         "切片",
-        "哈希"
+        "哈希",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4467,9 +4747,12 @@
         "len",
         "str.rstrip",
         "可见状态原位修改",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4555,9 +4838,12 @@
         "切片",
         "可见状态原位修改",
         "时间",
+        "环境变量",
         "随机数"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4632,9 +4918,12 @@
         "JSON 序列化",
         "JSON 解析",
         "可见状态原位修改",
-        "哈希"
+        "哈希",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4651,7 +4940,7 @@
         "prev",
         "cast_hint"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "book.get",
@@ -4679,6 +4968,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4705,6 +4996,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4756,6 +5049,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4781,6 +5076,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4820,6 +5117,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4831,7 +5130,7 @@
       "line_count": 22,
       "scope_kind": "module",
       "parameters": [],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "float",
         "isinstance",
@@ -4849,9 +5148,12 @@
         "JSON 解析",
         "dict 顺序",
         "len",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4866,7 +5168,7 @@
         "model",
         "official"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "PRICES.get",
         "_overrides",
@@ -4884,6 +5186,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4895,7 +5199,7 @@
       "line_count": 5,
       "scope_kind": "module",
       "parameters": [],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "float"
       ],
@@ -4905,9 +5209,12 @@
         "pipeline.models.estimate"
       ],
       "danger_semantics": [
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4919,7 +5226,7 @@
       "line_count": 2,
       "scope_kind": "module",
       "parameters": [],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.split",
         "os.environ.get"
@@ -4929,9 +5236,12 @@
         "pipeline.models.estimate"
       ],
       "danger_semantics": [
-        "str.split"
+        "str.split",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4949,7 +5259,7 @@
         "judge",
         "official"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.split",
         "RATES.get",
@@ -4972,9 +5282,12 @@
       ],
       "danger_semantics": [
         "str.split",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -4988,7 +5301,7 @@
       "parameters": [
         "usage"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.items",
         "jev.get",
@@ -5012,6 +5325,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5051,6 +5366,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5084,6 +5401,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5125,6 +5444,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5138,7 +5459,7 @@
       "parameters": [
         "node"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "len",
@@ -5155,9 +5476,14 @@
       ],
       "danger_semantics": [
         "len",
-        "str.rsplit"
+        "str.rsplit",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "render"
+      ],
       "status": "未开始"
     },
     {
@@ -5186,6 +5512,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5228,6 +5556,8 @@
         "正文长度疑似"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5258,6 +5588,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5307,6 +5639,8 @@
         "正则"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5350,6 +5684,8 @@
         "正则"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5386,6 +5722,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5421,6 +5759,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5453,6 +5793,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5482,6 +5824,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5511,6 +5855,8 @@
         "str.rsplit"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5542,6 +5888,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5592,6 +5940,8 @@
         "str.split"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5628,9 +5978,16 @@
         "pipeline.parse._toc.walk@L259"
       ],
       "danger_semantics": [
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "闭包依赖"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "base",
+        "out",
+        "walk"
+      ],
       "status": "未开始"
     },
     {
@@ -5666,9 +6023,16 @@
         "pipeline.parse._toc.walk@L291"
       ],
       "danger_semantics": [
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "闭包依赖"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "base",
+        "out",
+        "walk"
+      ],
       "status": "未开始"
     },
     {
@@ -5762,6 +6126,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5812,6 +6178,8 @@
         "str.split"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5835,6 +6203,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5885,6 +6255,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5911,6 +6283,8 @@
         "Unicode 编码"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -5945,6 +6319,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6023,6 +6399,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6052,6 +6430,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6065,7 +6445,7 @@
       "parameters": [
         "idx"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "len"
       ],
@@ -6073,9 +6453,14 @@
       "callers": [],
       "danger_semantics": [
         "len",
-        "浮点"
+        "浮点",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "paras"
+      ],
       "status": "未开始"
     },
     {
@@ -6108,6 +6493,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6136,6 +6523,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6174,6 +6563,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6195,6 +6586,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6249,6 +6642,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6288,6 +6683,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6339,6 +6736,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6393,6 +6792,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6430,6 +6831,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6455,6 +6858,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6494,6 +6899,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6526,6 +6933,8 @@
         "哈希"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6556,6 +6965,8 @@
         "哈希"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6570,7 +6981,7 @@
         "chars",
         "questions"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "Path",
         "Path(...).resolve",
@@ -6601,9 +7012,12 @@
       "danger_semantics": [
         "JSON 序列化",
         "JSON 解析",
-        "int 转换"
+        "int 转换",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6617,15 +7031,24 @@
       "parameters": [
         "value"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "RuntimeError",
         "value.get"
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "calls_limit",
+        "chars",
+        "chars_limit",
+        "questions"
+      ],
       "status": "未开始"
     },
     {
@@ -6685,6 +7108,8 @@
         "JSON 序列化"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6698,7 +7123,7 @@
       "parameters": [
         "msg"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "print",
         "time.strftime"
@@ -6726,6 +7151,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6762,6 +7189,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6796,6 +7225,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6824,6 +7255,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6853,6 +7286,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6930,9 +7365,12 @@
       "danger_semantics": [
         "JSON 解析",
         "len",
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6960,6 +7398,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -6990,6 +7430,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7013,6 +7455,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7039,6 +7483,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7064,6 +7510,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7087,6 +7535,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7114,6 +7564,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7148,6 +7600,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7192,6 +7646,8 @@
         "哈希"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7235,6 +7691,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7275,6 +7733,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7314,6 +7774,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7346,6 +7808,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7373,6 +7837,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7402,6 +7868,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7433,6 +7901,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7469,6 +7939,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7542,6 +8014,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7577,6 +8051,8 @@
         "排序"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7611,6 +8087,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7644,6 +8122,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7686,6 +8166,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7713,6 +8195,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7756,6 +8240,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7835,6 +8321,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7848,7 +8336,7 @@
       "parameters": [
         "w"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "intros.get",
         "pp.get",
@@ -7858,8 +8346,17 @@
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "intros",
+        "plan",
+        "refnames",
+        "self"
+      ],
       "status": "未开始"
     },
     {
@@ -7887,6 +8384,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7900,7 +8399,7 @@
       "parameters": [
         "pid"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "intro.get",
         "np.get",
@@ -7908,8 +8407,15 @@
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "intro",
+        "self"
+      ],
       "status": "未开始"
     },
     {
@@ -7946,6 +8452,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -7991,6 +8499,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8045,9 +8555,12 @@
         "str.strip",
         "切片",
         "可见状态原位修改",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8071,6 +8584,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8113,6 +8628,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8189,9 +8706,12 @@
         "str.strip",
         "切片",
         "可见状态原位修改",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8250,9 +8770,12 @@
         "切片",
         "可见状态原位修改",
         "正则",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8275,6 +8798,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8333,6 +8858,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8399,6 +8926,8 @@
         "排序"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8422,6 +8951,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8435,7 +8966,7 @@
       "parameters": [
         "pid"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "kg.canon",
@@ -8451,9 +8982,15 @@
       "danger_semantics": [
         "len",
         "切片",
-        "正则"
+        "正则",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "kg",
+        "people"
+      ],
       "status": "未开始"
     },
     {
@@ -8487,6 +9024,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8524,6 +9063,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8575,6 +9116,8 @@
         "dict 顺序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8629,9 +9172,12 @@
         "切片",
         "可见状态原位修改",
         "排序",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8692,9 +9238,12 @@
         "切片",
         "可见状态原位修改",
         "排序",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8735,6 +9284,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8796,6 +9347,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8836,6 +9389,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8903,6 +9458,8 @@
         "时间"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8927,6 +9484,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8955,6 +9514,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -8995,6 +9556,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9042,6 +9605,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9082,6 +9647,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9098,7 +9665,7 @@
         "sample_events",
         "checked_events"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.lstrip",
         "CRITICAL.search",
@@ -9128,9 +9695,12 @@
         "int 转换",
         "str.lstrip",
         "切片",
-        "哈希"
+        "哈希",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9162,6 +9732,8 @@
         "dict 顺序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9224,6 +9796,8 @@
         "排序"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9264,6 +9838,8 @@
         "排序"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9314,6 +9890,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9404,9 +9982,12 @@
         "可见状态原位修改",
         "排序",
         "正则",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9452,9 +10033,12 @@
         "//",
         "len",
         "切片",
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9539,6 +10123,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9608,6 +10194,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9670,6 +10258,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9683,15 +10273,21 @@
       "parameters": [
         "x"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "p.get",
         "self.kg.people.get"
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "self"
+      ],
       "status": "未开始"
     },
     {
@@ -9732,9 +10328,12 @@
       "danger_semantics": [
         "//",
         "len",
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9822,6 +10421,8 @@
         "浮点"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9850,9 +10451,19 @@
       ],
       "callers": [],
       "danger_semantics": [
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "闭包依赖"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "end",
+        "futures",
+        "local_pool",
+        "model",
+        "next_job",
+        "self"
+      ],
       "status": "未开始"
     },
     {
@@ -9897,6 +10508,8 @@
         "排序"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9964,6 +10577,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -9992,9 +10607,12 @@
       ],
       "callers": [],
       "danger_semantics": [
-        "int 转换"
+        "int 转换",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10006,7 +10624,7 @@
       "line_count": 8,
       "scope_kind": "module",
       "parameters": [],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "DATA.mkdir",
         "SECRET_FILE.exists",
@@ -10030,6 +10648,8 @@
         "随机数"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10041,7 +10661,7 @@
       "line_count": 4,
       "scope_kind": "module",
       "parameters": [],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "<BinOp>.encode",
         "hmac.new",
@@ -10065,6 +10685,8 @@
         "随机数"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10096,6 +10718,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10125,6 +10749,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10152,6 +10778,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10179,6 +10807,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10193,7 +10823,7 @@
         "bid",
         "d"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "b.get",
         "bool",
@@ -10222,6 +10852,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10245,6 +10877,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10267,8 +10901,12 @@
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "环境变量"
+      ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10314,6 +10952,8 @@
         "正文长度疑似"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10355,6 +10995,8 @@
         "Unicode 编码"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10394,6 +11036,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10424,6 +11068,8 @@
         "JSON 解析"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10463,6 +11109,8 @@
         "正则"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10503,6 +11151,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10526,6 +11176,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10556,6 +11208,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10592,6 +11246,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10626,6 +11282,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10649,6 +11307,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10672,6 +11332,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10695,6 +11357,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10863,9 +11527,12 @@
         "排序",
         "时间",
         "正则",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10892,6 +11559,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10923,6 +11592,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -10952,6 +11623,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11002,6 +11675,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11057,6 +11732,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11098,6 +11775,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11142,6 +11821,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11197,6 +11878,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11250,6 +11933,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11342,6 +12027,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11399,6 +12086,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11433,9 +12122,12 @@
         "server.app.Handler.route"
       ],
       "danger_semantics": [
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11483,6 +12175,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11509,9 +12203,14 @@
       "callers": [],
       "danger_semantics": [
         "JSON 序列化",
-        "Unicode 编码"
+        "Unicode 编码",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "self"
+      ],
       "status": "未开始"
     },
     {
@@ -11547,6 +12246,8 @@
         "正文长度疑似"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11578,6 +12279,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11618,6 +12321,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11652,6 +12357,8 @@
         "哈希"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11679,9 +12386,12 @@
       ],
       "danger_semantics": [
         "int 转换",
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11711,6 +12421,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11736,6 +12448,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11772,6 +12486,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11797,9 +12513,15 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "闭包依赖"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "cleanup",
+        "stopping"
+      ],
       "status": "未开始"
     },
     {
@@ -11819,8 +12541,14 @@
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "srv"
+      ],
       "status": "未开始"
     },
     {
@@ -11855,6 +12583,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11881,6 +12611,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11923,6 +12655,8 @@
         "正文长度疑似"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -11961,9 +12695,12 @@
         "len",
         "切片",
         "排序",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12020,6 +12757,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12052,9 +12791,12 @@
       "danger_semantics": [
         "str.strip",
         "切片",
-        "正则"
+        "正则",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12111,6 +12853,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12124,7 +12868,7 @@
       "parameters": [
         "person"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "len",
         "max",
@@ -12134,9 +12878,14 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "len"
+        "len",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "passage"
+      ],
       "status": "未开始"
     },
     {
@@ -12175,6 +12924,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12278,6 +13029,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12302,6 +13055,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12315,7 +13070,7 @@
       "parameters": [
         "m"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "int",
@@ -12329,9 +13084,14 @@
       "danger_semantics": [
         "dict 顺序",
         "int 转换",
-        "正则"
+        "正则",
+        "闭包依赖"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "src"
+      ],
       "status": "未开始"
     },
     {
@@ -12360,6 +13120,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12392,9 +13154,12 @@
       "internal_calls": [],
       "callers": [],
       "danger_semantics": [
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12417,6 +13182,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12457,6 +13224,8 @@
         "时间"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12499,6 +13268,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12556,9 +13327,12 @@
         "int 转换",
         "切片",
         "可见状态原位修改",
-        "时间"
+        "时间",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12602,6 +13376,8 @@
         "时间"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12625,6 +13401,8 @@
       "callers": [],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12660,6 +13438,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12699,6 +13479,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12715,7 +13497,7 @@
         "book",
         "graph"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.get",
         "ID.fullmatch",
@@ -12761,6 +13543,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12788,6 +13572,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12828,6 +13614,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12872,6 +13660,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12900,6 +13690,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12937,6 +13729,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -12966,6 +13760,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13017,6 +13813,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13050,6 +13848,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13102,6 +13902,8 @@
         "排序"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13159,9 +13961,12 @@
         "dict 顺序",
         "len",
         "排序",
-        "浮点"
+        "浮点",
+        "环境变量"
       ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13199,6 +14004,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13236,6 +14043,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13272,6 +14081,8 @@
         "随机数"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13299,6 +14110,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13338,6 +14151,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13364,6 +14179,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13425,6 +14242,8 @@
         "随机数"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13457,6 +14276,8 @@
         "哈希"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13524,6 +14345,8 @@
         "浮点"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13535,7 +14358,7 @@
       "line_count": 2,
       "scope_kind": "module",
       "parameters": [],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "Path"
       ],
@@ -13544,8 +14367,12 @@
         "server.model_settings.read",
         "server.model_settings.save"
       ],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "环境变量"
+      ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13557,7 +14384,7 @@
       "line_count": 14,
       "scope_kind": "module",
       "parameters": [],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "_file",
         "line.partition",
@@ -13580,6 +14407,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13591,7 +14420,7 @@
       "line_count": 6,
       "scope_kind": "module",
       "parameters": [],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "bool",
         "read",
@@ -13608,6 +14437,8 @@
         "切片"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13619,7 +14450,7 @@
       "line_count": 20,
       "scope_kind": "module",
       "parameters": [],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "read",
         "setattr",
@@ -13631,8 +14462,12 @@
       "callers": [
         "server.model_settings.save"
       ],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "环境变量"
+      ],
       "mutates_state": false,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13666,6 +14501,8 @@
         "str.strip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13701,6 +14538,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13714,7 +14553,7 @@
       "parameters": [
         "payload"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "<Constant>.join",
         "ValueError",
@@ -13764,6 +14603,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13799,6 +14640,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13841,6 +14684,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13856,7 +14701,7 @@
         "item",
         "book"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.get",
         "ID.fullmatch",
@@ -13884,6 +14729,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13898,7 +14745,7 @@
         "items",
         "book"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "ValueError",
         "integer",
@@ -13925,6 +14772,8 @@
         "时间"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13944,6 +14793,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -13959,7 +14810,7 @@
         "payload",
         "visible"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "BOOK_ID.fullmatch",
         "OPERATION.fullmatch",
@@ -13987,6 +14838,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14017,6 +14870,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14046,9 +14901,12 @@
       "danger_semantics": [
         "dict 顺序",
         "int 转换",
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "环境变量"
       ],
       "mutates_state": true,
+      "reads_environment": true,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14091,6 +14949,8 @@
         "哈希"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14135,6 +14995,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14165,6 +15027,8 @@
         "可见状态原位修改"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14201,6 +15065,8 @@
         "JSON 序列化"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14232,6 +15098,8 @@
         "str.strip"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14264,6 +15132,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14300,6 +15170,8 @@
         "哈希"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14340,6 +15212,8 @@
         "JSON 解析"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14380,6 +15254,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14409,6 +15285,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14451,6 +15329,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14487,6 +15367,8 @@
         "len"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14514,6 +15396,8 @@
       ],
       "danger_semantics": [],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14559,6 +15443,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14604,6 +15490,8 @@
         "正文长度疑似"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14657,6 +15545,8 @@
         "正则"
       ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [],
       "status": "未开始"
     },
     {
@@ -14692,9 +15582,20 @@
       ],
       "danger_semantics": [
         "dict 顺序",
-        "可见状态原位修改"
+        "可见状态原位修改",
+        "闭包依赖"
       ],
       "mutates_state": true,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "apply",
+        "early",
+        "events",
+        "merges",
+        "people",
+        "recaps",
+        "relations"
+      ],
       "status": "未开始"
     },
     {
@@ -14708,15 +15609,21 @@
       "parameters": [
         "pid"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "seen.add",
         "set"
       ],
       "internal_calls": [],
       "callers": [],
-      "danger_semantics": [],
+      "danger_semantics": [
+        "闭包依赖"
+      ],
       "mutates_state": false,
+      "reads_environment": false,
+      "closure_dependencies": [
+        "merges"
+      ],
       "status": "未开始"
     }
   ],

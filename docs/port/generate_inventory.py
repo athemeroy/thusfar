@@ -61,6 +61,8 @@ class Entry:
     callers: set[str] = field(default_factory=set)
     dangers: set[str] = field(default_factory=set)
     mutates_state: bool = False
+    reads_environment: bool = False
+    closure_dependencies: set[str] = field(default_factory=set)
     category: str = ""
 
 
@@ -179,6 +181,8 @@ class BodyAnalyzer(ast.NodeVisitor):
         self.dangers: set[str] = set()
         self.local_imports: dict[str, str] = {}
         self.mutates_state = False
+        self.reads_environment = False
+        self.loaded_names: set[str] = set()
 
     def _is_state_root(self, name: str | None) -> bool:
         return name is not None and (name in self.parameters or name not in self.locals | self.import_names | set(self.local_imports))
@@ -214,6 +218,16 @@ class BodyAnalyzer(ast.NodeVisitor):
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         self.local_imports.update(import_binding(node, self.module))
 
+    def visit_Name(self, node: ast.Name) -> None:
+        if isinstance(node.ctx, ast.Load):
+            self.loaded_names.add(node.id)
+
+    def visit_Attribute(self, node: ast.Attribute) -> None:
+        if call_name(node) == "os.environ":
+            self.reads_environment = True
+            self.dangers.add("环境变量")
+        self.generic_visit(node)
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         return
 
@@ -227,6 +241,9 @@ class BodyAnalyzer(ast.NodeVisitor):
         name = call_name(node.func)
         self.calls.append((name, node.lineno))
         base = name.split(".")[-1]
+        if name in {"os.getenv", "os.environ.get", "os.environ.setdefault"}:
+            self.reads_environment = True
+            self.dangers.add("环境变量")
         if isinstance(node.func, ast.Attribute) and base in MUTATING_METHODS and self._is_state_root(root_name(node.func.value)):
             self.mutates_state = True
         if name.startswith("re.") or base in {"finditer", "findall", "fullmatch"} or (base in {"match", "search", "sub"} and "RE" in name):
@@ -317,7 +334,7 @@ def category_for(entry: Entry, resolved: set[str]) -> str:
         return "并发与编排"
     if entry.id in MODEL_ENTRYPOINTS or resolved & MODEL_ENTRYPOINTS or bases & MODEL_CALL_NAMES or any(name.startswith(("urllib.request.urlopen", "_opener(...).open")) for name in names):
         return "模型调用"
-    if entry.mutates_state:
+    if entry.mutates_state or entry.reads_environment or entry.closure_dependencies or entry.dangers & {"时间", "随机数"}:
         return "并发与编排"
     if bases & ORCHESTRATION_CALLS or any(name.startswith(("threading.", "concurrent.futures.", "subprocess.")) for name in names):
         return "并发与编排"
@@ -352,8 +369,20 @@ def analyze_functions(trees: dict[str, ast.Module], entries: list[Entry]) -> Non
         e.call_expressions = {name for name, _ in visitor.calls}
         e.dangers = visitor.dangers
         e.mutates_state = visitor.mutates_state
+        e.reads_environment = visitor.reads_environment
+        local = local_names(e.node) | visitor.parameters
+        parts = e.qualname.split(".")[:-1]
+        while parts:
+            parents = [p for p in by_name.get(f"{e.module}.{'.'.join(parts)}", []) if p.node.lineno < e.node.lineno <= p.node.end_lineno]
+            if parents:
+                parent = min(parents, key=lambda p: p.node.end_lineno - p.node.lineno)
+                parent_names = local_names(parent.node) | {arg.arg for arg in (*parent.node.args.posonlyargs, *parent.node.args.args, *parent.node.args.kwonlyargs)}
+                e.closure_dependencies.update((visitor.loaded_names & parent_names) - local)
+            parts.pop()
         if e.mutates_state:
             e.dangers.add("可见状态原位修改")
+        if e.closure_dependencies:
+            e.dangers.add("闭包依赖")
         for name, line in visitor.calls:
             target = resolve_call(name, line, e, {**imports[e.module], **visitor.local_imports}, by_name, class_names)
             if target:
@@ -432,6 +461,8 @@ def payload(entries: list[Entry], tests: list[dict]) -> dict:
                 "callers": sorted(e.callers),
                 "danger_semantics": sorted(e.dangers),
                 "mutates_state": e.mutates_state,
+                "reads_environment": e.reads_environment,
+                "closure_dependencies": sorted(e.closure_dependencies),
                 "status": "未开始",
             }
             for e in entries
