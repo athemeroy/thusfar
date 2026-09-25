@@ -27,13 +27,18 @@ Object? evaluate(Map<String, Object?> item) {
       );
     case 'floor_div':
       return PyCompat.floorDiv(
-        int.parse(item['left']! as String),
-        int.parse(item['right']! as String),
+        BigInt.parse(item['left']! as String),
+        BigInt.parse(item['right']! as String),
       ).toString();
     case 'modulo':
       return PyCompat.modulo(
-        int.parse(item['left']! as String),
-        int.parse(item['right']! as String),
+        BigInt.parse(item['left']! as String),
+        BigInt.parse(item['right']! as String),
+      ).toString();
+    case 'round_floor_div':
+      return PyCompat.floorDiv(
+        PyCompat.round(double.parse(item['value']! as String)),
+        BigInt.parse(item['right']! as String),
       ).toString();
     case 'json_int':
       return PyJson.encode(BigInt.parse(item['value']! as String));

@@ -155,15 +155,23 @@ final class PyCompat {
     return result.toString();
   }
 
-  static Object floorDiv(int a, int b) {
-    if (b == 0) throw const PyZeroDivisionError();
-    return _narrow(_floorDivBig(BigInt.from(a), BigInt.from(b)));
+  static BigInt _asBigInt(Object value) {
+    if (value is BigInt) return value;
+    if (value is int) return BigInt.from(value);
+    throw ArgumentError.value(value, 'value', 'Expected a Python integer');
   }
 
-  static Object modulo(int a, int b) {
-    if (b == 0) throw const PyZeroDivisionError();
-    final BigInt left = BigInt.from(a);
-    final BigInt right = BigInt.from(b);
+  static Object floorDiv(Object a, Object b) {
+    final BigInt left = _asBigInt(a);
+    final BigInt right = _asBigInt(b);
+    if (right == BigInt.zero) throw const PyZeroDivisionError();
+    return _narrow(_floorDivBig(left, right));
+  }
+
+  static Object modulo(Object a, Object b) {
+    final BigInt left = _asBigInt(a);
+    final BigInt right = _asBigInt(b);
+    if (right == BigInt.zero) throw const PyZeroDivisionError();
     return _narrow(left - _floorDivBig(left, right) * right);
   }
 

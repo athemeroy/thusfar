@@ -39,8 +39,11 @@ def cases():
     for operation in ("floor_div", "modulo"):
         for left, right in (("-9223372036854775808", "-1"),
                             ("-9223372036854775808", "3"),
-                            ("9223372036854775807", "-3")):
+                            ("9223372036854775807", "-3"),
+                            ("9223372036854775808", "3"),
+                            ("100000000000000000000", "9223372036854775808")):
             rows.append({"op": operation, "left": left, "right": right})
+    rows.append({"op": "round_floor_div", "value": "1e20", "right": "3"})
     for raw in ("9223372036854775808", "-9223372036854775809",
                 "100000000000000000000"):
         rows.append({"op": "json_int", "value": raw})
@@ -61,6 +64,8 @@ def cases():
                 row["expected"] = str(int(row["left"]) // int(row["right"]))
             elif operation == "modulo":
                 row["expected"] = str(int(row["left"]) % int(row["right"]))
+            elif operation == "round_floor_div":
+                row["expected"] = str(round(float(row["value"])) // int(row["right"]))
             elif operation == "json_int":
                 row["expected"] = json.dumps(int(row["value"]))
             elif operation == "json_bool_keys":

@@ -47,11 +47,16 @@
 {"op":"floor_div","left":"-9223372036854775808","right":"-1","id":46,"expected":"9223372036854775808"}
 {"op":"floor_div","left":"-9223372036854775808","right":"3","id":47,"expected":"-3074457345618258603"}
 {"op":"floor_div","left":"9223372036854775807","right":"-3","id":48,"expected":"-3074457345618258603"}
-{"op":"modulo","left":"-9223372036854775808","right":"-1","id":49,"expected":"0"}
-{"op":"modulo","left":"-9223372036854775808","right":"3","id":50,"expected":"1"}
-{"op":"modulo","left":"9223372036854775807","right":"-3","id":51,"expected":"-2"}
-{"op":"json_int","value":"9223372036854775808","id":52,"expected":"9223372036854775808"}
-{"op":"json_int","value":"-9223372036854775809","id":53,"expected":"-9223372036854775809"}
-{"op":"json_int","value":"100000000000000000000","id":54,"expected":"100000000000000000000"}
-{"op":"json_bool_keys","id":55,"expected":"{\"false\": \"no\", \"true\": \"yes\"}"}
-{"op":"sort_signed_zero","id":56,"expected":["+0","-0"]}
+{"op":"floor_div","left":"9223372036854775808","right":"3","id":49,"expected":"3074457345618258602"}
+{"op":"floor_div","left":"100000000000000000000","right":"9223372036854775808","id":50,"expected":"10"}
+{"op":"modulo","left":"-9223372036854775808","right":"-1","id":51,"expected":"0"}
+{"op":"modulo","left":"-9223372036854775808","right":"3","id":52,"expected":"1"}
+{"op":"modulo","left":"9223372036854775807","right":"-3","id":53,"expected":"-2"}
+{"op":"modulo","left":"9223372036854775808","right":"3","id":54,"expected":"2"}
+{"op":"modulo","left":"100000000000000000000","right":"9223372036854775808","id":55,"expected":"7766279631452241920"}
+{"op":"round_floor_div","value":"1e20","right":"3","id":56,"expected":"33333333333333333333"}
+{"op":"json_int","value":"9223372036854775808","id":57,"expected":"9223372036854775808"}
+{"op":"json_int","value":"-9223372036854775809","id":58,"expected":"-9223372036854775809"}
+{"op":"json_int","value":"100000000000000000000","id":59,"expected":"100000000000000000000"}
+{"op":"json_bool_keys","id":60,"expected":"{\"false\": \"no\", \"true\": \"yes\"}"}
+{"op":"sort_signed_zero","id":61,"expected":["+0","-0"]}
