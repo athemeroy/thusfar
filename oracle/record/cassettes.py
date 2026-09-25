@@ -128,10 +128,25 @@ class CassetteStore:
         path = self.path(envelope)
         with self._tape_lock():
             tape = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {
-                'schema': 1, 'request_sha256': path.stem, 'request': envelope, 'attempts': []}
+                'schema': 1, 'request_sha256': path.stem, 'request': envelope,
+                'attempts': [], 'overlap_groups': []}
             if tape['request'] != envelope:
                 raise ValueError('cassette digest collision or changed request')
+            if 'overlap_slots' in tape and 'overlap_groups' not in tape:
+                tape['overlap_groups'] = [tape.pop('overlap_slots')]
             slot = len(tape['attempts'])
+            pending = [index for index, attempt in enumerate(tape['attempts'])
+                       if attempt.get('kind') == 'pending']
+            if pending:
+                groups = tape.setdefault('overlap_groups', [])
+                joined = set(pending) | {slot}
+                remaining = []
+                for group in groups:
+                    if joined.intersection(group):
+                        joined.update(group)
+                    else:
+                        remaining.append(group)
+                tape['overlap_groups'] = remaining + [sorted(joined)]
             tape['attempts'].append({'kind': 'pending'})
             write_json(path, tape)
             return slot
@@ -246,7 +261,8 @@ class CassetteStore:
         path = self.path(envelope)
         with self.lock, self._tape_lock():
             tape = json.loads(path.read_text(encoding='utf-8')) if path.exists() else {
-                'schema': 1, 'request_sha256': path.stem, 'request': envelope, 'attempts': []}
+                'schema': 1, 'request_sha256': path.stem, 'request': envelope,
+                'attempts': [], 'overlap_groups': []}
             if tape['request'] != envelope:
                 raise ValueError('cassette digest collision or changed request')
             if slot is None:
@@ -270,8 +286,17 @@ class CassetteStore:
         attempts = tape.get('attempts') or []
         if any(attempt.get('kind') == 'pending' for attempt in attempts):
             raise RuntimeError(f'cassette has unfinished live requests: sha256={path.stem}')
-        if len(attempts) > 1 and any(attempt != attempts[0] for attempt in attempts[1:]):
-            raise RuntimeError(f'cassette has ambiguous repeated request: sha256={path.stem}')
+        groups = tape.get('overlap_groups')
+        if groups is None and 'overlap_slots' in tape:
+            groups = [tape['overlap_slots']]
+        if groups is None and len(attempts) > 1 and any(attempt != attempts[0] for attempt in attempts[1:]):
+            raise RuntimeError(f'cassette has unknown duplicate overlap: sha256={path.stem}')
+        for group in groups or []:
+            if not isinstance(group, list) or not group or any(
+                    not isinstance(index, int) or not 0 <= index < len(attempts) for index in group):
+                raise ValueError(f'cassette overlap group is invalid: sha256={path.stem}')
+            if any(attempts[index] != attempts[group[0]] for index in group[1:]):
+                raise RuntimeError(f'cassette has ambiguous concurrent request: sha256={path.stem}')
         with self.lock:
             index = self.offsets.get(path.stem, 0)
             if index >= len(attempts):

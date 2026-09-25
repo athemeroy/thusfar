@@ -16,8 +16,19 @@ def inspect_value(value, secrets: tuple[str, ...], path: Path) -> None:
             if any(isinstance(attempt, dict) and attempt.get('kind') == 'pending'
                    for attempt in attempts):
                 raise UnsafeValue(f'unfinished cassette request in {path}')
-            if len(attempts) > 1 and any(attempt != attempts[0] for attempt in attempts[1:]):
-                raise UnsafeValue(f'ambiguous repeated cassette request in {path}')
+            groups = value.get('overlap_groups')
+            if groups is None and 'overlap_slots' in value:
+                groups = [value['overlap_slots']]
+            if groups is None and len(attempts) > 1 and any(attempt != attempts[0]
+                                                              for attempt in attempts[1:]):
+                raise UnsafeValue(f'unknown cassette duplicate overlap in {path}')
+            for group in groups or []:
+                if not isinstance(group, list) or not group or any(
+                        not isinstance(index, int) or not 0 <= index < len(attempts)
+                        for index in group):
+                    raise UnsafeValue(f'invalid cassette overlap group in {path}')
+                if any(attempts[index] != attempts[group[0]] for index in group[1:]):
+                    raise UnsafeValue(f'ambiguous concurrent cassette request in {path}')
         for key, item in value.items():
             if key.lower() in ('authorization', 'proxy-authorization', 'x-api-key', 'x-goog-api-key'):
                 raise UnsafeValue(f'authentication header in {path}')
