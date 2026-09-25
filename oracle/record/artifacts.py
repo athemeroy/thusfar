@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 from .cassettes import install
-from .common import UnsafeValue, canonical, known_secrets, write_json
+from .common import UnsafeValue, canonical, known_secrets, require_reference_runtime, write_json
 from .functions import LoopbackOnly
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -148,16 +148,20 @@ def historical_cache(source: Path, out: Path, repeat: int) -> dict[str, str]:
 def one_pass(book: Path, cassette_dir: Path, concurrency: int) -> None:
     names = ('LLM_BASE_URL', 'LLM_BASE_URL_OPENAI', 'LLM_PROTOCOL', 'LLM_PROTOCOL_MAP',
              'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY', 'JEV_ROUTE',
-             'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG', 'RECAP_MODEL')
+             'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG',
+             'EXTRACT_MODEL', 'LOCAL_MODEL', 'RECAP_MODEL', 'JUDGE_MODEL', 'CLASSIFY_MODEL')
     previous = {name: os.environ.get(name) for name in names}
     model = 'deepseek-flash+nothink'
     os.environ.update(LLM_BASE_URL='https://open.xiaojingai.com/v1',
-                      LLM_BASE_URL_OPENAI='', LLM_PROTOCOL='openai', LLM_PROTOCOL_MAP='',
-                      LLM_KEY_NAME='ORACLE_REPLAY_KEY', LLM_KEY_MAP='',
+                      LLM_BASE_URL_OPENAI='https://open.xiaojingai.com/v1',
+                      LLM_PROTOCOL='openai', LLM_PROTOCOL_MAP='deepseek-flash=openai',
+                      LLM_KEY_NAME='ORACLE_REPLAY_KEY',
+                      LLM_KEY_MAP='deepseek-flash=ORACLE_REPLAY_KEY',
                       ORACLE_REPLAY_KEY='oracle-placeholder', JEV_ROUTE='free-only',
                       CLASSIFIER_URL='https://classifier.dev/v1/classify',
                       JUDGE_LOG_DIR=str(book / 'work' / 'judge'), JUDGE_LOG='0',
-                      RECAP_MODEL=model)
+                      EXTRACT_MODEL=model, LOCAL_MODEL=model, RECAP_MODEL=model,
+                      JUDGE_MODEL=model, CLASSIFY_MODEL=model)
     try:
         from pipeline.run import run_book
         with LoopbackOnly(), install(cassette_dir, 'replay') as tape:
@@ -173,6 +177,7 @@ def one_pass(book: Path, cassette_dir: Path, concurrency: int) -> None:
 
 
 def main() -> None:
+    require_reference_runtime()
     if len(sys.argv) > 1 and sys.argv[1] == '--one-pass':
         inner = argparse.ArgumentParser(description='internal isolated cassette replay pass')
         inner.add_argument('--one-pass', dest='book', type=Path, required=True)

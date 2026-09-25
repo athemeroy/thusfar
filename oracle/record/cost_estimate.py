@@ -15,7 +15,7 @@ from pipeline.lang import book_lang
 from pipeline.models import LATIN_FACTOR, PRICES, RATES
 from pipeline.parse import parse_file
 
-from .common import write_json
+from .common import require_reference_runtime, write_json
 
 ROOT = Path(__file__).resolve().parents[2]
 MODEL = 'deepseek-flash'
@@ -66,6 +66,7 @@ def estimate(source_dir: Path) -> dict:
 
 
 def main() -> None:
+    require_reference_runtime()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source-dir', type=Path, default=ROOT / 'oracle/corpus/books')
     parser.add_argument('--out', type=Path, required=True)

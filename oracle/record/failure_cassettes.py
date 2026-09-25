@@ -9,6 +9,7 @@ import urllib.request
 from pathlib import Path
 
 from .cassettes import CassetteStore, request_envelope
+from .common import require_reference_runtime
 
 
 def b64(data: bytes) -> str:
@@ -35,8 +36,9 @@ def add_chat(store: CassetteStore, name: str, attempt: dict):
 def make(directory: Path) -> int:
     if directory.exists() and any(directory.iterdir()):
         raise FileExistsError('synthetic cassette directory must be empty')
-    previous = os.environ.get('LLM_BASE_URL')
+    previous = {name: os.environ.get(name) for name in ('LLM_BASE_URL', 'LLM_BASE_URL_OPENAI')}
     os.environ['LLM_BASE_URL'] = 'https://open.xiaojingai.com/v1'
+    os.environ['LLM_BASE_URL_OPENAI'] = 'https://open.xiaojingai.com/v1'
     try:
         store = CassetteStore(directory, 'record', secrets=())
         success = stream({'choices': [{'delta': {'content': '可以'}}]}, '[DONE]')
@@ -81,13 +83,15 @@ def make(directory: Path) -> int:
                      'chunks_base64': [b64(json.dumps(answer).encode('utf-8'))]})
         return store.count
     finally:
-        if previous is None:
-            os.environ.pop('LLM_BASE_URL', None)
-        else:
-            os.environ['LLM_BASE_URL'] = previous
+        for name, value in previous.items():
+            if value is None:
+                os.environ.pop(name, None)
+            else:
+                os.environ[name] = value
 
 
 def main():
+    require_reference_runtime()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('out', type=Path)
     args = parser.parse_args()

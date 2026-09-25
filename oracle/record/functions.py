@@ -24,7 +24,8 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
-from .common import ObjectView, UnsafeValue, digest, encode, known_secrets, write_json, write_jsonl
+from .common import (ObjectView, UnsafeValue, digest, encode, known_secrets,
+                     require_reference_runtime, write_json, write_jsonl)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -158,10 +159,14 @@ class Collector:
 
 
 class LoopbackOnly:
-    def __enter__(self):
-        self.original = socket.socket.connect
+    _PROXY_NAMES = ('HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'http_proxy', 'https_proxy',
+                    'all_proxy', 'FTP_PROXY', 'ftp_proxy')
 
-        def connect(sock, address):
+    def __enter__(self):
+        self.original = (socket.socket.connect, socket.socket.connect_ex, socket.socket.sendto)
+        self.proxies = {name: os.environ.pop(name, None) for name in self._PROXY_NAMES}
+
+        def check(address):
             if isinstance(address, tuple):
                 host = address[0]
                 try:
@@ -170,13 +175,29 @@ class LoopbackOnly:
                     local = host == 'localhost'
                 if not local:
                     raise RuntimeError('function recorder blocks non-loopback network')
-            return self.original(sock, address)
+
+        def connect(sock, address):
+            check(address)
+            return self.original[0](sock, address)
+
+        def connect_ex(sock, address):
+            check(address)
+            return self.original[1](sock, address)
+
+        def sendto(sock, data, *args):
+            check(args[-1])
+            return self.original[2](sock, data, *args)
 
         socket.socket.connect = connect
+        socket.socket.connect_ex = connect_ex
+        socket.socket.sendto = sendto
         return self
 
     def __exit__(self, *_):
-        socket.socket.connect = self.original
+        socket.socket.connect, socket.socket.connect_ex, socket.socket.sendto = self.original
+        for name, value in self.proxies.items():
+            if value is not None:
+                os.environ[name] = value
 
 
 def run_python_tests() -> bool:
@@ -238,16 +259,21 @@ def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int)
     model = 'deepseek-flash+nothink'
     names = ('LLM_BASE_URL', 'LLM_BASE_URL_OPENAI', 'LLM_PROTOCOL', 'LLM_PROTOCOL_MAP',
              'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY',
-             'JEV_ROUTE', 'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG')
+             'JEV_ROUTE', 'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG',
+             'EXTRACT_MODEL', 'LOCAL_MODEL', 'RECAP_MODEL', 'JUDGE_MODEL', 'CLASSIFY_MODEL')
     previous = {name: os.environ.get(name) for name in names}
     with tempfile.TemporaryDirectory(prefix='thusfar-oracle-function-book-') as tmp:
         root = Path(tmp) / source.name
         os.environ.update(LLM_BASE_URL='https://open.xiaojingai.com/v1',
-                          LLM_BASE_URL_OPENAI='', LLM_PROTOCOL='openai', LLM_PROTOCOL_MAP='',
-                          LLM_KEY_NAME='ORACLE_REPLAY_KEY', LLM_KEY_MAP='',
+                          LLM_BASE_URL_OPENAI='https://open.xiaojingai.com/v1',
+                          LLM_PROTOCOL='openai', LLM_PROTOCOL_MAP='deepseek-flash=openai',
+                          LLM_KEY_NAME='ORACLE_REPLAY_KEY',
+                          LLM_KEY_MAP='deepseek-flash=ORACLE_REPLAY_KEY',
                           ORACLE_REPLAY_KEY='oracle-placeholder', JEV_ROUTE='free-only',
                           CLASSIFIER_URL='https://classifier.dev/v1/classify',
-                          JUDGE_LOG_DIR=str(Path(tmp) / 'judge'), JUDGE_LOG='0')
+                          JUDGE_LOG_DIR=str(Path(tmp) / 'judge'), JUDGE_LOG='0',
+                          EXTRACT_MODEL=model, LOCAL_MODEL=model, RECAP_MODEL=model,
+                          JUDGE_MODEL=model, CLASSIFY_MODEL=model)
         try:
             stage_book(source, root, start)
             from pipeline import llm
@@ -269,6 +295,7 @@ def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int)
 
 
 def main() -> int:
+    require_reference_runtime()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--include', type=Path)
     parser.add_argument('--inventory', type=Path, default=ROOT / 'docs/port/inventory.json')

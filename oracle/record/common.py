@@ -8,12 +8,20 @@ import json
 import math
 import os
 import re
+import sys
+import unicodedata
 from pathlib import Path
 from xml.etree import ElementTree
 
 
 class UnsafeValue(ValueError):
     """A value cannot safely or faithfully be included in a committed oracle."""
+
+
+def require_reference_runtime() -> None:
+    """Freeze Python and Unicode behavior to the Chaquopy 1.7.x reference runtime."""
+    if sys.version_info[:2] != (3, 11) or unicodedata.unidata_version != '14.0.0':
+        raise RuntimeError('oracle recording requires Python 3.11 with Unicode 14.0.0')
 
 
 @dataclasses.dataclass(frozen=True)
