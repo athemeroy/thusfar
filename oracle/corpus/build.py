@@ -74,7 +74,6 @@ SOURCES = {
 }
 SNAPSHOTS = {
     "aq_complete": "e3f53d01f830aedf",
-    "bovary_partial": "bovary-terra",
 }
 SECRET = re.compile(
     rb"(?:sk-[A-Za-z0-9_-]{12,}|Bearer\s+[A-Za-z0-9._-]{20,}|"
@@ -365,7 +364,6 @@ def write_manifest() -> None:
             "aq_complete": {"origin": "local 1.7.x library/e3f53d01f830aedf", "state": "done", "rights": "public-domain source text; historical model output", "personal_data": False},
             "aq_annotated": {"origin": "isolated aq_complete copy; synthetic fixture note persisted by actual Python 1.7.5 HTTP notebook PUT with fixed clock", "state": "done with 1 API-written note", "rights": "public-domain source text; historical model output; MIT fixture note", "personal_data": False, "api_code_sha256": api_code_sha256()},
             "aq_paused_annotated": paused_snapshot_provenance(),
-            "bovary_partial": {"origin": "local 1.7.x library/bovary-terra; Chinese translation credited to 李健吾 with publisher front matter", "state": "paused", "rights": "redistribution unverified; private local compatibility fixture; replace with verifiably public-domain source before open-source publication", "personal_data": False},
             "aq_notebook_overlay": {"origin": "synthetic note on real 阿Q snapshot", "state": "synthetic", "rights": "MIT (this repository)", "personal_data": False},
         },
         "files": files,
@@ -395,8 +393,7 @@ def verify() -> None:
         "snapshots/aq_paused_annotated/source.txt",
         "snapshots/aq_paused_annotated/notebook.json",
         *(f"snapshots/aq_paused_annotated/work/segs/{index:04d}.json" for index in range(4)),
-        "snapshots/bovary_partial/book.json",
-        "snapshots/bovary_partial/status.json", "snapshots/aq_notebook_overlay.json",
+        "snapshots/aq_notebook_overlay.json",
     }
     if not required <= actual:
         raise ValueError(f"Required corpus fixtures missing: {sorted(required - actual)}")
@@ -411,7 +408,7 @@ def verify() -> None:
     long_book = (ROOT / SOURCES["rulin"]["output"]).read_bytes().decode("utf-8")
     if len(long_book) != 200_000:
         raise ValueError("Long Chinese sample must have exactly 200,000 Unicode code points")
-    for label, expected_state in (("aq_complete", "done"), ("bovary_partial", "paused")):
+    for label, expected_state in (("aq_complete", "done"), ("aq_paused_annotated", "paused")):
         status = json.loads((ROOT / "snapshots" / label / "status.json").read_text())
         if status["state"] != expected_state or not 0 <= status["done"] <= status["total"]:
             raise ValueError(f"Invalid {label} snapshot state")

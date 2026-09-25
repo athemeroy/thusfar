@@ -41,20 +41,20 @@ timestamps and generated images, so their bytes rebuild identically.
 
 ## 1.7.x compatibility snapshots
 
-`snapshots/aq_complete/` and `snapshots/bovary_partial/` are frozen copies of
-actual 1.7.x data directories from the local library. The former is completed;
-the latter is paused after 20 of 73 segments and retains its partial `work/`
-cache. The 阿Q text is public domain. The Bovary snapshot contains a Chinese
-translation credited to 李健吾 and publisher front matter; redistribution rights
-for this edition have **not** been verified. It is a private local compatibility
-fixture, and its current bytes must be replaced with a verifiably public-domain
-paused source before open-source publication. The original French novel's
-copyright status does not establish the translation's status. The capture
-allowlist includes `book.json`, `kg.json`, `status.json`,
-available `source.txt`, and JSON files under `work/` and `mentions/`. It excludes
-personal shelf metadata, runtime logs, PID/lock files, settings, and notebooks.
-All copied bytes were scanned for common key and credential formats; the
-manifest pins the resulting exact files.
+`snapshots/aq_complete/` is a frozen completed 1.7.x data directory from the
+local library. The 阿Q source text is public domain. The capture allowlist
+includes `book.json`, `kg.json`, `status.json`, available `source.txt`, and JSON
+files under `work/` and `mentions/`. It excludes personal shelf metadata,
+runtime logs, PID/lock files, settings, and notebooks. All copied bytes were
+scanned for common key and credential formats; the manifest pins their hashes.
+The only historical paused library directory available contained a Chinese
+translation of *Madame Bovary* credited to 李健吾. Its redistribution rights
+remain unverified, so its snapshot and derived book/fold goldens were removed
+from this branch. A local private archive preserves those bytes for later
+compatibility review; this branch's earlier Git commits still contain them and
+must be excluded from any published history. The replay/API-generated 阿Q
+fixture below supplies a rights-clear paused state, with its provenance stated
+separately from the historical library capture.
 
 `snapshots/aq_annotated/` is a full copy of the frozen completed 阿Q snapshot
 with one fixture-authored note added through the **real Python 1.7.5
@@ -119,11 +119,10 @@ five pinned downloads must be named `aq.txt`, `jekyll.txt`, `rulin.txt`,
 `french.txt`, and `kokoro.zip`. Without `--source-dir`, the builder fetches the
 recorded URLs and refuses any upstream edition whose SHA-256 has changed.
 Review a source and its rights before updating a pinned hash. To deliberately
-recapture the two local snapshots, also pass
-`--snapshot-root /path/to/1.7.x/books`; this replaces the checked-in copies
-with the selected source IDs. Do not recapture from a library containing
-private notes or a different book edition. Review source rights independently
-before any redistribution. The normal build also regenerates
+recapture the completed local 阿Q snapshot, also pass
+`--snapshot-root /path/to/1.7.x/books`. Do not recapture from a library
+containing private notes or a different book edition. Review source rights
+independently before any redistribution. The normal build also regenerates
 `aq_annotated/` through the isolated 1.7.5 HTTP route. To rebuild only that
 snapshot after reviewing its provenance, run
 `python3 oracle/corpus/annotate_snapshot.py --write`; replacing changed bytes
@@ -132,10 +131,10 @@ checked-in cassette. To create that snapshot alone after reviewing the pinned
 inputs, run `python3 -m oracle.corpus.paused_annotated_snapshot --write`.
 The generator refuses to replace changed bytes without a separate review.
 
-For the initial capture, `--verify` confirmed 117 data files totaling
-3,401,626 bytes. The API-generated annotated snapshot adds 49 pinned files,
-and the paused-plus-note fixture adds 67 more, for 233 files and 4,066,204
-bytes in the current corpus.
+The initial capture contained 117 data files. Removing the rights-unverified
+partial translation removed 52; the API-generated completed/annotated snapshot
+adds 49, and the paused/annotated fixture adds 67. The current corpus contains
+181 pinned files; `build.py --verify` prints their total byte count.
 Python `parse_file` read every nonempty text and both EPUBs;
 it extracted one footnote and both generated PNGs. `server.notebook.restore`
 accepted the synthetic note with an exact UTF-16 source quote.
