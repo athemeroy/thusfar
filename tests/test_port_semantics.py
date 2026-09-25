@@ -6,10 +6,12 @@ import unittest
 from pathlib import Path
 
 from oracle.semantics.record_general import evaluate
+from oracle.semantics.record_determinism import evaluate as evaluate_retry
 
 CASES = Path(__file__).resolve().parents[1] / "oracle" / "semantics" / "py_json.jsonl"
 GENERAL = CASES.with_name("general.jsonl")
 HASHES = CASES.with_name("hashes.jsonl")
+DETERMINISM = CASES.with_name("determinism.jsonl")
 
 
 class TestPyJsonOracle(unittest.TestCase):
@@ -67,6 +69,16 @@ class TestGeneralSemanticOracle(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(raw).hexdigest(), case["sha256"])
                 count += 1
         self.assertEqual(count, 12)
+
+    def test_injected_retry_clock_and_jitter(self):
+        count = 0
+        with DETERMINISM.open(encoding="utf-8") as source:
+            for line in source:
+                case = json.loads(line)
+                with self.subTest(case=case["id"]):
+                    self.assertEqual(evaluate_retry(case), case["expected"])
+                count += 1
+        self.assertEqual(count, 4)
 
 
 if __name__ == "__main__":
