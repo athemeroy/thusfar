@@ -1,0 +1,1 @@
+{"request_sha256":"a6051b7c168c2f97f50a3bb27e7b5b2a716f94ea78870534fa6fd17eb98f87f5","answers":{"d1":{"type":"choice","choice":"same","probabilities":{"same":0.43,"different":0.19,"unclear":0.38},"confidence":0.15},"d2":{"type":"choice","choice":"different","probabilities":{"same":0.01,"different":0.69,"unclear":0.3},"confidence":0.54}},"route":"free","model":"typesafe-ai/jev"}
