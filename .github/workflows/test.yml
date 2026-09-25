@@ -28,6 +28,7 @@ jobs:
         run: |
           python -m oracle.record.special --verify
           python -m oracle.record.parse_books --verify
+          python -m oracle.record.verify_book_artifacts
           python -m oracle.record.verify_folds
       - name: Interface translations
         run: python scripts/check_i18n.py
