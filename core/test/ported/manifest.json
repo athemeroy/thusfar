@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 4,
-    "pending_port": 158,
+    "translated_skipped": 10,
+    "pending_port": 152,
     "scope_exception": 9
   },
   "tests": [
@@ -907,7 +907,7 @@
       "direct_targets": [
         "pipeline.llm.parse_json"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by text'."
     },
     {
@@ -925,7 +925,7 @@
       "direct_targets": [
         "pipeline.llm.parse_json"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by ascii comma'."
     },
     {
@@ -943,7 +943,7 @@
       "direct_targets": [
         "pipeline.llm.parse_json"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by colon'."
     },
     {
@@ -961,7 +961,7 @@
       "direct_targets": [
         "pipeline.llm.parse_json"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'fences and trailing commas'."
     },
     {
@@ -979,7 +979,7 @@
       "direct_targets": [
         "pipeline.llm.parse_json"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'valid json untouched'."
     },
     {
@@ -1053,7 +1053,7 @@
       "direct_targets": [
         "server.manual_entities.mentions"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of server.manual_entities.mentions is pending (A6); required to check 'inline mentions preserve generated names and utf16 positions'."
     },
     {

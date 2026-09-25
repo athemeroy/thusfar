@@ -2,6 +2,8 @@
 // Skipped failing callbacks are unported assertions, not translations.
 import 'package:test/test.dart';
 
+import 'contract_invoker.dart';
+
 void main() {
   test(
     "tests.test_manual_entities.ManualRules.test_utf16_anchor_and_versions_do_not_spoil_earlier_pages",
@@ -29,9 +31,50 @@ void main() {
   );
   test(
     "tests.test_manual_entities.ManualRules.test_inline_mentions_preserve_generated_names_and_utf16_positions",
-    () => fail(
-      "Dart port not implemented: tests.test_manual_entities.ManualRules.test_inline_mentions_preserve_generated_names_and_utf16_positions",
-    ),
+    () {
+      final blocks = [
+        {'k': 'p', 'o': 0, 't': '😀尼尔遇见黑月。', 'fn': <Object?>[]},
+      ];
+      final items = [
+        {
+          'id': '12345678-abcd',
+          'kind': 'person',
+          'name': '尼尔',
+          'deleted': false,
+        },
+        {
+          'id': 'abcdefgh-1234',
+          'kind': 'concept',
+          'name': '黑月',
+          'deleted': false,
+        },
+        {'id': 'deleted-1234', 'kind': 'person', 'name': '遇见', 'deleted': true},
+      ];
+      expect(
+        callPorted('server.manual_entities.mentions', {
+          'blocks': blocks,
+          'items': items,
+          'existing': [
+            [2, 4, 'P1'],
+          ],
+        }),
+        [
+          [2, 4, 'P1'],
+          [6, 8, 'Uabcdefgh-1234'],
+        ],
+      );
+      expect(
+        callPorted('server.manual_entities.mentions', {
+          'blocks': blocks,
+          'items': items,
+          'existing': <Object?>[],
+        }),
+        [
+          [2, 4, 'U12345678-abcd'],
+          [6, 8, 'Uabcdefgh-1234'],
+        ],
+      );
+    },
     skip:
         "Dart implementation of server.manual_entities.mentions is pending (A6); required to check 'inline mentions preserve generated names and utf16 positions'.",
   );
