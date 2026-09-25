@@ -22,7 +22,7 @@ OUT = ROOT / "core/test/ported"
 MANIFEST = OUT / "manifest.json"
 PYTHON_ONLY = {"scripts.export_judge_data", "scripts.build_release"}
 TEST_CALL = re.compile(r'\btest\s*\(\s*"([^"]+)"', re.M)
-ASSERTION_CALL = re.compile(r'\b(?:expect|expectLater|expectClientError)\s*\(')
+ASSERTION_CALL = re.compile(r'\b(?:expect|expectLater)\s*\(')
 CONTRACT_CALL = re.compile(r'\bcallPorted\s*\(')
 DART_TRIVIA = re.compile(
     r"//[^\n]*|/\*[\s\S]*?\*/|r?'''[\s\S]*?'''|r?\"\"\"[\s\S]*?\"\"\"|"
@@ -156,7 +156,12 @@ def check_contract(row: dict, source: str, body: str, inventory: list[dict]) -> 
     skips = list(re.finditer(r"\bskip\s*:", cleaned))
     callback = body[:skips[-1].start()] if skips else body
     executable = DART_TRIVIA.sub(" ", callback)
-    if not ASSERTION_CALL.search(executable):
+    direct_assertion = ASSERTION_CALL.search(executable)
+    delegated_assertion = bool(re.search(r"\bexpectClientError\s*\(", executable))
+    if delegated_assertion:
+        assertion_helper = DART_TRIVIA.sub(" ", helper_source(source, "expectClientError"))
+        delegated_assertion = bool(ASSERTION_CALL.search(assertion_helper))
+    if not direct_assertion and not delegated_assertion:
         raise ValueError(f"Translated callback has no executable assertion: {row['id']}")
     helpers = CONTRACT_BINDINGS.get(Path(row["dart_file"]).name)
     if helpers is None:

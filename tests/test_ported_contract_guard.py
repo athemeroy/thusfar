@@ -54,6 +54,18 @@ class PortedContractGuardTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "no longer reaches callPorted"):
             port.check_contract(row, broken, callback + 'skip: "pending", );', self.inventory)
 
+    def test_assertion_helper_cannot_become_silent(self) -> None:
+        row = next(row for row in self.rows if row["id"].endswith(
+            "test_malformed_or_missing_free_dimensions_are_rejected"))
+        source = (port.ROOT / row["dart_file"]).read_text(encoding="utf-8")
+        broken = source.replace("expect(object(run['error'])['type'], 'pipeline.llm.LLMError');",
+                                "final ignored = run['error'];", 1)
+        self.assertNotEqual(source, broken)
+        callback = (', () { final run = scripted(\'pipeline.llm.jev_free\'); '
+                    'expectClientError(run); }, skip: "pending", );')
+        with self.assertRaisesRegex(ValueError, "no executable assertion"):
+            port.check_contract(row, broken, callback, self.inventory)
+
 
 if __name__ == "__main__":
     unittest.main()
