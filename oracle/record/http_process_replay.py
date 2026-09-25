@@ -25,7 +25,7 @@ from .concurrency import CASSETTES, REFERENCE, ROOT, SOURCE
 from .functions import LoopbackOnly
 from .http_model_live import MODEL, isolated_settings
 from .http_routes import _HEADERS
-from .resume import file_hashes
+from .resume import GOLDEN as RESUME_GOLDEN, file_hashes
 from .verify_book_artifacts import verify_book
 from .verify_live_cassettes import verify as verify_cassettes
 
@@ -108,6 +108,9 @@ def validate_run(result: dict, reference: dict[str, str], status: dict) -> None:
         raise ValueError('shelf does not expose the completed, explicitly stopped book')
     if result['request_counts'] != {'model': 21, 'jev': 82}:
         raise ValueError('HTTP worker did not consume the complete reviewed Aq tape')
+    expected_requests = json.loads(RESUME_GOLDEN.read_text())['runs']['fresh']['requests']
+    if result['requests'] != expected_requests:
+        raise ValueError('HTTP worker request digests differ from the fresh book replay')
     if result['worker'] != {'mode': 'thread', 'concurrency': 12,
                              'alive_after_stop': False, 'last_error': None}:
         raise ValueError('HTTP worker did not finish and shut down cleanly')

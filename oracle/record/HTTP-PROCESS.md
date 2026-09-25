@@ -22,6 +22,8 @@ are not replaced. It permits an exact queued response without a race against the
 worker's first status update. The worker must stop and join without errors.
 On failure it also joins before cassette and network guards are removed; the
 parent process has a 120-second bound on each isolated replay.
+All 101 request digest/count rows must also match the independent fresh-book
+receipt, so equal model/JEV totals cannot hide changed prompt inputs.
 
 All 154 normalized book files must match `aq_deepseek`, including the full JEV
 cache file set. Source bytes are checked against the corpus manifest before and

@@ -41,6 +41,12 @@ class HttpProcessReplayTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_run(changed, self.reference, self.status)
 
+    def test_equal_call_totals_do_not_hide_a_different_prompt_digest(self):
+        changed = copy.deepcopy(self.receipt)
+        changed['requests'][0]['sha256'] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'request digests differ'):
+            validate_run(changed, self.reference, self.status)
+
     def test_content_length_is_checked_before_timestamp_normalization(self):
         class Response:
             version = 11
