@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 19,
-    "pending_port": 143,
+    "translated_skipped": 22,
+    "pending_port": 140,
     "scope_exception": 9
   },
   "tests": [
@@ -2031,7 +2031,7 @@
       "direct_targets": [
         "pipeline.kg.quarantine_identities"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'identity taint propagates at temporal merge boundaries'."
     },
     {
@@ -2062,7 +2062,7 @@
       "direct_targets": [
         "pipeline.kg.quarantine_identities"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'tainted person retains source identity without unverified intro'."
     },
     {
@@ -2499,7 +2499,7 @@
       "direct_targets": [
         "pipeline.run.Runner.verified_summary"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.run.Runner.verified_summary is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'flagged cache needs explicit deterministic fallback'."
     },
     {
