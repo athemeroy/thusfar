@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 15,
-    "pending_port": 147,
+    "translated_skipped": 19,
+    "pending_port": 143,
     "scope_exception": 9
   },
   "tests": [
@@ -1188,7 +1188,7 @@
       "direct_targets": [
         "server.marginalia._story"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of server.marginalia._story is pending (A2, A6); required to check 'story prioritizes page character and related history'."
     },
     {
@@ -1210,7 +1210,7 @@
         "pipeline.parse.u16",
         "server.marginalia._source_before"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._source_before is pending (A2, A6); required to check 'prior source window is hard bounded at utf16 cutoff'."
     },
     {
@@ -1289,7 +1289,7 @@
         "pipeline.parse.u16",
         "server.marginalia._page_candidates"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._page_candidates is pending (A2, A6); required to check 'utf16 candidate offsets round trip'."
     },
     {
@@ -1310,7 +1310,7 @@
       "direct_targets": [
         "server.marginalia._clean"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of server.marginalia._clean is pending (A2, A6); required to check 'prompt fragments and truncated comments are not published'."
     },
     {
