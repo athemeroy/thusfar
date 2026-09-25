@@ -18,7 +18,7 @@ from unittest.mock import patch
 
 from oracle.record.common import UnsafeValue, canonical, digest, write_json, write_jsonl
 from oracle.record.http_model_live import (BASE_URL, MODEL, MODEL_URL, ExactOpener,
-                                           _read_intent, exercise,
+                                           _read_intent,
                                            assert_no_key_suffix, assert_success,
                                            assert_tape_no_key_suffix, exclusive_live_lock,
                                            isolated_settings,
@@ -278,13 +278,34 @@ class HttpModelLiveSafety(unittest.TestCase):
                 'overlap_groups': [],
             })
             observed_path = directory / 'observed-http.jsonl'
-
-            def save(row, secrets):
-                self.assertNotIn(FAKE_KEY, canonical(row))
-                write_jsonl(observed_path, [row])
-
-            with self.assertRaisesRegex(ValueError, 'real-model HTTP success'):
-                exercise('replay', directory, FAKE_KEY, request_sha, save)
+            # A full test run may already have imported server.app with a different
+            # DATA path. Exercise its import-time settings guard in a fresh process.
+            script = (
+                'import sys\n'
+                'from pathlib import Path\n'
+                'from oracle.record.common import canonical, write_jsonl\n'
+                'from oracle.record.http_model_live import exercise\n'
+                'key = sys.argv[3]\n'
+                'observed = Path(sys.argv[4])\n'
+                'def save(row, secrets):\n'
+                ' if key in canonical(row):\n'
+                '  raise AssertionError("credential appeared in HTTP receipt")\n'
+                ' write_jsonl(observed, [row])\n'
+                'try:\n'
+                ' exercise("replay", Path(sys.argv[1]), key, sys.argv[2], save)\n'
+                'except ValueError as exc:\n'
+                ' if "real-model HTTP success" not in str(exc):\n'
+                '  raise\n'
+                'else:\n'
+                ' raise AssertionError("application failure passed the success gate")\n'
+            )
+            result = subprocess.run(
+                [PYTHON, '-c', script, str(directory), request_sha, FAKE_KEY,
+                 str(observed_path)], cwd=ROOT,
+                env={**os.environ, 'PYTHONHASHSEED': '1'}, capture_output=True,
+                text=True, timeout=90,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
             recorded = json.loads(observed_path.read_text(encoding='utf-8'))
             self.assertEqual(recorded['response']['status'], 200)
             self.assertFalse(recorded['response']['body_json']['ok'])
