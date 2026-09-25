@@ -2,6 +2,8 @@
 // Skipped failing callbacks are unported assertions, not translations.
 import 'package:test/test.dart';
 
+import 'contract_invoker.dart';
+
 void main() {
   test(
     "tests.test_standalone.ThreadWorker.test_manual_start_cancel_resume_and_lock_release",
@@ -61,9 +63,32 @@ void main() {
   );
   test(
     "tests.test_standalone.ModelFailures.test_hopeless_failures_are_explained_and_transient_ones_are_not",
-    () => fail(
-      "Dart port not implemented: tests.test_standalone.ModelFailures.test_hopeless_failures_are_explained_and_transient_ones_are_not",
-    ),
+    () {
+      Object? explain(String type, String message) =>
+          callPorted('pipeline.llm.explain', {
+            'error': {
+              '\$error': {'type': type, 'message': message},
+            },
+          });
+      const llmError = 'pipeline.llm.LLMError';
+      expect(explain(llmError, '缺少模型访问密钥'), contains('模型设置'));
+      const unauthorized =
+          'HTTP 401: {"error":{"message":"Authentication Fails"}}';
+      expect(explain(llmError, unauthorized), contains('HTTP 401'));
+      expect(explain(llmError, unauthorized), contains('Authentication Fails'));
+      expect(
+        explain(
+          llmError,
+          'HTTP 402: {"error":{"message":"Insufficient Balance"}}',
+        ),
+        contains('余额'),
+      );
+      expect(explain(llmError, 'HTTP 400: Model Not Exist'), contains('模型名'));
+      expect(explain(llmError, 'HTTP 503: busy'), isNull);
+      expect(explain('builtins.TimeoutError', 'timed out'), isNull);
+      expect(explain(llmError, '模型调用失败：NOT_API: 接口地址返回的是网页'), contains('/v1'));
+      expect(explain(llmError, 'THINKING_ONLY: 只思考'), contains('+nothink'));
+    },
     skip:
         "Dart implementation of pipeline.llm.explain is pending (A1/A6, A3, A5, A6); required to check 'hopeless failures are explained and transient ones are not'.",
   );
@@ -85,9 +110,22 @@ void main() {
   );
   test(
     "tests.test_standalone.ModelFailures.test_settings_fill_in_v1_and_nothink",
-    () => fail(
-      "Dart port not implemented: tests.test_standalone.ModelFailures.test_settings_fill_in_v1_and_nothink",
-    ),
+    () {
+      Object? normalize(String url, String model) => callPorted(
+        'server.model_settings.normalize',
+        {'url': url, 'model': model},
+      );
+      expect(normalize('https://open.example.com/', 'deepseek-flash'), {
+        '\$tuple': ['https://open.example.com/v1', 'deepseek-flash+nothink'],
+      });
+      expect(normalize('https://api.example.com/v1beta/openai', 'gpt-6-luna'), {
+        '\$tuple': ['https://api.example.com/v1beta/openai', 'gpt-6-luna'],
+      });
+      final deepseek =
+          normalize('https://api.deepseek.com/v1', 'deepseek-flash+think')
+              as Map<String, Object?>;
+      expect((deepseek['\$tuple'] as List<Object?>)[1], 'deepseek-flash+think');
+    },
     skip:
         "Dart implementation of server.model_settings.normalize is pending (A1/A6, A5, A6); required to check 'settings fill in v1 and nothink'.",
   );

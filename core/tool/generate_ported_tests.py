@@ -213,11 +213,13 @@ def check() -> None:
             skipped = "skip:" in body
             if row["status"] == "translated" and skipped:
                 raise ValueError(f"Translated test is still skipped: {row['id']}")
-            if row["status"] == "translated" and "Dart port not implemented:" in body:
+            if row["status"] in ("translated", "translated_skipped") and "Dart port not implemented:" in body:
                 raise ValueError(f"Translated test still has a placeholder body: {row['id']}")
+            if row["status"] == "translated_skipped" and not skipped:
+                raise ValueError(f"Translated test awaiting a Dart owner has no skip: {row['id']}")
             if row["status"] in ("pending_port", "scope_exception") and not skipped:
                 raise ValueError(f"Untranslated test has no skip: {row['id']}")
-            if row["status"] not in ("pending_port", "scope_exception", "translated"):
+            if row["status"] not in ("pending_port", "scope_exception", "translated_skipped", "translated"):
                 raise ValueError(f"Unknown mapping status: {row['id']}")
         found.extend(names)
     if len(found) != 171 or len(set(found)) != 171:
@@ -225,12 +227,14 @@ def check() -> None:
     expected_counts = {
         "total": 171,
         "translated": sum(row["status"] == "translated" for row in actual_rows),
+        "translated_skipped": sum(row["status"] == "translated_skipped" for row in actual_rows),
         "pending_port": sum(row["status"] == "pending_port" for row in actual_rows),
         "scope_exception": sum(row["status"] == "scope_exception" for row in actual_rows),
     }
     if actual["counts"] != expected_counts:
         raise ValueError("Manifest status counts are stale")
-    print("Mapped {total} tests: {translated} translated, {pending_port} pending Dart owners, "
+    print("Mapped {total} tests: {translated} active translations, "
+          "{translated_skipped} translated and skipped, {pending_port} pending translations, "
           "{scope_exception} Python-tooling scope exceptions".format(**expected_counts))
 
 

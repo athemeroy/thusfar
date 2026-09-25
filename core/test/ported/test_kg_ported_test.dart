@@ -2,6 +2,8 @@
 // Skipped failing callbacks are unported assertions, not translations.
 import 'package:test/test.dart';
 
+import 'contract_invoker.dart';
+
 void main() {
   test(
     "tests.test_kg.KGTest.test_nothing_about_a_person_before_they_enter",
@@ -61,17 +63,37 @@ void main() {
   );
   test(
     "tests.test_kg.TextTest.test_zh_punctuation",
-    () => fail(
-      "Dart port not implemented: tests.test_kg.TextTest.test_zh_punctuation",
-    ),
+    () {
+      expect(
+        callPorted('pipeline.kg.zh', {'text': '他说"好",然后(笑了)'}),
+        '他说“好”，然后（笑了）',
+      );
+      expect(
+        callPorted('pipeline.kg.zh', {'text': 'Hello, world'}),
+        'Hello, world',
+      );
+    },
     skip:
         "Dart implementation of pipeline.kg.zh is pending (A2, A4, A6); required to check 'zh punctuation'.",
   );
   test(
     "tests.test_kg.TextTest.test_alias_filter",
-    () => fail(
-      "Dart port not implemented: tests.test_kg.TextTest.test_alias_filter",
-    ),
+    () {
+      for (final bad in ['太太', '查理夫妇', '卢欧老爹的女儿', '未婚女婿', '他们']) {
+        expect(
+          callPorted('pipeline.kg.good_alias', {'a': bad}),
+          isFalse,
+          reason: bad,
+        );
+      }
+      for (final ok in ['老Q', '小D', '爱玛', '包法利先生']) {
+        expect(
+          callPorted('pipeline.kg.good_alias', {'a': ok}),
+          isTrue,
+          reason: ok,
+        );
+      }
+    },
     skip:
         "Dart implementation of pipeline.kg.good_alias is pending (A2, A4, A6); required to check 'alias filter'.",
   );

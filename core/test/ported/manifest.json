@@ -22,7 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "pending_port": 162,
+    "translated_skipped": 4,
+    "pending_port": 158,
     "scope_exception": 9
   },
   "tests": [
@@ -865,7 +866,7 @@
       "direct_targets": [
         "pipeline.kg.zh"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.kg.zh is pending (A2, A4, A6); required to check 'zh punctuation'."
     },
     {
@@ -888,7 +889,7 @@
       "direct_targets": [
         "pipeline.kg.good_alias"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.kg.good_alias is pending (A2, A4, A6); required to check 'alias filter'."
     },
     {
@@ -3587,7 +3588,7 @@
       "direct_targets": [
         "pipeline.llm.explain"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm.explain is pending (A1/A6, A3, A5, A6); required to check 'hopeless failures are explained and transient ones are not'."
     },
     {
@@ -3662,7 +3663,7 @@
       "direct_targets": [
         "server.model_settings.normalize"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of server.model_settings.normalize is pending (A1/A6, A5, A6); required to check 'settings fill in v1 and nothink'."
     },
     {
