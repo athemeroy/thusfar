@@ -230,6 +230,7 @@ class Runner:
         self.deferred = []
         prior_status = json.loads((root / 'status.json').read_text()) if (root / 'status.json').exists() else {}
         self.quality_pending = set((prior_status.get('quality') or {}).get('pending') or [])
+        self.refused = set(prior_status.get('refused') or [])
         self.input_sha256 = source_fingerprint(self.book, self.segs)
         manifest = self.work / 'cache-manifest.json'
         if manifest.exists() and json.loads(manifest.read_text()).get('input_sha256') != self.input_sha256:
@@ -519,6 +520,7 @@ class Runner:
             'body_end': self.segs[-1]['o1'] if self.segs else 0,
             'model': self.model, 'people': sum(1 for p in self.kg.people.values() if not p.get('merged_into')),
             'updated': time.time(), 'error': error, 'usage': self.usage,
+            'refused': sorted(getattr(self, 'refused', set())),
             'quality': {'state': 'pending' if getattr(self, 'quality_pending', set()) else 'verified',
                         'pending': sorted(getattr(self, 'quality_pending', set()))},
         }, compact=False)
@@ -1561,6 +1563,10 @@ class Runner:
             rec = json.loads(path.read_text())
             if rec.get('empty'):
                 raise LLMError(f'第 {i} 段缓存来自抽取失败，须先隔离失败缓存再重试')
+            if rec.get('refused'):
+                with self.lock:
+                    self.refused.add(i)
+                return self.add_support(self.add_relations(rec, i, model), i)
             provenance = rec.get('provenance') or {}
             if provenance and (provenance.get('input_sha256') != getattr(self, 'input_sha256', None)
                                or provenance.get('extractor_revision') != EXTRACTOR_REVISION
@@ -1571,6 +1577,7 @@ class Runner:
                 rec['relation_context'] = self.relation_context(i, rec['data'], relation_memory)
             return self.add_support(self.add_relations(rec, i, model), i)
         seg = self.segs[i]
+        refusals = 0
         for attempt in range(4):
             try:
                 t0 = time.time()
@@ -1592,6 +1599,23 @@ class Runner:
                 break
             except Exception as e:
                 log(f'local segment {i} failed (attempt {attempt + 1}): {e}')
+                if str(e).startswith('REFUSED:'):
+                    refusals += 1
+                    if refusals >= 2:
+                        # The model will not read this passage (usually a provider content filter).
+                        # Stopping the whole book here helps no one: record the passage as skipped,
+                        # say so in the status, and keep reading the rest.
+                        data = sanitize({})
+                        rec = {'seg': i, 'model': model, 'data': data, 'refused': str(e)[len('REFUSED:'):].strip(),
+                               'relation_context': self.relation_context(i, data, relation_memory),
+                               'provenance': {'schema': SCHEMA, 'input_sha256': getattr(self, 'input_sha256', None),
+                                              'extractor_revision': EXTRACTOR_REVISION},
+                               'usage': {}, 'seconds': 0}
+                        wjson(path, rec)
+                        with self.lock:
+                            self.refused.add(i)
+                        break
+                    continue
                 reason = explain(e)
                 if reason:
                     # a missing/invalid key, an empty balance or a wrong model name: retrying only

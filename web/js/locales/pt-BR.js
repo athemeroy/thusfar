@@ -642,6 +642,7 @@ export default {
   "概念": "Conceito",
   "模型价格未收录，请先向接口提供方确认费用": "O preço do modelo não está incluído, confirme primeiro o custo com o fornecedor da interface",
   "模型名称无效": "é inválido\nO endereço da interface do modelo",
+  "模型拒绝处理其中 {0} 段（通常是内容审核），已跳过；这些段落里的人物信息可能缺失。换一个模型可以避免。": "O modelo recusou {0} trecho(s) (geralmente um filtro de conteúdo); eles foram pulados e personagens podem faltar. Outro modelo pode evitar isso.",
   "模型接口地址": "URL da API do modelo",
   "模型接口地址无效": "é inválido\nPreencha o endereço HTTPS da interface do modelo",
   "模型接口请填写 HTTPS 地址，不要包含账号、参数或片段": "e não inclua contas, parâmetros ou fragmentos.",

@@ -193,6 +193,68 @@ class ModelFailures(unittest.TestCase):
         self.assertIn('模型名', explain(LLMError('HTTP 400: Model Not Exist')))
         self.assertIsNone(explain(LLMError('HTTP 503: busy')))
         self.assertIsNone(explain(TimeoutError('timed out')))
+        self.assertIn('/v1', explain(LLMError('模型调用失败：NOT_API: 接口地址返回的是网页')))
+        self.assertIn('+nothink', explain(LLMError('THINKING_ONLY: 只思考')))
+
+    def test_a_refusal_is_named_without_a_second_fix_call(self):
+        from pipeline import local
+        from pipeline.llm import LLMError
+        calls = []
+        def refuse(*args, **kwargs):
+            calls.append(1); return '抱歉，我无法回答这个问题。', {}
+        seg = {'o0': 0, 'o1': 10, 'chars': 10, 'chapter': 0}
+        with patch.object(local, 'chat', refuse), patch.object(local, 'build', lambda *a: []):
+            with self.assertRaises(LLMError) as caught:
+                local.extract_local({}, seg, None, 'deepseek-flash+nothink')
+        self.assertTrue(str(caught.exception).startswith('REFUSED:'))
+        self.assertEqual(len(calls), 1)
+
+    def test_a_hung_stream_is_given_up_on_in_proportion_to_the_model(self):
+        from pipeline import llm
+        with patch.dict(os.environ, {'LLM_TIMEOUT': ''}), patch.object(llm, '_reply_seconds', {}):
+            self.assertEqual(llm._stall_timeout('fast'), 300)
+            for s in (8, 12, 10):
+                llm._record_reply('fast', s)
+            self.assertEqual(llm._stall_timeout('fast'), 90)
+            for s in (150, 175, 160):
+                llm._record_reply('slow', s)
+            self.assertEqual(llm._stall_timeout('slow'), 525)
+        with patch.dict(os.environ, {'LLM_TIMEOUT': '42'}):
+            self.assertEqual(llm._stall_timeout('fast'), 42)
+
+    def test_settings_fill_in_v1_and_nothink(self):
+        from server.model_settings import normalize
+        self.assertEqual(normalize('https://open.example.com/', 'deepseek-flash'),
+                         ('https://open.example.com/v1', 'deepseek-flash+nothink'))
+        self.assertEqual(normalize('https://api.example.com/v1beta/openai', 'gpt-6-luna'),
+                         ('https://api.example.com/v1beta/openai', 'gpt-6-luna'))
+        self.assertEqual(normalize('https://api.deepseek.com/v1', 'deepseek-flash+think')[1], 'deepseek-flash+think')
+
+    def test_web_page_and_thinking_only_replies_are_named(self):
+        import io
+        from pipeline import llm
+
+        class Reply(io.BytesIO):
+            def __init__(self, body, ctype):
+                super().__init__(body); self.headers = {'Content-Type': ctype}
+            def __enter__(self): return self
+            def __exit__(self, *exc): return False
+
+        def opener(body, ctype):
+            class Opener:
+                def open(self, req, timeout=None): return Reply(body, ctype)
+            return lambda: Opener()
+
+        with patch.dict(os.environ, {'LLM_API_KEY': 'sk-example', 'LLM_BASE_URL': 'https://open.example.com'}):
+            with patch.object(llm, '_opener', opener(b'<!doctype html><html></html>', 'text/html; charset=utf-8')):
+                with self.assertRaises(llm.LLMError) as caught:
+                    llm.chat('deepseek-flash', [{'role': 'user', 'content': 'x'}], retries=0)
+                self.assertIn('/v1', llm.explain(caught.exception))
+            thinking = b'data: {"choices":[{"delta":{"reasoning_content":"hmm"}}]}\n\ndata: [DONE]\n\n'
+            with patch.object(llm, '_opener', opener(thinking, 'text/event-stream')):
+                with self.assertRaises(llm.LLMError) as caught:
+                    llm.chat('deepseek-flash', [{'role': 'user', 'content': 'x'}], retries=0)
+                self.assertIn('+nothink', llm.explain(caught.exception))
 
 
 if __name__ == '__main__':

@@ -26,8 +26,10 @@ def read() -> dict:
             name, sep, value = line.partition('=')
             if sep and name in ('LLM_BASE_URL', 'LLM_API_KEY', 'EXTRACT_MODEL', 'JEV_ROUTE'):
                 values[name] = value
-    return {'base_url': values.get('LLM_BASE_URL') or DEFAULT_URL,
-            'model': values.get('EXTRACT_MODEL') or DEFAULT_MODEL,
+    # settings saved by 1.7.x before normalize() existed are corrected on read
+    url, model = normalize(values.get('LLM_BASE_URL') or DEFAULT_URL, values.get('EXTRACT_MODEL') or DEFAULT_MODEL)
+    return {'base_url': url,
+            'model': model,
             'jev_route': values.get('JEV_ROUTE') or 'free-only',
             'api_key': values.get('LLM_API_KEY') or ''}
 
@@ -47,6 +49,8 @@ def apply_environment():
                  'CLASSIFY_MODEL', 'QA_MODEL', 'MARGINALIA_MODEL', 'MARGINALIA_AUTO_MODEL'):
         os.environ[name] = model
     os.environ['JEV_ROUTE'] = settings['jev_route']
+    # the pipeline reads the address itself; hand it the corrected one (environment wins over the file)
+    os.environ['LLM_BASE_URL'] = settings['base_url']
     # These modules bind their default model at import time. A saved change must
     # also affect questions and reader comments in this already-running process.
     for module, names in (('server.ask', ('QA_MODEL',)),
@@ -58,6 +62,19 @@ def apply_environment():
     from pipeline import llm
     with llm._env_lock:
         llm._env_cache = None
+
+
+def normalize(url: str, model: str) -> tuple[str, str]:
+    """An OpenAI-compatible address with no path is almost always missing /v1 (the bare host
+    serves the provider's web page), and DeepSeek V4 thinks by default, spending the reply on
+    reasoning; the pipeline needs its answer, so plain deepseek-* names get +nothink."""
+    url = url.strip().rstrip('/')
+    if urllib.parse.urlsplit(url).path in ('', '/'):
+        url += '/v1'
+    model = model.strip()
+    if model.lower().startswith('deepseek-') and '+' not in model:
+        model += '+nothink'
+    return url, model
 
 
 def test() -> dict:
@@ -102,6 +119,7 @@ def save(payload: dict) -> dict:
     if key and payload.get('clear_key'):
         raise ValueError('不能同时填写和清除密钥')
     effective_key = '' if payload.get('clear_key') else key or current['api_key']
+    url, model = normalize(url, model)
     values = {'LLM_BASE_URL': url.strip().rstrip('/'), 'LLM_API_KEY': effective_key,
               'EXTRACT_MODEL': model, 'JEV_ROUTE': route}
     path = _file()

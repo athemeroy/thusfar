@@ -73,7 +73,7 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
-        s.setUserAgentString(s.getUserAgentString() + " YeduApp/1.7.4 YeduStandalone/1");
+        s.setUserAgentString(s.getUserAgentString() + " YeduApp/1.7.5 YeduStandalone/1");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
         web.addJavascriptInterface(new Bridge(), "YeduApp");

@@ -11,7 +11,7 @@ import os
 
 from .extract import seg_text
 from .lang import card_lang, local_note
-from .llm import chat, parse_json
+from .llm import LLMError, chat, parse_json
 
 LOCAL_MODEL = os.environ.get('LOCAL_MODEL', 'deepseek-flash+nothink')
 
@@ -146,6 +146,10 @@ def extract_local(book: dict, seg: dict, prev: dict | None, model: str = LOCAL_M
     try:
         data = parse_json(text)
     except ValueError:
+        if '{' not in text and len(text.strip()) < 300:
+            # "抱歉，我无法回答这个问题": a content filter, not malformed JSON; asking it to fix
+            # the JSON only spends a second call on the same refusal
+            raise LLMError('REFUSED: ' + text.strip()[:120])
         fix, u2 = chat(model, msgs + [{'role': 'assistant', 'content': text},
                                       {'role': 'user', 'content': '上面的输出不是合法 JSON。请只输出修正后的完整 JSON。'}],
                        max_tokens=9000, temperature=0)

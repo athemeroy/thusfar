@@ -210,6 +210,7 @@ export async function openReader(root, bookId, options = {}) {
     else if (st.state === 'paused') text = tr('AI 整理已暂停，已完成的资料仍可查看。');
     else text = tr('这本书还没有让 AI 整理。');
     pane.append(h('p', { class: 'muted', style: { marginTop: '26px' } }, text));
+    if (st.refused?.length) pane.append(h('p', { class: 'note', role: 'status' }, tr("模型拒绝处理其中 {0} 段（通常是内容审核），已跳过；这些段落里的人物信息可能缺失。换一个模型可以避免。", [st.refused.length])));
     if (st.notice && ['queued', 'running'].includes(st.state)) pane.append(h('p', { class: 'note', role: 'status' }, st.notice));
     if (graphError || kg.incomplete) pane.append(h('p', { class: 'note', role: 'status' }, graphError || tr("离线资料只整理到第 {0} 页。连接后可更新。", [reader.pageNumberOf(kg.loadedTo)])));
     if (st.state === 'done' && qualityPending(st)) pane.append(h('button', { class: 'btn zhu', onclick: async (e) => {

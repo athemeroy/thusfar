@@ -76,6 +76,10 @@ def explain(error) -> str | None:
     text = str(error)
     if '缺少模型访问密钥' in text:
         return '还没有填写模型 API 密钥，请先到「模型设置」填写'
+    if 'NOT_API:' in text:
+        return '模型接口地址不对：它返回的是网页，不是模型接口。多数接口地址以 /v1 结尾，例如 https://api.deepseek.com/v1，请到「模型设置」检查'
+    if 'THINKING_ONLY:' in text:
+        return '模型只“思考”没给正文。DeepSeek 请在模型名后加 +nothink（例如 deepseek-flash+nothink），请到「模型设置」修改'
     m = re.search(r'HTTP (\d{3}): ?(.*)', text, re.S)
     if not m:
         return None
@@ -267,7 +271,33 @@ def _delta(protocol: str, ev: dict, usage: dict) -> str:
         return ''.join(out)
     if ev.get('usage'):
         usage.update({k: ev['usage'].get(k, 0) for k in ('prompt_tokens', 'completion_tokens')})
+    for ch in ev.get('choices') or []:
+        if (ch.get('delta') or {}).get('reasoning_content'):
+            usage['_reasoning'] = usage.get('_reasoning', 0) + 1
     return ''.join((ch.get('delta') or {}).get('content') or '' for ch in (ev.get('choices') or []))
+
+
+# How long this model's recent successful replies took. A gateway occasionally leaves a stream
+# hanging with no bytes; a fixed 600 s wait then freezes a book for ten minutes, measured on a
+# phone. Waiting a few times the slowest recent reply lets fast models fail over in a minute or
+# two while slow ones (gpt-6-luna: ~175 s a passage) still get their time.
+_reply_seconds: dict[str, list[float]] = {}
+_reply_lock = threading.Lock()
+
+
+def _stall_timeout(model: str) -> float:
+    if os.environ.get('LLM_TIMEOUT'):
+        return float(os.environ['LLM_TIMEOUT'])
+    with _reply_lock:
+        seen = list(_reply_seconds.get(model, ()))
+    if len(seen) < 3:
+        return 300.0
+    return min(600.0, max(90.0, 3 * max(seen)))
+
+
+def _record_reply(model: str, seconds: float):
+    with _reply_lock:
+        _reply_seconds[model] = (_reply_seconds.get(model, []) + [seconds])[-20:]
 
 
 def chat(model: str, messages: list[dict], *, max_tokens: int = 8000, temperature: float = 0.2,
@@ -276,8 +306,10 @@ def chat(model: str, messages: list[dict], *, max_tokens: int = 8000, temperatur
 
     LLM_TIMEOUT / LLM_RETRIES set how long to wait and how often to retry — a dead endpoint should
     not hold a run for an hour, and a slow local model may need longer than the default."""
-    timeout = timeout if timeout is not None else int(os.environ.get('LLM_TIMEOUT', '600'))
+    adaptive = timeout is None
+    timeout = timeout if timeout is not None else _stall_timeout(model)
     retries = retries if retries is not None else int(os.environ.get('LLM_RETRIES', '4'))
+    full_model = model
     model, _, variant = model.partition('+')
     key = _env(key_name) if key_name else key_for(model)
     if not key:
@@ -290,6 +322,10 @@ def chat(model: str, messages: list[dict], *, max_tokens: int = 8000, temperatur
             parts, usage = [], {}
             t0, first = time.time(), None
             with _opener().open(req, timeout=_timeout(timeout)) as resp:
+                ctype = resp.headers.get('Content-Type') or ''
+                if 'text/html' in ctype:
+                    # e.g. https://open.example.com without /v1 serves the provider's web page
+                    raise LLMError(f'NOT_API: 接口地址返回的是网页，不是模型接口：{req.full_url}')
                 for raw in _lines(resp):
                     line = raw.decode('utf-8', errors='replace').strip()
                     if not line.startswith('data:'):
@@ -308,8 +344,12 @@ def chat(model: str, messages: list[dict], *, max_tokens: int = 8000, temperatur
                         parts.append(text)
             text = ''.join(parts)
             if not text.strip():
+                if usage.get('_reasoning'):
+                    raise LLMError('THINKING_ONLY: 模型把回复额度都用在“思考”上，没有给出正文')
                 raise LLMError('模型返回空内容')
             usage = dict(usage, _secs=round(time.time() - t0, 2), _ttft=round((first or time.time()) - t0, 2))
+            if adaptive:
+                _record_reply(full_model, usage['_secs'])
             return text, usage
         except urllib.error.HTTPError as e:
             detail = e.read(400).decode('utf-8', errors='replace')

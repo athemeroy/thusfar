@@ -1,5 +1,5 @@
 // Shell releases and downloaded book snapshots have independent lifetimes.
-const SHELL = 'yedu-shell-721036293c2f2735795d';
+const SHELL = 'yedu-shell-277c2353a03784f92d65';
 const VISITED = 'yedu-books-v1'; // Preserve books cached by older releases.
 const META = 'yedu-offline-index-v1';
 const INDEX = '/__yedu_offline_index__';

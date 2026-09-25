@@ -49,7 +49,7 @@ AUTO = os.environ.get('AUTO_PROCESS', '1') == '1'
 LOCAL_MODE = os.environ.get('YEDU_LOCAL_MODE') == '1'
 MAX_UPLOAD = 200 * 1024 * 1024
 SECRET_FILE = DATA / '.cookie-secret'
-RELEASE = os.environ.get('YEDU_RELEASE_ID') or os.environ.get('RELEASE_ID') or '1.7.4'
+RELEASE = os.environ.get('YEDU_RELEASE_ID') or os.environ.get('RELEASE_ID') or '1.7.5'
 READ_TIMEOUT = float(os.environ.get('HTTP_READ_TIMEOUT', '30'))
 COOKIE_SECURE = os.environ.get('COOKIE_SECURE', '1') == '1'
 _ask_gate = threading.BoundedSemaphore(int(os.environ.get('ASK_CONCURRENCY', '2')))

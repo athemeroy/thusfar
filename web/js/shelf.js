@@ -192,6 +192,7 @@ export async function openShelf(root, options = {}) {
       h('a', { class: 'library-action', href: `/api/books/${id}/export` }, h('span', {}, tr('导出完整备份')), h('small', {}, tr('正文、插图、进度及现有整理资料，一起存成文件'))),
       h('h3', { class: 'library-ai-heading' }, tr('人物与关系')), h('p', { class: 'library-ai-description' }, h('span', { class: `ai-dot ${cls}` }), label),
       b.status?.state === 'error' && b.status.error ? h('p', { class: 'library-ai-error', role: 'status' }, tr("AI 整理停下了：{0}", [b.status.error])) : null,
+      b.status?.refused?.length ? h('p', { class: 'library-ai-error', role: 'status' }, tr("模型拒绝处理其中 {0} 段（通常是内容审核），已跳过；这些段落里的人物信息可能缺失。换一个模型可以避免。", [b.status.refused.length])) : null,
       activeJob && b.status?.notice ? h('p', { class: 'library-ai-error', role: 'status' }, b.status.notice) : null,
       standalone && /模型设置|API 密钥|HTTP 40[0-4]/.test(b.status?.error || '') ? h('a', { class: 'library-action', href: '#/settings' }, h('span', {}, tr('模型设置')), h('small', {}, tr('填写或检查 API 密钥、接口地址和模型名'))) : null,
       h('p', { class: 'library-ai-explanation' }, retry ? tr('部分资料仍待核对；正文可以照常阅读。重试可能产生费用。') : tr('资料只显示到当前页。往回翻，它也会回退；每条线索都能回到原文核对。')),
