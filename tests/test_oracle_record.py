@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import sys
 import tempfile
 import types
 import unittest
@@ -15,6 +16,7 @@ from unittest.mock import patch
 from oracle.record.cassettes import CassetteStore, install, request_envelope
 from oracle.record.common import UnsafeValue, canonical, encode, known_secrets, require_reference_runtime
 from oracle.record.functions import LoopbackOnly
+from oracle.record.functions import Collector
 from oracle.record.scan import scan
 from oracle.record.workload import prepare_working_book
 
@@ -38,6 +40,27 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_trace_keeps_handled_exception_returning_none_but_skips_propagation(self):
+        from pipeline import llm
+        locations = {
+            ('pipeline/llm.py', llm.explain.__code__.co_firstlineno): 'pipeline.llm.explain',
+            ('pipeline/llm.py', llm.parse_json.__code__.co_firstlineno): 'pipeline.llm.parse_json',
+        }
+        collector = Collector(set(locations.values()), locations, (), 100)
+        sys.settrace(collector.trace)
+        try:
+            self.assertIsNone(llm.explain(llm.LLMError('HTTP 429: not JSON')))
+            with self.assertRaises(ValueError):
+                llm.parse_json('plain text without JSON')
+        finally:
+            sys.settrace(None)
+        self.assertEqual(len(collector.samples['pipeline.llm.explain']), 1)
+        sample = next(iter(collector.samples['pipeline.llm.explain'].values()))
+        self.assertIsNone(sample['output'])
+        self.assertNotIn('pipeline.llm.parse_json', collector.samples)
+        self.assertEqual(collector.skipped[('pipeline.llm.parse_json',
+                                            'propagated an exception')], 1)
+
     def test_synthetic_stream_http_error_and_free_jev_replay_offline(self):
         from pipeline import llm
         cassettes = Path(__file__).resolve().parents[1] / 'oracle/cassettes/synthetic'

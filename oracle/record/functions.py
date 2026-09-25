@@ -11,6 +11,7 @@ report lists skipped values and functions that received no calls.
 from __future__ import annotations
 
 import argparse
+import dis
 import importlib
 import ipaddress
 import json
@@ -106,9 +107,15 @@ class Collector:
             if kind == 'exception':
                 had_exception = True
             elif kind == 'return':
-                if had_exception and result is None:
+                # CPython emits a return(None) trace event while an exception propagates.
+                # A caught exception can also end in a legitimate return(None). The current
+                # bytecode distinguishes them: explicit returns end at RETURN_VALUE, while
+                # propagation ends at the raising/unwinding instruction.
+                opcode = _frame.f_code.co_code[_frame.f_lasti] if _frame.f_lasti >= 0 else None
+                explicit_return = opcode == dis.opmap['RETURN_VALUE']
+                if had_exception and result is None and not explicit_return:
                     with self.lock:
-                        self.skipped[(function, 'raised or handled an exception internally')] += 1
+                        self.skipped[(function, 'propagated an exception')] += 1
                 else:
                     try:
                         output = encode(result, self.secrets)
