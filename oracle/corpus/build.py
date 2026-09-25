@@ -319,6 +319,32 @@ def api_code_sha256() -> dict[str, str]:
     return PINNED_CODE_SHA256
 
 
+def paused_snapshot_provenance() -> dict:
+    if __package__:
+        from .paused_annotated_snapshot import LIMIT, PINNED_REPLAY_SHA256, CASSETTE_AUDIT
+    else:
+        from paused_annotated_snapshot import LIMIT, PINNED_REPLAY_SHA256, CASSETTE_AUDIT
+    audit = json.loads(CASSETTE_AUDIT.read_text(encoding="utf-8"))
+    return {
+        "origin": "public-domain aq_complete plus checked-in DeepSeek/JEV cassette replay, then actual Python 1.7.5 process DELETE and notebook PUT/GET",
+        "state": "paused after 4/9 segments with 1 API-written note",
+        "rights": "public-domain source text; MIT fixture note; replayed model output",
+        "personal_data": False,
+        "replay_limit": LIMIT,
+        "api_code_sha256": api_code_sha256(),
+        "replay_code_sha256": PINNED_REPLAY_SHA256,
+        "cassette_tree_sha256": audit["tape_tree_sha256"],
+    }
+
+
+def make_api_paused_snapshot() -> None:
+    if __package__:
+        from .paused_annotated_snapshot import write
+    else:
+        from paused_annotated_snapshot import write
+    write()
+
+
 def artifact_files() -> list[Path]:
     folders = [ROOT / "books", ROOT / "synthetic", ROOT / "snapshots"]
     return sorted(p for folder in folders if folder.exists() for p in folder.rglob("*") if p.is_file())
@@ -338,6 +364,7 @@ def write_manifest() -> None:
         "snapshots": {
             "aq_complete": {"origin": "local 1.7.x library/e3f53d01f830aedf", "state": "done", "rights": "public-domain source text; historical model output", "personal_data": False},
             "aq_annotated": {"origin": "isolated aq_complete copy; synthetic fixture note persisted by actual Python 1.7.5 HTTP notebook PUT with fixed clock", "state": "done with 1 API-written note", "rights": "public-domain source text; historical model output; MIT fixture note", "personal_data": False, "api_code_sha256": api_code_sha256()},
+            "aq_paused_annotated": paused_snapshot_provenance(),
             "bovary_partial": {"origin": "local 1.7.x library/bovary-terra; Chinese translation credited to 李健吾 with publisher front matter", "state": "paused", "rights": "redistribution unverified; private local compatibility fixture; replace with verifiably public-domain source before open-source publication", "personal_data": False},
             "aq_notebook_overlay": {"origin": "synthetic note on real 阿Q snapshot", "state": "synthetic", "rights": "MIT (this repository)", "personal_data": False},
         },
@@ -350,6 +377,8 @@ def verify() -> None:
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
     if manifest["snapshots"]["aq_annotated"].get("api_code_sha256") != api_code_sha256():
         raise ValueError("Annotated snapshot API code provenance differs from its pinned generator")
+    if manifest["snapshots"].get("aq_paused_annotated") != paused_snapshot_provenance():
+        raise ValueError("Paused/annotated snapshot provenance differs from pinned replay/API inputs")
     listed = set(manifest["files"])
     actual = {str(p.relative_to(ROOT)) for p in artifact_files()}
     required = {spec["output"] for spec in SOURCES.values()} | {
@@ -361,6 +390,11 @@ def verify() -> None:
         "synthetic/scrambled_toc.epub", "snapshots/aq_complete/book.json",
         "snapshots/aq_complete/status.json", "snapshots/aq_annotated/book.json",
         "snapshots/aq_annotated/status.json", "snapshots/aq_annotated/notebook.json",
+        "snapshots/aq_paused_annotated/book.json", "snapshots/aq_paused_annotated/kg.json",
+        "snapshots/aq_paused_annotated/status.json",
+        "snapshots/aq_paused_annotated/source.txt",
+        "snapshots/aq_paused_annotated/notebook.json",
+        *(f"snapshots/aq_paused_annotated/work/segs/{index:04d}.json" for index in range(4)),
         "snapshots/bovary_partial/book.json",
         "snapshots/bovary_partial/status.json", "snapshots/aq_notebook_overlay.json",
     }
@@ -392,6 +426,16 @@ def verify() -> None:
     notes = json.loads(annotated_files["notebook.json"])
     if len(notes) != 1 or notes[0].get("revision") != 1:
         raise ValueError("Annotated 阿Q snapshot must contain one API-created note")
+    paused = ROOT / "snapshots/aq_paused_annotated"
+    paused_status = json.loads((paused / "status.json").read_text(encoding="utf-8"))
+    paused_notes = json.loads((paused / "notebook.json").read_text(encoding="utf-8"))
+    if (paused_status.get("state"), paused_status.get("done"), paused_status.get("total")) != ("paused", 4, 9) \
+            or len(paused_notes) != 1 or paused_notes[0].get("revision") != 1:
+        raise ValueError("Paused/annotated 阿Q snapshot lost its 4/9 state or API note")
+    if (paused / "source.txt").read_bytes() != (base / "source.txt").read_bytes():
+        raise ValueError("Paused/annotated 阿Q source text differs from the public-domain base")
+    if {p.name for p in (paused / "work/segs").glob("*.json")} != {f"{index:04d}.json" for index in range(4)}:
+        raise ValueError("Paused/annotated 阿Q work segment set differs from 4/9 cutoff")
     for name in ("aq", "jekyll", "rulin", "french"):
         if b"Project Gutenberg" in (ROOT / SOURCES[name]["output"]).read_bytes():
             raise ValueError(f"eBook wrapper remains in {name}")
@@ -412,6 +456,8 @@ def main() -> None:
     if args.snapshot_root:
         capture_snapshots(args.snapshot_root)
     make_api_annotated_snapshot(force=args.snapshot_root is not None)
+    write_manifest()
+    make_api_paused_snapshot()
     write_manifest()
     verify()
 

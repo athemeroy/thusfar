@@ -21,6 +21,7 @@ jobs:
           python docs/port/check_test_scope.py
           python oracle/corpus/build.py --verify
           python oracle/corpus/annotate_snapshot.py --verify
+          python -m oracle.corpus.paused_annotated_snapshot --verify
           python -m oracle.semantics.regex_python
           python -m oracle.record.scan oracle
       - name: JavaScript tests

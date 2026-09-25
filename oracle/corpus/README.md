@@ -71,15 +71,31 @@ fixture's provenance.
 `annotate_snapshot.py --verify` recreates the note through the API and checks
 every byte without touching the checked-in snapshot.
 
+`snapshots/aq_paused_annotated/` is a separate **replay/API-generated** partial
+阿Q fixture, not a historical reader's snapshot. The checked-in
+`deepseek-flash+nothink` and free JEV cassette replays exactly four of nine
+segments from the public-domain `aq_complete/` source, with model networking
+blocked and a placeholder key. The actual Python 1.7.5 `DELETE /process`
+route then pauses the book, and its `PUT`/`GET /notebook` routes write and read
+one fixture-authored note at a verified UTF-16 quote anchor. Its `source.txt`
+is byte-for-byte the complete public-domain base source; the partial state is
+represented by `status.json`, four `work/segs/*.json` files, and related
+cache/mention files. The generator pins the replay and server module hashes,
+checks the cassette integrity and budget receipt, and compares all 67 published
+files across two independent Python 3.11 processes. This supplies a real
+paused-plus-note API format without asserting any historical human annotation.
+`python3 -m oracle.corpus.paused_annotated_snapshot --verify` regenerates and
+compares the entire snapshot offline.
+
 `snapshots/aq_notebook_overlay.json` is a **synthetic** 1.7.x-format note with a
 verified UTF-16 quote anchor into the real 阿Q snapshot. Apply it as
 `notebook.json` to a copy of `aq_complete/` for a lightweight annotated case.
 The only previously annotated data directory in the accessible local library
 is a copyrighted web novel, so it is intentionally excluded. We still lack a
 public-domain snapshot with historical, human-authored notes; the API-generated
-阿Q copy covers the real 1.7.5 write path without publishing private content.
-Other gaps are a paused book with notes and a multi-note history involving
-edits, conflicts, deletion, and cross-device import. Existing Python notebook
+阿Q copies cover the real 1.7.5 write path without publishing private content.
+Other gaps include a multi-note history involving edits, conflicts, deletion,
+and cross-device import. Existing Python notebook
 tests exercise those behaviors, but this corpus does not yet freeze their full
 data directories.
 
@@ -93,10 +109,11 @@ From the repository root:
 ```sh
 python3 oracle/corpus/build.py --verify
 python3 oracle/corpus/annotate_snapshot.py --verify
+python3 -m oracle.corpus.paused_annotated_snapshot --verify
 python3 oracle/corpus/build.py --source-dir /path/to/pinned-downloads
 ```
 
-`--verify` reads local files only and checks the manifest. The second command
+The three `--verify` commands read local files only. The final build command
 recreates published-book and synthetic inputs and refreshes the manifest; the
 five pinned downloads must be named `aq.txt`, `jekyll.txt`, `rulin.txt`,
 `french.txt`, and `kokoro.zip`. Without `--source-dir`, the builder fetches the
@@ -110,11 +127,15 @@ before any redistribution. The normal build also regenerates
 `aq_annotated/` through the isolated 1.7.5 HTTP route. To rebuild only that
 snapshot after reviewing its provenance, run
 `python3 oracle/corpus/annotate_snapshot.py --write`; replacing changed bytes
-requires `--force`.
+requires `--force`. It also checks or creates `aq_paused_annotated/` from the
+checked-in cassette. To create that snapshot alone after reviewing the pinned
+inputs, run `python3 -m oracle.corpus.paused_annotated_snapshot --write`.
+The generator refuses to replace changed bytes without a separate review.
 
 For the initial capture, `--verify` confirmed 117 data files totaling
 3,401,626 bytes. The API-generated annotated snapshot adds 49 pinned files,
-for 166 files and 3,747,208 bytes in the current corpus.
+and the paused-plus-note fixture adds 67 more, for 233 files and 4,066,204
+bytes in the current corpus.
 Python `parse_file` read every nonempty text and both EPUBs;
 it extracted one footnote and both generated PNGs. `server.notebook.restore`
 accepted the synthetic note with an exact UTF-16 source quote.

@@ -1,0 +1,1 @@
+{"request_sha256":"2813e9e282bb4ed5141db788aa22280e86dbcfa46a6a44c5133581cdb40c8317","answers":{"v_r0":{"type":"choice","choice":"supported","probabilities":{"supported":1,"not_in_passage":0,"contradicted":0},"confidence":1}},"route":"free","model":"typesafe-ai/jev"}
