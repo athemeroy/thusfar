@@ -2,6 +2,21 @@
 
 更新：2026-09-26。每条按症状 → 原因 → 修法记录；未解决的问题明确留在 `STATUS.md`。
 
+## A real marginalia rejection must remain a rejection
+
+- Symptom: the reviewed manual Aq request made two model calls and two free JEV
+  calls, then returned HTTP 400: `这条批注没有通过已读内容核对，已替你隐藏`.
+  Both paid attempts completed with token usage; there is no pending request.
+- Cause: the production guard rejected the original comment and its rewrite.
+  The recorder then wrongly attempted its cache probe despite the failed first
+  request. Its two-model cap blocked a third model request before transport;
+  the second HTTP response was a recorder-induced 500, not a cache hit.
+- Fix: retain the original intent, four wire attempts, both observed HTTP rows,
+  and shared ledger. Do not resubmit under a new task ID. Probe cache reuse only
+  after a successful first HTTP response. Verify the genuine first 400 offline
+  and label the retained second response as a recorder-cap consequence. This
+  case supplies a real rejection fixture, not a real marginalia success claim.
+
 ## HTTP worker replay needs the same cache policy as the full book
 
 - Symptom: the first real thread-worker HTTP replay consumed all 103 recorded
