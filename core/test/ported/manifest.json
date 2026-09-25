@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 45,
-    "pending_port": 117,
+    "translated_skipped": 56,
+    "pending_port": 106,
     "scope_exception": 9
   },
   "tests": [
@@ -530,8 +530,12 @@
       "direct_targets": [
         "pipeline.llm._state_text"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._state_text is pending (A3); required to check 'export matches what the pipeline sends'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.state_text, pipeline.llm._state_text is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.state_text",
+        "pipeline.llm._state_text"
+      ]
     },
     {
       "id": "tests.test_judge_data.Windowing.test_finds_what_the_claim_borrowed_from_the_passage",
@@ -546,8 +550,12 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'finds what the claim borrowed from the passage'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.shared, scripts.export_judge_data.focus is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.shared",
+        "scripts.export_judge_data.focus"
+      ]
     },
     {
       "id": "tests.test_judge_data.Windowing.test_keeps_the_people_the_question_names",
@@ -562,8 +570,12 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'keeps the people the question names'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.anchors, scripts.export_judge_data.focus is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.anchors",
+        "scripts.export_judge_data.focus"
+      ]
     },
     {
       "id": "tests.test_judge_data.Windowing.test_no_anchor_keeps_the_passage_rather_than_its_opening",
@@ -578,8 +590,11 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'no anchor keeps the passage rather than its opening'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.focus is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.focus"
+      ]
     },
     {
       "id": "tests.test_judge_data.Splits.test_full_evidence_and_options_distinguish_questions",
@@ -594,8 +609,11 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'full evidence and options distinguish questions'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.decision_id is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.decision_id"
+      ]
     },
     {
       "id": "tests.test_judge_data.Splits.test_reruns_of_one_book_are_one_work",
@@ -610,8 +628,11 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'reruns of one book are one work'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.work_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.work_of"
+      ]
     },
     {
       "id": "tests.test_judge_data.Labels.test_options_become_english_sentences",
@@ -626,8 +647,11 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'options become english sentences'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.gliclass_data.phrase_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.gliclass_data.phrase_of"
+      ]
     },
     {
       "id": "tests.test_judge_data.Labels.test_two_options_never_collapse_into_one_label",
@@ -642,8 +666,11 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'two options never collapse into one label'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.gliclass_data.labels_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.gliclass_data.labels_of"
+      ]
     },
     {
       "id": "tests.test_judge_data.Labels.test_round_trip_through_the_wire_format",
@@ -658,8 +685,12 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'round trip through the wire format'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.judge_server.criteria_of, scripts.gliclass_data.labels_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.judge_server.criteria_of",
+        "scripts.gliclass_data.labels_of"
+      ]
     },
     {
       "id": "tests.test_judge_data.LogIntegrity.test_missing_state_is_not_exported_as_empty_passage",
@@ -674,8 +705,11 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'missing state is not exported as empty passage'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.from_logs is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.from_logs"
+      ]
     },
     {
       "id": "tests.test_judge_data.LogIntegrity.test_corrupt_interior_line_is_not_silently_skipped",
@@ -690,8 +724,11 @@
         "A3"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm is pending (A3); required to check 'corrupt interior line is not silently skipped'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.read_log is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.read_log"
+      ]
     },
     {
       "id": "tests.test_kg.KGTest.test_nothing_about_a_person_before_they_enter",

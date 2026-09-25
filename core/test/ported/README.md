@@ -7,11 +7,16 @@
 changed Python sources, mismatched Dart names, missing owner modules or reasons,
 and stale status counts.
 
-Current status: **22 translated but skipped** Dart assertion contracts,
-**140 untranslated placeholders**, and **9 Python-only tooling scope exceptions**.
-The twenty-two translated callbacks retain their original inputs and assertions and
-call test-only adapters by inventory ID; those adapters have no production
-implementation yet. The other 149 callbacks still fail if enabled. Every
+Current status: **56 translated but skipped** Dart assertion contracts,
+**106 untranslated placeholders**, and **9 Python-only tooling scope exceptions**.
+The translated callbacks retain their original cases and assertions and
+call test-only adapters by inventory ID or data-tool function ID; those adapters have no production
+implementation yet. The `judge_client` contracts use a deterministic scripted
+transport, clock and file adapter shape so their future Dart owners can be
+checked without network calls. The `judge_data` contracts name their exact
+data-tool owners in `contract_owners`; the frozen inventory's broad
+`pipeline.llm` candidate remains in `owner_modules` until that inventory is
+reconciled. The other 115 callbacks still fail if enabled. Every
 callback has an explicit skip and a manifest reason naming its module, stage
 and behavior. A successful `dart test test/ported` therefore means only that
 the test skeleton loads; it is not evidence that the 171 Python assertions
