@@ -51,13 +51,32 @@ personal shelf metadata, runtime logs, PID/lock files, settings, and notebooks.
 All copied bytes were scanned for common key and credential formats; the
 manifest pins the resulting exact files.
 
+`snapshots/aq_annotated/` is a full copy of the frozen completed 阿Q snapshot
+with one fixture-authored note added through the **real Python 1.7.5
+`PUT /api/books/e3f53d01f830aedf/notebook` route**. The generator runs that
+route on a loopback server backed by a temporary copy, disables the model
+worker, fixes only the clock, then saves the server-written `notebook.json`.
+The annotation is synthetic in content; the persisted format, anchor
+validation, revision, operation receipt, and write path are genuine 1.7.5
+behavior. Its other 48 files are byte-for-byte equal to `aq_complete/`. This
+fixture contains no person's notes and no copyrighted private book content.
+The generator and manifest pin SHA-256 hashes of the four 1.7.5 server modules
+used by the route, so later Python changes cannot silently redefine the
+fixture's provenance.
+`annotate_snapshot.py --verify` recreates the note through the API and checks
+every byte without touching the checked-in snapshot.
+
 `snapshots/aq_notebook_overlay.json` is a **synthetic** 1.7.x-format note with a
 verified UTF-16 quote anchor into the real 阿Q snapshot. Apply it as
-`notebook.json` to a copy of `aq_complete/` for the annotated upgrade case.
-The only actual annotated data directory in the accessible local library is a
-copyrighted web novel, so it is intentionally excluded. This overlay covers
-the notebook schema and anchor contract, but it is not evidence that an actual
-annotated 1.7.x directory upgraded successfully.
+`notebook.json` to a copy of `aq_complete/` for a lightweight annotated case.
+The only previously annotated data directory in the accessible local library
+is a copyrighted web novel, so it is intentionally excluded. We still lack a
+public-domain snapshot with historical, human-authored notes; the API-generated
+阿Q copy covers the real 1.7.5 write path without publishing private content.
+Other gaps are a paused book with notes and a multi-note history involving
+edits, conflicts, deletion, and cross-device import. Existing Python notebook
+tests exercise those behaviors, but this corpus does not yet freeze their full
+data directories.
 
 These fixtures are snapshots for compatibility testing, not a backup of the
 live library. No live service files were changed during capture.
@@ -68,6 +87,7 @@ From the repository root:
 
 ```sh
 python3 oracle/corpus/build.py --verify
+python3 oracle/corpus/annotate_snapshot.py --verify
 python3 oracle/corpus/build.py --source-dir /path/to/pinned-downloads
 ```
 
@@ -80,9 +100,15 @@ Review a source and its rights before updating a pinned hash. To deliberately
 recapture the two local snapshots, also pass
 `--snapshot-root /path/to/1.7.x/books`; this replaces the checked-in copies
 with the selected source IDs. Do not recapture from a library containing
-private notes or a different book edition.
+private notes or a different book edition. The normal build also regenerates
+`aq_annotated/` through the isolated 1.7.5 HTTP route. To rebuild only that
+snapshot after reviewing its provenance, run
+`python3 oracle/corpus/annotate_snapshot.py --write`; replacing changed bytes
+requires `--force`.
 
 For the initial capture, `--verify` confirmed 117 data files totaling
-3,401,626 bytes. Python `parse_file` read every nonempty text and both EPUBs;
+3,401,626 bytes. The API-generated annotated snapshot adds 49 pinned files,
+for 166 files and 3,747,208 bytes in the current corpus.
+Python `parse_file` read every nonempty text and both EPUBs;
 it extracted one footnote and both generated PNGs. `server.notebook.restore`
 accepted the synthetic note with an exact UTF-16 source quote.

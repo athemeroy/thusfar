@@ -303,6 +303,22 @@ def make_annotated_overlay() -> None:
     put("snapshots/aq_notebook_overlay.json", (json.dumps(note, ensure_ascii=False, indent=2) + "\n").encode())
 
 
+def make_api_annotated_snapshot(*, force: bool) -> None:
+    if __package__:
+        from .annotate_snapshot import write
+    else:
+        from annotate_snapshot import write
+    write(force=force)
+
+
+def api_code_sha256() -> dict[str, str]:
+    if __package__:
+        from .annotate_snapshot import PINNED_CODE_SHA256
+    else:
+        from annotate_snapshot import PINNED_CODE_SHA256
+    return PINNED_CODE_SHA256
+
+
 def artifact_files() -> list[Path]:
     folders = [ROOT / "books", ROOT / "synthetic", ROOT / "snapshots"]
     return sorted(p for folder in folders if folder.exists() for p in folder.rglob("*") if p.is_file())
@@ -321,6 +337,7 @@ def write_manifest() -> None:
         "synthetic": {"rights": "MIT (this repository)", "origin": "deterministic standard-library generator in build.py"},
         "snapshots": {
             "aq_complete": {"origin": "local 1.7.x library/e3f53d01f830aedf", "state": "done", "rights": "public-domain source text; historical model output", "personal_data": False},
+            "aq_annotated": {"origin": "isolated aq_complete copy; synthetic fixture note persisted by actual Python 1.7.5 HTTP notebook PUT with fixed clock", "state": "done with 1 API-written note", "rights": "public-domain source text; historical model output; MIT fixture note", "personal_data": False, "api_code_sha256": api_code_sha256()},
             "bovary_partial": {"origin": "local 1.7.x library/bovary-terra", "state": "paused", "rights": "public-domain source text; historical model output", "personal_data": False},
             "aq_notebook_overlay": {"origin": "synthetic note on real 阿Q snapshot", "state": "synthetic", "rights": "MIT (this repository)", "personal_data": False},
         },
@@ -331,6 +348,8 @@ def write_manifest() -> None:
 
 def verify() -> None:
     manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+    if manifest["snapshots"]["aq_annotated"].get("api_code_sha256") != api_code_sha256():
+        raise ValueError("Annotated snapshot API code provenance differs from its pinned generator")
     listed = set(manifest["files"])
     actual = {str(p.relative_to(ROOT)) for p in artifact_files()}
     required = {spec["output"] for spec in SOURCES.values()} | {
@@ -340,7 +359,9 @@ def verify() -> None:
         "synthetic/encoding_utf16_le.txt", "synthetic/encoding_utf16_be.txt",
         "synthetic/empty.txt", "synthetic/footnote_illustration.epub",
         "synthetic/scrambled_toc.epub", "snapshots/aq_complete/book.json",
-        "snapshots/aq_complete/status.json", "snapshots/bovary_partial/book.json",
+        "snapshots/aq_complete/status.json", "snapshots/aq_annotated/book.json",
+        "snapshots/aq_annotated/status.json", "snapshots/aq_annotated/notebook.json",
+        "snapshots/bovary_partial/book.json",
         "snapshots/bovary_partial/status.json", "snapshots/aq_notebook_overlay.json",
     }
     if not required <= actual:
@@ -360,6 +381,17 @@ def verify() -> None:
         status = json.loads((ROOT / "snapshots" / label / "status.json").read_text())
         if status["state"] != expected_state or not 0 <= status["done"] <= status["total"]:
             raise ValueError(f"Invalid {label} snapshot state")
+    base = ROOT / "snapshots/aq_complete"
+    annotated = ROOT / "snapshots/aq_annotated"
+    base_files = {str(p.relative_to(base)): p.read_bytes() for p in base.rglob("*") if p.is_file()}
+    annotated_files = {str(p.relative_to(annotated)): p.read_bytes() for p in annotated.rglob("*") if p.is_file()}
+    if annotated_files.keys() != base_files.keys() | {"notebook.json"}:
+        raise ValueError("Annotated 阿Q snapshot file set differs from its base")
+    if any(annotated_files[name] != raw for name, raw in base_files.items()):
+        raise ValueError("Annotated 阿Q snapshot changed the public-domain base")
+    notes = json.loads(annotated_files["notebook.json"])
+    if len(notes) != 1 or notes[0].get("revision") != 1:
+        raise ValueError("Annotated 阿Q snapshot must contain one API-created note")
     for name in ("aq", "jekyll", "rulin", "french"):
         if b"Project Gutenberg" in (ROOT / SOURCES[name]["output"]).read_bytes():
             raise ValueError(f"eBook wrapper remains in {name}")
@@ -379,6 +411,7 @@ def main() -> None:
     synthetic()
     if args.snapshot_root:
         capture_snapshots(args.snapshot_root)
+    make_api_annotated_snapshot(force=args.snapshot_root is not None)
     write_manifest()
     verify()
 
