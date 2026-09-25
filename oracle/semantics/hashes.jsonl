@@ -1,0 +1,12 @@
+{"id":"utf8-0","value":"","sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}
+{"id":"utf8-1","value":"hello","sha256":"2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824"}
+{"id":"utf8-2","value":"𠮷😀","sha256":"9fd1a7f80835a4289084cbad4d5ffae17da3a72aecd9a293e76f6598a4cdcee3"}
+{"id":"utf8-3","value":"阿Q\n第二章","sha256":"0a42e868166ace094ad432cde0b6aadea2543ca13f2632a1d5ed99f234d95c09"}
+{"id":"utf8-4","value":"\u0000ÿ","sha256":"fa316b026bea1b5a7481f68db37bfec45d965cedeedbd6c5b6a3f14a470ef637"}
+{"id":"json-0-0","value":{"z":1,"a":"𠮷😀"},"compact":false,"serialized":"{\"a\": \"𠮷😀\", \"z\": 1}","sha256":"946d6d3d5e15f1e355bad2665963c10c80295656855fbf58136329c142fd770e"}
+{"id":"json-0-1","value":{"z":1,"a":"𠮷😀"},"compact":true,"serialized":"{\"a\":\"𠮷😀\",\"z\":1}","sha256":"d840c5139355d06d85947b1f1fe75f292cd2b44175b56d6ea3f15fe0d20d17cb"}
+{"id":"json-1-0","value":["阿Q",1e-05,1e+16],"compact":false,"serialized":"[\"阿Q\", 1e-05, 1e+16]","sha256":"e723ad2f7bde05ae46d943ee3dc9e33b0545f747625cdb9db56f34afd4629edc"}
+{"id":"json-1-1","value":["阿Q",1e-05,1e+16],"compact":true,"serialized":"[\"阿Q\",1e-05,1e+16]","sha256":"06f7880cd940095bc2bb27d2b3f425c1a77ce5e67c55ca876016a1417e937d94"}
+{"id":"json-2-0","value":{"nested":{"one":true,"two":null}},"compact":false,"serialized":"{\"nested\": {\"one\": true, \"two\": null}}","sha256":"e2ea0ea56afd1aac133fc7030254e4e68117be6c242c990458c2d560bb412d4c"}
+{"id":"json-2-1","value":{"nested":{"one":true,"two":null}},"compact":true,"serialized":"{\"nested\":{\"one\":true,\"two\":null}}","sha256":"ddfaaf394587933a7e6b038c9d2a960ea0272e0f7070619b51c49cbd25019e56"}
+{"id":"extractor-revision","source":"pipeline/local.py","sha256":"2ead2ec689628def6e1b12c657e554008571d3717a2b42ab6fbce98184fc0f55"}

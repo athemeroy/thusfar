@@ -1,6 +1,7 @@
 """The Python side of the cross-language semantic fixtures."""
 
 import json
+import hashlib
 import unittest
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from oracle.semantics.record_general import evaluate
 
 CASES = Path(__file__).resolve().parents[1] / "oracle" / "semantics" / "py_json.jsonl"
 GENERAL = CASES.with_name("general.jsonl")
+HASHES = CASES.with_name("hashes.jsonl")
 
 
 class TestPyJsonOracle(unittest.TestCase):
@@ -44,6 +46,27 @@ class TestGeneralSemanticOracle(unittest.TestCase):
                                      case["expected"])
                 count += 1
         self.assertEqual(count, 5726)
+
+    def test_hash_cases_match_python_and_frozen_source(self):
+        count = 0
+        with HASHES.open(encoding="utf-8") as source:
+            for line in source:
+                case = json.loads(line)
+                ident = case["id"]
+                if ident == "extractor-revision":
+                    raw = (CASES.parents[2] / case["source"]).read_bytes()
+                elif ident.startswith("utf8-"):
+                    raw = case["value"].encode("utf-8")
+                else:
+                    serialized = json.dumps(
+                        case["value"], ensure_ascii=False, sort_keys=True,
+                        separators=(",", ":") if case["compact"] else None)
+                    self.assertEqual(serialized, case["serialized"])
+                    raw = serialized.encode("utf-8")
+                with self.subTest(case=ident):
+                    self.assertEqual(hashlib.sha256(raw).hexdigest(), case["sha256"])
+                count += 1
+        self.assertEqual(count, 12)
 
 
 if __name__ == "__main__":

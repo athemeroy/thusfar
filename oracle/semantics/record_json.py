@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import random
 import struct
+import sys
 from pathlib import Path
 
 
@@ -65,6 +66,8 @@ def records():
 
 
 def main() -> None:
+    if sys.version_info[:2] != (3, 11):
+        raise RuntimeError("Python 3.11 is the frozen Android oracle")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", encoding="utf-8", newline="\n") as output:
         for item in records():
