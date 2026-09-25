@@ -7,11 +7,11 @@
 changed Python sources, mismatched Dart names, missing owner modules or reasons,
 and stale status counts.
 
-Current status: **13 translated but skipped** Dart assertion contracts,
-**149 untranslated placeholders**, and **9 Python-only tooling scope exceptions**.
-The thirteen translated callbacks retain their original inputs and assertions and
+Current status: **15 translated but skipped** Dart assertion contracts,
+**147 untranslated placeholders**, and **9 Python-only tooling scope exceptions**.
+The fifteen translated callbacks retain their original inputs and assertions and
 call test-only adapters by inventory ID; those adapters have no production
-implementation yet. The other 158 callbacks still fail if enabled. Every
+implementation yet. The other 156 callbacks still fail if enabled. Every
 callback has an explicit skip and a manifest reason naming its module, stage
 and behavior. A successful `dart test test/ported` therefore means only that
 the test skeleton loads; it is not evidence that the 171 Python assertions

@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 13,
-    "pending_port": 149,
+    "translated_skipped": 15,
+    "pending_port": 147,
     "scope_exception": 9
   },
   "tests": [
@@ -3146,7 +3146,7 @@
       "direct_targets": [
         "server.temporal.fold"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'shared temporal contract'."
     },
     {
@@ -3170,7 +3170,7 @@
       "direct_targets": [
         "server.temporal.fold"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'early and merged latest attributes preserved'."
     },
     {

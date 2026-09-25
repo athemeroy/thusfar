@@ -1,6 +1,11 @@
 // Generated from docs/port/inventory.json by core/tool/generate_ported_tests.py.
 // Skipped failing callbacks are unported assertions, not translations.
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:test/test.dart';
+
+import 'contract_invoker.dart';
 
 void main() {
   test(
@@ -165,17 +170,65 @@ void main() {
   );
   test(
     "tests.test_server_repair.QualityRepair.test_shared_temporal_contract",
-    () => fail(
-      "Dart port not implemented: tests.test_server_repair.QualityRepair.test_shared_temporal_contract",
-    ),
+    () {
+      final fixture =
+          jsonDecode(File('../tests/temporal-fixtures.json').readAsStringSync())
+              as Map<String, Object?>;
+      for (final rawCase in fixture['cases']! as List<Object?>) {
+        final caseData = rawCase! as Map<String, Object?>;
+        final result =
+            callPorted('server.temporal.fold', {
+                  'log': caseData['records'],
+                  'pos': caseData['cutoff'],
+                })
+                as Map<String, Object?>;
+        final rels =
+            (result['rels']! as Map<String, Object?>).values
+                .cast<Map<String, Object?>>()
+                .toList();
+        final expected =
+            (caseData['expected_rels']! as List<Object?>)
+                .cast<Map<String, Object?>>();
+        expect(
+          rels.length,
+          expected.length,
+          reason: caseData['name'] as String,
+        );
+        for (var i = 0; i < expected.length; i++) {
+          expect(
+            {for (final key in expected[i].keys) key: rels[i][key]},
+            expected[i],
+            reason: caseData['name'] as String,
+          );
+        }
+      }
+    },
     skip:
         "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'shared temporal contract'.",
   );
   test(
     "tests.test_server_repair.QualityRepair.test_early_and_merged_latest_attributes_preserved",
-    () => fail(
-      "Dart port not implemented: tests.test_server_repair.QualityRepair.test_early_and_merged_latest_attributes_preserved",
-    ),
+    () {
+      final log = [
+        {'t': 'attr', 'p': 1, 'id': 'a', 'key': 'job', 'value': 'teacher'},
+        {'t': 'person', 'p': 2, 'id': 'a', 'name': 'Alice'},
+        {'t': 'person', 'p': 3, 'id': 'b', 'name': 'Alias'},
+        {'t': 'attr', 'p': 4, 'id': 'b', 'key': 'job', 'value': 'writer'},
+        {'t': 'merge', 'p': 5, 'from': 'b', 'into': 'a'},
+      ];
+      Object? jobAt(int pos) {
+        final result =
+            callPorted('server.temporal.fold', {'log': log, 'pos': pos})
+                as Map<String, Object?>;
+        final people = result['people']! as Map<String, Object?>;
+        final alice = people['a']! as Map<String, Object?>;
+        final attrs = alice['attrs']! as Map<String, Object?>;
+        return attrs['job'];
+      }
+
+      expect(jobAt(2), 'teacher');
+      expect(jobAt(5), 'writer');
+    },
     skip:
         "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'early and merged latest attributes preserved'.",
   );
