@@ -2741,7 +2741,7 @@
       "qualified_name": "proper_name",
       "source": "pipeline/link.py",
       "line": 102,
-      "line_count": 6,
+      "line_count": 7,
       "scope_kind": "module",
       "parameters": [
         "p"
@@ -2749,6 +2749,7 @@
       "category": "纯函数",
       "calls": [
         "is_generic",
+        "len",
         "sorted"
       ],
       "internal_calls": [
@@ -2758,6 +2759,7 @@
         "pipeline.link.verify_names"
       ],
       "danger_semantics": [
+        "len",
         "排序"
       ],
       "mutates_state": false,
@@ -2770,7 +2772,7 @@
       "module": "pipeline.link",
       "qualified_name": "names_of",
       "source": "pipeline/link.py",
-      "line": 110,
+      "line": 111,
       "line_count": 2,
       "scope_kind": "module",
       "parameters": [
@@ -2797,7 +2799,7 @@
       "module": "pipeline.link",
       "qualified_name": "short_forms",
       "source": "pipeline/link.py",
-      "line": 114,
+      "line": 115,
       "line_count": 14,
       "scope_kind": "module",
       "parameters": [
@@ -2838,8 +2840,8 @@
       "module": "pipeline.link",
       "qualified_name": "link_segment",
       "source": "pipeline/link.py",
-      "line": 130,
-      "line_count": 94,
+      "line": 131,
+      "line_count": 95,
       "scope_kind": "module",
       "parameters": [
         "kg",
@@ -2932,7 +2934,7 @@
       "module": "pipeline.link",
       "qualified_name": "link_segment.contains",
       "source": "pipeline/link.py",
-      "line": 152,
+      "line": 153,
       "line_count": 8,
       "scope_kind": "nested",
       "parameters": [
@@ -2962,7 +2964,7 @@
       "module": "pipeline.link",
       "qualified_name": "_resolve_hint",
       "source": "pipeline/link.py",
-      "line": 226,
+      "line": 228,
       "line_count": 11,
       "scope_kind": "module",
       "parameters": [
@@ -2999,7 +3001,7 @@
       "module": "pipeline.link",
       "qualified_name": "verify_names",
       "source": "pipeline/link.py",
-      "line": 239,
+      "line": 241,
       "line_count": 65,
       "scope_kind": "module",
       "parameters": [
@@ -3074,7 +3076,7 @@
       "module": "pipeline.link",
       "qualified_name": "_gender_clash",
       "source": "pipeline/link.py",
-      "line": 306,
+      "line": 308,
       "line_count": 3,
       "scope_kind": "module",
       "parameters": [
@@ -3101,7 +3103,7 @@
       "module": "pipeline.link",
       "qualified_name": "_ask_jev",
       "source": "pipeline/link.py",
-      "line": 311,
+      "line": 313,
       "line_count": 31,
       "scope_kind": "module",
       "parameters": [
@@ -3151,7 +3153,7 @@
       "module": "pipeline.link",
       "qualified_name": "_ask_jev.desc",
       "source": "pipeline/link.py",
-      "line": 315,
+      "line": 317,
       "line_count": 6,
       "scope_kind": "nested",
       "parameters": [
@@ -3188,8 +3190,8 @@
       "module": "pipeline.link",
       "qualified_name": "to_classic",
       "source": "pipeline/link.py",
-      "line": 344,
-      "line_count": 41,
+      "line": 346,
+      "line_count": 44,
       "scope_kind": "module",
       "parameters": [
         "local",
@@ -3209,7 +3211,6 @@
         "forms.append",
         "is_generic",
         "isinstance",
-        "iter",
         "list",
         "local.get",
         "lp.get",
@@ -10479,7 +10480,7 @@
       "qualified_name": "Runner._maybe_recap",
       "source": "pipeline/run.py",
       "line": 1874,
-      "line_count": 20,
+      "line_count": 25,
       "scope_kind": "method",
       "parameters": [
         "self",
@@ -10524,7 +10525,7 @@
       "module": "pipeline.run",
       "qualified_name": "run_book",
       "source": "pipeline/run.py",
-      "line": 1896,
+      "line": 1901,
       "line_count": 47,
       "scope_kind": "module",
       "parameters": [
@@ -10593,7 +10594,7 @@
       "module": "pipeline.run",
       "qualified_name": "main",
       "source": "pipeline/run.py",
-      "line": 1945,
+      "line": 1950,
       "line_count": 18,
       "scope_kind": "module",
       "parameters": [],
@@ -12716,7 +12717,7 @@
       "qualified_name": "retrieve",
       "source": "server/ask.py",
       "line": 113,
-      "line_count": 48,
+      "line_count": 50,
       "scope_kind": "module",
       "parameters": [
         "d",
@@ -12773,7 +12774,7 @@
       "module": "server.ask",
       "qualified_name": "retrieval_query",
       "source": "server/ask.py",
-      "line": 163,
+      "line": 165,
       "line_count": 14,
       "scope_kind": "module",
       "parameters": [
@@ -12811,7 +12812,7 @@
       "module": "server.ask",
       "qualified_name": "who_is",
       "source": "server/ask.py",
-      "line": 183,
+      "line": 185,
       "line_count": 59,
       "scope_kind": "module",
       "parameters": [
@@ -12869,7 +12870,7 @@
       "module": "server.ask",
       "qualified_name": "who_is.relevance",
       "source": "server/ask.py",
-      "line": 219,
+      "line": 221,
       "line_count": 4,
       "scope_kind": "nested",
       "parameters": [
@@ -12900,7 +12901,7 @@
       "module": "server.ask",
       "qualified_name": "recent_text",
       "source": "server/ask.py",
-      "line": 244,
+      "line": 246,
       "line_count": 13,
       "scope_kind": "module",
       "parameters": [
@@ -12940,7 +12941,7 @@
       "module": "server.ask",
       "qualified_name": "answer",
       "source": "server/ask.py",
-      "line": 259,
+      "line": 261,
       "line_count": 157,
       "scope_kind": "module",
       "parameters": [
@@ -13045,7 +13046,7 @@
       "module": "server.ask",
       "qualified_name": "answer.accepted",
       "source": "server/ask.py",
-      "line": 355,
+      "line": 357,
       "line_count": 3,
       "scope_kind": "nested",
       "parameters": [
@@ -13071,7 +13072,7 @@
       "module": "server.ask",
       "qualified_name": "answer.verify",
       "source": "server/ask.py",
-      "line": 406,
+      "line": 408,
       "line_count": 5,
       "scope_kind": "nested",
       "parameters": [
