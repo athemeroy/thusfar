@@ -76,9 +76,9 @@ Each static call has positive and negative input in `REGEX.json`. `oracle/semant
 | [`pipeline/link.py:73:8:sub`](../../pipeline/link.py#L73) | `sub` | `^(老&#124;小&#124;阿)` | `` | — | `"阿Q"` / `"☃"` |
 | [`pipeline/link.py:74:23:search`](../../pipeline/link.py#L74) | `search` | `(叔&#124;伯&#124;哥&#124;姐&#124;嫂&#124;婶&#124;爷&#124;总&#124;董&#124;老&#124;兄&#124;弟&#124;妹)$` | `` | — | `"赵太爷"` / `"☃"` |
 | [`pipeline/link.py:75:12:sub`](../../pipeline/link.py#L75) | `sub` | `(叔&#124;伯&#124;哥&#124;姐&#124;嫂&#124;婶&#124;爷&#124;总&#124;董&#124;老&#124;兄&#124;弟&#124;妹)$` | `` | — | `"赵太爷"` / `"☃"` |
-| [`pipeline/link.py:119:28:split`](../../pipeline/link.py#L119) | `split` | `\s+` | `` | Python whitespace | `"Mr. Smith"` / `"☃"` |
-| [`pipeline/link.py:121:7:search`](../../pipeline/link.py#L121) | `search` | `(先生&#124;太太&#124;夫人&#124;小姐&#124;老爹&#124;老头子&#124;老头&#124;嫂子&#124;大妈&#124;大娘&#124;大爷&#124;老爷&#124;少爷&#124;姑娘&#124;女士&#124;博士&#124;医生&#124;律师&#124;师傅&#124;掌柜&#124;老板&#124;公子&#124;奶奶&#124;大师&#124;禅师&#124;法师&#124;道长&#124;真人&#124;长老&#124;方丈&#124;师太&#124;道人&#124;居士&#124;上人&#124;掌门&#124;宗主&#124;城主&#124;门主&#124;帮主&#124;盟主&#124;会长&#124;队长&#124;团长&#124;将军&#124;前辈&#124;老祖&#124;师兄&#124;师姐&#124;师弟&#124;师妹&#124;师父&#124;师尊&#124;大哥&#124;大姐&#124;爷&#124;嫂&#124;娘)$` | `` | — | `"赵太爷"` / `"☃"` |
-| [`pipeline/link.py:161:39:search`](../../pipeline/link.py#L161) | `search` | `夫妇&#124;夫妻&#124;们$&#124;一家&#124;众人&#124;全家&#124;大伙` | `` | — | `"夫妇"` / `"☃"` |
+| [`pipeline/link.py:120:28:split`](../../pipeline/link.py#L120) | `split` | `\s+` | `` | Python whitespace | `"Mr. Smith"` / `"☃"` |
+| [`pipeline/link.py:122:7:search`](../../pipeline/link.py#L122) | `search` | `(先生&#124;太太&#124;夫人&#124;小姐&#124;老爹&#124;老头子&#124;老头&#124;嫂子&#124;大妈&#124;大娘&#124;大爷&#124;老爷&#124;少爷&#124;姑娘&#124;女士&#124;博士&#124;医生&#124;律师&#124;师傅&#124;掌柜&#124;老板&#124;公子&#124;奶奶&#124;大师&#124;禅师&#124;法师&#124;道长&#124;真人&#124;长老&#124;方丈&#124;师太&#124;道人&#124;居士&#124;上人&#124;掌门&#124;宗主&#124;城主&#124;门主&#124;帮主&#124;盟主&#124;会长&#124;队长&#124;团长&#124;将军&#124;前辈&#124;老祖&#124;师兄&#124;师姐&#124;师弟&#124;师妹&#124;师父&#124;师尊&#124;大哥&#124;大姐&#124;爷&#124;嫂&#124;娘)$` | `` | — | `"赵太爷"` / `"☃"` |
+| [`pipeline/link.py:162:39:search`](../../pipeline/link.py#L162) | `search` | `夫妇&#124;夫妻&#124;们$&#124;一家&#124;众人&#124;全家&#124;大伙` | `` | — | `"夫妇"` / `"☃"` |
 | [`pipeline/llm.py:45:28:match`](../../pipeline/llm.py#L45) | `match` | `^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$` | `` | Python whitespace | `"yedu=v1.123456.abcdef0123456789abcdef01.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"` / `"☃"` |
 | [`pipeline/llm.py:83:8:search`](../../pipeline/llm.py#L83) | `search` | `HTTP (\d{3}): ?(.*)` | `S` | Python decimal digits | `"HTTP 401: bad key"` / `"☃"` |
 | [`pipeline/llm.py:403:11:sub`](../../pipeline/llm.py#L403) | `sub` | `,\s*([}\]])` | `` | Python whitespace | `"foo,}"` / `"☃"` |
@@ -146,17 +146,17 @@ Each static call has positive and negative input in `REGEX.json`. `oracle/semant
 | [`server/app.py:711:19:fullmatch`](../../server/app.py#L711) | `fullmatch` | `[0-9]{1,6}` | `` | — | `"1"` / `"☃"` |
 | [`server/ask.py:44:52:findall`](../../server/ask.py#L44) | `findall` | `[A-Za-z][A-Za-z'’]{2,}` | `` | — | `"abc"` / `"☃"` |
 | [`server/ask.py:45:8:sub`](../../server/ask.py#L45) | `sub` | `[\sA-Za-z0-9]` | `` | Python whitespace | `"阿Q"` / `"☃"` |
-| [`server/ask.py:166:21:search`](../../server/ask.py#L166) | `search` | `[\u3040-\u30ff\u3400-\u9fff]` | `` | — | `"阿Q"` / `"☃"` |
-| [`server/ask.py:179:10:compile`](../../server/ask.py#L179) | `compile` | `^(他&#124;她&#124;它&#124;他们&#124;她们&#124;它们&#124;这人&#124;那人&#124;此人&#124;对方&#124;两人&#124;二人&#124;自己&#124;he&#124;him&#124;his&#124;she&#124;her&#124;they&#124;them&#124;it)$` | `I` | — | `"他"` / `"☃"` |
-| [`server/ask.py:274:16:search`](../../server/ask.py#L274) | `search` | `[\u3400-\u9fff]` | `` | — | `"阿Q"` / `"☃"` |
-| [`server/ask.py:382:19:search`](../../server/ask.py#L382) | `search` | `[\u3400-\u9fff]` | `` | — | `"阿Q"` / `"☃"` |
-| [`server/ask.py:400:11:sub`](../../server/ask.py#L400) | `sub` | `"([^"\n]{1,80})"` | `` | — | `"\"hello\""` / `"☃"` |
-| [`server/ask.py:401:11:sub`](../../server/ask.py#L401) | `sub` | `“([^”\n]{1,80})”` | `` | — | `"“你好”"` / `"☃"` |
-| [`server/ask.py:402:11:sub`](../../server/ask.py#L402) | `sub` | `\s*\[(?!\d+\])[^\]]{1,12}\]` | `` | Python decimal digits, Python whitespace | `"[注1]"` / `"☃"` |
-| [`server/ask.py:404:19:sub`](../../server/ask.py#L404) | `sub` | `[\s，。、；：？！“”‘’「」…—]` | `` | Python whitespace | `"Mr. Smith"` / `"☃"` |
-| [`server/ask.py:408:16:sub`](../../server/ask.py#L408) | `sub` | `[\s，。、；：？！“”‘’「」…—]` | `` | Python whitespace | `"Mr. Smith"` / `"☃"` |
-| [`server/ask.py:411:11:sub`](../../server/ask.py#L411) | `sub` | `「([^」]{1,80})」\s*(?:\[(\d+)\])?` | `` | Python decimal digits, Python whitespace | `"「q」 [3]"` / `"☃"` |
-| [`server/ask.py:412:35:findall`](../../server/ask.py#L412) | `findall` | `\[(\d+)\]` | `` | Python decimal digits | `"[1]"` / `"☃"` |
+| [`server/ask.py:168:21:search`](../../server/ask.py#L168) | `search` | `[\u3040-\u30ff\u3400-\u9fff]` | `` | — | `"阿Q"` / `"☃"` |
+| [`server/ask.py:181:10:compile`](../../server/ask.py#L181) | `compile` | `^(他&#124;她&#124;它&#124;他们&#124;她们&#124;它们&#124;这人&#124;那人&#124;此人&#124;对方&#124;两人&#124;二人&#124;自己&#124;he&#124;him&#124;his&#124;she&#124;her&#124;they&#124;them&#124;it)$` | `I` | — | `"他"` / `"☃"` |
+| [`server/ask.py:276:16:search`](../../server/ask.py#L276) | `search` | `[\u3400-\u9fff]` | `` | — | `"阿Q"` / `"☃"` |
+| [`server/ask.py:384:19:search`](../../server/ask.py#L384) | `search` | `[\u3400-\u9fff]` | `` | — | `"阿Q"` / `"☃"` |
+| [`server/ask.py:402:11:sub`](../../server/ask.py#L402) | `sub` | `"([^"\n]{1,80})"` | `` | — | `"\"hello\""` / `"☃"` |
+| [`server/ask.py:403:11:sub`](../../server/ask.py#L403) | `sub` | `“([^”\n]{1,80})”` | `` | — | `"“你好”"` / `"☃"` |
+| [`server/ask.py:404:11:sub`](../../server/ask.py#L404) | `sub` | `\s*\[(?!\d+\])[^\]]{1,12}\]` | `` | Python decimal digits, Python whitespace | `"[注1]"` / `"☃"` |
+| [`server/ask.py:406:19:sub`](../../server/ask.py#L406) | `sub` | `[\s，。、；：？！“”‘’「」…—]` | `` | Python whitespace | `"Mr. Smith"` / `"☃"` |
+| [`server/ask.py:410:16:sub`](../../server/ask.py#L410) | `sub` | `[\s，。、；：？！“”‘’「」…—]` | `` | Python whitespace | `"Mr. Smith"` / `"☃"` |
+| [`server/ask.py:413:11:sub`](../../server/ask.py#L413) | `sub` | `「([^」]{1,80})」\s*(?:\[(\d+)\])?` | `` | Python decimal digits, Python whitespace | `"「q」 [3]"` / `"☃"` |
+| [`server/ask.py:414:35:findall`](../../server/ask.py#L414) | `findall` | `\[(\d+)\]` | `` | Python decimal digits | `"[1]"` / `"☃"` |
 | [`server/manual_entities.py:12:5:compile`](../../server/manual_entities.py#L12) | `compile` | `[A-Za-z0-9_-]{8,80}\Z` | `` | absolute end | `"12345678"` / `"☃"` |
 | [`server/manual_entities.py:34:41:fullmatch`](../../server/manual_entities.py#L34) | `fullmatch` | `[A-Za-z0-9_-]{8,80}\Z` | `` | absolute end | `"12345678"` / `"☃"` |
 | [`server/manual_entities.py:53:38:fullmatch`](../../server/manual_entities.py#L53) | `fullmatch` | `[A-Za-z0-9_-]{8,80}\Z` | `` | absolute end | `"12345678"` / `"☃"` |
