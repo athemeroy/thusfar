@@ -1,0 +1,2 @@
+{"input":{"ans":{"f1":{"probabilities":{"friend":0.4,"kin":0.75,"none":0.1,"other":0.34}}},"pairs":[{"$tuple":["P1","P2"]}]},"output":{"$map":[[{"$tuple":["P1","P2"]},[{"$tuple":["kin",0.75]},{"$tuple":["friend",0.4]}]]]}}
+{"input":{"ans":{},"pairs":[]},"output":{}}

@@ -1,0 +1,2 @@
+{"input":{"p":{"id":"P2","name":"贾宝玉","aliases":{"$set":["贾宝玉"]},"weak":{"$set":[]},"first":11,"last_seg":1,"imp":2,"gender":"女","intro":"初次登场","tagline":""}},"output":{"$set":["贾宝玉"]}}
+{"input":{"p":{"id":"P1","name":"贾宝玉","aliases":{"$set":["贾宝玉"]},"weak":{"$set":[]},"first":1,"last_seg":1,"imp":2,"gender":"女","intro":"初次登场","tagline":""}},"output":{"$set":["贾宝玉"]}}

@@ -1,0 +1,1 @@
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/work"}}},"ci":0},"output":{"$path":"<temp>/work/bios/0000.json"}}

@@ -1,0 +1,26 @@
+{"input":{"text":"verified"},"output":"verified"}
+{"input":{"text":"new"},"output":"new"}
+{"input":{"text":"他说\"好\",然后(笑了)"},"output":"他说“好”，然后（笑了）"}
+{"input":{"text":"cached"},"output":"cached"}
+{"input":{"text":"陈明失踪多年，今夜回到客栈。"},"output":"陈明失踪多年，今夜回到客栈。"}
+{"input":{"text":"Chapter recap"},"output":"Chapter recap"}
+{"input":{"text":"客栈掌柜"},"output":"客栈掌柜"}
+{"input":{"text":"new tagline"},"output":"new tagline"}
+{"input":{"text":"old"},"output":"old"}
+{"input":{"text":"new biography"},"output":"new biography"}
+{"input":{"text":"Alice biography"},"output":"Alice biography"}
+{"input":{"text":"穿黑斗篷的神秘人"},"output":"穿黑斗篷的神秘人"}
+{"input":{"text":""},"output":""}
+{"input":{"text":"失踪多年的人"},"output":"失踪多年的人"}
+{"input":{"text":"𠮷😀说\"好\",然后(笑了)"},"output":"𠮷😀说“好”，然后（笑了）"}
+{"input":{"text":"cached tagline"},"output":"cached tagline"}
+{"input":{"text":"Hello, world"},"output":"Hello, world"}
+{"input":{"text":"失踪的陈明"},"output":"失踪的陈明"}
+{"input":{"text":"cached biography"},"output":"cached biography"}
+{"input":{"text":"黑衣人摘下斗篷"},"output":"黑衣人摘下斗篷"}
+{"input":{"text":"黑衣人摘下斗篷露出真面目"},"output":"黑衣人摘下斗篷露出真面目"}
+{"input":{"text":"黑衣人进客栈，掌柜给他倒酒"},"output":"黑衣人进客栈，掌柜给他倒酒"}
+{"input":{"text":"黑衣人偷信"},"output":"黑衣人偷信"}
+{"input":{"text":"失踪多年后归来的人"},"output":"失踪多年后归来的人"}
+{"input":{"text":"Alice met Bob"},"output":"Alice met Bob"}
+{"input":{"text":"陈明对掌柜说他回来了"},"output":"陈明对掌柜说他回来了"}

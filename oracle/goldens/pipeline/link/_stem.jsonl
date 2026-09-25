@@ -1,0 +1,10 @@
+{"input":{"name":"王总"},"output":"王"}
+{"input":{"name":"王叔"},"output":"王"}
+{"input":{"name":"李母"},"output":"李母"}
+{"input":{"name":"余擎苍"},"output":"余擎苍"}
+{"input":{"name":"郝麦夫人"},"output":"郝麦"}
+{"input":{"name":"老余"},"output":"余"}
+{"input":{"name":"阿Q"},"output":"Q"}
+{"input":{"name":"郝麦太太"},"output":"郝麦"}
+{"input":{"name":"圆觉大师"},"output":"圆觉"}
+{"input":{"name":"王母"},"output":"王母"}

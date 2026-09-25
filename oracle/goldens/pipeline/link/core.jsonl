@@ -1,0 +1,6 @@
+{"input":{"name":"Mr. Pocket"},"output":"Pocket"}
+{"input":{"name":"贾宝玉"},"output":""}
+{"input":{"name":"😀"},"output":""}
+{"input":{"name":"郝麦太太"},"output":"郝麦"}
+{"input":{"name":"Dr. Jean-Luc"},"output":"Jean-Luc"}
+{"input":{"name":"Herbert Pocket"},"output":""}

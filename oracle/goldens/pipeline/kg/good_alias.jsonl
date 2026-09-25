@@ -1,0 +1,13 @@
+{"input":{"a":"爱玛"},"output":true}
+{"input":{"a":"查理夫妇"},"output":false}
+{"input":{"a":"Bob"},"output":true}
+{"input":{"a":"黑衣人"},"output":true}
+{"input":{"a":"小D"},"output":true}
+{"input":{"a":"未婚女婿"},"output":false}
+{"input":{"a":"太太"},"output":false}
+{"input":{"a":"包法利先生"},"output":true}
+{"input":{"a":"卢欧老爹的女儿"},"output":false}
+{"input":{"a":"陈明"},"output":true}
+{"input":{"a":"老Q"},"output":true}
+{"input":{"a":"Alice"},"output":true}
+{"input":{"a":"他们"},"output":false}

@@ -1,0 +1,5 @@
+{"input":{"name":"查理·包法利"},"output":{"$set":["包法利","查理"]}}
+{"input":{"name":"𠮷😀"},"output":{"$set":[]}}
+{"input":{"name":"贾宝玉"},"output":{"$set":["宝玉"]}}
+{"input":{"name":"Herbert Pocket"},"output":{"$set":["Herbert","Pocket"]}}
+{"input":{"name":"圆觉大师"},"output":{"$set":[]}}

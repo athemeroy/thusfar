@@ -1,0 +1,3 @@
+{"input":{"state":{"people":{},"rels":{},"seg":0,"recent_events":[]},"text":"[P1] 【标题】第一章\n[P2] 𠮷😀说：你好。"},"output":"（无）"}
+{"input":{"state":{"people":{},"rels":{}},"text":"无人出场"},"output":"（无）"}
+{"input":{"state":{"people":{"P1":{"name":"贾宝玉","aliases":["宝玉"]},"P2":{"name":"林黛玉","aliases":["黛玉"]}},"rels":{"R1":{"a":"P1","b":"P2","b_is":"表妹","desc":"同住荣府"},"R2":{"a":"P2","b":"P1","status":"ended","b_is":"旧识"}}},"text":"宝玉见到黛玉"},"output":"P1（贾宝玉）的表妹是 P2（林黛玉）：同住荣府"}

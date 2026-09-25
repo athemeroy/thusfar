@@ -1,0 +1,2 @@
+{"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P1":{"id":"P1","name":"贾宝玉","aliases":{"$set":["贾宝玉"]},"weak":{"$set":[]},"first":1,"last_seg":1,"imp":2,"gender":"女","intro":"初次登场","tagline":""}}}},"pid":"P1"},"output":"贾宝玉（初次登场）"}
+{"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P1":{"id":"P1","name":"贾宝玉","aliases":{"$set":["贾宝玉"]},"weak":{"$set":[]},"first":1,"last_seg":1,"imp":2,"gender":"女","intro":"初次登场","tagline":"荣府公子"}}}},"pid":"P1"},"output":"贾宝玉（荣府公子）"}

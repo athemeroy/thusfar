@@ -1,0 +1,34 @@
+{"input":{"s":"黑衣人"},"output":false}
+{"input":{"s":"Alice"},"output":true}
+{"input":{"s":"李母"},"output":false}
+{"input":{"s":"郝麦夫人"},"output":false}
+{"input":{"s":"卢欧老爹的女儿"},"output":false}
+{"input":{"s":"爱玛"},"output":false}
+{"input":{"s":"Dr. Jekyll"},"output":true}
+{"input":{"s":"宝玉"},"output":false}
+{"input":{"s":"小D"},"output":false}
+{"input":{"s":"未婚女婿"},"output":false}
+{"input":{"s":"查理夫妇"},"output":false}
+{"input":{"s":"余擎苍"},"output":false}
+{"input":{"s":"王母"},"output":false}
+{"input":{"s":"王子"},"output":false}
+{"input":{"s":"太太"},"output":false}
+{"input":{"s":"圆觉大师"},"output":false}
+{"input":{"s":"包法利先生"},"output":false}
+{"input":{"s":"𠮷😀"},"output":false}
+{"input":{"s":"少女"},"output":false}
+{"input":{"s":"老Q"},"output":false}
+{"input":{"s":"老余"},"output":false}
+{"input":{"s":"郝麦"},"output":false}
+{"input":{"s":"贾宝玉"},"output":false}
+{"input":{"s":"Mr. Pocket"},"output":true}
+{"input":{"s":"Bob"},"output":true}
+{"input":{"s":"陈明"},"output":false}
+{"input":{"s":"查理·包法利"},"output":false}
+{"input":{"s":"郝麦太太"},"output":false}
+{"input":{"s":"王叔"},"output":false}
+{"input":{"s":"Dr. Jean-Luc"},"output":true}
+{"input":{"s":"丛雨"},"output":false}
+{"input":{"s":"Herbert Pocket"},"output":true}
+{"input":{"s":"她"},"output":false}
+{"input":{"s":"😀"},"output":false}

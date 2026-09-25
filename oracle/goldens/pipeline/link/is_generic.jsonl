@@ -1,0 +1,15 @@
+{"input":{"name":"Dr. Jekyll"},"output":false}
+{"input":{"name":"*医生"},"output":true}
+{"input":{"name":"Alice"},"output":false}
+{"input":{"name":"*太太"},"output":true}
+{"input":{"name":"贾宝玉"},"output":false}
+{"input":{"name":"*先生"},"output":true}
+{"input":{"name":"郝麦"},"output":false}
+{"input":{"name":"Bob"},"output":false}
+{"input":{"name":"郝麦夫人"},"output":false}
+{"input":{"name":"*夫人"},"output":true}
+{"input":{"name":"*old gentleman"},"output":true}
+{"input":{"name":"*少爷"},"output":true}
+{"input":{"name":"宝玉"},"output":false}
+{"input":{"name":"*the doctor"},"output":true}
+{"input":{"name":"她"},"output":false}

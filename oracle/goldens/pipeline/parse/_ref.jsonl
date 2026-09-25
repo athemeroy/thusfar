@@ -1,0 +1,15 @@
+{"input":{"base":"OEBPS","href":"second.xhtml#second"},"output":{"$tuple":["OEBPS/second.xhtml","second"]}}
+{"input":{"base":"OEBPS","href":"ch1.xhtml#start"},"output":{"$tuple":["OEBPS/ch1.xhtml","start"]}}
+{"input":{"base":"OEBPS","href":"third.xhtml#third"},"output":{"$tuple":["OEBPS/third.xhtml","third"]}}
+{"input":{"base":"OEBPS","href":"nav.xhtml"},"output":{"$tuple":["OEBPS/nav.xhtml",""]}}
+{"input":{"base":"OEBPS","href":"first.xhtml"},"output":{"$tuple":["OEBPS/first.xhtml",""]}}
+{"input":{"base":"OEBPS","href":"second.xhtml"},"output":{"$tuple":["OEBPS/second.xhtml",""]}}
+{"input":{"base":"OEBPS","href":"#fn1"},"output":{"$tuple":["","fn1"]}}
+{"input":{"base":"OEBPS","href":"images/figure.png"},"output":{"$tuple":["OEBPS/images/figure.png",""]}}
+{"input":{"base":"OEBPS","href":"ch1.xhtml"},"output":{"$tuple":["OEBPS/ch1.xhtml",""]}}
+{"input":{"base":"OEBPS","href":"ch2.xhtml"},"output":{"$tuple":["OEBPS/ch2.xhtml",""]}}
+{"input":{"base":"OEBPS","href":"third.xhtml"},"output":{"$tuple":["OEBPS/third.xhtml",""]}}
+{"input":{"base":"OEBPS","href":"first.xhtml#first"},"output":{"$tuple":["OEBPS/first.xhtml","first"]}}
+{"input":{"base":"OEBPS","href":"images/cover.png"},"output":{"$tuple":["OEBPS/images/cover.png",""]}}
+{"input":{"base":"OPS","href":"chapter.xhtml"},"output":{"$tuple":["OPS/chapter.xhtml",""]}}
+{"input":{"base":"OEBPS","href":"missing.xhtml#lost"},"output":{"$tuple":["OEBPS/missing.xhtml","lost"]}}

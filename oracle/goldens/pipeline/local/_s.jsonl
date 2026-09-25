@@ -1,0 +1,9 @@
+{"input":{"x":"Alice speaks to Bob"},"output":"Alice speaks to Bob"}
+{"input":{"x":"identity"},"output":"identity"}
+{"input":{"x":"b"},"output":"b"}
+{"input":{"x":"a speaker"},"output":"a speaker"}
+{"input":{"x":"Bob"},"output":"Bob"}
+{"input":{"x":"a"},"output":"a"}
+{"input":{"x":"Alice speaks to Bob."},"output":"Alice speaks to Bob."}
+{"input":{"x":null},"output":""}
+{"input":{"x":"Alice"},"output":"Alice"}

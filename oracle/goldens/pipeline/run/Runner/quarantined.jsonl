@@ -1,0 +1,4 @@
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"root":{"$path":"<temp>"}}},"path":{"$path":"<temp>/work/recaps/0000.json"}},"output":false}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"root":{"$path":"<temp>"}}},"path":{"$path":"<temp>/work/dedupe/0000.json"}},"output":false}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"root":{"$path":"<temp>"}}},"path":{"$path":"<temp>/work/bios/0000.json"}},"output":false}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"root":{"$path":"<temp>"}}},"path":{"$path":"<temp>/work/sagas/000000069.json"}},"output":false}

@@ -1,0 +1,4 @@
+{"input":{"answer":{"choice":"not_in_passage","p":0.0,"probs":{"not_in_passage":1.0}}},"output":true}
+{"input":{"answer":{"choice":"contradicted","p":0.0,"probs":{"contradicted":1.0}}},"output":true}
+{"input":{"answer":null},"output":false}
+{"input":{"answer":{"choice":"supported","p":1.0,"probs":{"supported":1.0}}},"output":true}

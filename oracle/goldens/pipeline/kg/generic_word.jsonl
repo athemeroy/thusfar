@@ -1,0 +1,21 @@
+{"input":{"f":"Dr. Jekyll"},"output":false}
+{"input":{"f":"Bob"},"output":false}
+{"input":{"f":"包法利先生"},"output":false}
+{"input":{"f":"陈明"},"output":false}
+{"input":{"f":"爱玛"},"output":false}
+{"input":{"f":"黑衣人"},"output":false}
+{"input":{"f":"丛雨"},"output":false}
+{"input":{"f":"老Q"},"output":false}
+{"input":{"f":"查理夫妇"},"output":false}
+{"input":{"f":"小D"},"output":false}
+{"input":{"f":"王子"},"output":false}
+{"input":{"f":"少女"},"output":true}
+{"input":{"f":"卢欧老爹的女儿"},"output":false}
+{"input":{"f":"太太"},"output":true}
+{"input":{"f":"郝麦夫人"},"output":false}
+{"input":{"f":"宝玉"},"output":false}
+{"input":{"f":"Alice"},"output":false}
+{"input":{"f":"未婚女婿"},"output":true}
+{"input":{"f":"郝麦"},"output":false}
+{"input":{"f":"她"},"output":false}
+{"input":{"f":"贾宝玉"},"output":false}

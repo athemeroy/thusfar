@@ -1,0 +1,2 @@
+{"input":{"p":{"name":"*the doctor","names":["Dr. Jekyll","*old gentleman"]}},"output":{"$set":["old gentleman","the doctor"]}}
+{"input":{"p":{"name":"*太太","names":["*医生","贾宝玉","她"]}},"output":{"$set":["医生","太太"]}}

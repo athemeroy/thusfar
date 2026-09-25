@@ -1,0 +1,3 @@
+{"input":{"lp":{"gender":"未知"},"gp":{"gender":"女"}},"output":false}
+{"input":{"lp":{"gender":"男"},"gp":{"gender":"女"}},"output":true}
+{"input":{"lp":{},"gp":{}},"output":false}

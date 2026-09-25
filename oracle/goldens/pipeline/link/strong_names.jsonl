@@ -1,0 +1,4 @@
+{"input":{"p":{"id":"a","name":"Alice","names":["Alice"],"para":1,"quote":"Alice met Bob"}},"output":{"$set":["Alice"]}}
+{"input":{"p":{"id":"b","name":"Bob","names":["Bob"],"para":1,"quote":"Alice met Bob"}},"output":{"$set":["Bob"]}}
+{"input":{"p":{"name":"*the doctor","names":["Dr. Jekyll","he"]}},"output":{"$set":["Dr. Jekyll"]}}
+{"input":{"p":{"name":"贾宝玉","names":["宝玉","*少爷","他"]}},"output":{"$set":["宝玉","贾宝玉"]}}

@@ -1,0 +1,6 @@
+{"input":{"record":{"recap":"verified","guard":{"recap":{"verdict":"ok"}}},"fields":{"$tuple":["recap","saga"]}},"output":true}
+{"input":{"record":{"recap":"cached","guard":{"recap":{"verdict":"ok"}}},"fields":{"$tuple":["recap","saga"]}},"output":true}
+{"input":{"record":{"recap":"unchecked"},"fields":{"$tuple":["recap"]}},"output":false}
+{"input":{"record":{"recap":"claim","guard":{"recap":{"verdict":"flag"}}},"fields":{"$tuple":["recap"]}},"output":false}
+{"input":{"record":{"recap":"claim","guard":{"recap":{"verdict":"flag"}},"recap_flagged":"original","fallback_kind":"verified-input-excerpt"},"fields":{"$tuple":["recap"]}},"output":true}
+{"input":{"record":{"saga":"cached","guard":{"saga":{"verdict":"ok"}}},"fields":{"$tuple":["saga"]}},"output":true}

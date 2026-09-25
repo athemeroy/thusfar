@@ -1,0 +1,4 @@
+{"input":{"self":{"$object":"types.SimpleNamespace","fields":{"book":{"blocks":[{"o":0,"t":"𠮷甲乙丙"}]}}},"pos":2,"width":2},"output":"甲乙"}
+{"input":{"self":{"$object":"types.SimpleNamespace","fields":{"book":{"blocks":[{"o":0,"t":"😀ABC"}]}}},"pos":2,"width":2},"output":"AB"}
+{"input":{"self":{"$object":"types.SimpleNamespace","fields":{"book":{"blocks":[{"o":0,"t":"A😀BC"}]}}},"pos":3,"width":2},"output":"BC"}
+{"input":{"self":{"$object":"types.SimpleNamespace","fields":{"book":{"blocks":[{"o":0,"t":"甲乙丙丁"}]}}},"pos":1,"width":2},"output":"甲乙"}

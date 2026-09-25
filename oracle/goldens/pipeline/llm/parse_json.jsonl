@@ -1,0 +1,7 @@
+{"input":{"text":"{\"t\": \"他说\"好\"然后走了\"}"},"output":{"t":"他说\"好\"然后走了"}}
+{"input":{"text":"{\"a\": \"x\", \"b\": [\"y\", \"z\"], \"c\": true}"},"output":{"a":"x","b":["y","z"],"c":true}}
+{"input":{"text":"{\"t\": \"他喊\"快走\",大家散了\", \"n\": 1}"},"output":{"t":"他喊\"快走\",大家散了","n":1}}
+{"input":{"text":"{\"t\": \"她说:\"好\"\", \"n\": 1}"},"output":{"t":"她说:\"好\"","n":1}}
+{"input":{"text":"```json\n{\"𠮷😀\":\"值\"}\n```"},"output":{"𠮷😀":"值"}}
+{"input":{"text":"```json\n{\"a\": [1, 2,],}\n```"},"output":{"a":[1,2]}}
+{"input":{"text":"抱歉，我无法回答这个问题。"},"output":{"$error":{"type":"builtins.ValueError","message":"回复里没有 JSON"}}}

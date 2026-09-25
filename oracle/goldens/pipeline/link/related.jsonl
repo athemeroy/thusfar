@@ -1,0 +1,10 @@
+{"input":{"new":"老余","known":"余擎苍"},"output":true}
+{"input":{"new":"𠮷😀","known":"𠮷😀"},"output":true}
+{"input":{"new":"贾宝玉","known":"贾宝玉"},"output":true}
+{"input":{"new":"Mr. Pocket","known":"Mme. Bovary"},"output":false}
+{"input":{"new":"","known":"贾宝玉"},"output":false}
+{"input":{"new":"郝麦太太","known":"郝麦夫人"},"output":true}
+{"input":{"new":"王叔","known":"王母"},"output":true}
+{"input":{"new":"Mr. Pocket","known":"Herbert Pocket"},"output":true}
+{"input":{"new":"王叔","known":"李母"},"output":false}
+{"input":{"new":"Ann","known":"Anne"},"output":true}

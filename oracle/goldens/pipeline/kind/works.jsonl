@@ -1,0 +1,3 @@
+{"input":{"book":{"chapters":[{"kind":"front","title":"目录","o0":0,"o1":10},{"kind":"body","title":"序幕","o0":10,"o1":40}]},"min_chars":10},"output":[]}
+{"input":{"book":{"chapters":[{"kind":"body","title":"故事一","o0":0,"o1":50},{"kind":"body","title":"一之一","parent":"故事一","o0":0,"o1":50},{"kind":"body","title":"故事二","o0":60,"o1":110},{"kind":"body","title":"二之一","parent":"故事二","o0":60,"o1":110}]},"min_chars":10},"output":[{"$tuple":[0,50]},{"$tuple":[60,110]}]}
+{"input":{"book":{"chapters":[{"kind":"body","title":"第一章","o0":0,"o1":40},{"kind":"body","title":"第二章","o0":40,"o1":80},{"kind":"body","title":"第一章","o0":90,"o1":130},{"kind":"body","title":"第二章","o0":130,"o1":170}]},"min_chars":10},"output":[{"$tuple":[0,80]},{"$tuple":[90,170]}]}

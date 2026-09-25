@@ -1,0 +1,2 @@
+{"input":{"ans":{"v_e1":{"choice":"supported","probabilities":{"supported":0.81234,"beyond_text":0.18766}}},"items":{"e1":["event","贾宝玉入园"]}},"output":{"e1":{"p":0.812,"choice":"supported","probs":{"supported":0.812,"beyond_text":0.188}}}}
+{"input":{"ans":{},"items":{}},"output":{}}
