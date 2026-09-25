@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 140,
-    "pending_port": 31,
+    "translated_skipped": 171,
+    "pending_port": 0,
     "scope_exception": 0
   },
   "tests": [
@@ -1587,8 +1587,11 @@
         "pipeline.kg.KG.__init__",
         "pipeline.link.to_classic"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract.segments, pipeline.kg.KG.__init__, pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation status survives conversion and kg'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract.segments, pipeline.kg.KG.__init__, pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation status survives conversion and kg'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_short_identity_reveal_and_unicode_entry",
@@ -1619,8 +1622,11 @@
         "pipeline.extract.segments",
         "pipeline.kg.KG.__init__"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract.segments, pipeline.kg.KG.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'short identity reveal and unicode entry'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract.segments, pipeline.kg.KG.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'short identity reveal and unicode entry'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_merge_between_existing_people_does_not_rewrite_past",
@@ -1650,8 +1656,11 @@
       "direct_targets": [
         "pipeline.kg.KG.__init__"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'merge between existing people does not rewrite past'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'merge between existing people does not rewrite past'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_judge_relation_uses_evidence_frontier",
@@ -1681,8 +1690,11 @@
       "direct_targets": [
         "pipeline.link.to_classic"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'judge relation uses evidence frontier'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'judge relation uses evidence frontier'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_missing_facets_propagate_for_retry",
@@ -1712,8 +1724,11 @@
       "direct_targets": [
         "pipeline.judge.relations_by_judge"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.judge.relations_by_judge is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'missing facets propagate for retry'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.judge.relations_by_judge is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'missing facets propagate for retry'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.judge_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_relation_judge_receives_character_memory_but_requires_current_evidence",
@@ -1744,8 +1759,11 @@
         "pipeline.judge.family_questions",
         "pipeline.judge.relations_by_judge"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.judge.family_questions, pipeline.judge.relations_by_judge is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation judge receives character memory but requires current evidence'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.judge.family_questions, pipeline.judge.relations_by_judge is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation judge receives character memory but requires current evidence'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.judge_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_relation_memory_keeps_biography_events_and_existing_ties",
@@ -1773,8 +1791,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation memory keeps biography events and existing ties'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation memory keeps biography events and existing ties'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_critical_outage_keeps_extraction_and_does_not_publish",
@@ -1804,8 +1825,11 @@
       "direct_targets": [
         "pipeline.link.to_classic"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'critical outage keeps extraction and does not publish'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'critical outage keeps extraction and does not publish'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_biography_order_and_unchecked_publication",
@@ -1833,8 +1857,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'biography order and unchecked publication'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'biography order and unchecked publication'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_complete_replay_is_model_free_and_preserves_final_decisions",
@@ -1864,8 +1891,11 @@
       "direct_targets": [
         "pipeline.link.to_classic"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'complete replay is model free and preserves final decisions'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'complete replay is model free and preserves final decisions'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_generation_draft_is_reused_after_failed_guard",
@@ -1893,8 +1923,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'generation draft is reused after failed guard'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'generation draft is reused after failed guard'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_collection_keeps_interstitial_front_matter",
@@ -1924,8 +1957,11 @@
       "direct_targets": [
         "pipeline.classify.classify_chapters"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.classify.classify_chapters is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'collection keeps interstitial front matter'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify.classify_chapters is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'collection keeps interstitial front matter'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.classify_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_free_alias_never_reads_paid_credentials_on_outage",
@@ -1956,8 +1992,11 @@
         "pipeline.llm._Breaker.__init__",
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._Breaker.__init__, pipeline.llm.jev is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'free alias never reads paid credentials on outage'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._Breaker.__init__, pipeline.llm.jev is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'free alias never reads paid credentials on outage'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_paid_budget_persists_and_concurrency_cannot_exceed_cap",
@@ -1987,8 +2026,11 @@
       "direct_targets": [
         "pipeline.provenance.reserve_paid"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.provenance.reserve_paid is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'paid budget persists and concurrency cannot exceed cap'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.provenance.reserve_paid is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'paid budget persists and concurrency cannot exceed cap'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.budget_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_paid_budget_default_uses_durable_data_directory",
@@ -2018,8 +2060,11 @@
       "direct_targets": [
         "pipeline.provenance.reserve_paid"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.provenance.reserve_paid is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'paid budget default uses durable data directory'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.provenance.reserve_paid is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'paid budget default uses durable data directory'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.budget_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_legacy_chat_fallback_cannot_bypass_route_or_teacher_provenance",
@@ -2049,8 +2094,11 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'legacy chat fallback cannot bypass route or teacher provenance'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'legacy chat fallback cannot bypass route or teacher provenance'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_saga_refuses_missing_or_unverified_recap_before_generation",
@@ -2078,8 +2126,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'saga refuses missing or unverified recap before generation'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'saga refuses missing or unverified recap before generation'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_verified_output_reconciles_unacknowledged_job_without_calls",
@@ -2107,8 +2158,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'verified output reconciles unacknowledged job without calls'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'verified output reconciles unacknowledged job without calls'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_identity_taint_propagates_at_temporal_merge_boundaries",
@@ -2198,8 +2252,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'rebuilding journal filters old graph on fresh runner without cli flag'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'rebuilding journal filters old graph on fresh runner without cli flag'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_explicit_quality_retry_archives_and_can_complete_from_preserved_extraction",
@@ -2229,8 +2286,11 @@
       "direct_targets": [
         "pipeline.link.to_classic"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'explicit quality retry archives and can complete from preserved extraction'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'explicit quality retry archives and can complete from preserved extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_math_preserves_fraction_and_exponent",
@@ -2260,8 +2320,11 @@
       "direct_targets": [
         "pipeline.parse.DocParser.__init__"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse.DocParser.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'math preserves fraction and exponent'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.DocParser.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'math preserves fraction and exponent'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_svg_keeps_accessible_text_or_explicit_unavailable_marker",
@@ -2291,8 +2354,11 @@
       "direct_targets": [
         "pipeline.parse.DocParser.__init__"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse.DocParser.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'svg keeps accessible text or explicit unavailable marker'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.DocParser.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'svg keeps accessible text or explicit unavailable marker'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_oversized_paragraph_is_refused_before_extraction",
@@ -2322,8 +2388,11 @@
       "direct_targets": [
         "pipeline.run.Runner.__init__"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.run.Runner.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'oversized paragraph is refused before extraction'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.run.Runner.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'oversized paragraph is refused before extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_archive_rejected_before_member_read",
@@ -2353,8 +2422,11 @@
       "direct_targets": [
         "pipeline.parse.parse_epub"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse.parse_epub is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'archive rejected before member read'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.parse_epub is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'archive rejected before member read'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_epub_detects_english_for_cost_and_extraction",
@@ -2384,8 +2456,11 @@
       "direct_targets": [
         "pipeline.parse.parse_epub"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.parse.parse_epub is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'epub detects english for cost and extraction'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.parse_epub is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'epub detects english for cost and extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_request_deadline_spans_stages_and_refuses_unaffordable_retry",
@@ -2417,8 +2492,11 @@
         "pipeline.llm._timeout",
         "pipeline.llm.request_budget"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._sleep, pipeline.llm._timeout, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'request deadline spans stages and refuses unaffordable retry'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._sleep, pipeline.llm._timeout, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'request deadline spans stages and refuses unaffordable retry'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_trickled_response_cannot_reset_request_deadline",
@@ -2449,8 +2527,11 @@
         "pipeline.llm._chunks",
         "pipeline.llm.request_budget"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._chunks, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'trickled response cannot reset request deadline'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._chunks, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'trickled response cannot reset request deadline'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_expired_request_does_not_contact_any_route",
@@ -2481,8 +2562,11 @@
         "pipeline.llm.jev",
         "pipeline.llm.request_budget"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'expired request does not contact any route'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.jev, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'expired request does not contact any route'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_free_context_limit_never_silently_changes_teacher_input",
@@ -2513,8 +2597,11 @@
         "pipeline.llm._Breaker.__init__",
         "pipeline.llm.jev_free"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._Breaker.__init__, pipeline.llm.jev_free is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'free context limit never silently changes teacher input'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._Breaker.__init__, pipeline.llm.jev_free is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'free context limit never silently changes teacher input'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_classic_guard_outage_reuses_raw_extraction",
@@ -2544,8 +2631,11 @@
       "direct_targets": [
         "pipeline.link.to_classic"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'classic guard outage reuses raw extraction'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'classic guard outage reuses raw extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_classic_rejected_rewrite_is_withheld",
@@ -2575,8 +2665,11 @@
       "direct_targets": [
         "pipeline.link.to_classic"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'classic rejected rewrite is withheld'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'classic rejected rewrite is withheld'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_flagged_cache_needs_explicit_deterministic_fallback",
