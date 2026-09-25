@@ -1,24 +1,22 @@
-# Original test scope: data export and release tooling
+# Original test scope: translated data export and release contracts
 
 The 171-test baseline in `core/test/ported/manifest.json` includes nine tests
 whose direct targets are `scripts/`, outside the 378 production functions in
-`pipeline/` and `server/`. This ledger gives each test a concrete owner and a
-closure check. It does not change any test's current `scope_exception` status:
-none of these nine Python assertions has been translated or passed in Dart.
+`pipeline/` and `server/`. All nine now have Dart assertion bodies and a
+`contract_owners` entry. They are `translated_skipped`: their tests compile,
+but no replacement tool or business adapter exists yet, so none of the
+assertions has passed in Dart.
 
 `PLAN.md` A0.6 says to translate all 171 original tests before leaving A0,
 allowing a translated test to be skipped with a recorded reason. Its production
-function exception rule does not automatically waive tests. The nine entries
-below therefore remain an **A0.6 gate decision**, even though the prospective
-owners are now identified. A phase decision must either translate each contract
-into an executable Dart test or explicitly approve a narrower test scope with
-the reason recorded in the test manifest and `STATUS.md`. A skipped placeholder
-is not a translation.
+function exception rule does not waive tests. The nine entries below therefore
+retain their original IDs, explicit future owners and concrete assertions.
+They cannot be enabled until the listed replacement implementations exist.
 
 ## Three teacher-data export tests
 
-`scripts/export_judge_data.py` is an offline training-data utility, not part of
-the planned Dart app, core engine, or HTTP service. Its three tests protect the
+`scripts/export_judge_data.py` is an offline training-data utility outside the
+planned Dart app, core engine, or HTTP service. Its three translated tests protect the
 link between a teacher label and the exact input judged. The Python oracle
 continues running these tests while that tool exists. At C, the tool and tests
 can be stored with the tagged Python reference; keeping a runnable data exporter
@@ -36,7 +34,7 @@ passage must never be presented as the exact teacher input.
 ## Six Python/Web release-boundary tests
 
 `scripts/build_release.py` assembles the old Python-and-Web self-hosted release.
-Its six tests are release safety contracts, not tests of a `pipeline/` or
+Its six translated tests are release safety contracts, not tests of a `pipeline/` or
 `server/` function. `PLAN.md` C replaces the self-hosted service with a compiled
 Dart executable and keeps `web/`, so **C self-hosted packaging and its offline
 release validation** own these contracts. B6's Android APK checks are separate:
@@ -55,9 +53,9 @@ checks pass; the old builder is then removed from the active branch at C.
 | `tests.test_release.ReleaseBoundary.test_worker_stamp_changes_for_assets_and_logic_not_downloads` | Web service-worker stamp changes for shell assets or worker logic, stays stable for download artifacts. | C self-hosted Web package test: verify these three stamp cases for the retained `web/` frontend. Flutter does not use a service worker. |
 
 The C package checks must exercise the replacement release process, not merely
-re-run `scripts/build_release.py`. Only after they pass may the six tests be
-marked translated or be closed by an explicit scope decision. A0 retains the
-nine named skipped slots so the original test count cannot silently shrink.
+re-run `scripts/build_release.py`. They remain skipped until the replacement
+process is bound to the Dart test adapters and the assertions execute. A0
+retains all nine named slots so the original test count cannot silently shrink.
 
 Run `python3 docs/port/check_test_scope.py` to verify this ledger against the
 frozen test manifest. The existing `core/tool/generate_ported_tests.py --check`

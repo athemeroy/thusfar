@@ -22,9 +22,9 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 85,
+    "translated_skipped": 94,
     "pending_port": 77,
-    "scope_exception": 9
+    "scope_exception": 0
   },
   "tests": [
     {
@@ -40,8 +40,11 @@
         "A0（数据工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.export_judge_data owns 'zero window keeps tail beyond old cap'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
+      "contract_owners": [
+        "A4 judge-request exact-context serialization and C Dart teacher-data exporter"
+      ]
     },
     {
       "id": "tests.test_export_exact_context.ExactTeacherContextTests.test_cropped_context_is_explicitly_unverified",
@@ -56,8 +59,11 @@
         "A0（数据工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.export_judge_data owns 'cropped context is explicitly unverified'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
+      "contract_owners": [
+        "A4 judge-request exact-context serialization and C Dart teacher-data exporter"
+      ]
     },
     {
       "id": "tests.test_export_exact_context.ExactTeacherContextTests.test_structured_state_preserves_all_sections_and_order",
@@ -72,8 +78,11 @@
         "A0（数据工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.export_judge_data owns 'structured state preserves all sections and order'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
+      "contract_owners": [
+        "A4 judge-request exact-context serialization and C Dart teacher-data exporter"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_explicit_zero_retries_overrides_default_without_final_sleep",
@@ -2639,8 +2648,11 @@
         "C（发布工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.build_release owns 'verified snapshot reused and data credentials excluded'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "C compiled Dart self-hosted release package and retained Web shell"
+      ]
     },
     {
       "id": "tests.test_release.ReleaseBoundary.test_changed_source_requires_new_validation",
@@ -2655,8 +2667,11 @@
         "C（发布工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.build_release owns 'changed source requires new validation'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "C compiled Dart self-hosted release package and retained Web shell"
+      ]
     },
     {
       "id": "tests.test_release.ReleaseBoundary.test_private_runtime_file_and_symlink_rejected",
@@ -2671,8 +2686,11 @@
         "C（发布工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.build_release owns 'private runtime file and symlink rejected'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "C compiled Dart self-hosted release package and retained Web shell"
+      ]
     },
     {
       "id": "tests.test_release.ReleaseBoundary.test_tampering_refuses_existing_release_reuse",
@@ -2687,8 +2705,11 @@
         "C（发布工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.build_release owns 'tampering refuses existing release reuse'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "C compiled Dart self-hosted release package and retained Web shell"
+      ]
     },
     {
       "id": "tests.test_release.ReleaseBoundary.test_root_directory_symlink_is_rejected",
@@ -2703,8 +2724,11 @@
         "C（发布工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.build_release owns 'root directory symlink is rejected'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "C compiled Dart self-hosted release package and retained Web shell"
+      ]
     },
     {
       "id": "tests.test_release.ReleaseBoundary.test_worker_stamp_changes_for_assets_and_logic_not_downloads",
@@ -2719,8 +2743,11 @@
         "C（发布工具）"
       ],
       "direct_targets": [],
-      "status": "scope_exception",
-      "skip_reason": "Python-only scripts.build_release owns 'worker stamp changes for assets and logic not downloads'; PLAN names no Dart production replacement. Decide its A0/C treatment."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "C compiled Dart self-hosted release package and retained Web shell"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_old_epub_without_language_gets_english_shelf_estimate",

@@ -1,4 +1,4 @@
-"""Check the nine documented script-test exceptions against the frozen port ledger."""
+"""Check the nine translated script-tool contracts against the frozen ledger."""
 
 from __future__ import annotations
 
@@ -25,21 +25,24 @@ EXPECTED = {
 
 def main() -> None:
     rows = json.loads(MANIFEST.read_text(encoding="utf-8"))["tests"]
-    exceptions = {row["id"]: row for row in rows if row["status"] == "scope_exception"}
-    if set(exceptions) != set(EXPECTED):
-        raise ValueError("Scope-exception IDs differ from the nine reviewed script tests")
+    exceptions = {row["id"] for row in rows if row["status"] == "scope_exception"}
+    if exceptions:
+        raise ValueError(f"Untranslated script-test scope exceptions remain: {sorted(exceptions)}")
+    by_id = {row["id"]: row for row in rows}
     for test_id, module in EXPECTED.items():
-        row = exceptions[test_id]
-        if row["owner_modules"] != [module] or not row.get("skip_reason"):
-            raise ValueError(f"Scope-exception owner or reason drifted: {test_id}")
+        row = by_id[test_id]
+        if row["owner_modules"] != [module] or row["status"] not in {"translated_skipped", "translated"}:
+            raise ValueError(f"Script contract owner or translation drifted: {test_id}")
+        if not row.get("contract_owners") or row["status"] == "translated_skipped" and not row.get("skip_reason"):
+            raise ValueError(f"Script contract closure or skip reason is missing: {test_id}")
     documented = re.findall(
         r"^\| `(?P<id>tests\.test_[^`]+)` \|",
         DOC.read_text(encoding="utf-8"),
         re.MULTILINE,
     )
     if len(documented) != len(EXPECTED) or set(documented) != set(EXPECTED):
-        raise ValueError("Scope document must describe each exception exactly once")
-    print("Verified 9 script-test exceptions: 3 teacher-data, 6 self-hosted release")
+        raise ValueError("Scope document must describe each script contract exactly once")
+    print("Verified 9 translated script-tool contracts: 3 teacher-data, 6 self-hosted release")
 
 
 if __name__ == "__main__":
