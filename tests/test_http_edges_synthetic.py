@@ -33,9 +33,11 @@ class SyntheticEdgeHTTPOracleTests(unittest.TestCase):
             self.assertEqual(reports[0].read_bytes(), reports[1].read_bytes())
             self.assertEqual(reports[0].read_bytes(), GOLDEN.with_name('aq_edges_synthetic-report.json').read_bytes())
             report = json.loads(reports[0].read_text(encoding='utf-8'))
-            self.assertEqual((report['routes'], report['passes']), (8, 2))
+            self.assertEqual((report['routes'], report['passes']), (11, 2))
             self.assertFalse(report['transport']['outbound_model_network'])
             self.assertIn('synthetic', report['source'])
+            self.assertTrue(report['acceptance']['ask_guard_withheld'])
+            self.assertTrue(report['acceptance']['auto_marginalia_and_cache'])
             for secret in ('fixture-settings-key', 'oracle-http-transport-fixture-only'):
                 self.assertNotIn(secret, outputs[0].read_text(encoding='utf-8'))
 
