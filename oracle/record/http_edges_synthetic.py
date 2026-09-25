@@ -251,8 +251,12 @@ def protocol_once(data: Path, bid: str) -> list[dict]:
         ('marginalia-admission-429-synthetic', 'POST', f'/api/books/{bid}/marginalia',
          {'mode': 'auto', 'pos': 900, 'page_start': 820, 'page_end': 847}, None),
         ('incomplete-body-408-synthetic', 'POST', '/api/login', None, b'{}'),
+        ('me-passcode-required-synthetic', 'GET', '/api/me', None, None),
+        ('books-unauthorized-401-synthetic', 'GET', '/api/books', None, None),
+        ('settings-nonlocal-404-synthetic', 'GET', '/api/settings', None, None),
     ]
     previous_gate, previous_timeout = app._ask_gate, app.READ_TIMEOUT
+    previous_passcode, previous_local_mode = app.PASSCODE, app.LOCAL_MODE
     app._ask_gate = threading.BoundedSemaphore(0)
     app.READ_TIMEOUT = 0.15
     server = ThreadingHTTPServer(('127.0.0.1', 0), app.Handler)
@@ -267,6 +271,11 @@ def protocol_once(data: Path, bid: str) -> list[dict]:
             connection_number = 0
             try:
                 for route_id, method, path, body, raw in cases:
+                    app.PASSCODE = ('fixture-only-passcode' if route_id in (
+                        'me-passcode-required-synthetic', 'books-unauthorized-401-synthetic')
+                        else previous_passcode)
+                    app.LOCAL_MODE = (False if route_id == 'settings-nonlocal-404-synthetic'
+                                      else previous_local_mode)
                     payload = canonical(body).encode('utf-8') if body is not None else raw
                     headers = {'Content-Type': 'application/json'}
                     if route_id == 'incomplete-body-408-synthetic':
@@ -285,7 +294,7 @@ def protocol_once(data: Path, bid: str) -> list[dict]:
                     if body is not None:
                         request['body_json'] = body
                     else:
-                        request['body_base64'] = base64.b64encode(raw).decode('ascii')
+                        request['body_base64'] = base64.b64encode(raw or b'').decode('ascii')
                     rows.append({'route': route_id, 'request': request, 'response': reply,
                                  'transport': {'http_version': 'HTTP/1.1',
                                                'connection': connection_number,
@@ -297,12 +306,17 @@ def protocol_once(data: Path, bid: str) -> list[dict]:
         server.server_close()
         worker.join(timeout=5)
         app._ask_gate, app.READ_TIMEOUT = previous_gate, previous_timeout
-    if [row['response']['status'] for row in rows] != [429, 429, 429, 408]:
+        app.PASSCODE, app.LOCAL_MODE = previous_passcode, previous_local_mode
+    if [row['response']['status'] for row in rows] != [429, 429, 429, 408, 200, 401, 404]:
         raise ValueError('synthetic HTTP admission or body timeout statuses differ')
-    if [row['response']['body_json']['error'] for row in rows] != [
+    if [row['response']['body_json']['error'] for row in rows[:4]] != [
             '正在回答其他问题，请稍后重试', '正在回答其他问题，请稍后重试',
             'AI 正在写另一条批注，请稍后再试', '请求超时']:
         raise ValueError('synthetic HTTP admission or body timeout messages differ')
+    if (rows[4]['response']['body_json'] != {'ok': False, 'passcode': True} or
+            rows[5]['response']['body_json'] != {'error': '需要口令'} or
+            rows[6]['response']['body_json'] != {'error': '没有这个接口'}):
+        raise ValueError('synthetic passcode or nonlocal settings response differs')
     return rows
 
 
@@ -362,11 +376,13 @@ def main() -> None:
         'synthetic_graph_revision': list(FIXED_KG_REVISION),
         'transport': {'version': 'HTTP/1.1', 'outbound_model_network': False,
                       'synthetic_admission_gate': 'zero slots for ask, who, marginalia',
-                      'body_timeout': '2 sent bytes with Content-Length 20; isolated handler timeout 0.15s'},
+                      'body_timeout': '2 sent bytes with Content-Length 20; isolated handler timeout 0.15s',
+                      'auth_and_mode': 'fixture passcode for two requests; local mode disabled for one request'},
         'acceptance': {'settings_success': True, 'settings_http401': True,
                        'settings_timeout': True, 'future_refusal': True,
                        'ask_guard_withheld': True, 'auto_marginalia_and_cache': True,
-                       'admission_429': True, 'incomplete_body_408': True},
+                       'admission_429': True, 'incomplete_body_408': True,
+                       'passcode_401': True, 'nonlocal_settings_404': True},
     })
     print(f'recorded {len(rows)} synthetic edge HTTP routes; {args.repeat} passes byte-identical')
 
