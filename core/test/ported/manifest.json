@@ -43,7 +43,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
       "contract_owners": [
-        "A4 judge-request exact-context serialization and C Dart teacher-data exporter"
+        "scripts.export_judge_data.from_logs"
       ]
     },
     {
@@ -62,7 +62,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
       "contract_owners": [
-        "A4 judge-request exact-context serialization and C Dart teacher-data exporter"
+        "scripts.export_judge_data.from_logs"
       ]
     },
     {
@@ -81,7 +81,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
       "contract_owners": [
-        "A4 judge-request exact-context serialization and C Dart teacher-data exporter"
+        "scripts.export_judge_data.from_logs"
       ]
     },
     {
@@ -102,7 +102,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_lower_environment_retry_count_is_honored",
@@ -122,7 +125,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_success_after_retry_is_validated_and_logged_once",
@@ -142,7 +148,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_timeout_exhaustion_has_no_final_sleep",
@@ -162,7 +171,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_long_retry_advice_falls_back_immediately",
@@ -182,7 +194,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_exhaustion_has_no_final_sleep",
@@ -202,7 +217,10 @@
         "pipeline.llm.jev_free"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_valid_response_keeps_wire_contract",
@@ -222,7 +240,10 @@
         "pipeline.llm.jev_free"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_batches_honor_serialized_unicode_dimension_limit",
@@ -242,7 +263,10 @@
         "pipeline.llm.jev_free"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_batches_preserve_twenty_dimension_limit",
@@ -262,7 +286,10 @@
         "pipeline.llm._classifier_batches"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free batches preserve twenty dimension limit'."
+      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free batches preserve twenty dimension limit'.",
+      "contract_owners": [
+        "pipeline.llm._classifier_batches"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_serialized_dimension_boundary_is_inclusive",
@@ -282,7 +309,10 @@
         "pipeline.llm._classifier_batches"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free serialized dimension boundary is inclusive'."
+      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free serialized dimension boundary is inclusive'.",
+      "contract_owners": [
+        "pipeline.llm._classifier_batches"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_instruction_limit_is_checked_before_submission",
@@ -302,7 +332,10 @@
         "pipeline.llm._classifier_batches"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free instruction limit is checked before submission'."
+      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free instruction limit is checked before submission'.",
+      "contract_owners": [
+        "pipeline.llm._classifier_batches"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_long_guard_note_is_kept_in_state_with_short_instructions",
@@ -322,7 +355,10 @@
         "pipeline.judge.guard_texts"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.judge.guard_texts and its recorded jev callback/state capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.judge.guard_texts and its recorded jev callback/state capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.judge.guard_texts"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_oversized_single_dimension_goes_paid_without_partial_free_calls",
@@ -342,7 +378,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_missing_paid_answers_are_not_logged_as_training_labels",
@@ -362,7 +401,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_invalid_paid_scores_are_rejected",
@@ -382,7 +424,10 @@
         "pipeline.llm.jev"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_malformed_or_missing_free_dimensions_are_rejected",
@@ -402,7 +447,10 @@
         "pipeline.llm.jev_free"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_chat_exhaustion_has_no_final_sleep",
@@ -422,7 +470,10 @@
         "pipeline.llm.chat"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm.chat and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm.chat and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.chat"
+      ]
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_retry_after_dates_and_invalid_values",
@@ -442,7 +493,10 @@
         "pipeline.llm._retry_after"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm._retry_after and its fixed-clock Retry-After evaluation test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm._retry_after and its fixed-clock Retry-After evaluation test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._retry_after"
+      ]
     },
     {
       "id": "tests.test_judge_client.Breaker.test_cooldown_allows_only_one_recovery_probe",
@@ -462,7 +516,10 @@
         "pipeline.llm._Breaker.__init__"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm._Breaker.__init__ and its fixed-clock concurrent breaker probe test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm._Breaker.__init__ and its fixed-clock concurrent breaker probe test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._Breaker.__init__"
+      ]
     },
     {
       "id": "tests.test_judge_client.TeacherLog.test_parallel_writes_are_complete_and_have_one_state",
@@ -482,7 +539,10 @@
         "pipeline.llm._teacher_log"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._teacher_log"
+      ]
     },
     {
       "id": "tests.test_judge_client.TeacherLog.test_state_deduplication_is_scoped_to_log_directory",
@@ -502,7 +562,10 @@
         "pipeline.llm._teacher_log"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._teacher_log"
+      ]
     },
     {
       "id": "tests.test_judge_client.TeacherLog.test_failed_state_write_is_visible_and_remains_retryable",
@@ -522,7 +585,10 @@
         "pipeline.llm._teacher_log"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped."
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._teacher_log"
+      ]
     },
     {
       "id": "tests.test_judge_data.StateFormat.test_export_matches_what_the_pipeline_sends",
@@ -934,7 +1000,10 @@
         "pipeline.kg.zh"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.kg.zh is pending (A2, A4, A6); required to check 'zh punctuation'."
+      "skip_reason": "Dart implementation of pipeline.kg.zh is pending (A2, A4, A6); required to check 'zh punctuation'.",
+      "contract_owners": [
+        "pipeline.kg.zh"
+      ]
     },
     {
       "id": "tests.test_kg.TextTest.test_alias_filter",
@@ -957,7 +1026,10 @@
         "pipeline.kg.good_alias"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.kg.good_alias is pending (A2, A4, A6); required to check 'alias filter'."
+      "skip_reason": "Dart implementation of pipeline.kg.good_alias is pending (A2, A4, A6); required to check 'alias filter'.",
+      "contract_owners": [
+        "pipeline.kg.good_alias"
+      ]
     },
     {
       "id": "tests.test_llm.RepairTest.test_inner_quote_followed_by_text",
@@ -975,7 +1047,10 @@
         "pipeline.llm.parse_json"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by text'."
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by text'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
     },
     {
       "id": "tests.test_llm.RepairTest.test_inner_quote_followed_by_ascii_comma",
@@ -993,7 +1068,10 @@
         "pipeline.llm.parse_json"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by ascii comma'."
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by ascii comma'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
     },
     {
       "id": "tests.test_llm.RepairTest.test_inner_quote_followed_by_colon",
@@ -1011,7 +1089,10 @@
         "pipeline.llm.parse_json"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by colon'."
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by colon'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
     },
     {
       "id": "tests.test_llm.RepairTest.test_fences_and_trailing_commas",
@@ -1029,7 +1110,10 @@
         "pipeline.llm.parse_json"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'fences and trailing commas'."
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'fences and trailing commas'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
     },
     {
       "id": "tests.test_llm.RepairTest.test_valid_json_untouched",
@@ -1047,7 +1131,10 @@
         "pipeline.llm.parse_json"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'valid json untouched'."
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'valid json untouched'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
     },
     {
       "id": "tests.test_manual_entities.ManualRules.test_utf16_anchor_and_versions_do_not_spoil_earlier_pages",
@@ -1067,7 +1154,10 @@
         "server.manual_entities.rows"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.manual_entities.apply"
+      ]
     },
     {
       "id": "tests.test_manual_entities.ManualRules.test_existing_visible_name_is_not_duplicated",
@@ -1085,7 +1175,10 @@
         "server.manual_entities.apply"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.manual_entities.apply"
+      ]
     },
     {
       "id": "tests.test_manual_entities.ManualRules.test_name_must_be_in_already_read_source",
@@ -1103,7 +1196,10 @@
         "server.manual_entities.apply"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.manual_entities.apply"
+      ]
     },
     {
       "id": "tests.test_manual_entities.ManualRules.test_inline_mentions_preserve_generated_names_and_utf16_positions",
@@ -1121,7 +1217,10 @@
         "server.manual_entities.mentions"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of server.manual_entities.mentions is pending (A6); required to check 'inline mentions preserve generated names and utf16 positions'."
+      "skip_reason": "Dart implementation of server.manual_entities.mentions is pending (A6); required to check 'inline mentions preserve generated names and utf16 positions'.",
+      "contract_owners": [
+        "server.manual_entities.mentions"
+      ]
     },
     {
       "id": "tests.test_manual_entities.ManualHTTP.test_manual_endpoint_cutoff_retry_export_and_delete",
@@ -1137,7 +1236,11 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending."
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.app.Handler.route",
+        "server.manual_entities.apply"
+      ]
     },
     {
       "id": "tests.test_marginalia.MarginaliaHTTP.test_distinct_prefetch_pages_run_concurrently_and_keep_both_cache_rows",
@@ -1281,7 +1384,10 @@
         "server.marginalia._story"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of server.marginalia._story is pending (A2, A6); required to check 'story prioritizes page character and related history'."
+      "skip_reason": "Dart implementation of server.marginalia._story is pending (A2, A6); required to check 'story prioritizes page character and related history'.",
+      "contract_owners": [
+        "server.marginalia._story"
+      ]
     },
     {
       "id": "tests.test_marginalia.MarginaliaHTTP.test_prior_source_window_is_hard_bounded_at_utf16_cutoff",
@@ -1303,7 +1409,10 @@
         "server.marginalia._source_before"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._source_before is pending (A2, A6); required to check 'prior source window is hard bounded at utf16 cutoff'."
+      "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._source_before is pending (A2, A6); required to check 'prior source window is hard bounded at utf16 cutoff'.",
+      "contract_owners": [
+        "server.marginalia._source_before"
+      ]
     },
     {
       "id": "tests.test_marginalia.MarginaliaHTTP.test_clicked_cue_writes_three_distinct_plain_comments_in_parallel",
@@ -1397,7 +1506,10 @@
         "server.marginalia._page_candidates"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._page_candidates is pending (A2, A6); required to check 'utf16 candidate offsets round trip'."
+      "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._page_candidates is pending (A2, A6); required to check 'utf16 candidate offsets round trip'.",
+      "contract_owners": [
+        "server.marginalia._page_candidates"
+      ]
     },
     {
       "id": "tests.test_marginalia.MarginaliaHTTP.test_prompt_fragments_and_truncated_comments_are_not_published",
@@ -1418,7 +1530,10 @@
         "server.marginalia._clean"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of server.marginalia._clean is pending (A2, A6); required to check 'prompt fragments and truncated comments are not published'."
+      "skip_reason": "Dart implementation of server.marginalia._clean is pending (A2, A6); required to check 'prompt fragments and truncated comments are not published'.",
+      "contract_owners": [
+        "server.marginalia._clean"
+      ]
     },
     {
       "id": "tests.test_notebook.NotebookHTTP.test_idempotency_conflict_and_independent_notes",
@@ -1435,7 +1550,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_notebook.NotebookHTTP.test_anchors_reject_fabricated_quote_surrogate_split_and_future_bounds",
@@ -1455,7 +1573,10 @@
         "server.app.wjson"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_notebook.NotebookHTTP.test_export_import_preserves_notes_and_refuses_different_personal_records",
@@ -1472,7 +1593,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_notebook.NotebookHTTP.test_delete_tombstone_markdown_and_book_removal_preserve_personal_data",
@@ -1489,7 +1613,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_preface_does_not_swallow_numbered_parts",
@@ -1505,7 +1632,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_notebooks_and_narrative_frames_are_chapters",
@@ -1521,7 +1651,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_named_upper_middle_lower_parts_preserve_offsets",
@@ -1539,7 +1672,10 @@
         "pipeline.parse.u16"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
     },
     {
       "id": "tests.test_parse_japanese.JapanesePlainText.test_chinese_headings_keep_their_existing_structure",
@@ -1555,7 +1691,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_relation_status_survives_conversion_and_kg",
@@ -2193,7 +2332,10 @@
         "pipeline.kg.quarantine_identities"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'identity taint propagates at temporal merge boundaries'."
+      "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'identity taint propagates at temporal merge boundaries'.",
+      "contract_owners": [
+        "pipeline.kg.quarantine_identities"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_tainted_person_retains_source_identity_without_unverified_intro",
@@ -2224,7 +2366,10 @@
         "pipeline.kg.quarantine_identities"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'tainted person retains source identity without unverified intro'."
+      "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'tainted person retains source identity without unverified intro'.",
+      "contract_owners": [
+        "pipeline.kg.quarantine_identities"
+      ]
     },
     {
       "id": "tests.test_pipeline_repair.PipelineRepair.test_rebuilding_journal_filters_old_graph_on_fresh_runner_without_cli_flag",
@@ -2700,7 +2845,10 @@
         "pipeline.run.Runner.verified_summary"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.run.Runner.verified_summary is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'flagged cache needs explicit deterministic fallback'."
+      "skip_reason": "Dart implementation of pipeline.run.Runner.verified_summary is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'flagged cache needs explicit deterministic fallback'.",
+      "contract_owners": [
+        "pipeline.run.Runner.verified_summary"
+      ]
     },
     {
       "id": "tests.test_reading_list.ReadingListHTTP.test_order_receipt_conflict_and_no_progress_inference",
@@ -2716,7 +2864,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_reading_list.ReadingListHTTP.test_concurrent_reorders_have_exactly_one_winner",
@@ -2732,7 +2883,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_reading_list.ReadingListHTTP.test_unavailable_slots_preserved_but_new_hidden_or_missing_books_rejected",
@@ -2750,7 +2904,10 @@
         "server.app.wjson"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_reading_list.ReadingListHTTP.test_bad_payload_never_creates_state",
@@ -2766,7 +2923,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending."
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_release.ReleaseBoundary.test_verified_snapshot_reused_and_data_credentials_excluded",
@@ -2784,7 +2944,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
       "contract_owners": [
-        "C compiled Dart self-hosted release package and retained Web shell"
+        "scripts.build_release.build"
       ]
     },
     {
@@ -2803,7 +2963,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
       "contract_owners": [
-        "C compiled Dart self-hosted release package and retained Web shell"
+        "scripts.build_release.build"
       ]
     },
     {
@@ -2822,7 +2982,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
       "contract_owners": [
-        "C compiled Dart self-hosted release package and retained Web shell"
+        "scripts.build_release.build"
       ]
     },
     {
@@ -2841,7 +3001,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
       "contract_owners": [
-        "C compiled Dart self-hosted release package and retained Web shell"
+        "scripts.build_release.build"
       ]
     },
     {
@@ -2860,7 +3020,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
       "contract_owners": [
-        "C compiled Dart self-hosted release package and retained Web shell"
+        "scripts.build_release.build"
       ]
     },
     {
@@ -2879,7 +3039,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
       "contract_owners": [
-        "C compiled Dart self-hosted release package and retained Web shell"
+        "scripts.build_release.build"
       ]
     },
     {
@@ -3431,7 +3591,10 @@
         "server.temporal.fold"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'shared temporal contract'."
+      "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'shared temporal contract'.",
+      "contract_owners": [
+        "server.temporal.fold"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_early_and_merged_latest_attributes_preserved",
@@ -3455,7 +3618,10 @@
         "server.temporal.fold"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'early and merged latest attributes preserved'."
+      "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'early and merged latest attributes preserved'.",
+      "contract_owners": [
+        "server.temporal.fold"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_failed_guard_never_publishes_rejected_prose",
@@ -3734,7 +3900,10 @@
         "server.storage.write_json"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.jobs.Worker.__init__"
+      ]
     },
     {
       "id": "tests.test_standalone.ThreadWorker.test_pipeline_pre_cancel_releases_its_file_lock",
@@ -3758,7 +3927,10 @@
         "server.jobs.book_lease"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.run.run_book"
+      ]
     },
     {
       "id": "tests.test_standalone.PrivateSettings.test_cost_prompt_does_not_quote_a_paid_judge_or_unknown_model_price",
@@ -3783,7 +3955,10 @@
         "pipeline.models.estimate"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.models.estimate"
+      ]
     },
     {
       "id": "tests.test_standalone.PrivateSettings.test_saved_model_is_used_by_questions_comments_and_new_pipeline_jobs",
@@ -3811,7 +3986,10 @@
         "server.model_settings.save"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.model_settings.save"
+      ]
     },
     {
       "id": "tests.test_standalone.PrivateSettings.test_key_is_private_and_never_returned_by_api",
@@ -3832,7 +4010,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_standalone.PrivateSettings.test_processing_without_a_key_is_refused_with_the_reason",
@@ -3855,7 +4036,10 @@
         "server.app.cached_json"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_standalone.PrivateSettings.test_unread_post_body_does_not_poison_the_next_request_on_the_same_connection",
@@ -3876,7 +4060,10 @@
       ],
       "direct_targets": [],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
     },
     {
       "id": "tests.test_standalone.ModelFailures.test_hopeless_failures_are_explained_and_transient_ones_are_not",
@@ -3901,7 +4088,10 @@
         "pipeline.llm.explain"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of pipeline.llm.explain is pending (A1/A6, A3, A5, A6); required to check 'hopeless failures are explained and transient ones are not'."
+      "skip_reason": "Dart implementation of pipeline.llm.explain is pending (A1/A6, A3, A5, A6); required to check 'hopeless failures are explained and transient ones are not'.",
+      "contract_owners": [
+        "pipeline.llm.explain"
+      ]
     },
     {
       "id": "tests.test_standalone.ModelFailures.test_a_refusal_is_named_without_a_second_fix_call",
@@ -3926,7 +4116,10 @@
         "pipeline.local.extract_local"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.local.extract_local"
+      ]
     },
     {
       "id": "tests.test_standalone.ModelFailures.test_a_hung_stream_is_given_up_on_in_proportion_to_the_model",
@@ -3952,7 +4145,10 @@
         "pipeline.llm._stall_timeout"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.llm._stall_timeout"
+      ]
     },
     {
       "id": "tests.test_standalone.ModelFailures.test_settings_fill_in_v1_and_nothink",
@@ -3976,7 +4172,10 @@
         "server.model_settings.normalize"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Dart implementation of server.model_settings.normalize is pending (A1/A6, A5, A6); required to check 'settings fill in v1 and nothink'."
+      "skip_reason": "Dart implementation of server.model_settings.normalize is pending (A1/A6, A5, A6); required to check 'settings fill in v1 and nothink'.",
+      "contract_owners": [
+        "server.model_settings.normalize"
+      ]
     },
     {
       "id": "tests.test_standalone.ModelFailures.test_web_page_and_thinking_only_replies_are_named",
@@ -4002,7 +4201,10 @@
         "pipeline.llm.explain"
       ],
       "status": "translated_skipped",
-      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending."
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.llm.chat"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_added_worded_relation_gets_own_check_and_negative_is_dropped",
@@ -4026,7 +4228,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner.add_support"
       ]
     },
     {
@@ -4051,7 +4253,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner.add_support"
       ]
     },
     {
@@ -4074,7 +4276,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner.add_support"
       ]
     },
     {
@@ -4097,7 +4299,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner.add_support"
       ]
     },
     {
@@ -4120,7 +4322,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner.add_support"
       ]
     },
     {
@@ -4143,7 +4345,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner.support_items"
       ]
     },
     {
@@ -4166,7 +4368,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner._local_job"
       ]
     },
     {
@@ -4189,7 +4391,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner.add_support"
       ]
     },
     {
@@ -4212,7 +4414,7 @@
       "status": "translated_skipped",
       "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
       "contract_owners": [
-        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+        "pipeline.run.Runner._local_job"
       ]
     }
   ]
