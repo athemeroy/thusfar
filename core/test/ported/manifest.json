@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 26,
-    "pending_port": 136,
+    "translated_skipped": 45,
+    "pending_port": 117,
     "scope_exception": 9
   },
   "tests": [
@@ -92,8 +92,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'explicit zero retries overrides default without final sleep'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_lower_environment_retry_count_is_honored",
@@ -112,8 +112,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'lower environment retry count is honored'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_success_after_retry_is_validated_and_logged_once",
@@ -132,8 +132,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'success after retry is validated and logged once'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_timeout_exhaustion_has_no_final_sleep",
@@ -152,8 +152,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'timeout exhaustion has no final sleep'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_long_retry_advice_falls_back_immediately",
@@ -172,8 +172,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'free long retry advice falls back immediately'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_exhaustion_has_no_final_sleep",
@@ -192,8 +192,8 @@
       "direct_targets": [
         "pipeline.llm.jev_free"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev_free is pending (A3, A4); required to check 'free exhaustion has no final sleep'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_valid_response_keeps_wire_contract",
@@ -212,8 +212,8 @@
       "direct_targets": [
         "pipeline.llm.jev_free"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev_free is pending (A3, A4); required to check 'free valid response keeps wire contract'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_batches_honor_serialized_unicode_dimension_limit",
@@ -232,8 +232,8 @@
       "direct_targets": [
         "pipeline.llm.jev_free"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev_free is pending (A3, A4); required to check 'free batches honor serialized unicode dimension limit'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_free_batches_preserve_twenty_dimension_limit",
@@ -312,8 +312,8 @@
       "direct_targets": [
         "pipeline.judge.guard_texts"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.judge.guard_texts is pending (A3, A4); required to check 'long guard note is kept in state with short instructions'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.judge.guard_texts and its recorded jev callback/state capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_oversized_single_dimension_goes_paid_without_partial_free_calls",
@@ -332,8 +332,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'oversized single dimension goes paid without partial free calls'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_missing_paid_answers_are_not_logged_as_training_labels",
@@ -352,8 +352,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'missing paid answers are not logged as training labels'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_invalid_paid_scores_are_rejected",
@@ -372,8 +372,8 @@
       "direct_targets": [
         "pipeline.llm.jev"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A3, A4); required to check 'invalid paid scores are rejected'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_malformed_or_missing_free_dimensions_are_rejected",
@@ -392,8 +392,8 @@
       "direct_targets": [
         "pipeline.llm.jev_free"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.jev_free is pending (A3, A4); required to check 'malformed or missing free dimensions are rejected'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_chat_exhaustion_has_no_final_sleep",
@@ -412,8 +412,8 @@
       "direct_targets": [
         "pipeline.llm.chat"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm.chat is pending (A3, A4); required to check 'chat exhaustion has no final sleep'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.chat and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.JudgeClient.test_retry_after_dates_and_invalid_values",
@@ -432,8 +432,8 @@
       "direct_targets": [
         "pipeline.llm._retry_after"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._retry_after is pending (A3, A4); required to check 'retry after dates and invalid values'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._retry_after and its fixed-clock Retry-After evaluation test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.Breaker.test_cooldown_allows_only_one_recovery_probe",
@@ -452,8 +452,8 @@
       "direct_targets": [
         "pipeline.llm._Breaker.__init__"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._Breaker.__init__ is pending (A3, A4); required to check 'cooldown allows only one recovery probe'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._Breaker.__init__ and its fixed-clock concurrent breaker probe test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.TeacherLog.test_parallel_writes_are_complete_and_have_one_state",
@@ -472,8 +472,8 @@
       "direct_targets": [
         "pipeline.llm._teacher_log"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._teacher_log is pending (A3, A4); required to check 'parallel writes are complete and have one state'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.TeacherLog.test_state_deduplication_is_scoped_to_log_directory",
@@ -492,8 +492,8 @@
       "direct_targets": [
         "pipeline.llm._teacher_log"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._teacher_log is pending (A3, A4); required to check 'state deduplication is scoped to log directory'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_client.TeacherLog.test_failed_state_write_is_visible_and_remains_retryable",
@@ -512,8 +512,8 @@
       "direct_targets": [
         "pipeline.llm._teacher_log"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.llm._teacher_log is pending (A3, A4); required to check 'failed state write is visible and remains retryable'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped."
     },
     {
       "id": "tests.test_judge_data.StateFormat.test_export_matches_what_the_pipeline_sends",
