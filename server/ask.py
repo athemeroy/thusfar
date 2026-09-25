@@ -139,7 +139,9 @@ def retrieve(d: Path, book: dict, q: str, names: list[str], pos: int, k: int = 1
         hit = qg & g
         if not hit:
             continue
-        s = sum(weight[x] for x in hit) / (1 + 0.002 * len(t))
+        # Float addition depends on order. A set's hash-seed order can change
+        # the boundary passage and therefore the later judge/answer prompt.
+        s = sum(weight[x] for x in sorted(hit)) / (1 + 0.002 * len(t))
         scored.append((s, o, t))
     scored.sort(reverse=True)
     # Empty overlap should not silently reduce an older-evidence question to the last page.

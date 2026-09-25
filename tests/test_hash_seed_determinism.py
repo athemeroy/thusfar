@@ -36,6 +36,8 @@ class HashSeedDeterminismTests(unittest.TestCase):
                 self.assertEqual(actual['pairs'][0], ['P2', 'P1'])
                 self.assertEqual(actual['dossier_keys'],
                                  ['P1', 'P2', 'P3', 'P4', 'P5'])
+                self.assertEqual(actual['retrieved_offsets'],
+                                 [i * 4000 for i in range(13)] + [56000])
 
 
 if __name__ == '__main__':

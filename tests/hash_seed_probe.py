@@ -8,6 +8,7 @@ from pipeline.extract import segments
 from pipeline.kg import KG
 from pipeline.link import link_segment, proper_name, to_classic
 from pipeline.parse import finish
+from server import ask
 from tests.test_oracle_pure_coverage import bare_runner, person
 
 
@@ -28,11 +29,11 @@ def probe():
     kg = SimpleNamespace(people=cast, canon=lambda pid: pid, k=1)
     captured = []
 
-    def ask(questions, *_args):
+    def fake_judge(questions, *_args):
         captured.append(questions[0][2])
         return {'1': {'choice': 'new', 'p': 1.0}}
 
-    with patch('pipeline.link._ask_jev', side_effect=ask), \
+    with patch('pipeline.link._ask_jev', side_effect=fake_judge), \
          patch('pipeline.link.verify_names', return_value=({}, {})):
         link_segment(kg, {}, {'people': [{'id': '1', 'name': 'Alex', 'names': []}]}, 'Alex')
 
@@ -63,11 +64,24 @@ def probe():
     plan = old_kg.plan(seg, data)
     committed = old_kg.commit(seg, data, plan, {})
     event = next(row for row in committed if row['t'] == 'event')
+    question = 'alpha beta gamma delta epsilon zeta'
+    passages = [(i * 4000, question.ljust(30)) for i in range(13)]
+    passages.extend([
+        (52000, 'alpha beta gamma'.ljust(30)),
+        (56000, 'delta epsilon zeta'.ljust(30)),
+        (60000, 'beta epsilon gamma zeta'.ljust(3000)),
+        (64000, 'gamma zeta'.ljust(3000)),
+        (68000, 'extra'.ljust(3000)),
+        (72000, 'filler'.ljust(3000)),
+    ])
+    with patch.object(ask, '_book_index', return_value=passages):
+        retrieved = ask.retrieve(None, {}, question, [], 80000)
     return {
         'proper': proper, 'classic': classic,
         'candidates': captured[0], 'pairs': pairs,
         'dossier_keys': list(dossiers),
         'scrubbed': event['text'],
+        'retrieved_offsets': [row['o'] for row in retrieved],
     }
 
 
