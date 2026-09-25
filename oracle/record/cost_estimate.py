@@ -49,6 +49,7 @@ def estimate(source_dir: Path) -> dict:
     return {'schema': 1,
             'model': MODEL + '+nothink',
             'gateway_price_cny_per_million_tokens': {'input': price[0], 'output': price[1]},
+            'preflight_peak_multiplier': 2,
             'measured_tokens_per_10000_effective_chars': {'input': rate[0], 'output': rate[1]},
             'latin_character_factor': LATIN_FACTOR,
             'assumptions': [
@@ -60,7 +61,8 @@ def estimate(source_dir: Path) -> dict:
             ],
             'books': rows,
             'total': {'parser_body_segments': sum(row['parser_body_segments'] for row in rows),
-                      'estimated_cny': round(sum(row['estimated_cny'] for row in rows), 6)}}
+                      'estimated_cny': round(sum(row['estimated_cny'] for row in rows), 6),
+                      'estimated_peak_cny': round(2 * sum(row['estimated_cny'] for row in rows), 6)}}
 
 
 def main() -> None:
