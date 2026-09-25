@@ -1,0 +1,171 @@
+"""Record three stateful or higher-order helpers with explicit, typed fixtures.
+
+The general function tracer cannot encode a returned closure, a callback argument, or
+Runner's live lock. These cases record the value-bearing state and the observable calls
+instead. Every fixture is synthetic; no model, book file, or external service is used.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import subprocess
+import sys
+import tempfile
+import threading
+import unicodedata
+from pathlib import Path
+
+from .common import canonical, encode, known_secrets, require_reference_runtime
+from .functions import LoopbackOnly
+
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_OUT = ROOT / 'oracle/goldens/special'
+SOURCES = ('pipeline/run.py', 'pipeline/kg.py', 'pipeline/lang.py',
+           'oracle/record/common.py', 'oracle/record/special.py')
+
+
+def sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def rows() -> dict[str, list[dict]]:
+    from pipeline.kg import KG
+    from pipeline.run import Runner, attr_facts
+
+    secrets = known_secrets()
+    book = {'lang': 'zh', 'blocks': []}
+    result: dict[str, list[dict]] = {}
+
+    kg = KG(book)
+    kg.people['P1'] = {'name': '贾宝玉', 'tagline': '荣府公子', 'intro': '初次登场'}
+    runner = Runner.__new__(Runner)
+    runner.kg = kg
+    data = {'new_people': [{'ref': 'N1', 'name': '林黛玉', 'intro': '初到荣府'}]}
+    plan = {'refmap': {'N1': 'P2'}}
+    ids = ['P1', 'P2']
+    description_input = encode({
+        'book': book, 'kg_people': kg.people, 'data': data, 'plan': plan,
+        'returned_closure_calls': ids,
+    }, secrets)
+    describe = runner._describe_factory(data, plan)
+    description_output = encode([{'pid': pid, 'value': describe(pid)} for pid in ids], secrets)
+    result['describe_factory.jsonl'] = [{
+        'schema': 1, 'function': 'pipeline.run.Runner._describe_factory',
+        'case': 'known_and_new_person', 'input': description_input,
+        'output': description_output,
+    }]
+
+    people = {'P1': ('贾宝玉', '荣府公子'), 'P2': ('林黛玉', '寄居荣府')}
+    attributes = {'attrs': [
+        {'who': 'P1', 'key': '住处', 'value': '荣府'},
+        {'who': 'P1', 'key': '空值', 'value': ''},
+        {'who': 'P2', 'key': '籍贯', 'value': '姑苏'},
+    ]}
+
+    def who_of(pid: str) -> tuple[str, str]:
+        return people[pid]
+
+    result['attr_facts.jsonl'] = [{
+        'schema': 1, 'function': 'pipeline.run.attr_facts',
+        'case': 'callback_map_and_empty_attribute',
+        'input': encode({'data': attributes, 'who_of_map': people}, secrets),
+        'output': encode(attr_facts(attributes, who_of), secrets),
+    }]
+
+    saga_log = [
+        {'t': 'saga', 'p': 20, 'text': '第一段前情'},
+        {'t': 'event', 'p': 30, 'text': '中途事件', 'who': []},
+        {'t': 'saga', 'p': 40, 'text': '第二段前情'},
+    ]
+    runner.kg.log = saga_log
+    runner.lock = threading.RLock()
+    calls = [{'end_pos': pos, 'fallback': '无前情'} for pos in (20, 40, 41)]
+    saga_input = encode({'kg_log': saga_log, 'lock_kind': 'RLock', 'calls': calls}, secrets)
+    saga_output = encode([
+        {'end_pos': call['end_pos'], 'value': runner.earlier_saga(**call)}
+        for call in calls
+    ], secrets)
+    result['earlier_saga.jsonl'] = [{
+        'schema': 1, 'function': 'pipeline.run.Runner.earlier_saga',
+        'case': 'strict_cutoff_and_fallback',
+        'input': saga_input, 'output': saga_output,
+    }]
+    return result
+
+
+def one_pass(out: Path) -> None:
+    require_reference_runtime()
+    if out.exists():
+        raise FileExistsError(f'output exists: {out}')
+    out.mkdir(parents=True)
+    with LoopbackOnly():
+        cases = rows()
+    for name, values in sorted(cases.items()):
+        (out / name).write_text(''.join(canonical(row) + '\n' for row in values),
+                                encoding='utf-8')
+
+
+def files(root: Path) -> dict[str, bytes]:
+    return {str(path.relative_to(root)): path.read_bytes()
+            for path in sorted(root.rglob('*')) if path.is_file()}
+
+
+def expected_files() -> dict[str, bytes]:
+    require_reference_runtime()
+    with tempfile.TemporaryDirectory(prefix='thusfar-special-') as directory:
+        captures = []
+        for index in range(2):
+            out = Path(directory) / str(index)
+            subprocess.run([sys.executable, '-m', 'oracle.record.special', '--one-pass', str(out)],
+                           check=True, cwd=ROOT)
+            captures.append(files(out))
+        if captures[0] != captures[1]:
+            raise RuntimeError('two independent special-function recordings differ byte-for-byte')
+        actual = captures[0]
+    provenance = {
+        'schema': 1,
+        'source': 'Python 1.7.5 synthetic direct calls; no model or network',
+        'python': sys.version.split()[0],
+        'unicode': unicodedata.unidata_version,
+        'passes': 2,
+        'sources_sha256': {name: sha256((ROOT / name).read_bytes()) for name in SOURCES},
+        'goldens_sha256': {name: sha256(data) for name, data in sorted(actual.items())},
+    }
+    actual['provenance.json'] = (canonical(provenance) + '\n').encode('utf-8')
+    return actual
+
+
+def generate(out: Path = DEFAULT_OUT, *, verify: bool = False) -> dict[str, bytes]:
+    actual = expected_files()
+    if out.exists():
+        existing = files(out)
+        if actual != existing:
+            changed = sorted(set(actual) ^ set(existing) | {
+                name for name in actual.keys() & existing.keys() if actual[name] != existing[name]
+            })
+            raise RuntimeError(f'existing special goldens differ: {", ".join(changed)}')
+    elif verify:
+        raise FileNotFoundError(f'special goldens do not exist: {out}')
+    else:
+        out.mkdir(parents=True)
+        for name, data in sorted(actual.items()):
+            (out / name).write_bytes(data)
+    return actual
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--one-pass', type=Path)
+    parser.add_argument('--out', type=Path, default=DEFAULT_OUT)
+    parser.add_argument('--verify', action='store_true')
+    args = parser.parse_args()
+    if args.one_pass is not None:
+        one_pass(args.one_pass)
+    else:
+        actual = generate(args.out, verify=args.verify)
+        print(f'{len(actual) - 1} special-function golden files match two Python 3.11 passes')
+
+
+if __name__ == '__main__':
+    main()
