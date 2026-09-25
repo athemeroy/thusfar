@@ -532,7 +532,23 @@ class Runner:
     def _publish(self):
         rows, mentions, _, _, _ = quarantine_identities(self.kg.log, self.kg.mentions,
                                                        self.repair_policy.get('identity_taint', {}))
-        log_sorted = sorted(rows, key=lambda r: r['p'])
+        ordered = []
+        for index, row in enumerate(rows):
+            kind = row['t']
+            if kind == 'profile' and row.get('kind') == 'chapter':
+                phase = 1
+            elif kind == 'recap':
+                phase = 2
+            elif kind == 'saga':
+                phase = 3
+            else:
+                phase = 0
+            # Extraction records keep their same-position causal order. Independent
+            # finalization pools use a total tie-breaker instead of completion order.
+            tie = (row.get('chapter', -1), row.get('id', ''),
+                   json.dumps(row, ensure_ascii=False, sort_keys=True)) if phase else ()
+            ordered.append((row['p'], phase, tie, index, row))
+        log_sorted = [row for _, _, _, _, row in sorted(ordered)]
         wjson(self.root / 'kg.json', {'log': log_sorted, 'segments': [[s['o0'], s['o1'], s['chapter']] for s in self.segs]})
         by_ch: dict[int, list] = {}
         chapters = self.book['chapters']
