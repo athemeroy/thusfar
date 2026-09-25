@@ -10,12 +10,14 @@ from threading import Event
 from oracle.semantics.record_general import evaluate
 from oracle.semantics.record_determinism import evaluate as evaluate_retry
 from oracle.semantics.record_round_extremes import cases as round_cases
+from oracle.semantics.record_title_context import cases as title_cases
 
 CASES = Path(__file__).resolve().parents[1] / "oracle" / "semantics" / "py_json.jsonl"
 GENERAL = CASES.with_name("general.jsonl")
 HASHES = CASES.with_name("hashes.jsonl")
 DETERMINISM = CASES.with_name("determinism.jsonl")
 ROUND_EXTREMES = CASES.with_name("round_extremes.jsonl")
+TITLE_CONTEXT = CASES.with_name("title_context.jsonl")
 
 
 class TestPyJsonOracle(unittest.TestCase):
@@ -104,6 +106,12 @@ class TestGeneralSemanticOracle(unittest.TestCase):
             recorded = [json.loads(line) for line in source]
         self.assertEqual(recorded, expected_cases)
         self.assertEqual(len(recorded), 700)
+
+    def test_title_context_matches_frozen_python(self):
+        with TITLE_CONTEXT.open(encoding="utf-8") as source:
+            recorded = [json.loads(line) for line in source]
+        self.assertEqual(recorded, list(title_cases()))
+        self.assertGreaterEqual(len(recorded), 300)
 
 
 if __name__ == "__main__":

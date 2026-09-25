@@ -60,6 +60,14 @@ def main() -> None:
     whitespace = [code for code in all_codes if chr(code).isspace()]
     digits = [code for code in all_codes if chr(code).isdigit()]
     cased = [code for code in all_codes if chr(code).lower() != chr(code).upper()]
+    # Infer Python's frozen Case_Ignorable property from its Final_Sigma rule.
+    # A final sigma stays final before an ignorable character, but becomes a
+    # nonfinal sigma when a cased A follows through that character. This also
+    # catches U+0345, which is both Cased and Case_Ignorable.
+    case_ignorable = [code for code in all_codes
+                      if ('AΣ' + chr(code)).title()[1] == 'ς'
+                      and ('AΣ' + chr(code) + 'A').title()[1] == 'σ']
+    assert {0x301, 0x345, 0x200d, 0x2019} <= set(case_ignorable)
     casefold = {code: chr(code).casefold() for code in all_codes
                 if chr(code).casefold() != chr(code)}
     lower = {code: chr(code).lower() for code in all_codes
@@ -73,7 +81,8 @@ def main() -> None:
         "",
     ]
     for name, values in (("pyWhitespaceRanges", whitespace),
-                         ("pyDigitRanges", digits), ("pyCasedRanges", cased)):
+                         ("pyDigitRanges", digits), ("pyCasedRanges", cased),
+                         ("pyCaseIgnorableRanges", case_ignorable)):
         parts.extend(emit_ranges(name, values))
         parts.append("")
     for name, values in (("pyCasefoldMap", casefold), ("pyLowerMap", lower),

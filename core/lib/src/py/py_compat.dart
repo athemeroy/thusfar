@@ -129,10 +129,24 @@ final class PyCompat {
       final int rune = runes[i];
       final bool cased = _inRanges(rune, pyCasedRanges);
       final Map<int, String> mapping = previousCased ? pyLowerMap : pyTitleMap;
-      if (previousCased &&
-          rune == 0x03a3 &&
-          (i + 1 == runes.length || !_inRanges(runes[i + 1], pyCasedRanges))) {
-        result.write('ς');
+      if (previousCased && rune == 0x03a3) {
+        // Python 3.11 applies Unicode Final_Sigma to the source string. A
+        // case-ignorable rune can itself be cased (for example U+0345), so
+        // inspecting only the adjacent rune gives the wrong answer.
+        int before = i - 1;
+        while (before >= 0 && _inRanges(runes[before], pyCaseIgnorableRanges)) {
+          before--;
+        }
+        int after = i + 1;
+        while (after < runes.length &&
+            _inRanges(runes[after], pyCaseIgnorableRanges)) {
+          after++;
+        }
+        final bool precedingCased =
+            before >= 0 && _inRanges(runes[before], pyCasedRanges);
+        final bool followingCased =
+            after < runes.length && _inRanges(runes[after], pyCasedRanges);
+        result.write(precedingCased && !followingCased ? 'ς' : 'σ');
       } else {
         result.write(mapping[rune] ?? String.fromCharCode(rune));
       }
