@@ -270,6 +270,63 @@ class CrossChapterBarrierTests(unittest.TestCase):
         self.assertIn('new tagline', submitted[0][1])
         self.assertEqual(submitted[0][2]['people']['P1']['bio'], 'new biography')
 
+    def test_classic_recap_snapshots_before_new_bio_can_apply(self):
+        runner = self.runner
+        runner.segs = [runner.segs[0]]
+        position = runner.segs[0]['o1']
+        attempted, applied = threading.Event(), threading.Event()
+        captured = []
+        writers = []
+
+        def write_bio():
+            attempted.set()
+            with runner.lock:
+                runner.kg.log.append({'t': 'profile', 'p': position, 'id': 'P1',
+                                      'tagline': 'new tagline', 'kind': 'chapter'})
+            applied.set()
+
+        def queue(kind, _key, args, _pool):
+            if kind == 'bio':
+                thread = threading.Thread(target=write_bio)
+                writers.append(thread)
+                thread.start()
+                self.assertTrue(attempted.wait(5))
+                # The worker wins before recap in the old implementation. The
+                # fixed implementation holds runner.lock until inputs are saved.
+                applied.wait(.2)
+            elif kind == 'classic-recap':
+                captured.append(args[4])
+
+        try:
+            with patch.object(runner, '_dossiers', return_value=('dossier', ['P1'])), \
+                 patch.object(runner, 'queue_final', side_effect=queue):
+                runner._maybe_recap(0)
+        finally:
+            for thread in writers:
+                thread.join(5)
+        self.assertTrue(applied.is_set())
+        self.assertEqual(captured, [[]])
+
+    def test_classic_recap_keeps_synchronously_applied_cached_bio(self):
+        runner = self.runner
+        runner.segs = [runner.segs[0]]
+        position = runner.segs[0]['o1']
+        path = runner.bio_path(0)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({'chapter': 0, 'bios': {'P1': {
+            'tagline': 'cached tagline', 'bio': 'cached biography',
+            'chk': {'verdict': 'ok'},
+        }}}), encoding='utf-8')
+        captured = []
+
+        def queue(kind, _key, args, _pool):
+            if kind == 'classic-recap':
+                captured.append(args[4])
+
+        with patch.object(runner, 'queue_final', side_effect=queue):
+            runner._maybe_recap(0)
+        self.assertEqual(captured, [[('Alice', 'cached tagline')]])
+
 
 if __name__ == '__main__':
     unittest.main()

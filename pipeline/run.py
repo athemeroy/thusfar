@@ -1876,17 +1876,22 @@ class Runner:
         last = i == len(self.segs) - 1 or self.segs[i + 1]['chapter'] != seg['chapter']
         if last:
             start = min(s['o0'] for s in self.segs if s['chapter'] == seg['chapter'])
-            if seg['o1'] - self.last_bio >= 12000 or i == len(self.segs) - 1:
-                if self.two_phase:
-                    self.dedupe(seg['chapter'], seg['o1'], self.last_bio)
-                    for step in (self.rate_importance, self.settle_attrs):
-                        try:
-                            step(seg['o1'], self.last_bio)
-                        except Exception as e:
-                            log(f'{step.__name__} failed: {type(e).__name__}: {e}')
-                self.consolidate(seg['chapter'], seg['o1'], self.last_bio)
-                self.last_bio = seg['o1']
-            self.recap(seg['chapter'], seg['o1'], start)
+            do_bio = seg['o1'] - self.last_bio >= 12000 or i == len(self.segs) - 1
+            if do_bio and self.two_phase:
+                self.dedupe(seg['chapter'], seg['o1'], self.last_bio)
+                for step in (self.rate_importance, self.settle_attrs):
+                    try:
+                        step(seg['o1'], self.last_bio)
+                    except Exception as e:
+                        log(f'{step.__name__} failed: {type(e).__name__}: {e}')
+            # A newly queued bio can append chapter profile rows immediately.
+            # Snapshot the classic recap's profile inputs under the same lock
+            # that _apply_bios uses, after applying any existing bio cache.
+            with self.lock:
+                if do_bio:
+                    self.consolidate(seg['chapter'], seg['o1'], self.last_bio)
+                    self.last_bio = seg['o1']
+                self.recap(seg['chapter'], seg['o1'], start)
             if self.two_phase and (seg['o1'] - self.last_saga >= 30000 or i == len(self.segs) - 1):
                 chs = sorted({s['chapter'] for s in self.segs if self.last_saga < s['o1'] <= seg['o1']})
                 self.saga(seg['o1'], chs)
