@@ -305,9 +305,9 @@ functions:
     reason: "Stage A2 has not started"
   - id: pipeline.lang.book_lang
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.lang.book_lang"
+    reason: "Ported in A1"
   - id: pipeline.lang.card_lang
     stage: A1
     status: pending_port
@@ -320,9 +320,9 @@ functions:
     reason: "Stage A1 has not started"
   - id: pipeline.lang.seg_chars
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.lang.seg_chars"
+    reason: "Ported in A1"
   - id: pipeline.lang.local_note
     stage: A1
     status: pending_port
@@ -875,14 +875,14 @@ functions:
     reason: "Stage A2 has not started"
   - id: pipeline.provenance.digest
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.provenance.digest"
+    reason: "Ported in A1"
   - id: pipeline.provenance.source_fingerprint
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.provenance.source_fingerprint"
+    reason: "Ported in A1"
   - id: pipeline.provenance.reserve_paid
     stage: A1
     status: pending_port
@@ -1825,14 +1825,14 @@ functions:
     reason: "Stage A6 has not started"
   - id: server.storage.display_title
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.display_title"
+    reason: "Ported in A1"
   - id: server.storage.shelf_fields
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.shelf_fields"
+    reason: "Ported in A1"
   - id: server.storage.shelf_metadata
     stage: A6
     status: pending_port
@@ -1845,29 +1845,29 @@ functions:
     reason: "Stage A6 has not started"
   - id: server.storage.integer
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.integer"
+    reason: "Ported in A1"
   - id: server.storage.asset_name
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.asset_name"
+    reason: "Ported in A1"
   - id: server.storage.validate_book
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.validate_book"
+    reason: "Ported in A1"
   - id: server.storage.validate_graph
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.validate_graph"
+    reason: "Ported in A1"
   - id: server.storage.referenced_assets
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.referenced_assets"
+    reason: "Ported in A1"
   - id: server.storage.encode_assets
     stage: A6
     status: pending_port
@@ -1875,9 +1875,9 @@ functions:
     reason: "Stage A6 has not started"
   - id: server.storage.decode_assets
     stage: A1
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A1 has not started"
+    status: golden_passed
+    dart_symbol: "server.storage.decode_assets"
+    reason: "Ported in A1"
   - id: server.temporal.fold
     stage: A6
     status: pending_port

@@ -20,17 +20,31 @@ bool _matches(Map<String, Object?> dart, String mode, String input) {
   return regex.hasMatch(input);
 }
 
-void _checkCase(String site, Map<String, Object?> dart, Map<String, Object?> examples) {
+void _checkCase(
+  String site,
+  Map<String, Object?> dart,
+  Map<String, Object?> examples,
+) {
   final String positive = examples['positive'] as String;
   final String negative = examples['negative'] as String;
   final String mode = examples['mode'] as String;
-  expect(_matches(dart, mode, positive), isTrue, reason: '$site positive $positive');
-  expect(_matches(dart, mode, negative), isFalse, reason: '$site negative $negative');
+  expect(
+    _matches(dart, mode, positive),
+    isTrue,
+    reason: '$site positive $positive',
+  );
+  expect(
+    _matches(dart, mode, negative),
+    isFalse,
+    reason: '$site negative $negative',
+  );
 }
 
 void main() {
   final File fixture = File('../docs/port/REGEX.json');
-  final Map<String, Object?> data = _map(jsonDecode(fixture.readAsStringSync()));
+  final Map<String, Object?> data = _map(
+    jsonDecode(fixture.readAsStringSync()),
+  );
   final List<Object?> rows = data['calls'] as List<Object?>;
 
   test('all static Python regex examples also run in Dart', () {
@@ -47,7 +61,11 @@ void main() {
         final Map<String, Object?> variants = _map(rawVariants);
         for (final MapEntry<String, Object?> variant in variants.entries) {
           final Map<String, Object?> detail = _map(variant.value);
-          _checkCase('$id:${variant.key}', _map(detail['dart']), _map(detail['examples']));
+          _checkCase(
+            '$id:${variant.key}',
+            _map(detail['dart']),
+            _map(detail['examples']),
+          );
           cases++;
         }
       }

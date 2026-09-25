@@ -16,7 +16,7 @@ from collections import Counter
 from decimal import Decimal
 from pathlib import Path
 
-from .cassettes import CassetteStore, _CONFIGURED_PRICE, _GUARD_PRICE
+from .cassettes import MAX_CNY, CassetteStore, _CONFIGURED_PRICE, _GUARD_PRICE
 from .common import assert_public, canonical, digest, known_secrets
 from .scan import inspect_value
 
@@ -264,8 +264,8 @@ def _ledger(path: Path, model_attempts: Counter, model_envelopes: dict) -> \
             or ledger['schema'] != 1 or not isinstance(ledger['entries'], list):
         _fail('budget ledger schema is invalid')
     max_cny = _money(ledger['max_cny'], 'max_cny')
-    if not Decimal('0') < max_cny <= Decimal('1'):
-        _fail('budget ledger maximum exceeds ¥1')
+    if not Decimal('0') < max_cny <= Decimal(str(MAX_CNY)):
+        _fail('budget ledger maximum exceeds MAX_CNY')
     actual = Counter()
     ids = set()
     configured_total = Decimal('0')
@@ -318,7 +318,7 @@ def _ledger(path: Path, model_attempts: Counter, model_envelopes: dict) -> \
     if actual != model_attempts:
         _fail('budget ledger entries do not match model tape attempts and usage')
     if charged_total > max_cny:
-        _fail('cumulative guarded model charge exceeds the ¥1 ceiling')
+        _fail('cumulative guarded model charge exceeds the ledger ceiling')
     return ({'max_cny': float(max_cny), 'configured_rate_estimate_cny': float(configured_total),
              'guarded_charged_cny': float(charged_total), 'model_attempts': len(ledger['entries']),
              'usage_unavailable': unavailable}, file_sha, signature)

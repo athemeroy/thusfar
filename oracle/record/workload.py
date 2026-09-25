@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from .artifacts import stage_book
-from .cassettes import install
+from .cassettes import MAX_CNY, install
 from .common import digest, require_reference_runtime, write_json
 from .functions import LoopbackOnly
 from .scan import scan
@@ -74,7 +74,7 @@ def main() -> None:
     parser.add_argument('--max-model-attempts', type=int, default=16)
     parser.add_argument('--max-jev-attempts', type=int, default=200)
     parser.add_argument('--max-cny', type=float, default=1.0,
-                        help='cumulative model recording budget across this cassette directory, at most ¥1')
+                        help='cumulative model recording budget across this cassette directory, at most MAX_CNY')
     args = parser.parse_args()
     if args.resume_existing and args.mode != 'record':
         parser.error('--resume-existing is only for the original live recording')
@@ -82,8 +82,8 @@ def main() -> None:
         parser.error('--working-book must not exist; use --resume-existing to reconcile prior paid work')
     if args.max_model_attempts < 1 or args.max_jev_attempts < 1:
         parser.error('attempt caps must be positive')
-    if not 0 < args.max_cny <= 1.0:
-        parser.error('--max-cny must be greater than zero and at most ¥1')
+    if not 0 < args.max_cny <= MAX_CNY:
+        parser.error(f'--max-cny must be greater than zero and at most ¥{MAX_CNY:g}')
     if not (args.source_book / 'book.json').is_file():
         parser.error('source book has no book.json')
     previous = {key: os.environ.get(key) for key in _SETTINGS}

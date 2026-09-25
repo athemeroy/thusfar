@@ -79,14 +79,17 @@ def message_headers(values: dict) -> Message:
     return message
 
 
+MAX_CNY = 20.0  # user lifted the ¥1 A0 cap on 2026-09-26
+
+
 class CassetteStore:
     def __init__(self, directory: Path, mode: str, secrets: tuple[str, ...] | None = None,
                  max_model_attempts: int | None = None, max_jev_attempts: int | None = None,
                  max_cny: float = 1.0):
         if mode not in ('record', 'replay'):
             raise ValueError('mode must be record or replay')
-        if not 0 < max_cny <= 1.0:
-            raise ValueError('live cassette budget must be within ¥1')
+        if not 0 < max_cny <= MAX_CNY:
+            raise ValueError(f'live cassette budget must be within ¥{MAX_CNY:g}')
         self.directory = directory
         self.mode = mode
         self.max_cny = max_cny
@@ -108,7 +111,7 @@ class CassetteStore:
                     'schema': 1, 'max_cny': self.max_cny, 'entries': []}
                 if ledger.get('schema') != 1 or not isinstance(ledger.get('entries'), list):
                     raise ValueError('invalid cassette budget ledger')
-                ledger['max_cny'] = min(float(ledger['max_cny']), self.max_cny)
+                ledger['max_cny'] = self.max_cny
                 yield ledger
                 write_json(path, ledger)
             finally:
@@ -173,7 +176,7 @@ class CassetteStore:
                 with self._ledger() as ledger:
                     spent = sum(float(entry['charged_cny']) for entry in ledger['entries'])
                     if spent + upper > ledger['max_cny'] + 1e-12:
-                        raise RuntimeError('live cassette ¥1 cumulative preflight budget reached')
+                        raise RuntimeError('live cassette cumulative preflight budget reached')
                     reservation = uuid.uuid4().hex
                     ledger['entries'].append({'id': reservation,
                                               'request_sha256': digest(envelope),

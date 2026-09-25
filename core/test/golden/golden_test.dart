@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
+import 'codec.dart';
 import 'golden_registry.dart';
 
 void main() {
@@ -105,7 +106,10 @@ void main() {
             final Map<String, Object?> input =
                 sample['input']! as Map<String, Object?>;
             test('$stage $id sample ${index++}', () {
-              expect(invoke(input), sample['output']);
+              expect(
+                invoke(decodeInput(input)! as Map<String, Object?>),
+                sample['output'],
+              );
             });
           }
         }

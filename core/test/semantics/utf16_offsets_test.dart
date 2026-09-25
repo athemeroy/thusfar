@@ -7,7 +7,9 @@ import 'package:thusfar_core/src/py/py_compat.dart';
 
 void main() {
   final Map<String, Object?> data =
-      jsonDecode(File('../oracle/semantics/utf16_offsets.json').readAsStringSync())
+      jsonDecode(
+            File('../oracle/semantics/utf16_offsets.json').readAsStringSync(),
+          )
           as Map<String, Object?>;
   final List<Object?> cases = data['cases'] as List<Object?>;
 
@@ -25,8 +27,9 @@ void main() {
       );
       expect(frozen, row['frozen_175'], reason: row['id'] as String);
 
-      final int codepointPosition =
-          PyCompat.codePointLength(PyCompat.utf16Prefix(source, position));
+      final int codepointPosition = PyCompat.codePointLength(
+        PyCompat.utf16Prefix(source, position),
+      );
       final String centered = PyCompat.slice(
         source,
         math.max(0, codepointPosition - radius),
