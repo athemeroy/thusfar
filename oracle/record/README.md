@@ -36,6 +36,28 @@ After actual model cassettes exist, add `--replay-book oracle/corpus/snapshots/<
 
 ## Model and free JEV cassettes
 
+### Stage a checked-in public-domain book
+
+The five parser-only `book.json` goldens can be turned into fresh source-book directories
+without a model or network. `stage_corpus.py` accepts only `aq`, `jekyll`, `french`, `kokoro`,
+or `rulin`. It checks the raw source against `corpus/manifest.json`, checks the parser SHA and
+case in `goldens/parsed/report.json`, reruns Python 3.11 `parse_file`, and compares the complete
+book JSON bytes with the committed golden. A new output directory receives exact `source.txt`
+and `book.json` copies plus `.oracle-stage.json` containing source, manifest, parser, report,
+and output hashes. It refuses an existing destination and never stages inside frozen inputs.
+Use a separate new `--working-book` when starting a live or replay workload; keep its original
+path for `--resume-existing`.
+
+```bash
+$PY311 -m oracle.record.stage_corpus jekyll --out /tmp/thusfar-corpus-jekyll
+$PY311 -m oracle.record.stage_corpus french --out /tmp/thusfar-corpus-french
+```
+
+The IDs `kokoro` and `rulin` use the same command. The staged directory is parser-only: it has
+no `work/`, `kg.json`, or `status.json` until a separate cassette-backed workload runs.
+
+### Transport recording
+
 `cassettes.py` intercepts only `pipeline.llm._opener`. Each request digest covers method,
 URL, nonsecret headers, and the exact UTF-8 request body. It deliberately excludes every
 authorization header. Responses preserve status, relevant headers, raw read chunks, HTTP
