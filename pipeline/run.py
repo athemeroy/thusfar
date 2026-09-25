@@ -1188,10 +1188,11 @@ class Runner:
         self.replaying = False
         if limit != 0:
             self.resume_final_jobs()
+            for future in self.pending:
+                self.await_future(future)
+        finalized = len(self.pending)
         log(f'replayed {done}/{len(self.segs)} segments')
         if done == len(self.segs):
-            for f in self.pending:
-                self.await_future(f)
             if limit != 0:
                 self.finish_quality_retry()
         self.publish()
@@ -1221,13 +1222,15 @@ class Runner:
             self.checkpoint()
             self.apply(rec)
             self._maybe_recap(i)
+            # The next segment's prompt reads KG state; settle this chapter's
+            # final jobs before that snapshot can observe a timing-dependent subset.
+            for future in self.pending[finalized:]:
+                self.await_future(future)
+            finalized = len(self.pending)
             self.publish()
             done = i + 1
             n += 1
             if done == len(self.segs):
-                for f in self.pending:
-                    self.await_future(f)
-                self.publish()
                 self.finish_quality_retry()
             self.status('running' if done < len(self.segs) else 'done', done)
             d = rec['data']
@@ -1793,6 +1796,9 @@ class Runner:
         self.replaying = False
         if limit != 0:
             self.resume_final_jobs()
+            for future in self.pending:
+                self.await_future(future)
+        finalized = len(self.pending)
         log(f'replayed {done}/{len(self.segs)} segments')
         self.publish()
         self.status('running' if done < len(self.segs) else ('finalizing' if self.pending else 'done'), done)
@@ -1802,10 +1808,16 @@ class Runner:
         futures = {}
         next_job = [done]     # next segment to submit (kept apart from the loop variable)
 
-        def submit_upto(k):
+        def submit_upto(k, current):
             self.checkpoint()
             # the cast shown to segment j is the one linked so far (segments < current), never later text
             cap = min(end, k + 1)
+            # A future chapter must not receive a hint before the current
+            # chapter's biography and recap have settled into the graph.
+            for j in range(current + 1, cap):
+                if self.segs[j]['chapter'] != self.segs[current]['chapter']:
+                    cap = j
+                    break
             if next_job[0] >= cap:
                 return
             with self.lock:
@@ -1814,14 +1826,14 @@ class Runner:
             while next_job[0] < cap:
                 futures[next_job[0]] = local_pool.submit(self._local_job, next_job[0], model, hint, relation_memory)
                 next_job[0] += 1
-        submit_upto(done + concurrency - 1)
         if done < end:
+            submit_upto(done + concurrency - 1, done)
             # A slow model can take minutes per passage; say what the 0% is waiting for.
-            self.notify(f'已把 {min(concurrency, end - done)} 段发给 {model.split("+")[0]}，正在等它回复；每整理完一段，进度会更新')
+            self.notify(f'已把 {next_job[0] - done} 段发给 {model.split("+")[0]}，正在等它回复；每整理完一段，进度会更新')
         t_start = time.time()
         for i in range(done, end):
             self.checkpoint()
-            submit_upto(i + concurrency - 1)
+            submit_upto(i + concurrency - 1, i)
             try:
                 local_rec = self.await_future(futures[i])
                 self.checkpoint()
@@ -1829,6 +1841,9 @@ class Runner:
                 self.checkpoint()
                 self.apply(rec)
                 self._maybe_recap(i)
+                for future in self.pending[finalized:]:
+                    self.await_future(future)
+                finalized = len(self.pending)
             except Cancelled:
                 local_pool.shutdown(wait=False, cancel_futures=True)
                 raise
