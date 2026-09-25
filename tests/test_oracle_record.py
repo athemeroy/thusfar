@@ -17,6 +17,7 @@ from oracle.record.cassettes import CassetteStore, install, request_envelope
 from oracle.record.common import UnsafeValue, canonical, encode, known_secrets, require_reference_runtime
 from oracle.record.functions import LoopbackOnly
 from oracle.record.functions import Collector
+from oracle.record.http_routes import response_record
 from oracle.record.scan import scan
 from oracle.record.workload import prepare_working_book
 
@@ -40,6 +41,29 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_http_normalizes_worker_fields_only_on_health_route(self):
+        class Reply:
+            status = 200
+
+            def __init__(self, body):
+                self.body = json.dumps(body).encode()
+
+            def read(self):
+                return self.body
+
+            def getheader(self, key):
+                return 'application/json' if key == 'content-type' else None
+
+            def getheaders(self):
+                return [('content-type', 'application/json')]
+
+        who = response_record(Reply({'pid': 'P1', 'worker': {'pid': 123}}), (),
+                              'POST', 'book-who')
+        self.assertEqual(who['body_json'], {'pid': 'P1', 'worker': {'pid': 123}})
+        health = response_record(Reply({'worker': {'pid': 123, 'last_scan': 4, 'busy': False}}),
+                                 (), 'GET', 'health')
+        self.assertEqual(health['body_json'], {'worker': {'busy': False}})
+
     def test_trace_keeps_handled_exception_returning_none_but_skips_propagation(self):
         from pipeline import llm
         locations = {

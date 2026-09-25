@@ -166,7 +166,8 @@ def route_cases(book: dict) -> list[dict]:
     ]
 
 
-def response_record(response: http.client.HTTPResponse, secrets: tuple[str, ...], method: str) -> dict:
+def response_record(response: http.client.HTTPResponse, secrets: tuple[str, ...],
+                    method: str, route_id: str) -> dict:
     raw = response.read()
     if any(secret.encode() in raw for secret in secrets):
         raise UnsafeValue('HTTP body contains a credential')
@@ -184,12 +185,9 @@ def response_record(response: http.client.HTTPResponse, secrets: tuple[str, ...]
         headers['set-cookie'] = ';'.join(parts)
     if method != 'HEAD' and 'json' in (headers.get('content-type') or ''):
         body = json.loads(raw)
-        if isinstance(body, dict):
-            for key in ('pid', 'last_scan'):
-                body.pop(key, None)
-            if isinstance(body.get('worker'), dict):
-                body['worker'].pop('pid', None)
-                body['worker'].pop('last_scan', None)
+        if route_id == 'health' and isinstance(body, dict) and isinstance(body.get('worker'), dict):
+            body['worker'].pop('pid', None)
+            body['worker'].pop('last_scan', None)
         return {'status': response.status, 'headers': headers, 'body_json': body}
     return {'status': response.status, 'headers': headers,
             'body_base64': base64.b64encode(raw).decode('ascii')}
@@ -296,7 +294,7 @@ def run_once(data: Path, bid: str) -> list[dict]:
                     response = conn.getresponse()
                     if response.version != 11:
                         raise RuntimeError('HTTP oracle expected an HTTP/1.1 response')
-                    reply = response_record(response, secrets, case['method'])
+                    reply = response_record(response, secrets, case['method'], case['id'])
                     rows.append({'route': case['id'], 'request': {'method': case['method'], 'path': url,
                                  'headers': headers,
                                  'body_json': case_json} if case_json is not None else
