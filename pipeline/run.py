@@ -913,8 +913,8 @@ class Runner:
             en = {w.lower() for w in re.findall(r'[A-Za-z]{4,}', txt)} - STOPWORDS
             zh_ = re.sub(r'[^\u4e00-\u9fff]', '', txt)
             return en | {zh_[i:i + 2] for i in range(len(zh_) - 1)}
-        nameless = [a for a in sorted(recent) if not any(not is_generic(n) for n in names(people[a]))]
-        named = [b for b in people if b not in nameless and any(not is_generic(n) for n in names(people[b]))
+        nameless = [a for a in sorted(recent) if not any(not is_generic(n) for n in sorted(names(people[a])))]
+        named = [b for b in people if b not in nameless and any(not is_generic(n) for n in sorted(names(people[b])))
                  and (b in recent or people[b].get('first', 0) >= start_pos)]
         for a in nameless:
             wa = words(a)

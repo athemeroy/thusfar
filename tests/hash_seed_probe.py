@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from pipeline.extract import segments
 from pipeline.kg import KG
-from pipeline.link import link_segment, proper_name, to_classic, verify_names
+from pipeline.link import is_generic, link_segment, proper_name, to_classic, verify_names
 from pipeline.parse import finish
 from server import ask
 from tests.test_oracle_pure_coverage import bare_runner, person
@@ -44,6 +44,23 @@ def probe():
          patch('pipeline.link.verify_names', return_value=({}, {})):
         link_segment(kg, {}, {'people': [{'id': '1', 'name': 'Alex', 'names': []}]}, 'Alex')
 
+    latin_cast = {'P1': {
+        'name': 'Gabriel John Utterson',
+        'aliases': {'G. J. Utterson', 'Gabriel John Utterson', 'Mr. Utterson'},
+        'weak': set(), 'first': 0, 'mentions': 1, 'gender': '',
+    }}
+    latin_kg = SimpleNamespace(people=latin_cast, canon=lambda pid: pid, k=1)
+    latin_name_index = []
+
+    def capture_latin_index(_kg, _person, by_name):
+        latin_name_index.extend(by_name)
+        return None
+
+    with patch('pipeline.link._resolve_hint', side_effect=capture_latin_index), \
+         patch('pipeline.link.verify_names', return_value=({}, {})):
+        link_segment(latin_kg, {}, {'people': [{'id': '1', 'name': 'Gabriel John Utterson',
+                                               'names': []}]}, 'Gabriel John Utterson')
+
     runner = bare_runner()
     for index in range(1, 6):
         runner.kg.people[f'P{index}'] = person(f'P{index}', 'Alex', 1)
@@ -76,6 +93,13 @@ def probe():
 
     with patch('pipeline.run.related', side_effect=dedupe_related):
         dedupe_runner._dedupe_candidates(20, 0)
+
+    mixed_runner = bare_runner()
+    mixed_runner.kg.people['P1'] = person('P1', 'Alice', 1)
+    mixed_runner.kg.people['P1']['aliases'].update({'father', 'mother'})
+    with patch('pipeline.run.is_generic', wraps=is_generic) as counted_generic:
+        mixed_runner._dedupe_candidates(20, 0)
+    mixed_generic_calls = [call.args[0] for call in counted_generic.call_args_list]
 
     book = finish([
         {'k': 'p', 't': '某人靠近。甲乙丙在后面。'},
@@ -113,9 +137,11 @@ def probe():
         retrieved = ask.retrieve(None, {}, question, [], 80000)
     return {
         'proper': proper, 'classic': classic,
-        'candidates': captured[0], 'name_index': name_index, 'pairs': pairs,
+        'candidates': captured[0], 'name_index': name_index,
+        'latin_name_index': latin_name_index, 'pairs': pairs,
         'verify_related_calls': verify_related_calls,
         'dedupe_related_calls': dedupe_related_calls,
+        'mixed_generic_calls': mixed_generic_calls,
         'dossier_keys': list(dossiers),
         'scrubbed': event['text'],
         'retrieved_offsets': [row['o'] for row in retrieved],

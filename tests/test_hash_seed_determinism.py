@@ -34,12 +34,16 @@ class HashSeedDeterminismTests(unittest.TestCase):
                                  ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'])
                 self.assertEqual(actual['name_index'],
                                  ['Aaron', 'Alder', 'Alex', 'Alice', 'Alpha'])
+                self.assertEqual(actual['latin_name_index'],
+                                 ['G. J. Utterson', 'Gabriel John Utterson',
+                                  '~Gabriel', '~John', '~Utterson', 'Mr. Utterson'])
                 self.assertEqual(actual['verify_related_calls'][:4],
                                  [['周丙', '吴甲'], ['周丙', '钱乙'],
                                   ['郑丁', '吴甲'], ['郑丁', '钱乙']])
                 self.assertEqual(actual['dedupe_related_calls'][:4],
                                  [['吴甲', '周丙'], ['周丙', '吴甲'],
                                   ['吴甲', '郑丁'], ['郑丁', '吴甲']])
+                self.assertEqual(actual['mixed_generic_calls'], ['Alice', 'Alice'])
                 self.assertEqual(actual['scrubbed'], '甲某人开始行动')
                 self.assertEqual(actual['pairs'][0], ['P2', 'P1'])
                 self.assertEqual(actual['dossier_keys'],

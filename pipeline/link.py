@@ -144,7 +144,7 @@ def link_segment(kg, seg: dict, local: dict, context_text: str, scope_start: int
         for n in sorted(p['aliases'] | {p['name']}):
             by_name.setdefault(n, set()).add(pid)
             all_names.append((n, pid))
-            for s in short_forms(n):
+            for s in sorted(short_forms(n)):
                 by_name.setdefault('~' + s, set()).add(pid)
         for n in p.get('weak', ()):
             weak_idx.setdefault(n, set()).add(pid)
