@@ -32,6 +32,8 @@ jobs:
           python -m oracle.record.verify_folds
       - name: Live cassette audit contracts (synthetic, no network)
         run: python -m unittest tests.test_verify_live_cassettes -v
+      - name: Checked-in live cassette integrity and budget (read-only, no network)
+        run: python -m oracle.record.verify_live_cassettes oracle/cassettes/live --expect-report oracle/record/live-a0-audit.json
       - name: Interface translations
         run: python scripts/check_i18n.py
       - uses: dart-lang/setup-dart@v1

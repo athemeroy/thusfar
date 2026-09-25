@@ -119,6 +119,8 @@ $PY311 -m oracle.record.verify_live_cassettes /path/to/live-cassettes \
 The configured and guarded prices are local estimates. A provider receipt is required to
 confirm the actual account charge, and a structurally valid tape alone cannot prove who
 served the original response.
+CI audits the checked-in `oracle/cassettes/live` directory against the safe, count-only
+`oracle/record/live-a0-audit.json` fingerprint. Neither file contains the model key.
 
 ## Book artifacts, HTTP routes, and browser fold
 
