@@ -1,0 +1,6 @@
+{"function":"pipeline.llm.repair_json","args":["{\"话\":\"他说\"好\"，𠮷😀\",}"]}
+{"function":"pipeline.llm.parse_json","args":["```json\n{\"𠮷😀\":\"值\"}\n```"]}
+{"function":"pipeline.judge._context","args":["前𠮷😀后。第二句。",1,4],"kwargs":{"before":1,"after":8}}
+{"function":"server.model_settings.normalize","args":["https://open.xiaojingai.com/","deepseek-flash"]}
+{"function":"server.model_settings.normalize","args":["https://open.xiaojingai.com/v1","deepseek-flash+nothink"]}
+{"function":"pipeline.kg.zh","args":["𠮷😀说\"好\",然后(笑了)"]}
