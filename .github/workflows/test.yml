@@ -20,6 +20,7 @@ jobs:
           python oracle/corpus/build.py --verify
           python oracle/corpus/annotate_snapshot.py --verify
           python -m oracle.semantics.regex_python
+          python -m oracle.record.scan oracle
       - name: JavaScript tests
         run: for f in tests/*.test.mjs; do node "$f"; done
       - name: Interface translations
