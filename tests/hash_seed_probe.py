@@ -39,7 +39,7 @@ def probe():
     runner = bare_runner()
     for index in range(1, 6):
         runner.kg.people[f'P{index}'] = person(f'P{index}', 'Alex', 1)
-    pairs, _ = runner._dedupe_candidates(20, 0)
+    pairs, dossiers = runner._dedupe_candidates(20, 0)
 
     book = finish([
         {'k': 'p', 't': '某人靠近。甲乙丙在后面。'},
@@ -66,6 +66,7 @@ def probe():
     return {
         'proper': proper, 'classic': classic,
         'candidates': captured[0], 'pairs': pairs,
+        'dossier_keys': list(dossiers),
         'scrubbed': event['text'],
     }
 

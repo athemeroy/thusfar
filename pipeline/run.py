@@ -934,7 +934,7 @@ class Runner:
                 self.desc_pairs.add(pr)
         pairs = list(dict.fromkeys(pairs))[:32]
         dossiers = {}
-        for pid in {q for pr in pairs for q in pr}:
+        for pid in sorted({q for pr in pairs for q in pr}):
             p = kg.people[pid]
             evs = [e['text'] for e in kg.log if e['t'] == 'event' and e['p'] <= end_pos and pid in {kg.canon(w) for w in e['who']}]
             rels = [f"{kg.people[r['b'] if r['a'] == pid else r['a']]['name']}（{r['b_is'] if r['a'] == pid else r['a_is']}）"
