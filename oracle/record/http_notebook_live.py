@@ -46,6 +46,9 @@ FIXED_BOOK_MTIME_NS = 1_730_000_000_987_654_321
 FIXED_BOOK_INODE = 73
 ASK_QUESTION = '读到这里，阿Q经历了什么？'
 QUOTE = '阿Q不开口，想往后退了；赵太爷跳过去，给了他一个嘴巴。'
+REJECTED_MARGINALIA_TASK_ID = 'd2f9bc10e6104a8ab8a344425653bac7'
+REJECTED_MARGINALIA_ERROR = '这条批注没有通过已读内容核对，已替你隐藏'
+REJECTED_MARGINALIA_ATTEMPT_SHA256 = '96e3fad858c56505cb1a88467ee06c026ca037dd8060e68ce483ebd2b9076a86'
 CASES = {
     'who': {'id': 'who-person-live', 'path': f'/api/books/{BOOK_ID}/who',
             'body': {'pos': 900, 'start': 751, 'end': 753}, 'model_cap': 0, 'jev_cap': 2},
@@ -73,7 +76,7 @@ def source_hashes() -> dict[str, str]:
     return actual
 
 
-def _assert_case(route: str, row: dict) -> None:
+def _assert_request(route: str, row: dict) -> None:
     case = CASES[route]
     if row.get('route') != case['id'] or row.get('request') != {
             'method': 'POST', 'path': case['path'],
@@ -81,6 +84,10 @@ def _assert_case(route: str, row: dict) -> None:
         raise ValueError('live notebook HTTP request differs from the reviewed case')
     if row.get('transport') != {'http_version': 'HTTP/1.1'}:
         raise ValueError('live notebook HTTP transport is not HTTP/1.1')
+
+
+def _assert_case(route: str, row: dict) -> None:
+    _assert_request(route, row)
     response = row.get('response') or {}
     if response.get('status') != 200 or (route != 'ask' and
             response.get('headers', {}).get('x-yedu-release') != '1.7.5'):
@@ -350,7 +357,7 @@ def exercise(route: str, mode: str, cassettes: Path, key: str, work: Path,
                         on_observation(first)
                     rows = [first]
                     first_count = tape.count
-                    if route == 'marginalia':
+                    if route == 'marginalia' and first['response']['status'] == 200:
                         cached = _send(connection, case, case['id'] + '-cached', route_secrets)
                         if on_observation is not None:
                             on_observation(cached)
@@ -562,6 +569,55 @@ def _read_observation(receipt: Path, cassettes: Path) -> tuple[dict, dict, bytes
     return intent, observation, original
 
 
+def _assert_first_marginalia_rejection(row: dict) -> None:
+    _assert_request('marginalia', row)
+    response = row.get('response') or {}
+    if (response.get('status') != 400
+            or response.get('headers', {}).get('content-type') != 'application/json; charset=utf-8'
+            or response.get('headers', {}).get('x-yedu-release') != '1.7.5'
+            or response.get('body_json') != {'error': REJECTED_MARGINALIA_ERROR}):
+        raise ValueError('original marginalia first request is not the observed guard rejection')
+
+
+def _read_rejected_marginalia(receipt: Path, cassettes: Path) -> tuple[dict, bytes, list[dict], dict[str, str]]:
+    """Bind this proof to the original rejected task, including its erroneous follow-up."""
+    intent = _read_intent(receipt, cassettes)
+    if intent['route'] != 'marginalia' or intent['task_id'] != REJECTED_MARGINALIA_TASK_ID:
+        raise ValueError('failure proof requires the original rejected marginalia task')
+    if (receipt / 'observation.json').exists() or (receipt / 'live-http.jsonl').exists():
+        raise ValueError('rejected marginalia receipt was incorrectly marked as success')
+    attempt_path, failure_path, work = (receipt / 'attempt-http.jsonl',
+                                        receipt / 'failure.json', receipt / 'work')
+    if (any(path.is_symlink() or not path.is_file() for path in (attempt_path, failure_path))
+            or work.is_symlink() or not work.is_dir()):
+        raise ValueError('original marginalia failure receipt is incomplete or linked')
+    raw = attempt_path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != REJECTED_MARGINALIA_ATTEMPT_SHA256:
+        raise ValueError('marginalia failure attempt bytes differ from the original receipt')
+    lines = raw.splitlines(keepends=True)
+    if len(lines) != 2 or any(not line.endswith(b'\n') for line in lines):
+        raise ValueError('original failure receipt must contain exactly two observed HTTP rows')
+    first, second = (json.loads(line) for line in lines)
+    if lines[0] != (canonical(first) + '\n').encode('utf-8') or lines[1] != (
+            canonical(second) + '\n').encode('utf-8'):
+        raise ValueError('original rejected HTTP rows lost canonical byte identity')
+    _assert_first_marginalia_rejection(first)
+    _assert_request('marginalia', {**second, 'route': CASES['marginalia']['id']})
+    if (second.get('route') != CASES['marginalia']['id'] + '-cached'
+            or second.get('response', {}).get('status') != 500
+            or second['response'].get('body_json') != {'error': '服务器出错了'}):
+        raise ValueError('original failed cached probe differs from the recorded harness consequence')
+    outbound = _outbound_rows(receipt)
+    failure = json.loads(failure_path.read_text(encoding='utf-8'))
+    if (failure.get('state') != 'original_attempt_not_published'
+            or failure.get('outbound_attempts') != 4
+            or [row['kind'] for row in outbound] != ['model', 'jev', 'model', 'jev']):
+        raise ValueError('original marginalia failure provider journal differs')
+    work_hashes = tree_hashes(work)
+    assert_public(raw.decode('utf-8'), known_secrets())
+    return intent, lines[0], outbound, work_hashes
+
+
 def reconcile(receipt: Path, cassettes: Path) -> dict:
     """Inspect the original attempt without retrying, modifying, or opening a socket."""
     intent = _read_intent(receipt, cassettes)
@@ -621,6 +677,70 @@ def replay(route: str, cassettes: Path, receipt: Path, out: Path) -> None:
     write_jsonl(out, rows)
 
 
+def replay_failure(route: str, cassettes: Path, receipt: Path, out: Path) -> None:
+    """Replay only the original request; the old cached probe followed an HTTP 400."""
+    if route != 'marginalia' or out.exists() or out.is_symlink() or out.resolve(
+            strict=False).is_relative_to(cassettes.resolve()):
+        raise ValueError('failure replay requires marginalia and a new output outside cassettes')
+    _intent, original_first, original_outbound, original_work = _read_rejected_marginalia(
+        receipt, cassettes)
+    verify_live_cassettes(cassettes)
+    with tempfile.TemporaryDirectory(prefix='thusfar-notebook-rejected-replay-') as temp:
+        rows, outbound, first_count, count, work_hashes = exercise(
+            'marginalia', 'replay', cassettes, 'oracle-placeholder', Path(temp) / 'work')
+        if len(rows) != 1:
+            raise ValueError('rejected marginalia replay sent the old cached follow-up')
+        _assert_first_marginalia_rejection(rows[0])
+        if (outbound != original_outbound or first_count != count or count != len(original_outbound)
+                or work_hashes != original_work
+                or (canonical(rows[0]) + '\n').encode('utf-8') != original_first):
+            raise ValueError('rejected marginalia replay differs from original first HTTP or state')
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(original_first)
+
+
+def verify_failure(route: str, cassettes: Path, receipt: Path, out: Path) -> None:
+    """Publish the observed first 400 only after two exact, offline replays."""
+    if route != 'marginalia' or out.exists() or out.is_symlink() or out.resolve(
+            strict=False).is_relative_to(cassettes.resolve()):
+        raise ValueError('failure verification requires marginalia and a new output outside cassettes')
+    intent, original_first, outbound, work_hashes = _read_rejected_marginalia(receipt, cassettes)
+    tapes_before = _tape_hashes(cassettes, outbound)
+    with tempfile.TemporaryDirectory(prefix='thusfar-notebook-rejected-dual-') as temp:
+        outputs = []
+        for seed in ('1', '2'):
+            path = Path(temp) / (seed + '.jsonl')
+            result = subprocess.run(
+                [sys.executable, '-m', 'oracle.record.http_notebook_live', 'replay-failure',
+                 '--route', 'marginalia', '--cassettes', str(cassettes.resolve()),
+                 '--receipt', str(receipt.resolve()), '--out', str(path)],
+                cwd=ROOT, env={**os.environ, 'PYTHONHASHSEED': seed},
+                capture_output=True, text=True, timeout=240, check=False)
+            if result.returncode:
+                raise RuntimeError(f'offline original marginalia rejection replay {seed} failed')
+            outputs.append(path.read_bytes())
+        if outputs != [original_first, original_first] or _tape_hashes(cassettes, outbound) != tapes_before:
+            raise ValueError('original marginalia rejection and two independent replays differ')
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(original_first)
+    write_json(out.with_name(out.stem + '-report.json'), {
+        'schema': 1, 'source': 'observed real DeepSeek and free JEV marginalia application rejection',
+        'classification': 'application_rejection_not_success', 'route': 'marginalia',
+        'original_task_id': intent['task_id'], 'original_response_ordinal': 1,
+        'original_http_status': 400,
+        'original_attempt_http_sha256': REJECTED_MARGINALIA_ATTEMPT_SHA256,
+        'original_first_response_sha256': hashlib.sha256(original_first).hexdigest(),
+        'original_outbound': outbound, 'tape_sha256': tapes_before,
+        'original_work_file_sha256': work_hashes,
+        'excluded_original_followup': {
+            'ordinal': 2, 'http_status': 500,
+            'reason': 'old recorder sent a cached probe after the first 400; model attempt cap blocked it',
+        },
+        'passes': 2, 'hash_seeds': ['1', '2'],
+        'new_provider_attempts': 0,
+    })
+
+
 def verify(route: str, cassettes: Path, receipt: Path, out: Path) -> None:
     if out.exists() or out.is_symlink() or out.resolve(strict=False).is_relative_to(cassettes.resolve()):
         raise ValueError('verified notebook HTTP golden output must be new and outside cassettes')
@@ -667,7 +787,8 @@ def verify(route: str, cassettes: Path, receipt: Path, out: Path) -> None:
 def main() -> None:
     require_reference_runtime()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('mode', choices=('record', 'replay', 'verify', 'reconcile'))
+    parser.add_argument('mode', choices=('record', 'replay', 'verify', 'reconcile',
+                                         'replay-failure', 'verify-failure'))
     parser.add_argument('--route', choices=sorted(CASES), required=True)
     parser.add_argument('--cassettes', type=Path, default=LIVE_CASSETTES)
     parser.add_argument('--receipt', type=Path, required=True)
@@ -675,8 +796,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.mode in ('record', 'reconcile') and args.out is not None:
         parser.error('record and reconcile write no explicit --out')
-    if args.mode in ('replay', 'verify') and args.out is None:
-        parser.error('replay and verify require --out')
+    if args.mode in ('replay', 'verify', 'replay-failure', 'verify-failure') and args.out is None:
+        parser.error('replay and verify modes require --out')
     if args.mode == 'record':
         record(args.route, args.cassettes, args.receipt)
     elif args.mode == 'reconcile':
@@ -686,6 +807,10 @@ def main() -> None:
         print(canonical(result))
     elif args.mode == 'replay':
         replay(args.route, args.cassettes, args.receipt, args.out)
+    elif args.mode == 'replay-failure':
+        replay_failure(args.route, args.cassettes, args.receipt, args.out)
+    elif args.mode == 'verify-failure':
+        verify_failure(args.route, args.cassettes, args.receipt, args.out)
     else:
         verify(args.route, args.cassettes, args.receipt, args.out)
 

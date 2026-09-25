@@ -61,8 +61,8 @@ class _MemoryReply(io.BytesIO):
 class _FixtureOpener:
     """Synthetic in-memory replies; it persists keyless tapes for a later real replay."""
 
-    def __init__(self, store: CassetteStore, attempts: dict):
-        self.store, self.attempts = store, attempts
+    def __init__(self, store: CassetteStore, attempts: dict, reject_guard: bool = False):
+        self.store, self.attempts, self.reject_guard = store, attempts, reject_guard
 
     def open(self, request, timeout=None):
         envelope = request_envelope(request, (FAKE_KEY,))
@@ -79,7 +79,7 @@ class _FixtureOpener:
                 elif 'answers' in labels:
                     choice = 'answers'
                 elif 'supported' in labels:
-                    choice = 'supported'
+                    choice = 'beyond_text' if self.reject_guard else 'supported'
                 else:
                     raise AssertionError('synthetic fixture received an unreviewed JEV dimension')
                 dimensions[name] = {'label': choice, 'confidence': .96,
@@ -105,7 +105,7 @@ class _FixtureOpener:
         return _MemoryReply(raw, content_type)
 
 
-def build_offline_fixture(route: str, directory: Path) -> None:
+def build_offline_fixture(route: str, directory: Path, reject_guard: bool = False) -> None:
     """Run the real handler with a synthetic opener, then write replay-only tapes."""
     tapes = directory / 'cassettes'
     tapes.mkdir()
@@ -118,7 +118,7 @@ def build_offline_fixture(route: str, directory: Path) -> None:
     def fake_install(_directory, _mode, **_kwargs):
         from pipeline import llm
         previous = llm._opener
-        llm._opener = lambda: _FixtureOpener(store, attempts)
+        llm._opener = lambda: _FixtureOpener(store, attempts, reject_guard)
         try:
             yield store
         finally:
@@ -130,7 +130,12 @@ def build_offline_fixture(route: str, directory: Path) -> None:
             route, 'record', tapes, FAKE_KEY, directory / 'work',
             on_observation=observed.append)
     assert observed == rows
-    notebook.assert_success(route, rows, outbound, first_count, count, (FAKE_KEY,))
+    if reject_guard:
+        assert route == 'marginalia' and len(rows) == 1 and rows[0]['response']['status'] == 400
+        assert [row['kind'] for row in outbound] == ['model', 'jev', 'model', 'jev']
+        assert first_count == count == 4
+    else:
+        notebook.assert_success(route, rows, outbound, first_count, count, (FAKE_KEY,))
     for sha, (envelope, replies) in attempts.items():
         write_json(tapes / (sha + '.json'), {'schema': 1, 'request_sha256': sha,
                                             'request': envelope, 'attempts': replies,
@@ -341,6 +346,35 @@ class NotebookLiveOfflineTests(unittest.TestCase):
                  'probe_timeout_teardown(Path(sys.argv[1]))', temp],
                 cwd=ROOT, capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_rejected_first_marginalia_request_stops_before_cached_probe(self):
+        with tempfile.TemporaryDirectory(prefix='thusfar-notebook-rejected-') as temp:
+            directory = Path(temp)
+            fixture = subprocess.run(
+                [PYTHON, '-c',
+                 'from pathlib import Path; import sys; '
+                 'from tests.test_http_notebook_live import build_offline_fixture; '
+                 'build_offline_fixture("marginalia", Path(sys.argv[1]), True)', temp],
+                cwd=ROOT, capture_output=True, text=True, timeout=15)
+            self.assertEqual(fixture.returncode, 0, fixture.stderr)
+            expected = json.loads((directory / 'expected.json').read_text())
+            script = ('from pathlib import Path; import sys; '
+                      'from oracle.record.http_notebook_live import exercise; '
+                      'from oracle.record.common import canonical; '
+                      'rows, outbound, first, count, hashes = exercise('
+                      '"marginalia", "replay", Path(sys.argv[1]), "oracle-placeholder", Path(sys.argv[2])); '
+                      'print(canonical({"rows": rows, "outbound": outbound, '
+                      '"work_hashes": hashes, "first_count": first, "count": count}))')
+            replay = subprocess.run(
+                [PYTHON, '-c', script, str(directory / 'cassettes'),
+                 str(directory / 'replay')], cwd=ROOT,
+                capture_output=True, text=True, timeout=15)
+            self.assertEqual(replay.returncode, 0, replay.stderr)
+            observed = json.loads(replay.stdout)
+            self.assertEqual(observed['rows'], expected['rows'])
+            self.assertEqual(observed['outbound'], expected['outbound'])
+            self.assertEqual(observed['work_hashes'], expected['work_hashes'])
+            self.assertEqual((observed['first_count'], observed['count']), (4, 4))
 
 
 if __name__ == '__main__':

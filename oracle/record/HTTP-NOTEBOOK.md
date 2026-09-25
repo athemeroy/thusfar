@@ -48,7 +48,7 @@ ledger state without resubmitting. A paid request already present in the
 cassette directory is refused. If the original attempt is incomplete, inspect
 that receipt and cassette before deciding any further action.
 
-`verify` first replays the original live response through the production HTTP
+`verify` first replays an accepted original live response through the production HTTP
 handler with no external sockets. It checks exact outbound digests, the entire
 working tree's file hashes, and exact response bytes against the observed
 receipt. It then runs two new Python processes under hash seeds 1 and 2 and
@@ -56,7 +56,37 @@ writes the golden only if both replay bytes equal the genuine live bytes. A
 source or generated-state mismatch remains a failure, not an adjusted golden.
 The companion report records tape hashes and the normalization list. The
 provider's final invoice is unknown unless the gateway supplies a billing
-receipt; guarded ledger charge is a conservative upper bound.
+receipt. The ledger charge uses the configured model token rates plus a guard
+margin; it is not an observed account charge.
+
+## The original manual marginalia rejection
+
+Task `d2f9bc10e6104a8ab8a344425653bac7` returned HTTP 400 with
+`这条批注没有通过已读内容核对，已替你隐藏` after two real model replies and two free JEV
+replies. The original recorder then incorrectly sent its cached-response probe
+despite the failed first request. That second HTTP 500 was caused by the
+recorder's model attempt cap; it is retained in the original private attempt
+receipt and excluded from the published application rejection. The harness now
+sends the cached probe only after a first HTTP 200. This failure is resolved;
+the original paid task must not be resubmitted under a new ID.
+
+The following command reads the four original cassettes and the original
+receipt, sends **no provider request**, and publishes only original HTTP row
+**ordinal 1** after two fresh-process replays. It requires the original task
+ID and exact original attempt-file SHA-256, checks all four provider request
+digests and the complete persisted work-file hashes, and records ordinal 2 as
+an excluded recorder consequence in a separate report.
+
+```bash
+python3.11 -m oracle.record.http_notebook_live verify-failure \
+  --route marginalia \
+  --receipt /home/dev/.local/share/thusfar-oracle/marginalia-http-live-20260926 \
+  --out oracle/goldens/http/aq_marginalia_first400_live.jsonl
+```
+
+This is an observed application **rejection** golden. It does not satisfy the
+manual marginalia HTTP success requirement. The original receipt remains
+unchanged; no substitute model response or expected comment is created.
 
 The narrow deterministic controls are: omit HTTP `Date`/`Server` through the
 existing response header allowlist; use a fixed response clock for `ask.ms`
