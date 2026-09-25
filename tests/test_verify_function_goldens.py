@@ -7,8 +7,7 @@ import unittest
 from pathlib import Path
 
 from oracle.record.common import digest, write_json, write_jsonl
-from oracle.record.verify_function_goldens import (GOLDENS, INVENTORY, TREE_ALGORITHM,
-                                                   audit_files, verify)
+from oracle.record.verify_function_goldens import TREE_ALGORITHM, audit_files, verify
 
 
 def _fixture(root: Path) -> tuple[Path, Path, Path]:
@@ -47,12 +46,28 @@ def _fixture(root: Path) -> tuple[Path, Path, Path]:
 
 
 class FunctionGoldenVerifierTests(unittest.TestCase):
-    def test_current_ordinary_tree_has_exact_inventory_and_report_file_set(self):
-        result = audit_files(GOLDENS, INVENTORY)
-        self.assertEqual(result['selected_functions'], 128)
-        self.assertEqual(result['observed_functions'], 123)
-        self.assertEqual(result['output_file_count'], result['observed_functions'] + 1)
-        self.assertEqual(result['non_deterministic_inputs'], 0)
+    def test_inventory_selection_and_report_file_set(self):
+        # A checked-in golden can temporarily lag the inventory while a new formal
+        # double recording is in progress. CI runs verify() on that actual tree.
+        with tempfile.TemporaryDirectory(prefix='thusfar-function-audit-') as temp:
+            root = Path(temp)
+            _fixture(root)
+            inventory = root / 'inventory.json'
+            rows = [
+                {'source': 'pipeline/kg.py', 'line': 1,
+                 'id': 'pipeline.kg.demo', 'category': '纯函数'},
+                {'source': 'server/ask.py', 'line': 2,
+                 'id': 'server.ask.closure', 'category': '纯函数'},
+            ]
+            write_json(inventory, {'functions': rows})
+            result = verify(root, inventory=inventory)
+            self.assertEqual(result['selected_functions'], 2)
+            self.assertEqual(result['observed_functions'], 1)
+            self.assertEqual(result['output_file_count'], 2)
+            rows[1]['category'] = '有原位状态修改'
+            write_json(inventory, {'functions': rows})
+            with self.assertRaisesRegex(ValueError, 'current pure-function inventory'):
+                verify(root, inventory=inventory)
 
     def test_fixture_report_tree_and_special_mapping_verify(self):
         with tempfile.TemporaryDirectory(prefix='thusfar-function-audit-') as temp:
