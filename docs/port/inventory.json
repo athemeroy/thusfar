@@ -6220,7 +6220,7 @@
         "text",
         "name"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "<IfExp>.strip",
         "AOZORA_HEAD.search",
@@ -6336,7 +6336,7 @@
         "text",
         "name"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "BARE_HEAD_RE.match",
         "EN_CHAPTER_RE.match",
@@ -6603,7 +6603,7 @@
         "path",
         "out_dir"
       ],
-      "category": "文件读写",
+      "category": "并发与编排",
       "calls": [
         "CHAPTER_RE.match",
         "JA_FRAME_RE.fullmatch",
@@ -6756,7 +6756,7 @@
         "title",
         "author"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "b.get",
         "b.pop",
@@ -6790,9 +6790,11 @@
         "Unicode 编码",
         "dict 顺序",
         "len",
+        "可见状态原位修改",
+        "形参别名原位修改（人工审计）",
         "排序"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "reads_environment": false,
       "closure_dependencies": [],
       "status": "未开始"
@@ -6848,7 +6850,7 @@
         "chapters",
         "blocks"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "any",
         "reversed"
@@ -6857,8 +6859,11 @@
       "callers": [
         "pipeline.parse.finish"
       ],
-      "danger_semantics": [],
-      "mutates_state": false,
+      "danger_semantics": [
+        "可见状态原位修改",
+        "形参别名原位修改（人工审计）"
+      ],
+      "mutates_state": true,
       "reads_environment": false,
       "closure_dependencies": [],
       "status": "未开始"
@@ -7167,7 +7172,7 @@
       "parameters": [
         "rec"
       ],
-      "category": "纯函数",
+      "category": "并发与编排",
       "calls": [
         "<BoolOp>.get",
         "<BoolOp>.get(...).get",
@@ -7187,9 +7192,11 @@
       ],
       "danger_semantics": [
         "dict 顺序",
+        "可见状态原位修改",
+        "形参别名原位修改（人工审计）",
         "浮点"
       ],
-      "mutates_state": false,
+      "mutates_state": true,
       "reads_environment": false,
       "closure_dependencies": [],
       "status": "未开始"

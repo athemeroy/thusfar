@@ -27,6 +27,14 @@ MODEL_ENTRYPOINTS = {
     "pipeline.llm.chat", "pipeline.llm.chat_json", "pipeline.llm.llm_judge",
     "pipeline.llm.jev_free", "pipeline.llm.jev_local", "pipeline.llm._jev_uncached", "pipeline.llm.jev",
 }
+# AST root-name analysis cannot see writes through an iteration/local alias of a
+# parameter. These three were audited against the 1.7.5 implementation and must
+# be recorded as input-state transformations, never as return-only pure calls.
+PARAMETER_ALIAS_MUTATIONS = {
+    "pipeline.parse.classify",      # c aliases chapters[*]
+    "pipeline.parse.finish",        # b/f alias blocks[*]/footnote entries
+    "pipeline.run.settle_rewrites", # c/pr alias rec.guard/rec.data entries
+}
 MODEL_CALL_NAMES = {"chat", "chat_json", "llm_judge", "jev", "jev_free", "jev_local", "urlopen"}
 STAGE_BY_MODULE = {
     "pipeline.provenance": "A1", "pipeline.lang": "A1", "pipeline.models": "A1", "server.storage": "A1/A6",
@@ -368,7 +376,7 @@ def analyze_functions(trees: dict[str, ast.Module], entries: list[Entry]) -> Non
             visitor.visit(stmt)
         e.call_expressions = {name for name, _ in visitor.calls}
         e.dangers = visitor.dangers
-        e.mutates_state = visitor.mutates_state
+        e.mutates_state = visitor.mutates_state or e.id in PARAMETER_ALIAS_MUTATIONS
         e.reads_environment = visitor.reads_environment
         local = local_names(e.node) | visitor.parameters
         parts = e.qualname.split(".")[:-1]
@@ -381,6 +389,8 @@ def analyze_functions(trees: dict[str, ast.Module], entries: list[Entry]) -> Non
             parts.pop()
         if e.mutates_state:
             e.dangers.add("可见状态原位修改")
+        if e.id in PARAMETER_ALIAS_MUTATIONS:
+            e.dangers.add("形参别名原位修改（人工审计）")
         if e.closure_dependencies:
             e.dangers.add("闭包依赖")
         for name, line in visitor.calls:
@@ -401,6 +411,9 @@ def analyze_functions(trees: dict[str, ast.Module], entries: list[Entry]) -> Non
                 if priority[target_category] > priority[e.category]:
                     e.category = target_category
                     changed = True
+    unknown_overrides = PARAMETER_ALIAS_MUTATIONS - by_id.keys()
+    if unknown_overrides:
+        raise ValueError(f"Stale parameter alias mutation overrides: {sorted(unknown_overrides)}")
 
 
 def test_entries(function_by_name: dict[str, list[Entry]], class_names: set[str]) -> list[dict]:
