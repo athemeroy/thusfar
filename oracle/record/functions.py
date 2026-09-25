@@ -46,6 +46,39 @@ def _contains_test_revision(value: object) -> bool:
     return False
 
 
+def _canon_inputs(inputs: dict[str, object]) -> dict[str, object]:
+    """Snapshot only the merge chain read by KG.canon.
+
+    Capturing the entire KG.people mapping makes this pure call depend on unrelated
+    mention counts and can push semantically identical calls across the sample cap.
+    Keep every visited person's merged_into field, including a cyclic closing edge.
+    """
+    view = inputs.get('self')
+    if not isinstance(view, ObjectView):
+        return inputs
+    kg = view.value
+    pid = inputs.get('pid')
+    if not isinstance(pid, (str, type(None))) or not isinstance(getattr(kg, 'people', None), dict):
+        return inputs
+    people = kg.people
+    chain: dict[str, dict] = {}
+    seen: set[str] = set()
+    cursor = pid
+    while cursor and cursor in people and cursor not in seen:
+        person = people[cursor]
+        if not isinstance(person, dict):
+            return inputs
+        seen.add(cursor)
+        chain[cursor] = ({'merged_into': person['merged_into']}
+                         if 'merged_into' in person else {})
+        cursor = person.get('merged_into')
+        if cursor is not None and not isinstance(cursor, str):
+            return inputs
+    projected = {'$object': f'{type(kg).__module__}.{type(kg).__qualname__}',
+                 'fields': {'people': chain}}
+    return {**inputs, 'self': projected}
+
+
 def included_functions(path: Path | None, inventory: Path) -> tuple[set[str], dict[tuple[str, int], str]]:
     if not inventory.is_file():
         raise ValueError(f'no machine-readable inventory at {inventory}')
@@ -115,6 +148,8 @@ class Collector:
             return None
         if 'self' in inputs:
             inputs['self'] = ObjectView(inputs['self'], frozenset(frame.f_code.co_names))
+        if function == 'pipeline.kg.KG.canon':
+            inputs = _canon_inputs(inputs)
         try:
             encoded = encode(inputs, self.secrets)
         except UnsafeValue as exc:
