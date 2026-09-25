@@ -23,3 +23,5 @@ __pycache__/
 .pytest_cache/
 .venv*/
 .DS_Store
+core/.dart_tool/
+core/coverage/
