@@ -453,7 +453,6 @@ def main() -> None:
     if args.snapshot_root:
         capture_snapshots(args.snapshot_root)
     make_api_annotated_snapshot(force=args.snapshot_root is not None)
-    write_manifest()
     make_api_paused_snapshot()
     write_manifest()
     verify()
