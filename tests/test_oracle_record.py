@@ -244,12 +244,15 @@ class OracleRecordSafety(unittest.TestCase):
                     patch('oracle.record.cassettes.install', fake_install), \
                     patch('oracle.record.artifacts.install', fake_install):
                 functions.run_book_replay(source, Path(tmp) / 'tapes', 'fresh', 1)
+                functions.run_book_replay(source, Path(tmp) / 'tapes', 'fresh', 1, limit=1)
+                with self.assertRaisesRegex(ValueError, 'partial function replay'):
+                    functions.run_book_replay(source, Path(tmp) / 'tapes', 'fresh', 12, limit=1)
                 book.mkdir()
                 artifacts.one_pass(book, Path(tmp) / 'tapes', 1, limit=19)
                 self.assertEqual({name: os.environ[name] for name in _MODEL_ENV}, hostile)
                 self.assertEqual(run.RECAP_MODEL, original_recap)
-        self.assertEqual(len(seen), 2)
-        self.assertEqual(limits, [None, 19])
+        self.assertEqual(len(seen), 3)
+        self.assertEqual(limits, [None, 1, 19])
         self.assertTrue(all(all(value == 'deepseek-flash+nothink' for value in row.values())
                             for row in seen))
 

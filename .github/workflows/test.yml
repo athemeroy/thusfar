@@ -41,6 +41,7 @@ jobs:
           PYTHONHASHSEED=1 python -m oracle.record.functions \
             --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
             --replay-book oracle/corpus/snapshots/aq_complete \
+            --replay-french-prefix \
             --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
             --maximum 200 --out "$output"
           actual=$(python -m oracle.record.verify_function_goldens --root "$output" --tree-sha)

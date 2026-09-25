@@ -323,9 +323,12 @@ def run_manual(path: Path) -> None:
             raise RuntimeError(f'manual case {number} ({name}) failed') from exc
 
 
-def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int) -> None:
+def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int,
+                    limit: int | None = None) -> None:
     from .artifacts import stage_book
     from .cassettes import install
+    if limit is not None and (limit < 1 or concurrency != 1 or start != 'fresh'):
+        raise ValueError('partial function replay requires a positive limit, fresh start, and concurrency 1')
     model = 'deepseek-flash+nothink'
     names = ('LLM_BASE_URL', 'LLM_BASE_URL_OPENAI', 'LLM_PROTOCOL', 'LLM_PROTOCOL_MAP',
              'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY',
@@ -353,7 +356,8 @@ def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int)
             llm.CLASSIFIER_URL, run.RECAP_MODEL = 'https://classifier.dev/v1/classify', model
             try:
                 with install(cassettes, 'replay'):
-                    run_book(root, model=model, local_model=model, concurrency=concurrency)
+                    run_book(root, model=model, local_model=model, concurrency=concurrency,
+                             limit=limit)
             finally:
                 llm.CLASSIFIER_URL, run.RECAP_MODEL = old_classifier, old_recap
         finally:
@@ -362,6 +366,17 @@ def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int)
                     os.environ.pop(name, None)
                 else:
                     os.environ[name] = value
+
+
+def run_french_prefix(cassettes: Path, concurrency: int) -> None:
+    """Replay only the one published French segment from verified parser inputs."""
+    if concurrency != 1:
+        raise ValueError('French prefix function replay requires concurrency 1')
+    from .stage_corpus import stage_public_book
+    with tempfile.TemporaryDirectory(prefix='thusfar-oracle-function-french-') as tmp:
+        source = Path(tmp) / 'french'
+        stage_public_book('french', source)
+        run_book_replay(source, cassettes, 'fresh', concurrency=1, limit=1)
 
 
 def main() -> int:
@@ -374,6 +389,8 @@ def main() -> int:
     parser.add_argument('--manual', type=Path)
     parser.add_argument('--script', type=Path, help='additional Python workload to execute')
     parser.add_argument('--replay-book', type=Path, action='append', default=[])
+    parser.add_argument('--replay-french-prefix', action='store_true',
+                        help='replay the checked-in French source through its single taped segment')
     parser.add_argument('--cassettes', type=Path, default=ROOT / 'oracle/cassettes')
     parser.add_argument('--book-start', choices=('fresh', 'resume'), default='fresh')
     parser.add_argument('--concurrency', type=int, default=12)
@@ -382,7 +399,10 @@ def main() -> int:
     args = parser.parse_args()
     if args.maximum < 1 or args.maximum > 200:
         parser.error('--maximum must be between 1 and 200')
-    if not any((args.unittest, args.corpus, args.manual, args.script, args.replay_book)):
+    if args.replay_french_prefix and (args.book_start != 'fresh' or args.concurrency != 1):
+        parser.error('--replay-french-prefix requires --book-start fresh --concurrency 1')
+    if not any((args.unittest, args.corpus, args.manual, args.script,
+                args.replay_book, args.replay_french_prefix)):
         parser.error('choose at least one workload')
     if args.out.exists() and any(args.out.iterdir()):
         parser.error('--out must be empty to prevent stale goldens from a previous run')
@@ -409,6 +429,9 @@ def main() -> int:
             for source in args.replay_book:
                 collector.phase = 'book-replay'
                 run_book_replay(source, args.cassettes, args.book_start, args.concurrency)
+            if args.replay_french_prefix:
+                collector.phase = 'book-replay-french-prefix'
+                run_french_prefix(args.cassettes, args.concurrency)
     finally:
         sys.settrace(old_trace)
         threading.settrace(old_thread_trace)
