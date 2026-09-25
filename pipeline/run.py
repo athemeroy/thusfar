@@ -901,7 +901,7 @@ class Runner:
                 proper_b = {n for n in nb if not is_generic(n)}
                 same_name = bool(na & nb)
                 same_core = bool({core(n) for n in proper_a} & {core(n) for n in proper_b} - {''})
-                close = any(related(m, n) or related(n, m) for m in proper_a for n in proper_b) if proper_a and proper_b else False
+                close = any(related(m, n) or related(n, m) for m in sorted(proper_a) for n in sorted(proper_b)) if proper_a and proper_b else False
                 if same_name or same_core or close:
                     pairs.append((y, x))
         # someone first known only by a description ("the little man") and later named in the text

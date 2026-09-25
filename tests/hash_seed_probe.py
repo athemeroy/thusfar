@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from pipeline.extract import segments
 from pipeline.kg import KG
-from pipeline.link import link_segment, proper_name, to_classic
+from pipeline.link import link_segment, proper_name, to_classic, verify_names
 from pipeline.parse import finish
 from server import ask
 from tests.test_oracle_pure_coverage import bare_runner, person
@@ -49,6 +49,34 @@ def probe():
         runner.kg.people[f'P{index}'] = person(f'P{index}', 'Alex', 1)
     pairs, dossiers = runner._dedupe_candidates(20, 0)
 
+    verify_related_calls = []
+    target = person('P1', '吴甲', 1)
+    target['aliases'].add('钱乙')
+    local_person = {'id': '1', 'name': '周丙', 'names': ['郑丁']}
+
+    def verify_related(a, b):
+        verify_related_calls.append((a, b))
+        return False
+
+    with patch('pipeline.link.related', side_effect=verify_related), \
+         patch('pipeline.link.jev', return_value={}):
+        verify_names({'P1': target}, [local_person],
+                     {'1': {'to': 'P1', 'how': 'fallback-name'}}, '测试段落')
+
+    dedupe_related_calls = []
+    dedupe_runner = bare_runner()
+    dedupe_runner.kg.people['P1'] = target
+    other = person('P2', '周丙', 2)
+    other['aliases'].add('郑丁')
+    dedupe_runner.kg.people['P2'] = other
+
+    def dedupe_related(a, b):
+        dedupe_related_calls.append((a, b))
+        return False
+
+    with patch('pipeline.run.related', side_effect=dedupe_related):
+        dedupe_runner._dedupe_candidates(20, 0)
+
     book = finish([
         {'k': 'p', 't': '某人靠近。甲乙丙在后面。'},
         {'k': 'p', 't': '某人后来被称为甲乙和乙丙。'},
@@ -86,6 +114,8 @@ def probe():
     return {
         'proper': proper, 'classic': classic,
         'candidates': captured[0], 'name_index': name_index, 'pairs': pairs,
+        'verify_related_calls': verify_related_calls,
+        'dedupe_related_calls': dedupe_related_calls,
         'dossier_keys': list(dossiers),
         'scrubbed': event['text'],
         'retrieved_offsets': [row['o'] for row in retrieved],

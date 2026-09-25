@@ -257,7 +257,7 @@ def verify_names(cast: dict, people: list, decisions: dict, passage: str) -> tup
             base = {n for n in t['aliases'] | {t['name']} if not is_generic(n)} or {t['name']}
             who = f"{proper_name(t)}（{t.get('tagline') or t.get('intro') or ''}）"
             if (d.get('how', '').startswith('jev') or d.get('how') == 'fallback-name') and strong \
-                    and not any(related(a, b) for a in strong for b in base):
+                    and not any(related(a, b) for a in sorted(strong) for b in sorted(base)):
                 claims[lid] = (lp.get('name', '').lstrip('*') or sorted(strong)[0], proper_name(t),
                                lp.get('role') or '', t.get('tagline') or t.get('intro') or '')
         else:
@@ -266,7 +266,7 @@ def verify_names(cast: dict, people: list, decisions: dict, passage: str) -> tup
             who = f"{main}（{lp.get('role', '')}）"
         for f in sorted(strong - base):
             taken = any(pid != tgt and f in (p['aliases'] | {p['name']}) for pid, p in cast.items())
-            if taken or not any(related(f, b) for b in base):
+            if taken or not any(related(f, b) for b in sorted(base)):
                 forms[(lid, f)] = who
     if not claims and not forms:
         return {}, {}
