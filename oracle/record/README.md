@@ -283,8 +283,8 @@ and guarded charge; the gateway's actual bill remains unknown without a provider
 
 The handler's actual nonempty reply text, capped by its own 20-character display limit,
 is retained. The fixture replaces only `server.model_settings.time.time` with a fixed clock
-in both live and replay runs, so the response's `0.0 秒` is controlled test data, not measured provider
-latency. The model client and server clocks remain real. The existing HTTP response recorder
+in both live and replay runs. The response's `0.0 秒` is controlled test data, not measured
+provider latency. The model client and server clocks remain real. The existing HTTP response recorder
 omits standard `Date` and `Server` headers; it retains status, allowed response headers,
 JSON body, model reply text, release value, and content length. Offline verification starts
 two separate Python 3.11 processes with different hash seeds, blocks nonloopback sockets,
@@ -309,6 +309,16 @@ replay/verify accepts a relocated scanned tape after checking the original reque
 exact cassette file SHA-256, and the current full tape audit. A keyless copy of
 `intent.json`, `observation.json`, and `live-http.jsonl` can therefore be checked by CI in
 a different checkout. That copy is an observed HTTP receipt, not a new live attempt.
+
+The original 2026-09-26 settings request succeeded once through the Python 1.7.5 route.
+The committed keyless copy is `oracle/goldens/http/live/settings-test/` (all four original
+receipt files); its output and report are `oracle/goldens/http/settings_test_live.jsonl`
+and `settings_test_live-report.json`. The observed HTTP 200 body equals both independent
+offline replays byte for byte (SHA-256 `c2fb0bdf6825ba6f457c353ca834c7eaa5fadc3aba1692c4086c8388d83c9388`).
+The recorded model usage is 9 prompt and 1 completion tokens; the shared tape's guarded
+charge after this request is ¥0.904987776. The gateway's actual charge is not available.
+`tests/test_http_live_committed.py` checks the receipt hashes and reruns portable verification
+twice without a provider connection or local key.
 
 The Node command imports the actual `web/js/kg.js`, calls `KG.world(cutoff)` at 20 evenly
 spaced cutoffs, and records people, relations, events, recaps, canonical identities, ranking,
