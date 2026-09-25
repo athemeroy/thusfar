@@ -13,6 +13,11 @@ optional book replays. Inputs are copied at call entry and outputs at return. No
 types carry tags (`$tuple`, `$set`, `$map`, `$bytes`, `$xml`, `$path`). Unsupported values are
 counted in `record-report.json`, never silently discarded. Duplicate inputs with different
 outputs are reported as non-deterministic and receive no golden file.
+The tracer and `LoopbackOnly` guard cover the recorder's Python process and threads started
+after tracing is installed. A unittest that launches a child Python process still contributes
+its parent assertion result, but function calls inside that child are not traced into ordinary
+function goldens and the child does not inherit the parent's socket monkeypatch. Such child
+workloads need their own offline controls and separate coverage evidence.
 Up to 200 samples are kept per function. Every distinct handwritten `manual` sample is
 reserved first; remaining slots keep the lowest input hashes from later workloads. If
 `--maximum` cannot hold the manual samples, recording fails with the function and required
@@ -60,15 +65,23 @@ JSONL files plus `record-report.json`, and excludes special goldens and provenan
 The current result is 120 ordinary functions, 7,482 samples, and 42 tagged exception outputs;
 both passes produced tree SHA-256
 `931cedb261785231f581a3dc3f0b4c85372eed8637f4bf9ace1f5699eb608ed1`.
-Provenance also names the exact 1,604 recording input paths and their SHA-256 content tree,
-`34f9ee9233ff53597e92238b5d54bf4666f0c175c007d29e59288d5025c5e738`.
-That tree includes Python source and tests, inventory, manual cases, corpus, cassettes,
-recorder scripts, and other fixtures read by the test suite. It excludes the ordinary
-function output tree, Dart files, and STATUS/NOTES. The verifier recalculates both trees
-and rejects changed, added, or removed inputs. The source commit records the freeze point;
+Provenance names the recording input paths and their SHA-256 content tree. That tree includes
+Python source and tests, inventory, manual cases, corpus, cassettes, recorder scripts, and
+non-function fixtures read by the test suite. Python tests also import
+`docs/port/check_deferred_markers.py` and `core/tool/generate_ported_tests.py`, and read
+`core/test/ported/manifest.json` plus the Dart callbacks in `core/test/ported/*.dart`; these
+specific files are included. The ordinary function output tree, unrelated Dart sources,
+documentation, and STATUS/NOTES remain outside this input tree. The verifier recalculates
+both trees and rejects changed, added, or removed files within the declared input patterns.
+The source commit records the freeze point;
 the content tree is the actual drift check, so later documentation-only commits do not
 invalidate the evidence. CI additionally replays the complete workload once with its
 network guard and compares the resulting ordinary tree SHA with this committed provenance.
+The verifier requires well-formed source commit, two distinct hash seeds, a positive Python
+test count, and the declared six-workload command shape. Those metadata fields describe the
+recording; they do not prove the two commands actually ran. Independent exit receipts and a
+byte comparison of both complete output trees establish the two-pass result. CI's replay is
+one additional seed-1 check against the committed tree.
 Run `--tree-sha` after both passes match to calculate the value before writing provenance;
 the default command checks the declared digest and inventory against the checked-in files.
 

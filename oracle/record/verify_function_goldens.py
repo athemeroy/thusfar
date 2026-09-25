@@ -21,6 +21,7 @@ INVENTORY = ROOT / 'docs/port/inventory.json'
 TREE_ALGORITHM = 'sha256(sorted POSIX relative path UTF-8 + NUL + raw SHA-256 file digest bytes)'
 IDENTIFIER = re.compile(r'[A-Za-z_][A-Za-z_0-9]*\Z')
 SHA256 = re.compile(r'[0-9a-f]{64}\Z')
+COMMIT = re.compile(r'[0-9a-f]{40}\Z')
 MAXIMUM = 200
 RECORDING_INPUT_PATTERNS = (
     'pipeline/**/*.py', 'server/**/*.py', 'tests/**/*',
@@ -30,7 +31,11 @@ RECORDING_INPUT_PATTERNS = (
     'oracle/corpus/books/**/*', 'oracle/corpus/synthetic/**/*',
     'oracle/corpus/snapshots/**/*', 'oracle/cassettes/live/**/*.json',
     'oracle/cassettes/synthetic/**/*.json', 'oracle/semantics/**/*',
-    'docs/port/inventory.json', 'scripts/*.py', 'web/**/*',
+    'docs/port/inventory.json', 'docs/port/check_deferred_markers.py',
+    'scripts/*.py', 'web/**/*',
+    # Python unittest imports the generator and reads its manifest/Dart callbacks.
+    'core/tool/generate_ported_tests.py', 'core/test/ported/manifest.json',
+    'core/test/ported/*.dart',
     # These are unittest inputs, not the ordinary function outputs being verified.
     'oracle/goldens/parsed/**/*', 'oracle/goldens/special/**/*',
     'oracle/goldens/http/**/*', 'oracle/goldens/books/**/*',
@@ -102,8 +107,9 @@ def audit_recording_inputs(root: Path = ROOT) -> dict:
     """Fingerprint the exact local files that can affect the formal workload.
 
     The selection deliberately omits the ordinary function golden tree, its report,
-    its provenance, Dart sources, and documentation. It includes non-function
-    goldens because Python unittests read and compare those fixtures.
+    its provenance, unrelated Dart sources, and documentation. It includes the
+    ported-test Dart callbacks read by Python unittests and non-function goldens
+    compared by those tests.
     """
     if root.is_symlink() or not root.is_dir():
         _fail('recording input root is missing or linked')
@@ -209,6 +215,41 @@ def audit_files(goldens: Path = GOLDENS, inventory: Path | None = None) -> dict:
             'output_tree_sha256': tree_sha256(files)}
 
 
+def _check_workloads(value: object) -> None:
+    """Check the declared current workload shape, not whether it actually ran."""
+    if not isinstance(value, list) or len(value) != 6 or not all(isinstance(row, dict) for row in value):
+        _fail('function provenance workload list is missing or malformed')
+    tape = value[3].get('cassette_tree_sha256')
+    if not isinstance(tape, str) or not SHA256.fullmatch(tape):
+        _fail('function provenance workload tape digest is invalid')
+    for row in value:
+        if any(type(row[field]) is not int for field in ('concurrency', 'segments', 'total_segments')
+               if field in row):
+            _fail('function provenance workload count is invalid')
+    expected = [
+        {'kind': 'manual', 'path': 'oracle/record/manual.jsonl'},
+        {'kind': 'unittest', 'discovery': 'tests/test*.py'},
+        {'kind': 'corpus', 'manifest': 'oracle/corpus/manifest.json'},
+        {'kind': 'cassette-replay', 'source': 'oracle/corpus/snapshots/aq_complete',
+         'cassettes': 'oracle/cassettes/live', 'cassette_tree_sha256': tape,
+         'start': 'fresh', 'concurrency': 1, 'model': 'deepseek-flash+nothink', 'segments': 9},
+        {'kind': 'cassette-prefix-replay', 'corpus_book': 'french',
+         'source': 'oracle/corpus/books/un_coeur_simple.txt',
+         'parsed': 'oracle/goldens/parsed/books__un_coeur_simple.txt/book.json',
+         'cassettes': 'oracle/cassettes/live', 'cassette_tree_sha256': tape,
+         'start': 'fresh', 'concurrency': 1, 'model': 'deepseek-flash+nothink',
+         'segments': 1, 'total_segments': 25},
+        {'kind': 'cassette-prefix-replay', 'corpus_book': 'jekyll',
+         'source': 'oracle/corpus/books/jekyll.txt',
+         'parsed': 'oracle/goldens/parsed/books__jekyll.txt/book.json',
+         'cassettes': 'oracle/cassettes/live', 'cassette_tree_sha256': tape,
+         'start': 'fresh', 'concurrency': 1, 'model': 'deepseek-flash+nothink',
+         'segments': 19, 'total_segments': 20},
+    ]
+    if value != expected:
+        _fail('function provenance workloads differ from the declared recording command')
+
+
 def verify(goldens: Path = GOLDENS, inventory: Path | None = INVENTORY,
            input_root: Path = ROOT) -> dict:
     result = audit_files(goldens, inventory)
@@ -225,10 +266,18 @@ def verify(goldens: Path = GOLDENS, inventory: Path | None = INVENTORY,
                   'output_file_count', 'report_sha256', 'output_tree_sha256'):
         if provenance.get(field) != result[field]:
             _fail(f'function provenance {field} differs from the verified tree/report')
+    seeds = provenance.get('hash_seeds')
     if provenance.get('python') != '3.11.13' or provenance.get('unicode') != '14.0.0' \
-            or isinstance(provenance.get('passes'), bool) \
-            or not isinstance(provenance.get('passes'), int) or provenance['passes'] < 2:
-        _fail('function provenance reference runtime or two-pass gate is invalid')
+            or provenance.get('passes') != 2 or isinstance(provenance.get('passes'), bool) \
+            or not isinstance(provenance.get('source_commit'), str) \
+            or not COMMIT.fullmatch(provenance['source_commit']) \
+            or not isinstance(seeds, list) or len(seeds) != 2 \
+            or any(type(seed) is not int or not 0 <= seed <= 4294967295 for seed in seeds) \
+            or seeds[0] == seeds[1] \
+            or type(provenance.get('unittest_tests_per_pass')) is not int \
+            or provenance['unittest_tests_per_pass'] < 1:
+        _fail('function provenance reference runtime or two-pass metadata is invalid')
+    _check_workloads(provenance.get('workloads'))
     special = provenance.get('unobserved_with_special_coverage')
     if not isinstance(special, dict) or set(special) != set(result['unobserved_functions']):
         _fail('unobserved functions lack an exact special-golden mapping')

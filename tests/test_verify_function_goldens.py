@@ -18,8 +18,15 @@ def _fixture(root: Path) -> tuple[Path, Path, Path]:
     (input_root / 'oracle/corpus').mkdir(parents=True)
     (input_root / 'oracle/record').mkdir(parents=True)
     (input_root / 'oracle/cassettes/live').mkdir(parents=True)
+    (input_root / 'docs/port').mkdir(parents=True)
+    (input_root / 'core/tool').mkdir(parents=True)
+    (input_root / 'core/test/ported').mkdir(parents=True)
     (input_root / 'pipeline/example.py').write_text('def example(): return 1\n')
     (input_root / 'tests/test_example.py').write_text('def test_example(): pass\n')
+    (input_root / 'docs/port/check_deferred_markers.py').write_text('def find_markers(): return []\n')
+    (input_root / 'core/tool/generate_ported_tests.py').write_text('def check_contract(): return True\n')
+    (input_root / 'core/test/ported/manifest.json').write_text('{"tests": []}\n')
+    (input_root / 'core/test/ported/test_example_ported_test.dart').write_text('void main() {}\n')
     write_json(input_root / 'oracle/corpus/manifest.json', {'fixture': True})
     (input_root / 'oracle/record/manual.jsonl').write_text('{}\n')
     write_json(input_root / 'oracle/cassettes/live/fixture.json', {'receipt': 'fake'})
@@ -50,6 +57,29 @@ def _fixture(root: Path) -> tuple[Path, Path, Path]:
     provenance_path = root / 'function-provenance.json'
     write_json(provenance_path, {
         'schema': 1, 'python': '3.11.13', 'unicode': '14.0.0', 'passes': 2,
+        'source_commit': '0' * 40, 'hash_seeds': [1, 2],
+        'unittest_tests_per_pass': 1,
+        'workloads': [
+            {'kind': 'manual', 'path': 'oracle/record/manual.jsonl'},
+            {'kind': 'unittest', 'discovery': 'tests/test*.py'},
+            {'kind': 'corpus', 'manifest': 'oracle/corpus/manifest.json'},
+            {'kind': 'cassette-replay', 'source': 'oracle/corpus/snapshots/aq_complete',
+             'cassettes': 'oracle/cassettes/live', 'cassette_tree_sha256': '0' * 64,
+             'start': 'fresh', 'concurrency': 1, 'model': 'deepseek-flash+nothink',
+             'segments': 9},
+            {'kind': 'cassette-prefix-replay', 'corpus_book': 'french',
+             'source': 'oracle/corpus/books/un_coeur_simple.txt',
+             'parsed': 'oracle/goldens/parsed/books__un_coeur_simple.txt/book.json',
+             'cassettes': 'oracle/cassettes/live', 'cassette_tree_sha256': '0' * 64,
+             'start': 'fresh', 'concurrency': 1, 'model': 'deepseek-flash+nothink',
+             'segments': 1, 'total_segments': 25},
+            {'kind': 'cassette-prefix-replay', 'corpus_book': 'jekyll',
+             'source': 'oracle/corpus/books/jekyll.txt',
+             'parsed': 'oracle/goldens/parsed/books__jekyll.txt/book.json',
+             'cassettes': 'oracle/cassettes/live', 'cassette_tree_sha256': '0' * 64,
+             'start': 'fresh', 'concurrency': 1, 'model': 'deepseek-flash+nothink',
+             'segments': 19, 'total_segments': 20},
+        ],
         **{key: value for key, value in measured.items() if key != 'unobserved_functions'},
         'recording_inputs': audit_recording_inputs(input_root),
         'unobserved_with_special_coverage': {
@@ -163,7 +193,11 @@ class FunctionGoldenVerifierTests(unittest.TestCase):
             root = Path(temp)
             _fixture(root)
             for relative in ('pipeline/example.py', 'oracle/corpus/manifest.json',
-                             'oracle/cassettes/live/fixture.json'):
+                             'oracle/cassettes/live/fixture.json',
+                             'docs/port/check_deferred_markers.py',
+                             'core/tool/generate_ported_tests.py',
+                             'core/test/ported/manifest.json',
+                             'core/test/ported/test_example_ported_test.dart'):
                 source = root / 'inputs' / relative
                 original = source.read_bytes()
                 with self.subTest(relative=relative):
@@ -178,6 +212,37 @@ class FunctionGoldenVerifierTests(unittest.TestCase):
             extra.unlink()
             (root / 'inputs/oracle/cassettes/live/.budget.lock').write_text('runtime lock\n')
             self.assertEqual(_verify(root)['samples'], 2)
+
+    def test_two_pass_metadata_shape_and_workload_declaration_are_required(self):
+        with tempfile.TemporaryDirectory(prefix='thusfar-function-audit-') as temp:
+            root = Path(temp)
+            _, _, provenance_path = _fixture(root)
+            original = json.loads(provenance_path.read_text())
+            changed = [
+                ('source_commit', 'not-a-commit'),
+                ('hash_seeds', [1, 1]),
+                ('hash_seeds', [True, 2]),
+                ('unittest_tests_per_pass', 0),
+                ('passes', 3),
+                ('workloads', []),
+                ('workloads', [*original['workloads'][:-1],
+                               dict(original['workloads'][-1], model='unreviewed')]),
+                ('workloads', [*original['workloads'][:3],
+                               dict(original['workloads'][3], concurrency=True),
+                               *original['workloads'][4:]]),
+            ]
+            for field, value in changed:
+                with self.subTest(field=field, value=value):
+                    write_json(provenance_path, dict(original, **{field: value}))
+                    with self.assertRaisesRegex(ValueError, 'metadata|workload'):
+                        _verify(root)
+            for field in ('source_commit', 'hash_seeds', 'unittest_tests_per_pass', 'workloads'):
+                with self.subTest(missing=field):
+                    trimmed = dict(original)
+                    trimmed.pop(field)
+                    write_json(provenance_path, trimmed)
+                    with self.assertRaisesRegex(ValueError, 'metadata|workload'):
+                        _verify(root)
 
 
 if __name__ == '__main__':
