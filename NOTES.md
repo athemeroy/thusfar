@@ -198,3 +198,16 @@
 - 症状：把三个原地修改函数移出纯函数清单后，首次含阿Q回放的试录跑了 287 项 Python 测试，只有 `test_verify_function_goldens.py` 报旧 golden 的选中集合与新清单不一致；真实函数测试和离线回放正常。
 - 原因：验证器单测直接验证当时仓库里尚未替换的旧正式 golden，形成“先有新 golden 才能跑完录制、先跑完录制才能发布新 golden”的循环依赖。
 - 修法：篡改/清单匹配单测改用自建且内部一致的临时 golden 与临时清单；CI 仍另行对提交的正式 goldens 执行完整选中集合、报告和树 SHA 校验，未放宽正式规则。随后两种 `PYTHONHASHSEED` 的独立正式录制均通过 287 项 Python 测试、阿Q 9/9 离线回放，120 个普通函数 4,652 条样本与 5 个专用覆盖，整树逐字节相同，SHA-256 为 `2ef15bffba67e7fd74fac8e97951bbc282d250ff2cfc0b4986f709c75b837d14`；70 次未编码调用保留在报告中，不能称作已覆盖。
+
+## 2026-09-26: Final HTTP oracle integration checks
+
+- Symptom: the standalone settings-recorder module passed, but full Python test discovery had already imported `server.app` before the settings application-error test ran. The recorder correctly rejected that shared interpreter because its data directory was not the isolated fixture directory.
+- Cause: the new test invoked the real handler fixture in the shared unittest process; other server tests legitimately import the app during discovery.
+- Fix: commit `1bab17e` runs that HTTP application-error fixture in a fresh child interpreter, keeps the production isolation guard, and checks the persisted HTTP 200/application-failure observation in the parent. All 10 module tests and the explicit pre-import regression passed. The complete suite and formal function captures still require a fresh run.
+- A separate full-suite run observed one complete-book hash mismatch in the thread-worker HTTP receipt. A standalone capture and a repeated 48-test prefix matched all 154 reference artifacts. This intermittent failure remains under diagnosis; a successful retry does not establish its cause or close it. Diagnostic captures retain every normalized artifact under `/tmp/thusfar-worker-stress-20260926` so the first differing path can be inspected without relaxing the comparator.
+
+## 2026-09-26: Freeze actual unittest dependencies
+
+- Symptom: the ordinary function input fingerprint omitted Dart contract files and their Python generator even though a Python unittest reads them. Changing those dependencies could leave the advertised recording input tree unchanged.
+- Cause: the initial whitelist excluded all Dart files and some support scripts, treating only the direct oracle inputs as dependencies.
+- Fix: commit `66d631c` adds the exact imported generator, deferred-marker helper, and ported Dart test contracts. Mutation tests reject changes to each added dependency. Provenance metadata now validates the two distinct integer seeds, frozen commit identifier, positive test count, and declared workload shapes. Metadata alone is not proof that two processes ran: the final acceptance record must also retain the actual commands, exit codes and independently compared output hashes. Python child-process tests assert their own results; their internal calls are outside the parent's function tracer.
