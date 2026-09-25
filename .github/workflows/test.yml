@@ -44,7 +44,11 @@ jobs:
           from collections import Counter
           with open('dart-test-events.jsonl', encoding='utf-8') as source:
               events = [json.loads(line) for line in source]
-          counts = Counter(event['result'] for event in events if event.get('type') == 'testDone')
-          print(dict(counts))
-          assert counts['failure'] == counts['error'] == 0
+          completed = [event for event in events if event.get('type') == 'testDone']
+          counts = Counter(event['result'] for event in completed)
+          passed = sum(event['result'] == 'success' and not event['skipped'] for event in completed)
+          skipped = sum(event['skipped'] for event in completed)
+          print({'passed': passed, 'skipped': skipped,
+                 'failed': counts['failure'] + counts['error']})
+          assert passed > 0 and counts['failure'] == counts['error'] == 0
           PY
