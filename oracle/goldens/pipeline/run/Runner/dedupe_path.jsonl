@@ -1,3 +1,9 @@
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"ci":4},"output":{"$path":"<temp>/jekyll/work/dedupe/0004.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"ci":1},"output":{"$path":"<temp>/jekyll/work/dedupe/0001.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"ci":6},"output":{"$path":"<temp>/aq_complete/work/dedupe/0006.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"ci":9},"output":{"$path":"<temp>/aq_complete/work/dedupe/0009.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"ci":2},"output":{"$path":"<temp>/jekyll/work/dedupe/0002.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/work"}}},"ci":0},"output":{"$path":"<temp>/work/dedupe/0000.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"ci":6},"output":{"$path":"<temp>/jekyll/work/dedupe/0006.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"ci":8},"output":{"$path":"<temp>/jekyll/work/dedupe/0008.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"ci":9},"output":{"$path":"<temp>/jekyll/work/dedupe/0009.json"}}

@@ -1,7 +1,69 @@
+{"input":{"name":"Dr. Jekyll"},"output":{"$set":["dr","jekyll"]}}
+{"input":{"name":"the man in the middle"},"output":{"$set":["in","man","middle"]}}
 {"input":{"name":"Mr. Pocket"},"output":{"$set":["pocket"]}}
+{"input":{"name":"Bradshaw"},"output":{"$set":["bradshaw"]}}
+{"input":{"name":"the elderly and discontented doctor"},"output":{"$set":["discontented","doctor","elderly"]}}
+{"input":{"name":"Dr. Lanyon"},"output":{"$set":["dr","lanyon"]}}
+{"input":{"name":"an aged beautiful gentleman with white hair"},"output":{"$set":["aged","beautiful","gentleman","hair","white","with"]}}
+{"input":{"name":"the locksmith"},"output":{"$set":["locksmith"]}}
+{"input":{"name":"a voice"},"output":{"$set":["voice"]}}
+{"input":{"name":"Carew"},"output":{"$set":["carew"]}}
+{"input":{"name":"the housemaid"},"output":{"$set":["housemaid"]}}
+{"input":{"name":"Sir Danvers Carew"},"output":{"$set":["carew","danvers"]}}
 {"input":{"name":"贾宝玉与𠮷😀"},"output":{"$set":[]}}
+{"input":{"name":"G. J. Utterson"},"output":{"$set":["utterson"]}}
+{"input":{"name":"Jekyll"},"output":{"$set":["jekyll"]}}
+{"input":{"name":"H.J."},"output":{"$set":[]}}
+{"input":{"name":"the small man"},"output":{"$set":["man","small"]}}
+{"input":{"name":"the fugitive"},"output":{"$set":["fugitive"]}}
+{"input":{"name":"Henry Jekyll"},"output":{"$set":["henry","jekyll"]}}
 {"input":{"name":"Madame"},"output":{"$set":["madame"]}}
+{"input":{"name":"Inspector Newcomen of Scotland Yard"},"output":{"$set":["inspector","newcomen","scotland","yard"]}}
+{"input":{"name":"the Sawbones"},"output":{"$set":["sawbones"]}}
+{"input":{"name":"Dr. J."},"output":{"$set":["dr"]}}
+{"input":{"name":"a handy fellow"},"output":{"$set":["fellow","handy"]}}
+{"input":{"name":"Hyde"},"output":{"$set":["hyde"]}}
+{"input":{"name":"Lanyon"},"output":{"$set":["lanyon"]}}
+{"input":{"name":"Mr. Utterson"},"output":{"$set":["utterson"]}}
+{"input":{"name":"HASTIE LANYON"},"output":{"$set":["hastie","lanyon"]}}
 {"input":{"name":"Mme Aubain"},"output":{"$set":["aubain","mme"]}}
+{"input":{"name":"the master of the servant maid"},"output":{"$set":["maid","master","servant"]}}
+{"input":{"name":"Harry Jekyll"},"output":{"$set":["harry","jekyll"]}}
+{"input":{"name":"Mr. Enfield"},"output":{"$set":["enfield"]}}
+{"input":{"name":"Gabriel John Utterson"},"output":{"$set":["gabriel","john","utterson"]}}
+{"input":{"name":"a policeman"},"output":{"$set":["policeman"]}}
+{"input":{"name":"one Hyde"},"output":{"$set":["hyde","one"]}}
+{"input":{"name":"Mr. Guest"},"output":{"$set":["guest"]}}
+{"input":{"name":"Richard"},"output":{"$set":["richard"]}}
+{"input":{"name":"Utterson"},"output":{"$set":["utterson"]}}
+{"input":{"name":"Sir Danvers"},"output":{"$set":["danvers"]}}
 {"input":{"name":"Mme. Bovary"},"output":{"$set":["bovary","mme"]}}
+{"input":{"name":"a small man"},"output":{"$set":["man","small"]}}
+{"input":{"name":"the person that drew the cheque"},"output":{"$set":["cheque","drew","person","that"]}}
 {"input":{"name":"Mr. Jean-Luc O'Neill and the Lady"},"output":{"$set":["jean-luc","o'neill"]}}
+{"input":{"name":"young Hyde"},"output":{"$set":["hyde"]}}
+{"input":{"name":"Edward Hyde"},"output":{"$set":["edward","hyde"]}}
+{"input":{"name":"your kinsman"},"output":{"$set":["kinsman","your"]}}
+{"input":{"name":"the voice"},"output":{"$set":["voice"]}}
+{"input":{"name":"the policeman"},"output":{"$set":["policeman"]}}
+{"input":{"name":"Enfield"},"output":{"$set":["enfield"]}}
+{"input":{"name":"the drawer of the cheque"},"output":{"$set":["cheque","drawer"]}}
+{"input":{"name":"A voice"},"output":{"$set":["voice"]}}
+{"input":{"name":"Mr. Hyde"},"output":{"$set":["hyde"]}}
+{"input":{"name":"the maid servant"},"output":{"$set":["maid","servant"]}}
+{"input":{"name":"Mr. Richard Enfield"},"output":{"$set":["enfield","richard"]}}
+{"input":{"name":"HENRY JEKYLL"},"output":{"$set":["henry","jekyll"]}}
+{"input":{"name":"Harry"},"output":{"$set":["harry"]}}
+{"input":{"name":"my colleague"},"output":{"$set":["colleague","my"]}}
+{"input":{"name":"the gentleman of my adventure"},"output":{"$set":["adventure","gentleman","my"]}}
+{"input":{"name":"this last"},"output":{"$set":["last","this"]}}
+{"input":{"name":"Poole"},"output":{"$set":["poole"]}}
+{"input":{"name":"A maid servant"},"output":{"$set":["maid","servant"]}}
+{"input":{"name":"my colleague and old school companion"},"output":{"$set":["colleague","companion","my","school"]}}
+{"input":{"name":"the carpenter"},"output":{"$set":["carpenter"]}}
+{"input":{"name":"the knife-boy"},"output":{"$set":["knife-boy"]}}
+{"input":{"name":"the screaming child"},"output":{"$set":["child","screaming"]}}
+{"input":{"name":"poor Hyde"},"output":{"$set":["hyde","poor"]}}
 {"input":{"name":"Herbert Pocket"},"output":{"$set":["herbert","pocket"]}}
+{"input":{"name":"Dr. Henry Jekyll"},"output":{"$set":["dr","henry","jekyll"]}}
+{"input":{"name":"the older man"},"output":{"$set":["man","older"]}}

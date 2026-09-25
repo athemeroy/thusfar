@@ -1,70 +1,143 @@
+{"input":{"name":"Dr. Jekyll"},"output":{"$set":[]}}
 {"input":{"name":"未庄的闲人们"},"output":{"$set":[]}}
+{"input":{"name":"the man in the middle"},"output":{"$set":["man","middle"]}}
 {"input":{"name":"满面剃得精光的老头子"},"output":{"$set":[]}}
 {"input":{"name":"查理·包法利"},"output":{"$set":["包法利","查理"]}}
+{"input":{"name":"Bradshaw"},"output":{"$set":[]}}
+{"input":{"name":"the elderly and discontented doctor"},"output":{"$set":["discontented","doctor","elderly"]}}
 {"input":{"name":"看客"},"output":{"$set":[]}}
+{"input":{"name":"Dr. Lanyon"},"output":{"$set":[]}}
 {"input":{"name":"少奶奶"},"output":{"$set":[]}}
+{"input":{"name":"an aged beautiful gentleman with white hair"},"output":{"$set":["aged","beautiful","gentleman","hair","white","with"]}}
+{"input":{"name":"the cook"},"output":{"$set":[]}}
 {"input":{"name":"黑狗"},"output":{"$set":[]}}
 {"input":{"name":"王癞胡"},"output":{"$set":["癞胡"]}}
+{"input":{"name":"the locksmith"},"output":{"$set":[]}}
+{"input":{"name":"a voice"},"output":{"$set":[]}}
+{"input":{"name":"Carew"},"output":{"$set":[]}}
 {"input":{"name":"蚂蚁似的人"},"output":{"$set":[]}}
 {"input":{"name":"团丁"},"output":{"$set":[]}}
 {"input":{"name":"洋鬼子"},"output":{"$set":["鬼子"]}}
+{"input":{"name":"the housemaid"},"output":{"$set":[]}}
 {"input":{"name":"𠮷😀"},"output":{"$set":[]}}
+{"input":{"name":"Sir Danvers Carew"},"output":{"$set":["Carew","Danvers"]}}
 {"input":{"name":"吴妈"},"output":{"$set":[]}}
 {"input":{"name":"赵太爷的儿子"},"output":{"$set":[]}}
 {"input":{"name":"茂才公"},"output":{"$set":["才公"]}}
 {"input":{"name":"地保"},"output":{"$set":[]}}
+{"input":{"name":"G. J. Utterson"},"output":{"$set":[]}}
 {"input":{"name":"小尼姑"},"output":{"$set":["尼姑"]}}
 {"input":{"name":"闲人"},"output":{"$set":[]}}
+{"input":{"name":"Jekyll"},"output":{"$set":[]}}
+{"input":{"name":"H.J."},"output":{"$set":[]}}
+{"input":{"name":"the small man"},"output":{"$set":["man","small"]}}
 {"input":{"name":"小Don"},"output":{"$set":["Don"]}}
+{"input":{"name":"the fugitive"},"output":{"$set":[]}}
+{"input":{"name":"the doctor"},"output":{"$set":[]}}
 {"input":{"name":"阿Q哥"},"output":{"$set":["Q哥"]}}
+{"input":{"name":"Henry Jekyll"},"output":{"$set":["Henry","Jekyll"]}}
 {"input":{"name":"喝采的人们"},"output":{"$set":[]}}
 {"input":{"name":"Madame"},"output":{"$set":[]}}
 {"input":{"name":"长衫和短衫人物"},"output":{"$set":[]}}
+{"input":{"name":"Inspector Newcomen of Scotland Yard"},"output":{"$set":["Inspector","Newcomen","Scotland","Yard"]}}
+{"input":{"name":"the Sawbones"},"output":{"$set":[]}}
+{"input":{"name":"Dr. J."},"output":{"$set":[]}}
 {"input":{"name":"三个闲人"},"output":{"$set":["个闲人"]}}
 {"input":{"name":"洋先生"},"output":{"$set":[]}}
+{"input":{"name":"a handy fellow"},"output":{"$set":["fellow","handy"]}}
 {"input":{"name":"管祠的老头子"},"output":{"$set":[]}}
 {"input":{"name":"钱洋鬼子"},"output":{"$set":["洋鬼子"]}}
+{"input":{"name":"butler"},"output":{"$set":[]}}
+{"input":{"name":"Hyde"},"output":{"$set":[]}}
 {"input":{"name":"老Q"},"output":{"$set":[]}}
 {"input":{"name":"酒店里的人"},"output":{"$set":[]}}
+{"input":{"name":"the man"},"output":{"$set":[]}}
 {"input":{"name":"秀才"},"output":{"$set":[]}}
 {"input":{"name":"赵秀才"},"output":{"$set":["秀才"]}}
+{"input":{"name":"Lanyon"},"output":{"$set":[]}}
+{"input":{"name":"Mr. Utterson"},"output":{"$set":[]}}
 {"input":{"name":"航船七斤"},"output":{"$set":["船七斤"]}}
 {"input":{"name":"秃儿"},"output":{"$set":[]}}
+{"input":{"name":"HASTIE LANYON"},"output":{"$set":["HASTIE","LANYON"]}}
 {"input":{"name":"老头子"},"output":{"$set":[]}}
 {"input":{"name":"人们"},"output":{"$set":[]}}
 {"input":{"name":"Mme Aubain"},"output":{"$set":["Aubain","Mme"]}}
 {"input":{"name":"假洋鬼子的老婆"},"output":{"$set":[]}}
 {"input":{"name":"贾宝玉"},"output":{"$set":["宝玉"]}}
+{"input":{"name":"the master of the servant maid"},"output":{"$set":["maid","master","servant"]}}
+{"input":{"name":"Harry Jekyll"},"output":{"$set":["Harry","Jekyll"]}}
+{"input":{"name":"Mr. Enfield"},"output":{"$set":[]}}
 {"input":{"name":"赵白眼"},"output":{"$set":["白眼"]}}
 {"input":{"name":"小D"},"output":{"$set":[]}}
+{"input":{"name":"Gabriel John Utterson"},"output":{"$set":["Gabriel","John","Utterson"]}}
+{"input":{"name":"my servants"},"output":{"$set":[]}}
 {"input":{"name":"钱太爷"},"output":{"$set":[]}}
+{"input":{"name":"a policeman"},"output":{"$set":[]}}
+{"input":{"name":"one Hyde"},"output":{"$set":["Hyde","one"]}}
 {"input":{"name":"茂才先生"},"output":{"$set":[]}}
+{"input":{"name":"Mr. Guest"},"output":{"$set":[]}}
 {"input":{"name":"王胡"},"output":{"$set":[]}}
+{"input":{"name":"the child’s family"},"output":{"$set":["child’s","family"]}}
 {"input":{"name":"把总"},"output":{"$set":[]}}
 {"input":{"name":"赵太爷"},"output":{"$set":[]}}
+{"input":{"name":"Richard"},"output":{"$set":[]}}
+{"input":{"name":"Utterson"},"output":{"$set":[]}}
+{"input":{"name":"Sir Danvers"},"output":{"$set":[]}}
 {"input":{"name":"秀才娘子"},"output":{"$set":["才娘子"]}}
+{"input":{"name":"a small man"},"output":{"$set":["man","small"]}}
 {"input":{"name":"邹七嫂的女儿"},"output":{"$set":[]}}
 {"input":{"name":"我"},"output":{"$set":[]}}
+{"input":{"name":"the person that drew the cheque"},"output":{"$set":["cheque","drew","person","that"]}}
+{"input":{"name":"young Hyde"},"output":{"$set":[]}}
+{"input":{"name":"Edward Hyde"},"output":{"$set":["Edward","Hyde"]}}
+{"input":{"name":"your kinsman"},"output":{"$set":["kinsman","your"]}}
 {"input":{"name":"假洋鬼子"},"output":{"$set":["洋鬼子"]}}
+{"input":{"name":"the voice"},"output":{"$set":[]}}
+{"input":{"name":"the policeman"},"output":{"$set":[]}}
 {"input":{"name":"阿Q"},"output":{"$set":[]}}
+{"input":{"name":"Enfield"},"output":{"$set":[]}}
 {"input":{"name":"Félicité"},"output":{"$set":[]}}
+{"input":{"name":"the old woman"},"output":{"$set":[]}}
 {"input":{"name":"洪哥"},"output":{"$set":[]}}
+{"input":{"name":"a housekeeper"},"output":{"$set":[]}}
 {"input":{"name":"太太"},"output":{"$set":[]}}
+{"input":{"name":"the drawer of the cheque"},"output":{"$set":["cheque","drawer"]}}
 {"input":{"name":"举人老爷"},"output":{"$set":[]}}
+{"input":{"name":"A voice"},"output":{"$set":[]}}
 {"input":{"name":"里通外国的人"},"output":{"$set":[]}}
 {"input":{"name":"迭更司"},"output":{"$set":["更司"]}}
+{"input":{"name":"Mr. Hyde"},"output":{"$set":[]}}
 {"input":{"name":"阿Quei"},"output":{"$set":[]}}
+{"input":{"name":"the officer"},"output":{"$set":[]}}
+{"input":{"name":"the maid servant"},"output":{"$set":["maid","servant"]}}
+{"input":{"name":"Mr. Richard Enfield"},"output":{"$set":["Enfield","Richard"]}}
+{"input":{"name":"HENRY JEKYLL"},"output":{"$set":["HENRY","JEKYLL"]}}
+{"input":{"name":"Harry"},"output":{"$set":[]}}
 {"input":{"name":"钱太爷的大儿子"},"output":{"$set":[]}}
+{"input":{"name":"my colleague"},"output":{"$set":[]}}
+{"input":{"name":"the gentleman of my adventure"},"output":{"$set":["adventure","gentleman"]}}
+{"input":{"name":"the girl"},"output":{"$set":[]}}
 {"input":{"name":"赵司晨"},"output":{"$set":["司晨"]}}
 {"input":{"name":"陈独秀"},"output":{"$set":["独秀"]}}
+{"input":{"name":"An ivory-faced and silvery-haired old woman"},"output":{"$set":["ivory-faced","silvery-haired","woman"]}}
+{"input":{"name":"this last"},"output":{"$set":["last","this"]}}
+{"input":{"name":"Poole"},"output":{"$set":[]}}
 {"input":{"name":"Monsieur"},"output":{"$set":[]}}
+{"input":{"name":"A maid servant"},"output":{"$set":["maid","servant"]}}
+{"input":{"name":"my colleague and old school companion"},"output":{"$set":["colleague","companion","school"]}}
+{"input":{"name":"the carpenter"},"output":{"$set":[]}}
+{"input":{"name":"the knife-boy"},"output":{"$set":[]}}
 {"input":{"name":"孔子"},"output":{"$set":[]}}
+{"input":{"name":"the screaming child"},"output":{"$set":["child","screaming"]}}
 {"input":{"name":"光头的老头子"},"output":{"$set":[]}}
 {"input":{"name":"长衫人物"},"output":{"$set":["衫人物"]}}
+{"input":{"name":"poor Hyde"},"output":{"$set":["Hyde","poor"]}}
 {"input":{"name":"Herbert Pocket"},"output":{"$set":["Herbert","Pocket"]}}
 {"input":{"name":"小孤孀"},"output":{"$set":["孤孀"]}}
 {"input":{"name":"圆觉大师"},"output":{"$set":[]}}
 {"input":{"name":"邹七嫂"},"output":{"$set":[]}}
 {"input":{"name":"赵太爷的儿子茂才先生"},"output":{"$set":[]}}
 {"input":{"name":"胡适之先生"},"output":{"$set":[]}}
+{"input":{"name":"Dr. Henry Jekyll"},"output":{"$set":["Henry","Jekyll"]}}
+{"input":{"name":"the older man"},"output":{"$set":["man","older"]}}
 {"input":{"name":"桩家"},"output":{"$set":[]}}

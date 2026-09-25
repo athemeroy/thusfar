@@ -5,6 +5,8 @@
 {"input":{"error":{"$error":{"type":"builtins.TimeoutError","message":"timed out"}}},"output":null}
 {"input":{"error":{"$error":{"type":"pipeline.llm.LLMError","message":"HTTP 503: busy"}}},"output":null}
 {"input":{"error":{"$error":{"type":"pipeline.llm.LLMError","message":"HTTP 400: Model Not Exist"}}},"output":"接口不接受这个请求（HTTP 400），多半是模型名不对。接口返回：Model Not Exist"}
+{"input":{"error":{"$error":{"type":"json.decoder.JSONDecodeError","message":"Expecting ',' delimiter: line 1 column 6144 (char 6143)"}}},"output":null}
 {"input":{"error":{"$error":{"type":"pipeline.llm.LLMError","message":"缺少模型访问密钥"}}},"output":"还没有填写模型 API 密钥，请先到「模型设置」填写"}
 {"input":{"error":{"$error":{"type":"pipeline.llm.LLMError","message":"模型调用失败：NOT_API: 接口地址返回的是网页"}}},"output":"模型接口地址不对：它返回的是网页，不是模型接口。多数接口地址以 /v1 结尾，例如 https://api.deepseek.com/v1，请到「模型设置」检查"}
 {"input":{"error":{"$error":{"type":"pipeline.llm.LLMError","message":"THINKING_ONLY: 只思考"}}},"output":"模型只“思考”没给正文。DeepSeek 请在模型名后加 +nothink（例如 deepseek-flash+nothink），请到「模型设置」修改"}
+{"input":{"error":{"$error":{"type":"json.decoder.JSONDecodeError","message":"Expecting ',' delimiter: line 1 column 7376 (char 7375)"}}},"output":null}

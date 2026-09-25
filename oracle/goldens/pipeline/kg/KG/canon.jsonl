@@ -27,6 +27,7 @@
 {"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P15":{}}}},"pid":"P15"},"output":"P15"}
 {"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P28":{}}}},"pid":"P28"},"output":"P28"}
 {"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P5":{}}}},"pid":"P5"},"output":"P5"}
+{"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P3":{"merged_into":"P7"},"P7":{}}}},"pid":"P3"},"output":"P7"}
 {"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P4":{}}}},"pid":"P4"},"output":"P4"}
 {"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P2":{"merged_into":null}}}},"pid":"P2"},"output":"P2"}
 {"input":{"self":{"$object":"pipeline.kg.KG","fields":{"people":{"P21":{}}}},"pid":"P21"},"output":"P21"}

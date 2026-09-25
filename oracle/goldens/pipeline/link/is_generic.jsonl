@@ -1,84 +1,189 @@
 {"input":{"name":"Dr. Jekyll"},"output":false}
 {"input":{"name":"未庄的闲人们"},"output":false}
+{"input":{"name":"the man in the middle"},"output":false}
 {"input":{"name":"满面剃得精光的老头子"},"output":false}
+{"input":{"name":"Bradshaw"},"output":false}
+{"input":{"name":"the elderly and discontented doctor"},"output":false}
 {"input":{"name":"看客"},"output":false}
+{"input":{"name":"Dr. Lanyon"},"output":false}
 {"input":{"name":"少奶奶"},"output":false}
+{"input":{"name":"an aged beautiful gentleman with white hair"},"output":false}
+{"input":{"name":"the cook"},"output":true}
+{"input":{"name":"the woman"},"output":true}
 {"input":{"name":"黑狗"},"output":false}
 {"input":{"name":"王癞胡"},"output":false}
+{"input":{"name":"*the driver"},"output":true}
+{"input":{"name":"the locksmith"},"output":false}
+{"input":{"name":"a voice"},"output":false}
+{"input":{"name":"Carew"},"output":false}
+{"input":{"name":"I"},"output":true}
 {"input":{"name":"蚂蚁似的人"},"output":false}
+{"input":{"name":"your master"},"output":true}
 {"input":{"name":"团丁"},"output":false}
 {"input":{"name":"洋鬼子"},"output":false}
+{"input":{"name":"the housemaid"},"output":false}
+{"input":{"name":"Sir Danvers Carew"},"output":false}
+{"input":{"name":"the host"},"output":true}
 {"input":{"name":"吴妈"},"output":false}
 {"input":{"name":"赵太爷的儿子"},"output":false}
+{"input":{"name":"the clerk"},"output":true}
 {"input":{"name":"茂才公"},"output":false}
 {"input":{"name":"地保"},"output":false}
+{"input":{"name":"G. J. Utterson"},"output":false}
 {"input":{"name":"小尼姑"},"output":true}
 {"input":{"name":"闲人"},"output":false}
+{"input":{"name":"Jekyll"},"output":false}
 {"input":{"name":"*医生"},"output":true}
+{"input":{"name":"H.J."},"output":false}
+{"input":{"name":"the small man"},"output":false}
 {"input":{"name":"小Don"},"output":false}
+{"input":{"name":"the fugitive"},"output":false}
 {"input":{"name":"Alice"},"output":false}
+{"input":{"name":"the doctor"},"output":true}
 {"input":{"name":"阿Q哥"},"output":false}
+{"input":{"name":"Henry Jekyll"},"output":false}
 {"input":{"name":"喝采的人们"},"output":false}
 {"input":{"name":"Madame"},"output":false}
 {"input":{"name":"长衫和短衫人物"},"output":false}
+{"input":{"name":"Inspector Newcomen of Scotland Yard"},"output":false}
 {"input":{"name":"老尼姑"},"output":true}
+{"input":{"name":"the Sawbones"},"output":false}
+{"input":{"name":"my butler"},"output":true}
+{"input":{"name":"Dr. J."},"output":false}
 {"input":{"name":"三个闲人"},"output":false}
 {"input":{"name":"洋先生"},"output":false}
+{"input":{"name":"a handy fellow"},"output":false}
 {"input":{"name":"*太太"},"output":true}
 {"input":{"name":"管祠的老头子"},"output":false}
 {"input":{"name":"钱洋鬼子"},"output":false}
+{"input":{"name":"butler"},"output":true}
+{"input":{"name":"Hyde"},"output":false}
 {"input":{"name":"老Q"},"output":false}
+{"input":{"name":"the lawyer"},"output":true}
 {"input":{"name":"酒店里的人"},"output":false}
+{"input":{"name":"the man"},"output":true}
 {"input":{"name":"秀才"},"output":false}
 {"input":{"name":"赵秀才"},"output":false}
+{"input":{"name":"Lanyon"},"output":false}
+{"input":{"name":"Mr. Utterson"},"output":false}
 {"input":{"name":"航船七斤"},"output":false}
 {"input":{"name":"秃儿"},"output":false}
+{"input":{"name":"HASTIE LANYON"},"output":false}
 {"input":{"name":"老头子"},"output":true}
+{"input":{"name":"a woman"},"output":true}
 {"input":{"name":"人们"},"output":false}
 {"input":{"name":"Mme Aubain"},"output":false}
 {"input":{"name":"假洋鬼子的老婆"},"output":false}
+{"input":{"name":"the old gentleman"},"output":true}
 {"input":{"name":"贾宝玉"},"output":false}
+{"input":{"name":"the master of the servant maid"},"output":false}
 {"input":{"name":"*先生"},"output":true}
+{"input":{"name":"Harry Jekyll"},"output":false}
+{"input":{"name":"Mr. Enfield"},"output":false}
 {"input":{"name":"赵白眼"},"output":false}
 {"input":{"name":"小D"},"output":false}
+{"input":{"name":"*a woman"},"output":true}
+{"input":{"name":"Gabriel John Utterson"},"output":false}
+{"input":{"name":"my servants"},"output":true}
 {"input":{"name":"*老爷"},"output":true}
+{"input":{"name":"*the waiter"},"output":true}
 {"input":{"name":"钱太爷"},"output":false}
+{"input":{"name":"a policeman"},"output":false}
 {"input":{"name":"郝麦"},"output":false}
 {"input":{"name":"Bob"},"output":false}
+{"input":{"name":"one Hyde"},"output":false}
+{"input":{"name":"the driver"},"output":true}
+{"input":{"name":"my gentleman"},"output":true}
 {"input":{"name":"郝麦夫人"},"output":false}
 {"input":{"name":"茂才先生"},"output":false}
+{"input":{"name":"Mr. Guest"},"output":false}
 {"input":{"name":"王胡"},"output":false}
+{"input":{"name":"the child’s family"},"output":false}
+{"input":{"name":"the servant"},"output":true}
 {"input":{"name":"把总"},"output":false}
 {"input":{"name":"赵太爷"},"output":false}
+{"input":{"name":"Richard"},"output":false}
+{"input":{"name":"Utterson"},"output":false}
+{"input":{"name":"Sir Danvers"},"output":false}
 {"input":{"name":"*小孤孀"},"output":true}
 {"input":{"name":"秀才娘子"},"output":false}
+{"input":{"name":"a small man"},"output":false}
+{"input":{"name":"*the butler"},"output":true}
+{"input":{"name":"the butler"},"output":true}
 {"input":{"name":"邹七嫂的女儿"},"output":false}
+{"input":{"name":"my prisoner"},"output":true}
 {"input":{"name":"*夫人"},"output":true}
 {"input":{"name":"我"},"output":false}
 {"input":{"name":"*old gentleman"},"output":true}
+{"input":{"name":"the person that drew the cheque"},"output":false}
+{"input":{"name":"my visitor"},"output":true}
+{"input":{"name":"the master"},"output":true}
+{"input":{"name":"young Hyde"},"output":false}
+{"input":{"name":"a child"},"output":true}
+{"input":{"name":"Edward Hyde"},"output":false}
+{"input":{"name":"your kinsman"},"output":false}
 {"input":{"name":"假洋鬼子"},"output":false}
+{"input":{"name":"the voice"},"output":false}
+{"input":{"name":"the policeman"},"output":false}
 {"input":{"name":"阿Q"},"output":false}
+{"input":{"name":"Enfield"},"output":false}
 {"input":{"name":"Félicité"},"output":false}
 {"input":{"name":"*少爷"},"output":true}
+{"input":{"name":"the old woman"},"output":true}
+{"input":{"name":"a girl"},"output":true}
 {"input":{"name":"洪哥"},"output":false}
+{"input":{"name":"The butler"},"output":true}
+{"input":{"name":"a housekeeper"},"output":true}
 {"input":{"name":"太太"},"output":true}
+{"input":{"name":"the drawer of the cheque"},"output":false}
 {"input":{"name":"举人老爷"},"output":false}
+{"input":{"name":"A voice"},"output":false}
+{"input":{"name":"him"},"output":true}
+{"input":{"name":"she"},"output":true}
 {"input":{"name":"里通外国的人"},"output":false}
 {"input":{"name":"迭更司"},"output":false}
+{"input":{"name":"Mr. Hyde"},"output":false}
 {"input":{"name":"阿Quei"},"output":false}
+{"input":{"name":"the officer"},"output":true}
 {"input":{"name":"宝玉"},"output":false}
+{"input":{"name":"*butler"},"output":true}
+{"input":{"name":"Guest"},"output":true}
+{"input":{"name":"the maid servant"},"output":false}
 {"input":{"name":"*the doctor"},"output":true}
+{"input":{"name":"Mr. Richard Enfield"},"output":false}
+{"input":{"name":"HENRY JEKYLL"},"output":false}
+{"input":{"name":"Harry"},"output":false}
 {"input":{"name":"钱太爷的大儿子"},"output":false}
+{"input":{"name":"my colleague"},"output":false}
+{"input":{"name":"the gentleman of my adventure"},"output":false}
+{"input":{"name":"the girl"},"output":true}
 {"input":{"name":"赵司晨"},"output":false}
 {"input":{"name":"陈独秀"},"output":false}
+{"input":{"name":"the maid"},"output":true}
+{"input":{"name":"An ivory-faced and silvery-haired old woman"},"output":false}
+{"input":{"name":"my master"},"output":true}
+{"input":{"name":"the waiter"},"output":true}
+{"input":{"name":"this last"},"output":false}
+{"input":{"name":"Poole"},"output":false}
 {"input":{"name":"Monsieur"},"output":false}
+{"input":{"name":"A maid servant"},"output":false}
+{"input":{"name":"master"},"output":true}
+{"input":{"name":"my colleague and old school companion"},"output":false}
+{"input":{"name":"the carpenter"},"output":false}
+{"input":{"name":"the knife-boy"},"output":false}
 {"input":{"name":"尼姑"},"output":true}
 {"input":{"name":"孔子"},"output":false}
+{"input":{"name":"the screaming child"},"output":false}
 {"input":{"name":"光头的老头子"},"output":false}
 {"input":{"name":"长衫人物"},"output":false}
+{"input":{"name":"poor Hyde"},"output":false}
+{"input":{"name":"my good woman"},"output":true}
 {"input":{"name":"小孤孀"},"output":false}
+{"input":{"name":"the child"},"output":true}
 {"input":{"name":"邹七嫂"},"output":false}
 {"input":{"name":"她"},"output":false}
 {"input":{"name":"赵太爷的儿子茂才先生"},"output":false}
 {"input":{"name":"胡适之先生"},"output":false}
+{"input":{"name":"Dr. Henry Jekyll"},"output":false}
+{"input":{"name":"the older man"},"output":false}
 {"input":{"name":"桩家"},"output":false}

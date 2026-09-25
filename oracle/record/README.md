@@ -19,9 +19,10 @@ reserved first; remaining slots keep the lowest input hashes from later workload
 count instead of dropping an edge case.
 
 The committed ordinary goldens came from two independent Python 3.11.13 runs at frozen
-input commit `1f532d942b7c1c2d4a1cdcaed4e8825056749b34`. They used hash seeds 1 and 2
-and the checked-in wire tape. Each passed 298 Python tests, replayed all 9 阿Q segments and
-the first of 25 French segments offline, and produced a byte-identical output tree. The
+input commit `e3c5121f633db40444eeb51502c3a9c26262842d`. They used hash seeds 1 and 2
+and the checked-in wire tape. Each passed 309 Python tests, replayed all 9 阿Q segments,
+the first of 25 French segments and the first 19 of 20 Jekyll segments offline,
+and produced a byte-identical output tree. The
 complete workload is:
 
 ```bash
@@ -29,13 +30,13 @@ PY311=/home/dev/.local/share/uv/python/cpython-3.11.13-linux-x86_64-gnu/bin/pyth
 env PYTHONHASHSEED=1 $PY311 -m oracle.record.functions \
   --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
   --replay-book oracle/corpus/snapshots/aq_complete \
-  --replay-french-prefix \
+  --replay-french-prefix --replay-jekyll-prefix \
   --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
   --maximum 200 --out /tmp/thusfar-functions-pass-1
 env PYTHONHASHSEED=2 $PY311 -m oracle.record.functions \
   --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
   --replay-book oracle/corpus/snapshots/aq_complete \
-  --replay-french-prefix \
+  --replay-french-prefix --replay-jekyll-prefix \
   --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
   --maximum 200 --out /tmp/thusfar-functions-pass-2
 diff -rq /tmp/thusfar-functions-pass-1 /tmp/thusfar-functions-pass-2
@@ -56,11 +57,11 @@ ordinary pure-function goldens. The two-pass provenance declares this explicit t
 SHA-256 over files sorted by POSIX relative path, feeding each UTF-8 path, one NUL byte, and
 the raw 32-byte SHA-256 digest of that file's bytes. The tree includes 120 ordinary function
 JSONL files plus `record-report.json`, and excludes special goldens and provenance itself.
-The current result is 120 ordinary functions, 4,783 samples, and 44 tagged exception outputs;
+The current result is 120 ordinary functions, 7,482 samples, and 42 tagged exception outputs;
 both passes produced tree SHA-256
-`90cbb0cbe27a2b084f66ae3d0f2b6b5f25f4e974a317f19f1b81a452f3bfd67c`.
-Provenance also names the exact 1,601 recording input paths and their SHA-256 content tree,
-`b83e6d8daf3497d0e871728cbfe1b055481c1b467a71453eb42f0efb65e5d880`.
+`931cedb261785231f581a3dc3f0b4c85372eed8637f4bf9ace1f5699eb608ed1`.
+Provenance also names the exact 1,604 recording input paths and their SHA-256 content tree,
+`34f9ee9233ff53597e92238b5d54bf4666f0c175c007d29e59288d5025c5e738`.
 That tree includes Python source and tests, inventory, manual cases, corpus, cassettes,
 recorder scripts, and other fixtures read by the test suite. It excludes the ordinary
 function output tree, Dart files, and STATUS/NOTES. The verifier recalculates both trees
@@ -80,9 +81,9 @@ $PY311 -m oracle.record.verify_function_goldens
 The checked-in tape covers 阿Q's complete book replay, the first French segment, and the
 first 19 Jekyll segments. `--replay-french-prefix` and `--replay-jekyll-prefix` stage their
 verified public-domain parser fixtures and enforce fresh, single-worker replay at those
-published limits. Include the Jekyll flag when regenerating the function goldens; the
-two-pass commands above document the earlier committed tree. Japanese and 儒林外史 have no
-model-backed segment. Use
+published limits. The commands above include all three published workloads.
+A separate manual-only trace verified that all 127 observed handwritten input/output
+samples are retained in the capped output. Japanese and 儒林外史 have no model-backed segment. Use
 `--book-start fresh` for a new book and `--book-start resume` for a 1.7.x partial snapshot.
 The paused 阿Q continuation has its own offline verification in [RESUME.md](RESUME.md).
 

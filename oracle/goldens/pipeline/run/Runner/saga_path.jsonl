@@ -1,2 +1,4 @@
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"end_pos":85722},"output":{"$path":"<temp>/jekyll/work/sagas/000085722.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/jekyll/work"}}},"end_pos":33256},"output":{"$path":"<temp>/jekyll/work/sagas/000033256.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"end_pos":21733},"output":{"$path":"<temp>/aq_complete/work/sagas/000021733.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/work"}}},"end_pos":69},"output":{"$path":"<temp>/work/sagas/000000069.json"}}

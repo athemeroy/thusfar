@@ -1,24 +1,54 @@
 {"input":{"key":"accused","lang":"zh"},"output":"被告发者"}
+{"input":{"key":"affair","lang":"en"},"output":"lover in secret"}
+{"input":{"key":"harmed","lang":"en"},"output":"the one harmed"}
 {"input":{"key":"patient","lang":"zh"},"output":"病人"}
+{"input":{"key":"parent","lang":"en"},"output":"parent"}
+{"input":{"key":"love_rival","lang":"en"},"output":"rival in love"}
 {"input":{"key":"subordinate","lang":"zh"},"output":"下属"}
 {"input":{"key":"uncle_aunt","lang":"zh"},"output":"叔伯姑舅姨"}
 {"input":{"key":"grandchild","lang":"zh"},"output":"孙辈"}
+{"input":{"key":"master","lang":"en"},"output":"master"}
 {"input":{"key":"fearful","lang":"zh"},"output":"畏惧"}
 {"input":{"key":"other_kin","lang":"zh"},"output":"其他血亲"}
 {"input":{"key":"saviour","lang":"zh"},"output":"救命恩人"}
+{"input":{"key":"using","lang":"en"},"output":"using"}
 {"input":{"key":"seller","lang":"zh"},"output":"卖主"}
+{"input":{"key":"client","lang":"en"},"output":"client"}
 {"input":{"key":"unrequited","lang":"zh"},"output":"单恋"}
+{"input":{"key":"grandchild","lang":"en"},"output":"grandchild"}
 {"input":{"key":"tenant","lang":"zh"},"output":"房客或佃户"}
+{"input":{"key":"landlord","lang":"en"},"output":"landlord"}
 {"input":{"key":"protege","lang":"zh"},"output":"受提携者"}
 {"input":{"key":"confidant","lang":"zh"},"output":"知己"}
+{"input":{"key":"customer","lang":"en"},"output":"customer"}
+{"input":{"key":"tenant","lang":"en"},"output":"tenant"}
+{"input":{"key":"schoolmate","lang":"en"},"output":"schoolmate"}
+{"input":{"key":"spouse","lang":"en"},"output":"spouse"}
+{"input":{"key":"sworn_sibling","lang":"en"},"output":"sworn brother or sister"}
+{"input":{"key":"captor","lang":"en"},"output":"captor"}
+{"input":{"key":"harmer","lang":"en"},"output":"the one who harms"}
 {"input":{"key":"buyer","lang":"zh"},"output":"买主"}
 {"input":{"key":"former","lang":"zh"},"output":"已结束"}
+{"input":{"key":"accuser","lang":"en"},"output":"accuser"}
 {"input":{"key":"beneficiary","lang":"zh"},"output":"受恩者"}
+{"input":{"key":"enemy","lang":"en"},"output":"enemy"}
 {"input":{"key":"other_marriage","lang":"zh"},"output":"其他姻亲"}
+{"input":{"key":"doctor","lang":"en"},"output":"doctor"}
+{"input":{"key":"acquaintance","lang":"en"},"output":"acquaintance"}
+{"input":{"key":"townsman","lang":"en"},"output":"from the same place"}
 {"input":{"key":"step","lang":"zh"},"output":"继亲"}
+{"input":{"key":"employee","lang":"en"},"output":"employee"}
+{"input":{"key":"betrothed","lang":"en"},"output":"betrothed"}
+{"input":{"key":"colleague","lang":"en"},"output":"colleague"}
+{"input":{"key":"confidant","lang":"en"},"output":"confidant"}
+{"input":{"key":"former","lang":"en"},"output":"no longer"}
 {"input":{"key":"trade_fellow","lang":"zh"},"output":"同行"}
+{"input":{"key":"fearful","lang":"en"},"output":"in fear"}
 {"input":{"key":"debtor","lang":"zh"},"output":"欠债人"}
 {"input":{"key":"parishioner","lang":"zh"},"output":"教众"}
+{"input":{"key":"nephew_niece","lang":"en"},"output":"nephew or niece"}
+{"input":{"key":"craftsman","lang":"en"},"output":"craftsman"}
+{"input":{"key":"rival","lang":"en"},"output":"rival"}
 {"input":{"key":"teammate","lang":"zh"},"output":"搭档或队友"}
 {"input":{"key":"close","lang":"zh"},"output":"亲近"}
 {"input":{"key":"neighbour","lang":"zh"},"output":"邻居"}
@@ -28,67 +58,131 @@
 {"input":{"key":"accuser","lang":"zh"},"output":"告发者"}
 {"input":{"key":"parent","lang":"zh"},"output":"父母"}
 {"input":{"key":"customer","lang":"zh"},"output":"主顾"}
+{"input":{"key":"captive","lang":"en"},"output":"captive"}
+{"input":{"key":"employer_of_tutor","lang":"en"},"output":"the one who hired them"}
+{"input":{"key":"widowed","lang":"en"},"output":"late husband or wife"}
 {"input":{"key":"employer_of_tutor","lang":"zh"},"output":"聘请者"}
 {"input":{"key":"fellow_disciple","lang":"zh"},"output":"同门师兄弟"}
+{"input":{"key":"grandparent","lang":"en"},"output":"grandparent"}
+{"input":{"key":"adoptive_parent","lang":"en"},"output":"adoptive parent"}
+{"input":{"key":"past_love","lang":"en"},"output":"former lover"}
+{"input":{"key":"friend","lang":"en"},"output":"friend"}
+{"input":{"key":"patient","lang":"en"},"output":"patient"}
+{"input":{"key":"saviour","lang":"en"},"output":"the one who saved their life"}
+{"input":{"key":"godchild","lang":"en"},"output":"godchild"}
+{"input":{"key":"opposing_side","lang":"en"},"output":"on the opposing side"}
 {"input":{"key":"master","lang":"zh"},"output":"主人"}
+{"input":{"key":"step","lang":"en"},"output":"step-relation"}
+{"input":{"key":"debtor","lang":"en"},"output":"debtor"}
 {"input":{"key":"grandparent","lang":"zh"},"output":"祖辈"}
+{"input":{"key":"employer","lang":"en"},"output":"employer"}
 {"input":{"key":"acquaintance","lang":"zh"},"output":"熟人"}
+{"input":{"key":"uncle_aunt","lang":"en"},"output":"uncle or aunt"}
 {"input":{"key":"benefactor","lang":"zh"},"output":"恩人"}
 {"input":{"key":"cousin","lang":"zh"},"output":"堂表亲"}
 {"input":{"key":"servant","lang":"zh"},"output":"仆人"}
 {"input":{"key":"divorced","lang":"zh"},"output":"前夫前妻"}
+{"input":{"key":"godparent","lang":"en"},"output":"godparent"}
+{"input":{"key":"agent","lang":"en"},"output":"agent"}
 {"input":{"key":"ally","lang":"zh"},"output":"盟友"}
 {"input":{"key":"using","lang":"zh"},"output":"利用"}
+{"input":{"key":"parishioner","lang":"en"},"output":"parishioner"}
+{"input":{"key":"close","lang":"en"},"output":"close"}
+{"input":{"key":"courted","lang":"en"},"output":"the one courted"}
+{"input":{"key":"patron","lang":"en"},"output":"patron"}
+{"input":{"key":"guardian","lang":"en"},"output":"guardian"}
+{"input":{"key":"predecessor","lang":"en"},"output":"the one succeeded"}
 {"input":{"key":"accomplice","lang":"zh"},"output":"同伙"}
 {"input":{"key":"creditor","lang":"zh"},"output":"债主"}
 {"input":{"key":"widowed","lang":"zh"},"output":"亡夫亡妻"}
 {"input":{"key":"tutor","lang":"zh"},"output":"西席或家教"}
 {"input":{"key":"craftsman","lang":"zh"},"output":"匠人"}
+{"input":{"key":"beneficiary","lang":"en"},"output":"the one helped"}
 {"input":{"key":"love_rival","lang":"zh"},"output":"情敌"}
 {"input":{"key":"past_love","lang":"zh"},"output":"旧情"}
+{"input":{"key":"trade_fellow","lang":"en"},"output":"in the same trade"}
+{"input":{"key":"neighbour","lang":"en"},"output":"neighbour"}
 {"input":{"key":"successor","lang":"zh"},"output":"继承人或接班人"}
 {"input":{"key":"godparent","lang":"zh"},"output":"教父母或干亲"}
 {"input":{"key":"sibling_in_law","lang":"zh"},"output":"姑嫂妯娌连襟"}
 {"input":{"key":"ward","lang":"zh"},"output":"被监护者"}
+{"input":{"key":"suitor","lang":"en"},"output":"suitor"}
+{"input":{"key":"successor","lang":"en"},"output":"successor"}
+{"input":{"key":"tutor","lang":"en"},"output":"private tutor"}
 {"input":{"key":"spouse","lang":"zh"},"output":"配偶"}
 {"input":{"key":"doctor","lang":"zh"},"output":"医生"}
+{"input":{"key":"hostile","lang":"en"},"output":"hostile"}
 {"input":{"key":"townsman","lang":"zh"},"output":"同乡"}
+{"input":{"key":"lover","lang":"en"},"output":"lover"}
+{"input":{"key":"saved","lang":"en"},"output":"the one saved"}
 {"input":{"key":"saved","lang":"zh"},"output":"被救者"}
 {"input":{"key":"nephew_niece","lang":"zh"},"output":"侄甥"}
 {"input":{"key":"friend","lang":"zh"},"output":"朋友"}
+{"input":{"key":"buyer","lang":"en"},"output":"buyer"}
+{"input":{"key":"superior","lang":"en"},"output":"superior"}
 {"input":{"key":"partner","lang":"zh"},"output":"合伙人"}
+{"input":{"key":"parent_in_law","lang":"en"},"output":"parent-in-law"}
+{"input":{"key":"pupil","lang":"en"},"output":"disciple or pupil"}
+{"input":{"key":"lawyer","lang":"en"},"output":"lawyer"}
 {"input":{"key":"godchild","lang":"zh"},"output":"教子女或干子女"}
 {"input":{"key":"agent","lang":"zh"},"output":"中间人"}
+{"input":{"key":"concubine","lang":"en"},"output":"concubine"}
 {"input":{"key":"landlord","lang":"zh"},"output":"房东或地主"}
 {"input":{"key":"patron","lang":"zh"},"output":"提携者"}
 {"input":{"key":"colleague","lang":"zh"},"output":"同僚"}
+{"input":{"key":"partner","lang":"en"},"output":"business partner"}
 {"input":{"key":"schoolmate","lang":"zh"},"output":"同窗"}
 {"input":{"key":"rival","lang":"zh"},"output":"对手"}
 {"input":{"key":"betrothed","lang":"zh"},"output":"未婚夫妻"}
+{"input":{"key":"fellow_disciple","lang":"en"},"output":"fellow disciple"}
+{"input":{"key":"creditor","lang":"en"},"output":"creditor"}
 {"input":{"key":"superior","lang":"zh"},"output":"上司"}
+{"input":{"key":"other_kin","lang":"en"},"output":"other relative"}
+{"input":{"key":"subordinate","lang":"en"},"output":"subordinate"}
+{"input":{"key":"child_in_law","lang":"en"},"output":"child-in-law"}
 {"input":{"key":"affair","lang":"zh"},"output":"私情"}
+{"input":{"key":"unrequited","lang":"en"},"output":"loves without return"}
+{"input":{"key":"ward","lang":"en"},"output":"ward"}
 {"input":{"key":"harmer","lang":"zh"},"output":"加害者"}
 {"input":{"key":"lawyer","lang":"zh"},"output":"律师"}
 {"input":{"key":"courted","lang":"zh"},"output":"被追求者"}
 {"input":{"key":"sibling","lang":"zh"},"output":"兄弟姐妹"}
 {"input":{"key":"pupil","lang":"zh"},"output":"徒弟"}
+{"input":{"key":"child","lang":"en"},"output":"child"}
 {"input":{"key":"suitor","lang":"zh"},"output":"追求者"}
 {"input":{"key":"claimed","lang":"zh"},"output":"据称"}
+{"input":{"key":"other_marriage","lang":"en"},"output":"other in-law"}
 {"input":{"key":"sworn_sibling","lang":"zh"},"output":"结拜兄弟姐妹"}
+{"input":{"key":"sibling_in_law","lang":"en"},"output":"sibling-in-law"}
+{"input":{"key":"teammate","lang":"en"},"output":"partner or teammate"}
+{"input":{"key":"seller","lang":"en"},"output":"seller"}
+{"input":{"key":"divorced","lang":"en"},"output":"former husband or wife"}
+{"input":{"key":"servant","lang":"en"},"output":"servant"}
 {"input":{"key":"lover","lang":"zh"},"output":"恋人"}
+{"input":{"key":"accused","lang":"en"},"output":"accused"}
 {"input":{"key":"client","lang":"zh"},"output":"委托人"}
 {"input":{"key":"hostile","lang":"zh"},"output":"敌意"}
+{"input":{"key":"teacher","lang":"en"},"output":"master or teacher"}
 {"input":{"key":"guardian","lang":"zh"},"output":"监护人"}
+{"input":{"key":"priest","lang":"en"},"output":"clergyman"}
 {"input":{"key":"adopted_child","lang":"zh"},"output":"养子女"}
 {"input":{"key":"opposing_side","lang":"zh"},"output":"敌对阵营"}
+{"input":{"key":"cousin","lang":"en"},"output":"cousin"}
 {"input":{"key":"employer","lang":"zh"},"output":"雇主"}
 {"input":{"key":"harmed","lang":"zh"},"output":"受害者"}
 {"input":{"key":"child","lang":"zh"},"output":"子女"}
 {"input":{"key":"captive","lang":"zh"},"output":"阶下囚"}
 {"input":{"key":"concubine","lang":"zh"},"output":"妾室"}
+{"input":{"key":"ally","lang":"en"},"output":"ally"}
 {"input":{"key":"captor","lang":"zh"},"output":"看押者"}
 {"input":{"key":"parent_in_law","lang":"zh"},"output":"岳父母公婆"}
 {"input":{"key":"adoptive_parent","lang":"zh"},"output":"养父母"}
+{"input":{"key":"adopted_child","lang":"en"},"output":"adopted child"}
+{"input":{"key":"protege","lang":"en"},"output":"protégé"}
+{"input":{"key":"benefactor","lang":"en"},"output":"benefactor"}
+{"input":{"key":"secret","lang":"en"},"output":"kept secret"}
 {"input":{"key":"employee","lang":"zh"},"output":"雇员"}
 {"input":{"key":"predecessor","lang":"zh"},"output":"前任"}
 {"input":{"key":"priest","lang":"zh"},"output":"神职"}
+{"input":{"key":"sibling","lang":"en"},"output":"sibling"}
+{"input":{"key":"accomplice","lang":"en"},"output":"accomplice"}
