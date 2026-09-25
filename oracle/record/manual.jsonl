@@ -4,3 +4,68 @@
 {"function":"server.model_settings.normalize","args":["https://open.xiaojingai.com/","deepseek-flash"]}
 {"function":"server.model_settings.normalize","args":["https://open.xiaojingai.com/v1","deepseek-flash+nothink"]}
 {"function":"pipeline.kg.zh","args":["𠮷😀说\"好\",然后(笑了)"]}
+{"function":"pipeline.kind._cn","args":["十二"]}
+{"function":"pipeline.kind._cn","args":["二百零三"]}
+{"function":"pipeline.kind._cn","args":["千零一"]}
+{"function":"pipeline.kind._cn","args":["004"]}
+{"function":"pipeline.kind._cn","args":["零"]}
+{"function":"pipeline.kind.ordinal","args":["第十二回　雨夜"]}
+{"function":"pipeline.kind.ordinal","args":["第 203 章：𠮷😀"]}
+{"function":"pipeline.kind.ordinal","args":["Chapter IX: The Return"]}
+{"function":"pipeline.kind.ordinal","args":["volume 14 — End"]}
+{"function":"pipeline.kind.ordinal","args":["07、开篇"]}
+{"function":"pipeline.kind.ordinal","args":["序言"]}
+{"function":"pipeline.kind.ordinal","args":["第𠮷章"]}
+{"function":"pipeline.kind.works","args":[{"chapters":[{"kind":"body","title":"第一章","o0":0,"o1":40},{"kind":"body","title":"第二章","o0":40,"o1":80},{"kind":"body","title":"第一章","o0":90,"o1":130},{"kind":"body","title":"第二章","o0":130,"o1":170}]}],"kwargs":{"min_chars":10}}
+{"function":"pipeline.kind.works","args":[{"chapters":[{"kind":"body","title":"故事一","o0":0,"o1":50},{"kind":"body","title":"一之一","parent":"故事一","o0":0,"o1":50},{"kind":"body","title":"故事二","o0":60,"o1":110},{"kind":"body","title":"二之一","parent":"故事二","o0":60,"o1":110}]}],"kwargs":{"min_chars":10}}
+{"function":"pipeline.kind.works","args":[{"chapters":[{"kind":"front","title":"目录","o0":0,"o1":10},{"kind":"body","title":"序幕","o0":10,"o1":40}]}],"kwargs":{"min_chars":10}}
+{"function":"pipeline.kg._norm","args":["𠮷😀，他说：“好！”\n《题名》"]}
+{"function":"pipeline.kg._norm","args":["A—B · C!?\u2028终"]}
+{"function":"pipeline.link._gender_clash","args":[{"gender":"男"},{"gender":"女"}]}
+{"function":"pipeline.link._gender_clash","args":[{"gender":"未知"},{"gender":"女"}]}
+{"function":"pipeline.link._gender_clash","args":[{},{}]}
+{"function":"pipeline.link.core","args":["郝麦太太"]}
+{"function":"pipeline.link.core","args":["Mr. Pocket"]}
+{"function":"pipeline.link.core","args":["Dr. Jean-Luc"]}
+{"function":"pipeline.link.core","args":["贾宝玉"]}
+{"function":"pipeline.link.core","args":["😀"]}
+{"function":"pipeline.link._tokens","args":["Mr. Jean-Luc O'Neill and the Lady"]}
+{"function":"pipeline.link._tokens","args":["贾宝玉与𠮷😀"]}
+{"function":"pipeline.link._stem","args":["老余"]}
+{"function":"pipeline.link._stem","args":["王总"]}
+{"function":"pipeline.link._stem","args":["圆觉大师"]}
+{"function":"pipeline.link._stem","args":["阿Q"]}
+{"function":"pipeline.link.related","args":["郝麦太太","郝麦夫人"]}
+{"function":"pipeline.link.related","args":["老余","余擎苍"]}
+{"function":"pipeline.link.related","args":["王叔","王母"]}
+{"function":"pipeline.link.related","args":["Mr. Pocket","Herbert Pocket"]}
+{"function":"pipeline.link.related","args":["Ann","Anne"]}
+{"function":"pipeline.link.related","args":["𠮷😀","𠮷😀"]}
+{"function":"pipeline.link.related","args":["王叔","李母"]}
+{"function":"pipeline.link.related","args":["Mr. Pocket","Mme. Bovary"]}
+{"function":"pipeline.link.related","args":["","贾宝玉"]}
+{"function":"pipeline.link.strong_names","args":[{"name":"贾宝玉","names":["宝玉","*少爷","他"]}]}
+{"function":"pipeline.link.strong_names","args":[{"name":"*the doctor","names":["Dr. Jekyll","he"]}]}
+{"function":"pipeline.link.weak_names","args":[{"name":"*太太","names":["*医生","贾宝玉","她"]}]}
+{"function":"pipeline.link.weak_names","args":[{"name":"*the doctor","names":["Dr. Jekyll","*old gentleman"]}]}
+{"function":"pipeline.link.proper_name","args":[{"name":"*太太","aliases":["*夫人","郝麦夫人","郝麦","她"]}]}
+{"function":"pipeline.link.proper_name","args":[{"name":"*医生","aliases":["*先生"]}]}
+{"function":"pipeline.link.names_of","args":[{"name":"郝麦","aliases":["郝麦夫人","郝麦"],"weak":["*太太"]}]}
+{"function":"pipeline.link.short_forms","args":["贾宝玉"]}
+{"function":"pipeline.link.short_forms","args":["圆觉大师"]}
+{"function":"pipeline.link.short_forms","args":["查理·包法利"]}
+{"function":"pipeline.link.short_forms","args":["Herbert Pocket"]}
+{"function":"pipeline.link.short_forms","args":["𠮷😀"]}
+{"function":"pipeline.extract.registry_prompt","args":[{"people":{},"seg":0},"𠮷😀"]}
+{"function":"pipeline.extract.registry_prompt","args":[{"people":{"P1":{"id":"P1","name":"贾宝玉","aliases":["宝玉"],"importance":3,"mentions":5,"last_seg":1,"tagline":"荣府公子","bio":"住在荣府"},"P2":{"id":"P2","name":"郝麦","aliases":[],"importance":1,"mentions":1,"last_seg":0,"tagline":"旧识","bio":""}},"seg":8},"宝玉来到园中"]}
+{"function":"pipeline.extract.relations_prompt","args":[{"people":{"P1":{"name":"贾宝玉","aliases":["宝玉"]},"P2":{"name":"林黛玉","aliases":["黛玉"]}},"rels":{"R1":{"a":"P1","b":"P2","b_is":"表妹","desc":"同住荣府"},"R2":{"a":"P2","b":"P1","status":"ended","b_is":"旧识"}}},"宝玉见到黛玉"]}
+{"function":"pipeline.extract.relations_prompt","args":[{"people":{},"rels":{}},"无人出场"]}
+{"function":"pipeline.extract.build_messages","args":[{"title":"𠮷😀传","author":"佚名","chapters":[{"title":"第一章","parent":"上篇"}],"blocks":[{"k":"h","t":"第一章"},{"k":"p","t":"𠮷😀说：你好。"}]},{"people":{},"rels":{},"seg":0,"recent_events":[]},{"chapter":0,"blocks":[0,1]}]}
+{"function":"pipeline.local.lang_note","args":["zh",6,30]}
+{"function":"pipeline.local.lang_note","args":["en",20,100,"en"]}
+{"function":"pipeline.local.lang_note","args":["ja",6,30,"zh"]}
+{"function":"pipeline.judge.read_families","args":[{},[]]}
+{"function":"pipeline.judge.read_records","args":[{"v_e1":{"choice":"supported","probabilities":{"supported":0.81234,"beyond_text":0.18766}}},{"e1":["event","贾宝玉入园"]}]}
+{"function":"pipeline.judge.read_records","args":[{},{}]}
+{"function":"pipeline.judge.same_question","args":["𠮷😀","吉田"]}
+{"function":"pipeline.judge.same_question","args":["郝麦夫人","郝麦","家中女主人","医生"]}
