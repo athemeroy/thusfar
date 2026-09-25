@@ -145,6 +145,44 @@ class PrivateSettings(unittest.TestCase):
             case.doCleanups()
 
 
+    def test_unread_post_body_does_not_poison_the_next_request_on_the_same_connection(self):
+        import http.client
+        from test_server_repair import HTTPRepair
+        case = HTTPRepair(methodName='runTest')
+        case.setUp()
+        try:
+            bid = case.make_book(state='idle').name
+            with patch.dict(os.environ, {'SECRETS_FILE': str(case.root / '.model.env')}), \
+                 patch.object(app, 'LOCAL_MODE', True):
+                conn = http.client.HTTPConnection('127.0.0.1', case.server.server_port, timeout=5)
+                try:
+                    # what the page sends: a JSON body the /process handler never needs to read
+                    conn.request('POST', f'/api/books/{bid}/process', body=b'{}',
+                                 headers={'Content-Type': 'application/json'})
+                    first = conn.getresponse(); first.read()
+                    self.assertEqual(first.status, 409)
+                    conn.request('GET', '/api/books')
+                    second = conn.getresponse()
+                    self.assertEqual(second.status, 200)
+                    self.assertIsInstance(json.loads(second.read()), list)
+                    # the success path answers without reading the body and keeps the connection
+                    (case.root / '.model.env').write_text('LLM_API_KEY=sk-example\n')
+                    conn.request('POST', f'/api/books/{bid}/process', body=b'{}',
+                                 headers={'Content-Type': 'application/json'})
+                    third = conn.getresponse(); third.read()
+                    self.assertEqual(third.status, 200)
+                    socket_before = conn.sock
+                    conn.request('GET', '/api/books')
+                    fourth = conn.getresponse()
+                    self.assertEqual(fourth.status, 200)
+                    self.assertIsInstance(json.loads(fourth.read()), list)
+                    self.assertIs(conn.sock, socket_before)
+                finally:
+                    conn.close()
+        finally:
+            case.doCleanups()
+
+
 class ModelFailures(unittest.TestCase):
     def test_hopeless_failures_are_explained_and_transient_ones_are_not(self):
         from pipeline.llm import LLMError, explain

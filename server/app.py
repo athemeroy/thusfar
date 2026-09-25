@@ -49,7 +49,7 @@ AUTO = os.environ.get('AUTO_PROCESS', '1') == '1'
 LOCAL_MODE = os.environ.get('YEDU_LOCAL_MODE') == '1'
 MAX_UPLOAD = 200 * 1024 * 1024
 SECRET_FILE = DATA / '.cookie-secret'
-RELEASE = os.environ.get('YEDU_RELEASE_ID') or os.environ.get('RELEASE_ID') or '1.7.3'
+RELEASE = os.environ.get('YEDU_RELEASE_ID') or os.environ.get('RELEASE_ID') or '1.7.4'
 READ_TIMEOUT = float(os.environ.get('HTTP_READ_TIMEOUT', '30'))
 COOKIE_SECURE = os.environ.get('COOKIE_SECURE', '1') == '1'
 _ask_gate = threading.BoundedSemaphore(int(os.environ.get('ASK_CONCURRENCY', '2')))
@@ -138,6 +138,9 @@ class Handler(BaseHTTPRequestHandler):
             body = gzip.compress(body, 5)
             headers['Content-Encoding'] = 'gzip'
             headers['Vary'] = 'Accept-Encoding'
+        if self.close_connection:
+            # say so: a browser that reuses a connection we are about to drop sees a failed request
+            headers.setdefault('Connection', 'close')
         self.send_response(code)
         self.send_header('Content-Type', ctype)
         self.send_header('Content-Length', str(len(body)))
@@ -178,6 +181,7 @@ class Handler(BaseHTTPRequestHandler):
         if n > limit:
             self.close_connection = True
             raise ValueError('请求太大')
+        self._body_consumed = True
         result = self.rfile.read(n) if n else b''
         if len(result) != n:
             self.close_connection = True
@@ -210,6 +214,7 @@ class Handler(BaseHTTPRequestHandler):
             self.err(500, '服务器出错了')
 
     def _write(self, method: str):
+        self._body_consumed = False
         try:
             self.route(method)
         except BrokenPipeError:
@@ -224,6 +229,28 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             traceback.print_exc()
             self.err(500, '服务器出错了')
+        finally:
+            self._discard_unread_body()
+
+    def _discard_unread_body(self):
+        """A handler that answers without reading the request body (POST /process sends `{}`)
+        would leave those bytes on a kept-alive connection; the browser's next request then
+        arrives as `{}GET /api/books` and gets a 501 HTML page instead of JSON."""
+        if self._body_consumed or self.close_connection:
+            return
+        raw = (self.headers.get('Content-Length') or '0').strip()
+        if self.headers.get('Transfer-Encoding') or not raw.isdigit():
+            self.close_connection = True
+            return
+        n = int(raw)
+        if n > 1 << 20:
+            self.close_connection = True
+            return
+        try:
+            if n and len(self.rfile.read(n)) != n:
+                self.close_connection = True
+        except OSError:
+            self.close_connection = True
 
     def do_POST(self):
         self._write('POST')
