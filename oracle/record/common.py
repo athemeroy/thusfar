@@ -9,6 +9,7 @@ import math
 import os
 import re
 from pathlib import Path
+from xml.etree import ElementTree
 
 
 class UnsafeValue(ValueError):
@@ -56,6 +57,8 @@ def encode(value: object, secrets: tuple[str, ...] = (), seen: set[int] | None =
         return {'$bytes': base64.b64encode(value).decode('ascii')}
     if isinstance(value, Path):
         return {'$path': encode(str(value), secrets)}
+    if isinstance(value, ElementTree.Element):
+        return {'$xml': encode(ElementTree.tostring(value, encoding='unicode'), secrets)}
     seen = seen if seen is not None else set()
     ident = id(value)
     if ident in seen:

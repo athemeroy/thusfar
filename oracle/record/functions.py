@@ -98,7 +98,7 @@ class Collector:
             if kind == 'exception':
                 had_exception = True
             elif kind == 'return':
-                if had_exception:
+                if had_exception and result is None:
                     with self.lock:
                         self.skipped[(function, 'raised or handled an exception internally')] += 1
                 else:
@@ -167,7 +167,7 @@ class LoopbackOnly:
 
 
 def run_python_tests() -> bool:
-    tests = unittest.TestLoader().discover(str(ROOT / 'tests'), pattern='test*.py', top_level_dir=str(ROOT))
+    tests = unittest.TestLoader().discover(str(ROOT / 'tests'), pattern='test*.py')
     return unittest.TextTestRunner(verbosity=1).run(tests).wasSuccessful()
 
 
