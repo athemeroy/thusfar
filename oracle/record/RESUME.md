@@ -45,6 +45,41 @@ telemetry. This records the existing Python behavior without relaxing that
 gate or changing production code. It establishes no default-concurrency or
 Dart compatibility claim: the runs use concurrency 1 and the Python oracle.
 
+### Why the JEV counters differ
+
+The difference is the already-completed prefix's transport telemetry, not a
+repeated paid-model call or variation between identical replays. In
+`pipeline/llm.py`, `JEV_STATS` is a module-global counter (line 30); the free
+classifier counts a batch and its payload before attempting it (lines 680–693),
+while an exact-input cache hit returns before the transport (lines 925–954).
+Each of this receipt's runs starts in a separate Python process. On resume,
+`pipeline/run.py` loads the existing per-book usage (line 251), but `status()`
+replaces its `jev` entry with a snapshot of that process's `JEV_STATS` (line
+510). It writes this snapshot to `status.json` (lines 515–526). The already
+completed prefix is consequently absent from the resumed status's JEV entry.
+`pipeline/judge.py` constructs and invokes JEV questions; it does not own these
+transport counters.
+
+For every numeric JEV field, treating an absent optional `retries` field as
+zero, the observed receipt obeys both componentwise identities:
+
+```text
+fresh.status.usage.jev = prefix.status.usage.jev + resume.status.usage.jev
+fresh.work/usage.jev   = prefix.status.usage.jev + resume.work/usage.jev
+```
+
+The prefix status contribution is `calls=35`, `attempts=36`, `chars=253674`,
+`questions=204`, `passage_chars=116395`, `retries=1`, and `paid_chars=0`.
+`work/usage.json` is written by `Runner.count()` only on a model usage event
+(`pipeline/run.py` lines 304–314), while `status()` does not persist that file.
+Consequently each final `work/usage.json` trails its own final `status.json`
+by the same 16 later free JEV batches. The two status objects agree outside
+`usage.jev`; both usage objects agree outside `jev`. The committed receipt
+retains the raw counters, and a focused test checks these identities against
+the recorded files. PLAN A5's literal fresh/continuation equality remains
+unmet for `status.json` and `work/usage.json`; no equality exception or counter
+normalization has been added to that gate.
+
 The fixture was created by the actual Python 1.7.5 pause/notebook HTTP handlers
 after an offline partial replay. It is not a historical user's notebook.
 `tests/test_resume_receipt.py` checks the independent replay and rejects altered
