@@ -97,7 +97,7 @@
         "oracle/record/artifacts.py": "71be6e82dc81f9a9f1ab5bcbbaeee8c2d8aa0ae2024108aed3cf942303f54815",
         "oracle/record/cassettes.py": "bd832be47df60f8cc54d9b7ead14dd670eed796deba2390887cfd20a07560b4b"
       },
-      "cassette_tree_sha256": "dc136a3fa5f6bdb4b3819f0fa2f73d8a9f5021430030473a2c467c968ca88b66"
+      "cassette_tree_sha256": "c8053699e0744a3adb2b5105a43a32c60d1581ead858c477b865c8385b583525"
     },
     "aq_notebook_overlay": {
       "origin": "synthetic note on real 阿Q snapshot",
