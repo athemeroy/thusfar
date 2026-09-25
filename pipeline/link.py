@@ -103,7 +103,8 @@ def proper_name(p: dict) -> str:
     """The name to use when asking about a person: a real name if they have one (not 老和尚)."""
     if not is_generic(p['name']):
         return p['name']
-    named = sorted((n for n in p['aliases'] if not is_generic(n) and n not in PRONOUNS), key=len, reverse=True)
+    named = sorted((n for n in p['aliases'] if not is_generic(n) and n not in PRONOUNS),
+                   key=lambda n: (-len(n), n))
     return named[0] if named else p['name']
 
 
@@ -191,7 +192,8 @@ def link_segment(kg, seg: dict, local: dict, context_text: str, scope_start: int
         elif len(distinct) > 1 or hint or exact or fuzzy or weak_c or near or same_core or local_c:
             # shared names, titles, hints without a distinctive name: never merge blindly — JEV decides, "new" allowed
             pool = distinct | exact | fuzzy | weak_c | near | same_core
-            cands = list(dict.fromkeys(([hint] if hint else []) + sorted(pool, key=lambda x: -cast[x].get('mentions', 0))))[:6]
+            cands = list(dict.fromkeys(([hint] if hint else []) +
+                                           sorted(pool, key=lambda x: (-cast[x].get('mentions', 0), x))))[:6]
             questions.append((lid, lp, cands + local_c[:4]))
         else:
             decisions[lid] = {'to': None, 'how': 'new'}
@@ -356,7 +358,10 @@ def to_classic(local: dict, decisions: dict, drop: dict | None = None, k: int = 
             ref[lid] = ref[d['local']]
         else:
             ref[lid] = f'N{lid}'
-            new_people.append({'ref': ref[lid], 'name': (lp.get('name') or next(iter(strong_names(lp)), '无名氏')).lstrip('*'),
+            strong = strong_names(lp)
+            fallback = next((n.lstrip('*').strip() for n in lp.get('names') or []
+                             if isinstance(n, str) and n.lstrip('*').strip() in strong), '无名氏')
+            new_people.append({'ref': ref[lid], 'name': (lp.get('name') or fallback).lstrip('*'),
                                'gender': lp.get('gender'), 'importance': 2, 'para': lp.get('para'),
                                'quote': lp.get('quote'), 'intro': lp.get('role') or ''})
             if lp.get('role'):

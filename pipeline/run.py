@@ -888,7 +888,7 @@ class Runner:
         def names(p):
             return {n for n in p['aliases'] | {p['name']} if len(n) >= 2}
         pairs = []
-        for a in sorted(recent, key=lambda x: people[x].get('first', 0)):
+        for a in sorted(recent, key=lambda x: (people[x].get('first', 0), x)):
             pa = people[a]
             for b, pb in people.items():
                 if b == a or (min(a, b), max(a, b)) in together or pa.get('gender') and pb.get('gender') and pa['gender'] != pb['gender']:
@@ -913,7 +913,7 @@ class Runner:
             en = {w.lower() for w in re.findall(r'[A-Za-z]{4,}', txt)} - STOPWORDS
             zh_ = re.sub(r'[^\u4e00-\u9fff]', '', txt)
             return en | {zh_[i:i + 2] for i in range(len(zh_) - 1)}
-        nameless = [a for a in recent if not any(not is_generic(n) for n in names(people[a]))]
+        nameless = [a for a in sorted(recent) if not any(not is_generic(n) for n in names(people[a]))]
         named = [b for b in people if b not in nameless and any(not is_generic(n) for n in names(people[b]))
                  and (b in recent or people[b].get('first', 0) >= start_pos)]
         for a in nameless:

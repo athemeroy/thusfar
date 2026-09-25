@@ -474,10 +474,10 @@ class KG:
             if not old_name:
                 continue
             forms = [f for f, v in plan['surfaces'].items() if into in v['ids'] and not v['generic']]
-            for f in set(forms + [self.people[into]['name']]):
+            for f in sorted(set(forms + [self.people[into]['name']]), key=lambda name: (-len(name), name)):
                 hit = A.first(f)
                 reveals.append((f, hit[0] if hit else intro[into], old_name))
-        reveals.sort(key=lambda x: -len(x[0]))
+        reveals.sort(key=lambda x: (-len(x[0]), x[0], x[1], x[2]))
         if reveals:
             def scrub(text, p):
                 for name, q, old_name in reveals:
@@ -492,7 +492,7 @@ class KG:
         fresh = {n for p in self.people.values() for n in (p['aliases'] | {p['name']})
                  if len(n) >= 2 and n not in known_names and n not in GENERIC}
         first_at = {}
-        for n in fresh:
+        for n in sorted(fresh):
             hit = A.first(n)
             if hit:
                 first_at[n] = hit[1]
