@@ -431,7 +431,7 @@ def report(data: dict) -> str:
         "",
         f"Direct `re.*` call sites: **{len(direct)}**; `pipeline.parse` contributes **{by_module['pipeline.parse']}** (PLAN says 34). Resolved compiled-pattern method calls: **{len(rows)-len(direct)}**. Static pattern call sites: **{len(static)}**; dynamic pattern call sites: **{len(dynamic)}**.",
         "",
-        "Each static call has positive and negative input in `REGEX.json`. `oracle/semantics/regex_python.py` and `core/test/semantics/regex_test.dart` execute the same cases. The generated Dart form rewrites named captures, `\\Z`, leading inline flags, and Python's Unicode `\\w`, `\\b`, `\\d`, and `\\s` classes. These examples establish matching for the listed inputs; ported callers still need operation-specific golden cases for captures, substitutions, splits, spans, and Unicode offsets.",
+        "Each static call has positive and negative input in `REGEX.json`. `oracle/semantics/regex_python.py` and `core/test/semantics/regex_test.dart` execute the same cases. The generated Dart form rewrites named captures, `\\Z`, leading inline flags, and Python's Unicode `\\w`, `\\b`, `\\d`, and `\\s` classes. The two dynamic `KG.plan` sites additionally have six paired cases in `oracle/semantics/surface_regex.jsonl`, generated through the production helper and checked in Python/Dart. These examples establish matching for the listed inputs; ported callers still need their full function goldens.",
         "",
         "## Direct calls by module",
         "",
@@ -450,7 +450,7 @@ def report(data: dict) -> str:
         if row.get("dynamic_variants"):
             strategy += f" Static variants: {', '.join(row['dynamic_variants'])}; their cases are executable in both engines."
         if row["module"] == "pipeline.kg" and row["scope"] == "KG.plan" and "surf" in row["dependencies"]:
-            strategy += " `surf` is built from filtered `data['surfaces']` model output; record escaped Latin and CJK forms, overlapping names, punctuation, and empty input."
+            strategy += " `surf` is built from filtered `data['surfaces']` model output. `surface_regex.jsonl` drives actual `KG.plan` for CJK, Latin boundaries, overlap, punctuation, empty, and filtered-empty cases; Python/Dart compare all match groups and code-point/UTF-16 spans. Full model-generated surface variety remains for A4 function goldens."
         elif row["module"] == "pipeline.parse" and row["scope"] == "detect_lang" and row["pattern_expression"] == "pat":
             strategy += " `pat` is drawn from the eight constant `LANG_WORDS` entries."
         elif row["module"] == "pipeline.run" and row["scope"] == "Runner._recap_job":
