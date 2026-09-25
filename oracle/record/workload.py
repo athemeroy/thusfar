@@ -14,7 +14,8 @@ from .cassettes import install
 from .functions import LoopbackOnly
 
 ROOT = Path(__file__).resolve().parents[2]
-_SETTINGS = ('LLM_BASE_URL', 'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY',
+_SETTINGS = ('LLM_BASE_URL', 'LLM_BASE_URL_OPENAI', 'LLM_PROTOCOL', 'LLM_PROTOCOL_MAP',
+             'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY',
              'EXTRACT_MODEL', 'LOCAL_MODEL', 'RECAP_MODEL', 'JUDGE_MODEL', 'CLASSIFY_MODEL',
              'JEV_ROUTE', 'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG')
 
@@ -43,6 +44,7 @@ def main() -> None:
     previous = {key: os.environ.get(key) for key in _SETTINGS}
     model = 'deepseek-flash+nothink'
     os.environ.update(LLM_BASE_URL='https://open.xiaojingai.com/v1',
+                      LLM_BASE_URL_OPENAI='', LLM_PROTOCOL='openai', LLM_PROTOCOL_MAP='',
                       LLM_KEY_NAME='NAS_DEFAULT_KEY' if args.mode == 'record' else 'ORACLE_REPLAY_KEY',
                       LLM_KEY_MAP='', EXTRACT_MODEL=model, LOCAL_MODEL=model, RECAP_MODEL=model,
                       JUDGE_MODEL=model, CLASSIFY_MODEL=model, JEV_ROUTE='free-only',

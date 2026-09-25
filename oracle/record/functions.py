@@ -233,21 +233,30 @@ def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int)
     from .artifacts import stage_book
     from .cassettes import install
     model = 'deepseek-flash+nothink'
-    names = ('LLM_BASE_URL', 'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY',
+    names = ('LLM_BASE_URL', 'LLM_BASE_URL_OPENAI', 'LLM_PROTOCOL', 'LLM_PROTOCOL_MAP',
+             'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY',
              'JEV_ROUTE', 'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG')
     previous = {name: os.environ.get(name) for name in names}
     with tempfile.TemporaryDirectory(prefix='thusfar-oracle-function-book-') as tmp:
         root = Path(tmp) / source.name
         os.environ.update(LLM_BASE_URL='https://open.xiaojingai.com/v1',
+                          LLM_BASE_URL_OPENAI='', LLM_PROTOCOL='openai', LLM_PROTOCOL_MAP='',
                           LLM_KEY_NAME='ORACLE_REPLAY_KEY', LLM_KEY_MAP='',
                           ORACLE_REPLAY_KEY='oracle-placeholder', JEV_ROUTE='free-only',
                           CLASSIFIER_URL='https://classifier.dev/v1/classify',
                           JUDGE_LOG_DIR=str(Path(tmp) / 'judge'), JUDGE_LOG='0')
         try:
             stage_book(source, root, start)
+            from pipeline import llm
             from pipeline.run import run_book
-            with install(cassettes, 'replay'):
-                run_book(root, model=model, local_model=model, concurrency=concurrency)
+            from pipeline import run
+            old_classifier, old_recap = llm.CLASSIFIER_URL, run.RECAP_MODEL
+            llm.CLASSIFIER_URL, run.RECAP_MODEL = 'https://classifier.dev/v1/classify', model
+            try:
+                with install(cassettes, 'replay'):
+                    run_book(root, model=model, local_model=model, concurrency=concurrency)
+            finally:
+                llm.CLASSIFIER_URL, run.RECAP_MODEL = old_classifier, old_recap
         finally:
             for name, value in previous.items():
                 if value is None:

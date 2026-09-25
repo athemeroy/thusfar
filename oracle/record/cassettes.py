@@ -43,6 +43,7 @@ def request_envelope(request, secrets: tuple[str, ...]) -> dict:
     assert_public(clean_url + body, secrets)
     headers = {key.lower(): value for key, value in request.header_items()
                if key.lower() in _SAFE_HEADERS}
+    assert_public(canonical(headers), secrets)
     return {'method': request.get_method(), 'url': clean_url, 'headers': dict(sorted(headers.items())),
             'body_utf8': body}
 
