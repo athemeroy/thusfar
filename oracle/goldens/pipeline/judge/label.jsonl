@@ -3,6 +3,7 @@
 {"input":{"key":"subordinate","lang":"zh"},"output":"下属"}
 {"input":{"key":"uncle_aunt","lang":"zh"},"output":"叔伯姑舅姨"}
 {"input":{"key":"grandchild","lang":"zh"},"output":"孙辈"}
+{"input":{"key":"fearful","lang":"zh"},"output":"畏惧"}
 {"input":{"key":"other_kin","lang":"zh"},"output":"其他血亲"}
 {"input":{"key":"saviour","lang":"zh"},"output":"救命恩人"}
 {"input":{"key":"seller","lang":"zh"},"output":"卖主"}
@@ -11,6 +12,7 @@
 {"input":{"key":"protege","lang":"zh"},"output":"受提携者"}
 {"input":{"key":"confidant","lang":"zh"},"output":"知己"}
 {"input":{"key":"buyer","lang":"zh"},"output":"买主"}
+{"input":{"key":"former","lang":"zh"},"output":"已结束"}
 {"input":{"key":"beneficiary","lang":"zh"},"output":"受恩者"}
 {"input":{"key":"other_marriage","lang":"zh"},"output":"其他姻亲"}
 {"input":{"key":"step","lang":"zh"},"output":"继亲"}
@@ -18,6 +20,7 @@
 {"input":{"key":"debtor","lang":"zh"},"output":"欠债人"}
 {"input":{"key":"parishioner","lang":"zh"},"output":"教众"}
 {"input":{"key":"teammate","lang":"zh"},"output":"搭档或队友"}
+{"input":{"key":"close","lang":"zh"},"output":"亲近"}
 {"input":{"key":"neighbour","lang":"zh"},"output":"邻居"}
 {"input":{"key":"enemy","lang":"zh"},"output":"仇敌"}
 {"input":{"key":"child_in_law","lang":"zh"},"output":"女婿儿媳"}
@@ -35,6 +38,7 @@
 {"input":{"key":"servant","lang":"zh"},"output":"仆人"}
 {"input":{"key":"divorced","lang":"zh"},"output":"前夫前妻"}
 {"input":{"key":"ally","lang":"zh"},"output":"盟友"}
+{"input":{"key":"using","lang":"zh"},"output":"利用"}
 {"input":{"key":"accomplice","lang":"zh"},"output":"同伙"}
 {"input":{"key":"creditor","lang":"zh"},"output":"债主"}
 {"input":{"key":"widowed","lang":"zh"},"output":"亡夫亡妻"}
@@ -69,9 +73,11 @@
 {"input":{"key":"sibling","lang":"zh"},"output":"兄弟姐妹"}
 {"input":{"key":"pupil","lang":"zh"},"output":"徒弟"}
 {"input":{"key":"suitor","lang":"zh"},"output":"追求者"}
+{"input":{"key":"claimed","lang":"zh"},"output":"据称"}
 {"input":{"key":"sworn_sibling","lang":"zh"},"output":"结拜兄弟姐妹"}
 {"input":{"key":"lover","lang":"zh"},"output":"恋人"}
 {"input":{"key":"client","lang":"zh"},"output":"委托人"}
+{"input":{"key":"hostile","lang":"zh"},"output":"敌意"}
 {"input":{"key":"guardian","lang":"zh"},"output":"监护人"}
 {"input":{"key":"adopted_child","lang":"zh"},"output":"养子女"}
 {"input":{"key":"opposing_side","lang":"zh"},"output":"敌对阵营"}

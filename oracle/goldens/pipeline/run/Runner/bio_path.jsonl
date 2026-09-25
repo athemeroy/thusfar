@@ -1,1 +1,3 @@
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"ci":6},"output":{"$path":"<temp>/aq_complete/work/bios/0006.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"ci":9},"output":{"$path":"<temp>/aq_complete/work/bios/0009.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/work"}}},"ci":0},"output":{"$path":"<temp>/work/bios/0000.json"}}
