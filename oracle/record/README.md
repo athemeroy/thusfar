@@ -246,6 +246,70 @@ compares exact bytes with `oracle/goldens/http/aq_edges_synthetic.jsonl` and its
 The total is 82 cases across 27 reported route families, but live provider-backed success
 answers and long-running worker success remain outside this synthetic evidence.
 
+### Opt-in real settings HTTP success
+
+`http_model_live.py` makes exactly one `POST /api/settings/test` through the actual local
+Python 1.7.5 handler. Its live mode accepts only the checked-in `oracle/cassettes/live`
+ledger with the existing cumulative ¥1 guard and one approved
+`deepseek-flash+nothink` request to `https://open.xiaojingai.com/v1`. It reads
+`NAS_DEFAULT_KEY` directly from `~/.env` and puts that value in an anonymous temporary
+`SECRETS_FILE` for the route; neither the file nor the key is written to a named disk path.
+The exported `exclusive_live_lock(cassettes)` context uses
+`/tmp/thusfar-oracle-live-<first 24 SHA-256 hex digits of the resolved cassette path>.lock`.
+Every live HTTP recorder sharing that tape holds this lock from preflight through its
+saved observation. The model transport refuses HTTP redirects, so a gateway 30x cannot
+forward Authorization. It also preserves the client's `LLM_BYPASS_PROXY=1` direct mode.
+The key, Authorization header, and model-settings `api_key_last4` are absent from the
+intent, cassette request envelope, and HTTP artifacts. This recorder calls the test route
+directly and never calls `model_settings.save()` or `public()`.
+
+Record mode creates a new receipt directory and writes `intent.json` with a task ID and
+keyless request digest **before** opening the provider connection. It refuses an existing
+receipt or cassette for the same request. If the process stops after the intent, inspect its
+original cassette and budget entry with read-only `reconcile`; do not start a new record
+invocation. The recorder first saves each credential-safe observed HTTP response as
+`attempt-http.jsonl`. An application failure stays there for read-only reconciliation.
+For a successful route it then writes `live-http.jsonl` and `observation.json`; a process
+stopped between those writes is reported as an observed success without the observation
+manifest. If the wire reply settled before any HTTP response was saved, that original
+HTTP response is unavailable. A later offline reconstruction from the existing cassette
+must be labeled reconstructed and cannot pass this recorder's observed-live verification.
+Responses with the key's last four characters are rejected from public HTTP receipts;
+a raw paid tape containing those characters must be quarantined and cannot be published.
+Only HTTP 200 with application `ok: true`, one complete wire response, and streamed token
+usage earns an
+`observation.json` and `live-http.jsonl`. The cassette audit keeps the actual token counts
+and guarded charge; the gateway's actual bill remains unknown without a provider receipt.
+
+The handler's actual nonempty reply text, capped by its own 20-character display limit,
+is retained. The fixture replaces only `server.model_settings.time.time` with a fixed clock
+in both live and replay runs, so the response's `0.0 秒` is controlled test data, not measured provider
+latency. The model client and server clocks remain real. The existing HTTP response recorder
+omits standard `Date` and `Server` headers; it retains status, allowed response headers,
+JSON body, model reply text, release value, and content length. Offline verification starts
+two separate Python 3.11 processes with different hash seeds, blocks nonloopback sockets,
+replays the original wire cassette, and compares both results byte for byte with the live
+HTTP observation before writing a golden.
+
+```bash
+$PY311 -m oracle.record.http_model_live record \
+  --cassettes oracle/cassettes/live --receipt /tmp/thusfar-settings-live-receipt
+$PY311 -m oracle.record.http_model_live reconcile \
+  --cassettes oracle/cassettes/live --receipt /tmp/thusfar-settings-live-receipt
+$PY311 -m oracle.record.http_model_live verify \
+  --cassettes oracle/cassettes/live --receipt /tmp/thusfar-settings-live-receipt \
+  --out /tmp/thusfar-settings-test-live.jsonl
+```
+
+Only the first command can contact the real provider. Review the code and existing tape
+budget before invoking it; the offline tests use a synthetic SSE cassette and make no live
+request. The receipt and verified golden require a credential scan before publication.
+The original intent keeps its absolute tape location for record/reconcile safety. Offline
+replay/verify accepts a relocated scanned tape after checking the original request digest,
+exact cassette file SHA-256, and the current full tape audit. A keyless copy of
+`intent.json`, `observation.json`, and `live-http.jsonl` can therefore be checked by CI in
+a different checkout. That copy is an observed HTTP receipt, not a new live attempt.
+
 The Node command imports the actual `web/js/kg.js`, calls `KG.world(cutoff)` at 20 evenly
 spaced cutoffs, and records people, relations, events, recaps, canonical identities, ranking,
 and per-person relations.
