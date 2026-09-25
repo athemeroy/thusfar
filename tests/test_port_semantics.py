@@ -1,0 +1,35 @@
+"""The Python side of the cross-language semantic fixtures."""
+
+import json
+import unittest
+from pathlib import Path
+
+
+CASES = Path(__file__).resolve().parents[1] / "oracle" / "semantics" / "py_json.jsonl"
+
+
+class TestPyJsonOracle(unittest.TestCase):
+    def test_ten_thousand_recorded_values_match_python(self):
+        with CASES.open(encoding="utf-8") as source:
+            for line in source:
+                case = json.loads(line)
+                with self.subTest(case=case["id"]):
+                    actual = json.dumps(
+                        case["value"],
+                        ensure_ascii=case["ensure_ascii"],
+                        sort_keys=case["sort_keys"],
+                        separators=(",", ":") if case["compact"] else None,
+                    )
+                    self.assertEqual(actual, case["expected"])
+
+    def test_non_finite_and_unicode_key_order(self):
+        self.assertEqual(json.dumps([float("nan"), float("inf"), -float("inf")]),
+                         "[NaN, Infinity, -Infinity]")
+        self.assertEqual(json.dumps({"𠮷": 1, "\ue000": 2}, ensure_ascii=False,
+                                    sort_keys=True), '{"\ue000": 2, "𠮷": 1}')
+        with self.assertRaises(ValueError):
+            json.dumps(float("nan"), allow_nan=False)
+
+
+if __name__ == "__main__":
+    unittest.main()
