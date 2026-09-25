@@ -25,3 +25,7 @@ __pycache__/
 .DS_Store
 core/.dart_tool/
 core/coverage/
+
+# cassette budget and tape flock files are created locally during recording
+oracle/cassettes/live/.budget.lock
+oracle/cassettes/live/.tape.lock
