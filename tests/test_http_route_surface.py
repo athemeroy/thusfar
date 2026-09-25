@@ -30,8 +30,9 @@ EXTRA_RECORDED_PAIRS = {
 }
 
 
-def _route_surface() -> tuple[set[tuple[str, str]], set[str], int]:
-    tree = ast.parse((ROOT / 'server/app.py').read_text(encoding='utf-8'))
+def _route_surface(source: str | None = None) -> tuple[set[tuple[str, str]], set[str], int]:
+    tree = ast.parse(source if source is not None else
+                     (ROOT / 'server/app.py').read_text(encoding='utf-8'))
     handler = next(node for node in tree.body
                    if isinstance(node, ast.ClassDef) and node.name == 'Handler')
     route = next(node for node in handler.body
@@ -60,7 +61,11 @@ def _route_surface() -> tuple[set[tuple[str, str]], set[str], int]:
         if not isinstance(node, ast.If):
             continue
         names = {part.id for part in ast.walk(node.test) if isinstance(part, ast.Name)}
-        if not ({'path', 'rest'} | (regexes.keys() - {'m'})) & names:
+        # `if not m` is the reviewed unknown-book-path guard. Every other use
+        # of a regex alias must be inventoried, including new `if m` branches.
+        if ast.unparse(node.test) == 'not m':
+            continue
+        if not ({'path', 'rest'} | regexes.keys()) & names:
             continue
         gate_count += 1
         comparisons = [part for part in ast.walk(node.test)
@@ -82,6 +87,12 @@ def _route_surface() -> tuple[set[tuple[str, str]], set[str], int]:
             if len(aliases) != 1:
                 raise AssertionError(f'unreviewed regex gate at server/app.py:{node.lineno}')
             family = REGEX_FAMILIES[aliases.pop()]
+        elif 'm' in names:
+            if any(isinstance(part, ast.UnaryOp) and isinstance(part.op, ast.Not)
+                   and isinstance(part.operand, ast.Name) and part.operand.id == 'm'
+                   for part in ast.walk(node.test)):
+                raise AssertionError(f'unreviewed negative book route gate at server/app.py:{node.lineno}')
+            family = '/api/books/{book}'
         elif ast.unparse(node.test) == "not path.startswith('/api/')":
             family = 'static'
         else:
@@ -108,10 +119,8 @@ def _route_surface() -> tuple[set[tuple[str, str]], set[str], int]:
 
 
 class HTTPRouteSurfaceTests(unittest.TestCase):
-    def test_every_declared_route_method_has_a_committed_success_response(self):
-        explicit, neutral, gates = _route_surface()
-        self.assertEqual(gates, 28)
-        self.assertEqual(len(explicit), 32)
+    def _assert_covered(self, source: str | None = None) -> None:
+        explicit, neutral, gates = _route_surface(source)
         self.assertEqual(neutral, METHOD_NEUTRAL_FAMILIES)
 
         observed: set[tuple[str, str]] = set()
@@ -133,8 +142,28 @@ class HTTPRouteSurfaceTests(unittest.TestCase):
                     successful.add(pair)
 
         representative = {(family, 'GET') for family in neutral}
+        missing = explicit - successful
+        self.assertFalse(missing, f'uncovered route methods: {sorted(missing)}')
         self.assertEqual(observed, explicit | representative | EXTRA_RECORDED_PAIRS)
-        self.assertFalse((explicit | representative) - successful)
+        self.assertFalse(representative - successful)
+        self.assertEqual(gates, 28)
+        self.assertEqual(len(explicit), 32)
+
+    def test_every_declared_route_method_has_a_committed_success_response(self):
+        self._assert_covered()
+
+    def test_new_book_resource_method_cannot_escape_route_audit(self):
+        source = (ROOT / 'server/app.py').read_text(encoding='utf-8')
+        marker = "        if rest == '' and method == 'GET':"
+        self.assertEqual(source.count(marker), 1)
+        altered = source.replace(marker,
+                                 "        if m and method == 'PATCH':\n"
+                                 "            return self.json({'ok': True})\n" + marker, 1)
+        explicit, _, gates = _route_surface(altered)
+        self.assertEqual(gates, 29)
+        self.assertIn(('/api/books/{book}', 'PATCH'), explicit)
+        with self.assertRaisesRegex(AssertionError, 'uncovered route methods.*PATCH'):
+            self._assert_covered(altered)
 
 
 if __name__ == '__main__':
