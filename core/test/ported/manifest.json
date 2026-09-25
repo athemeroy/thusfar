@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 10,
-    "pending_port": 152,
+    "translated_skipped": 13,
+    "pending_port": 149,
     "scope_exception": 9
   },
   "tests": [
@@ -252,7 +252,7 @@
       "direct_targets": [
         "pipeline.llm._classifier_batches"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free batches preserve twenty dimension limit'."
     },
     {
@@ -272,7 +272,7 @@
       "direct_targets": [
         "pipeline.llm._classifier_batches"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free serialized dimension boundary is inclusive'."
     },
     {
@@ -292,7 +292,7 @@
       "direct_targets": [
         "pipeline.llm._classifier_batches"
       ],
-      "status": "pending_port",
+      "status": "translated_skipped",
       "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free instruction limit is checked before submission'."
     },
     {

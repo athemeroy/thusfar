@@ -1,6 +1,24 @@
 // Generated from docs/port/inventory.json by core/tool/generate_ported_tests.py.
 // Skipped failing callbacks are unported assertions, not translations.
 import 'package:test/test.dart';
+import 'package:thusfar_core/src/py/py_json.dart';
+
+import 'contract_invoker.dart';
+
+List<Object?> classifierBatches(Map<String, Object?> questions) =>
+    callPorted('pipeline.llm._classifier_batches', {'questions': questions})
+        as List<Object?>;
+
+List<Object?> batchTuple(Object? value) =>
+    (value as Map<String, Object?>)['\$tuple'] as List<Object?>;
+
+Map<String, Object?> choiceQuestion(String instructions) => {
+  'type': 'choice',
+  'instructions': instructions,
+  'criteria': {'yes': 'Supported', 'no': 'Unsupported'},
+};
+
+String repeatText(String text, int count) => List.filled(count, text).join();
 
 void main() {
   test(
@@ -69,25 +87,59 @@ void main() {
   );
   test(
     "tests.test_judge_client.JudgeClient.test_free_batches_preserve_twenty_dimension_limit",
-    () => fail(
-      "Dart port not implemented: tests.test_judge_client.JudgeClient.test_free_batches_preserve_twenty_dimension_limit",
-    ),
+    () {
+      final questions = <String, Object?>{
+        for (var i = 0; i < 41; i++) 'q$i': choiceQuestion('Is it supported?'),
+      };
+      final sizes =
+          classifierBatches(questions)
+              .map((batch) => (batchTuple(batch)[0] as List<Object?>).length)
+              .toList();
+      expect(sizes, [20, 20, 1]);
+    },
     skip:
         "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free batches preserve twenty dimension limit'.",
   );
   test(
     "tests.test_judge_client.JudgeClient.test_free_serialized_dimension_boundary_is_inclusive",
-    () => fail(
-      "Dart port not implemented: tests.test_judge_client.JudgeClient.test_free_serialized_dimension_boundary_is_inclusive",
-    ),
+    () {
+      final questions = <String, Object?>{
+        for (var i = 0; i < 5; i++)
+          'q$i': choiceQuestion(i < 4 ? repeatText('甲', 3000) : ''),
+      };
+      Map<String, Object?> firstDimensions() =>
+          batchTuple(classifierBatches(questions).first)[1]
+              as Map<String, Object?>;
+      final overhead =
+          PyJson.encode(firstDimensions(), ensureAscii: false).length;
+      final fifth = questions['q4']! as Map<String, Object?>;
+      fifth['instructions'] = repeatText('甲', 16000 - overhead);
+      expect(
+        PyJson.encode(firstDimensions(), ensureAscii: false).length,
+        16000,
+      );
+      fifth['instructions'] = (fifth['instructions']! as String) + '甲';
+      final sizes =
+          classifierBatches(questions)
+              .map((batch) => (batchTuple(batch)[0] as List<Object?>).length)
+              .toList();
+      expect(sizes, [4, 1]);
+    },
     skip:
         "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free serialized dimension boundary is inclusive'.",
   );
   test(
     "tests.test_judge_client.JudgeClient.test_free_instruction_limit_is_checked_before_submission",
-    () => fail(
-      "Dart port not implemented: tests.test_judge_client.JudgeClient.test_free_instruction_limit_is_checked_before_submission",
-    ),
+    () {
+      final response =
+          callPorted('pipeline.llm._classifier_batches', {
+                'questions': {'q': choiceQuestion(repeatText('甲', 4000))},
+              })
+              as Map<String, Object?>;
+      final error = response['\$error']! as Map<String, Object?>;
+      expect(error['type'], 'pipeline.llm.LLMError');
+      expect(error['message'], contains('4000'));
+    },
     skip:
         "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free instruction limit is checked before submission'.",
   );
