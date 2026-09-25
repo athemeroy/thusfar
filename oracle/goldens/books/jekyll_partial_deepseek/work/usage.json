@@ -1,1 +1,1 @@
-{"prompt":88592,"completion":36083,"jev_calls":120,"llm_calls":39,"by_model":{"deepseek-flash+nothink":{"calls":39,"prompt":88592,"completion":36083}},"jev":{"calls":155,"chars":2108427,"questions":953,"paid_chars":0,"passage_chars":1475467,"attempts":158,"retries":3}}
+{"prompt":88592,"completion":36083,"jev_calls":126,"llm_calls":39,"by_model":{"deepseek-flash+nothink":{"calls":39,"prompt":88592,"completion":36083}},"jev":{"calls":162,"chars":2205563,"questions":986,"paid_chars":0,"passage_chars":1547474,"attempts":165,"retries":3}}
