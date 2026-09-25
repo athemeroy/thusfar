@@ -41,6 +41,36 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_book_snapshot_rejects_symlinked_files_and_directories(self):
+        from oracle.record.artifacts import snapshot
+
+        with tempfile.TemporaryDirectory(prefix='thusfar-artifact-link-test-') as tmp:
+            root = Path(tmp) / 'book'
+            work = root / 'work'
+            external = Path(tmp) / 'external'
+            work.mkdir(parents=True)
+            external.mkdir()
+            for name in ('book.json', 'kg.json', 'status.json'):
+                (root / name).write_text('{}')
+            (work / 'usage.json').write_text('{}')
+            (external / 'private.json').write_text('{}')
+
+            hidden = work / 'hidden'
+            hidden.symlink_to(external, target_is_directory=True)
+            with self.assertRaisesRegex(UnsafeValue, 'symlink.*work/hidden'):
+                snapshot(root, Path(tmp) / 'out-hidden')
+            hidden.unlink()
+            (work / 'usage.json').unlink()
+            work.rmdir()
+            work.symlink_to(external, target_is_directory=True)
+            with self.assertRaisesRegex(UnsafeValue, 'symlink.*work'):
+                snapshot(root, Path(tmp) / 'out-work')
+            work.unlink()
+            (root / 'book.json').unlink()
+            (root / 'book.json').symlink_to(external / 'private.json')
+            with self.assertRaisesRegex(UnsafeValue, 'symlink.*book.json'):
+                snapshot(root, Path(tmp) / 'out-book')
+
     def test_book_snapshot_ignores_only_the_judge_retry_duration(self):
         from oracle.record.artifacts import snapshot
 

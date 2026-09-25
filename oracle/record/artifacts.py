@@ -40,12 +40,20 @@ def without_times(value, artifact: str = '', path: tuple[str, ...] = ()):
 def files_for(root: Path):
     for name in _TOP:
         path = root / name
+        if path.is_symlink():
+            raise UnsafeValue(f'symlink in book artifacts: {path.relative_to(root)}')
         if path.is_file():
             yield path
     for dirname in ('work', 'mentions'):
         directory = root / dirname
+        if directory.is_symlink():
+            raise UnsafeValue(f'symlink in book artifacts: {directory.relative_to(root)}')
         if directory.is_dir():
-            yield from sorted(path for path in directory.rglob('*') if path.is_file())
+            for path in sorted(directory.rglob('*')):
+                if path.is_symlink():
+                    raise UnsafeValue(f'symlink in book artifacts: {path.relative_to(root)}')
+                if path.is_file():
+                    yield path
 
 
 def snapshot(root: Path, out: Path) -> dict[str, str]:
