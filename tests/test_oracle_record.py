@@ -41,6 +41,27 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_volatile_unittest_revision_is_skipped_but_manual_value_is_recorded(self):
+        from server import marginalia
+        function = 'server.marginalia._key'
+        locations = {('server/marginalia.py', marginalia._key.__code__.co_firstlineno): function}
+        collector = Collector({function}, locations, (), 100)
+        payload = {'mode': 'cues', 'pos': 7, 'graph_revision': (10, 20, 30)}
+        previous_trace = sys.gettrace()
+        try:
+            collector.phase = 'unittest'
+            sys.settrace(collector.trace)
+            first = marginalia._key(payload)
+            self.assertNotIn(function, collector.samples)
+            collector.phase = 'manual'
+            second = marginalia._key(payload)
+        finally:
+            sys.settrace(previous_trace)
+        self.assertEqual(first, second)
+        self.assertEqual(len(collector.samples[function]), 1)
+        self.assertEqual(collector.skipped[(function,
+                                            'test-generated clock/inode input; fixed special oracle exists')], 1)
+
     def test_http_normalizes_worker_fields_only_on_health_route(self):
         class Reply:
             status = 200
@@ -64,7 +85,7 @@ class OracleRecordSafety(unittest.TestCase):
                                  (), 'GET', 'health')
         self.assertEqual(health['body_json'], {'worker': {'busy': False}})
 
-    def test_trace_keeps_handled_exception_returning_none_but_skips_propagation(self):
+    def test_trace_keeps_handled_none_and_tags_propagated_errors(self):
         from pipeline import llm
         locations = {
             ('pipeline/llm.py', llm.explain.__code__.co_firstlineno): 'pipeline.llm.explain',
@@ -82,9 +103,9 @@ class OracleRecordSafety(unittest.TestCase):
         self.assertEqual(len(collector.samples['pipeline.llm.explain']), 1)
         sample = next(iter(collector.samples['pipeline.llm.explain'].values()))
         self.assertIsNone(sample['output'])
-        self.assertNotIn('pipeline.llm.parse_json', collector.samples)
-        self.assertEqual(collector.skipped[('pipeline.llm.parse_json',
-                                            'propagated an exception')], 1)
+        failed = next(iter(collector.samples['pipeline.llm.parse_json'].values()))
+        self.assertEqual(failed['output']['$error']['type'], 'builtins.ValueError')
+        self.assertIn('JSON', failed['output']['$error']['message'])
 
     def test_synthetic_stream_http_error_and_free_jev_replay_offline(self):
         from pipeline import llm

@@ -29,6 +29,21 @@ from .common import (ObjectView, UnsafeValue, digest, encode, known_secrets,
                      require_reference_runtime, write_json, write_jsonl)
 
 ROOT = Path(__file__).resolve().parents[2]
+_VOLATILE_TEST_FUNCTIONS = {
+    'server.manual_entities._base', 'server.manual_entities.mentions',
+    'server.manual_entities.restore', 'server.manual_entities.rows',
+    'server.marginalia._key', 'server.notebook.validate',
+}
+
+
+def _contains_test_revision(value: object) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ('created', 'updated', 'graph_revision')):
+            return True
+        return any(_contains_test_revision(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_contains_test_revision(item) for item in value)
+    return False
 
 
 def included_functions(path: Path | None, inventory: Path) -> tuple[set[str], dict[tuple[str, int], str]]:
@@ -65,6 +80,7 @@ class Collector:
         self.rejected_corpus = []
         self.conflicts: dict[str, set[str]] = {}
         self.lock = threading.Lock()
+        self.phase = 'none'
 
     def trace(self, frame, event, arg):
         if event != 'call':
@@ -92,6 +108,11 @@ class Collector:
         if frame.f_code.co_flags & 0x08:  # **kwargs
             names += frame.f_code.co_varnames[var_count:var_count + 1]
         inputs = {name: frame.f_locals[name] for name in names if name in frame.f_locals}
+        if self.phase == 'unittest' and function in _VOLATILE_TEST_FUNCTIONS and \
+                _contains_test_revision(inputs):
+            with self.lock:
+                self.skipped[(function, 'test-generated clock/inode input; fixed special oracle exists')] += 1
+            return None
         if 'self' in inputs:
             inputs['self'] = ObjectView(inputs['self'], frozenset(frame.f_code.co_names))
         try:
@@ -101,11 +122,13 @@ class Collector:
                 self.skipped[(function, str(exc))] += 1
             return None
         had_exception = False
+        last_exception = None
 
         def local(_frame, kind, result):
-            nonlocal had_exception
+            nonlocal had_exception, last_exception
             if kind == 'exception':
                 had_exception = True
+                last_exception = result[1]
             elif kind == 'return':
                 # CPython emits a return(None) trace event while an exception propagates.
                 # A caught exception can also end in a legitimate return(None). The current
@@ -114,8 +137,13 @@ class Collector:
                 opcode = _frame.f_code.co_code[_frame.f_lasti] if _frame.f_lasti >= 0 else None
                 explicit_return = opcode == dis.opmap['RETURN_VALUE']
                 if had_exception and result is None and not explicit_return:
-                    with self.lock:
-                        self.skipped[(function, 'propagated an exception')] += 1
+                    try:
+                        if last_exception is None:
+                            raise UnsafeValue('propagated exception was not available')
+                        self.add(function, encoded, encode(last_exception, self.secrets))
+                    except UnsafeValue as exc:
+                        with self.lock:
+                            self.skipped[(function, str(exc))] += 1
                 else:
                     try:
                         output = encode(result, self.secrets)
@@ -332,14 +360,19 @@ def main() -> int:
             sys.settrace(collector.trace)
             threading.settrace(collector.trace)
             if args.manual:
+                collector.phase = 'manual'
                 run_manual(args.manual)
             if args.unittest:
+                collector.phase = 'unittest'
                 ok = run_python_tests() and ok
             if args.corpus:
+                collector.phase = 'corpus'
                 run_corpus(args.corpus, collector)
             if args.script:
+                collector.phase = 'script'
                 runpy.run_path(str(args.script), run_name='__main__')
             for source in args.replay_book:
+                collector.phase = 'book-replay'
                 run_book_replay(source, args.cassettes, args.book_start, args.concurrency)
     finally:
         sys.settrace(old_trace)
