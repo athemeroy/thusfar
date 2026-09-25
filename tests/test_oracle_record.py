@@ -41,6 +41,33 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_book_snapshot_ignores_only_the_judge_retry_duration(self):
+        from oracle.record.artifacts import snapshot
+
+        with tempfile.TemporaryDirectory(prefix='thusfar-retry-artifact-test-') as tmp:
+            roots = [Path(tmp) / f'book-{index}' for index in range(2)]
+            outputs = [Path(tmp) / f'golden-{index}' for index in range(2)]
+            for root, delay in zip(roots, (2.1, 2.9)):
+                (root / 'work').mkdir(parents=True)
+                (root / 'book.json').write_text('{}')
+                (root / 'kg.json').write_text('{}')
+                (root / 'status.json').write_text(json.dumps({
+                    'usage': {'jev': {'retry_wait_seconds': delay, 'retries': 1}},
+                    'reading': {'retry_wait_seconds': 7},
+                }))
+                (root / 'work/usage.json').write_text(json.dumps({
+                    'jev': {'retry_wait_seconds': delay, 'attempts': 2},
+                    'other': {'retry_wait_seconds': 7},
+                }))
+            hashes = [snapshot(root, out) for root, out in zip(roots, outputs)]
+            self.assertEqual(hashes[0], hashes[1])
+            status = json.loads((outputs[0] / 'status.json').read_text())
+            usage = json.loads((outputs[0] / 'work/usage.json').read_text())
+            self.assertEqual(status, {'usage': {'jev': {'retries': 1}},
+                                      'reading': {'retry_wait_seconds': 7}})
+            self.assertEqual(usage, {'jev': {'attempts': 2},
+                                     'other': {'retry_wait_seconds': 7}})
+
     def test_volatile_unittest_revision_is_skipped_but_manual_value_is_recorded(self):
         from server import marginalia
         function = 'server.marginalia._key'

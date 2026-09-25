@@ -18,14 +18,22 @@ from .functions import LoopbackOnly
 ROOT = Path(__file__).resolve().parents[2]
 _TIME_KEYS = {'updated', 'started', 'finished', 'created', 'exported',
               '_secs', '_ttft', 'seconds', 'timing'}
+# The free judge records its random retry delay as telemetry. It is a duration,
+# not a reading result; keep the same-named field elsewhere if one is added.
+_RUNTIME_TIME_PATHS = {
+    ('status.json', ('usage', 'jev', 'retry_wait_seconds')),
+    ('work/usage.json', ('jev', 'retry_wait_seconds')),
+}
 _TOP = ('book.json', 'kg.json', 'status.json')
 
 
-def without_times(value):
+def without_times(value, artifact: str = '', path: tuple[str, ...] = ()):
     if isinstance(value, dict):
-        return {key: without_times(item) for key, item in value.items() if key not in _TIME_KEYS}
+        return {key: without_times(item, artifact, path + (key,))
+                for key, item in value.items()
+                if key not in _TIME_KEYS and (artifact, path + (key,)) not in _RUNTIME_TIME_PATHS}
     if isinstance(value, list):
-        return [without_times(item) for item in value]
+        return [without_times(item, artifact, path) for item in value]
     return value
 
 
@@ -50,7 +58,7 @@ def snapshot(root: Path, out: Path) -> dict[str, str]:
         target = out / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         if source.suffix == '.json':
-            obj = without_times(json.loads(source.read_text(encoding='utf-8')))
+            obj = without_times(json.loads(source.read_text(encoding='utf-8')), rel.as_posix())
             data = (canonical(obj) + '\n').encode('utf-8')
         else:
             data = source.read_bytes()
@@ -113,7 +121,9 @@ def replay(source: Path, cassette_dir: Path, out: Path, start: str, repeat: int,
         write_json(out / 'provenance.json', {
             'schema': 1, 'source': 'deepseek-flash+nothink cassette replay',
             'source_snapshot': source.name, 'book_start': start,
-            'passes': repeat, 'artifact_sha256': reference})
+            'passes': repeat, 'artifact_sha256': reference,
+            'normalizations': sorted(_TIME_KEYS) + [
+                f'{artifact}:{".".join(path)}' for artifact, path in sorted(_RUNTIME_TIME_PATHS)]})
         return reference
 
 
