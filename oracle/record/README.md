@@ -1,0 +1,127 @@
+# Python 1.7.5 oracle recorders
+
+Use Python 3.11.13, the version embedded by the 1.7.x Android app. The system `python3`
+may be Python 3.13 and has different Unicode behavior. All commands below are launched from
+the repository root. Recording is an A0 activity; nothing here changes the Python engine.
+
+## Function calls
+
+`functions.py` reads `docs/port/inventory.json`, selects rows categorized `纯函数`, and
+matches calls by source path and definition line. This disambiguates the two nested `_toc.walk`
+functions. It traces the Python test suite, parser corpus, manually supplied edge cases, and
+optional book replays. Inputs are copied at call entry and outputs at return. Non-JSON Python
+types carry tags (`$tuple`, `$set`, `$map`, `$bytes`, `$xml`, `$path`). Unsupported values are
+counted in `record-report.json`, never silently discarded. Duplicate inputs with different
+outputs are reported as non-deterministic and receive no golden file.
+
+```bash
+PY311=/home/dev/.local/share/uv/python/cpython-3.11.13-linux-x86_64-gnu/bin/python3.11
+$PY311 -m oracle.record.functions \
+  --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
+  --out /tmp/thusfar-functions-pass-1
+$PY311 -m oracle.record.functions \
+  --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
+  --out /tmp/thusfar-functions-pass-2
+diff -r /tmp/thusfar-functions-pass-1 /tmp/thusfar-functions-pass-2
+```
+
+The corpus includes an intentionally empty TXT. `expected_rejections.json` states its exact
+Python exception and text; any other unexpected parser error stops recording. Test workloads
+can use loopback fake servers, while the function recorder blocks non-loopback connections.
+
+After actual model cassettes exist, add `--replay-book oracle/corpus/snapshots/<book_id>` and
+`--cassettes oracle/cassettes` to the same command. Use `--book-start fresh` for a new book and
+`--book-start resume` for a 1.7.x partial snapshot. A single workload can repeat
+`--replay-book` for several books.
+
+## Model and free JEV cassettes
+
+`cassettes.py` intercepts only `pipeline.llm._opener`. Each request digest covers method,
+URL, nonsecret headers, and the exact UTF-8 request body. It deliberately excludes every
+authorization header. Responses preserve status, relevant headers, raw read chunks, HTTP
+errors, and socket timeouts. Replaying a missing request fails closed. Synthetic transport
+cases are generated separately and labelled `source: synthetic`:
+
+```bash
+$PY311 -m oracle.record.failure_cassettes /tmp/thusfar-failure-cassettes
+```
+
+The live command requires explicit invocation and a fresh working directory. It accepts only
+`deepseek-flash+nothink` at `https://open.xiaojingai.com/v1` and the keyless
+`classifier.dev` route. It reads `NAS_DEFAULT_KEY` through the existing Python client without
+displaying or saving it. Attempt caps bound the number of requests. Before each model request,
+`budget-ledger.json` durably reserves a conservative upper bound from UTF-8 request bytes,
+the requested output token ceiling, and **twice** the gateway rates in `pipeline/models.py`
+to cover a possible peak tariff. A shared
+lock and a cumulative `--max-cny` ceiling of at most ¥1 prevent separate runs from exceeding
+the same cassette directory's guarded estimate. A response with token usage settles to a
+token-based rate estimate; the actual account bill requires a gateway receipt.
+An error or missing usage keeps the full reservation charged. The ledger retains a reservation
+if a process dies mid-request. A copied book is used so corpus files remain unchanged.
+Concurrent attempts for the same request digest can be replayed only when their replies are
+identical. Divergent sequential retries, such as a 503 followed by success, retain their
+request order. The scanner rejects ambiguous concurrent replies.
+
+```bash
+$PY311 -m oracle.record.workload oracle/corpus/snapshots/<book_id> \
+  --mode record --start fresh --working-book /tmp/thusfar-live-book \
+  --cassettes oracle/cassettes --max-model-attempts 16 --max-jev-attempts 200 \
+  --max-cny 1.0
+```
+
+Use `--mode replay` with a different `--working-book` to consume existing cassettes without
+network access. Never record a new live run merely to diagnose an uncertain earlier run;
+inspect and reconcile its original working directory and cassette request digests.
+Use `--resume-existing` with the same source, working directory, cassette directory, and start
+mode to continue an interrupted live run. It checks the source hash, receipt, and cassette
+ledger before doing paid work. A pending request requires reconciliation first.
+
+## Book artifacts, HTTP routes, and browser fold
+
+`artifacts.py --mode historical-cache` freezes the two 1.7.x public-domain snapshots directly,
+with their original model names in `provenance.json`. It never presents cached Gemini or Terra
+outputs as DeepSeek wire replies. Once actual DeepSeek cassettes exist, `--mode cassette-replay`
+copies a source book and runs each pass in a separate Python interpreter so global JEV counts,
+rate state, and circuit breakers start clean. Both modes publish `book.json`, `work/**`,
+`kg.json`, `mentions/**`, and `status.json` only if every normalized file is byte-identical.
+The normalizer removes only fields that
+represent elapsed or wall clock time (`updated`, `started`, `finished`, `created`, `exported`,
+`_secs`, `_ttft`, `seconds`, `timing`). All other fields, list order, and file presence remain
+part of the comparison.
+
+```bash
+$PY311 -m oracle.record.artifacts oracle/corpus/snapshots/aq_complete \
+  --mode historical-cache --out oracle/goldens/books/aq_complete
+$PY311 -m oracle.record.artifacts oracle/corpus/snapshots/<book_id> \
+  --mode cassette-replay --start fresh --cassettes oracle/cassettes \
+  --out oracle/goldens/books/<book_id>-deepseek
+```
+
+`http_routes.py` exercises every route family in `server.app.Handler.route` with an isolated copy
+of a corpus book over a reused HTTP/1.1 connection. It includes successful writes and
+validation failures. Each pass hard-links the same baseline files so inode-based revision
+values stay stable. It freezes the server clock, keeps the original response version and
+time fields, and replaces only the random session cookie value with `<session>`; cookie
+attributes remain. The companion `-report.json` records that normalization. Routes that
+require a real model are currently represented by their validation/error responses; a later
+cassette-backed pass can add successful model responses.
+Reuse one persistent `--baseline` path across separate invocations; moving it to another
+filesystem can change inode-derived revision values.
+
+```bash
+$PY311 -m oracle.record.http_routes oracle/corpus/snapshots/aq_complete \
+  --baseline /tmp/thusfar-http-aq-baseline \
+  --out oracle/goldens/http/aq_complete.jsonl
+node oracle/record/fold.mjs oracle/corpus/snapshots/aq_complete \
+  oracle/goldens/books/aq_complete/fold.jsonl
+```
+
+The Node command imports the actual `web/js/kg.js`, calls `KG.world(cutoff)` at 20 evenly
+spaced cutoffs, and records people, relations, events, recaps, canonical identities, ranking,
+and per-person relations.
+
+Before committing any cassette or golden tree, scan decoded response chunks as well as JSON:
+
+```bash
+$PY311 -m oracle.record.scan oracle/cassettes oracle/goldens
+```

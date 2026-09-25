@@ -16,7 +16,8 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .common import UnsafeValue, canonical, digest, known_secrets, write_json, write_jsonl
+from .common import (UnsafeValue, canonical, digest, known_secrets,
+                     require_reference_runtime, write_json, write_jsonl)
 from .functions import LoopbackOnly
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,6 +25,53 @@ ILLUSTRATED_EPUB = ROOT / 'oracle/corpus/synthetic/footnote_illustration.epub'
 _HEADERS = ('content-type', 'cache-control', 'etag', 'content-encoding', 'content-disposition',
             'content-length', 'x-content-type-options', 'x-yedu-release', 'connection',
             'retry-after', 'content-security-policy', 'vary', 'set-cookie')
+
+# This is a reviewed acceptance contract, not inferred from the response being recorded.
+# A stable 404/500 on a route intended to succeed must fail before a golden is written.
+_EXPECTED_REPLIES = {
+    'healthz': (200, 'ok release'), 'healthz-head': (200, ''),
+    'static': (200, ''), 'static-root': (200, ''), 'static-304': (304, ''),
+    'static-gzip': (200, ''), 'static-missing': (404, ''),
+    'login': (200, 'ok'), 'me': (200, 'ok passcode'),
+    'cross-origin': (403, 'error'), 'logout': (200, 'ok'),
+    'health': (200, 'cache release worker'),
+    'settings-get': (200, 'api_key_last4 api_key_set base_url jev_route model'),
+    'settings-test': (200, 'message ok'),
+    'settings-put': (200, 'api_key_last4 api_key_set base_url jev_route model'),
+    'reading-list-get': (200, 'items operation revision updated'),
+    'reading-list-put': (200, 'items operation revision updated'),
+    'reading-list-after-put': (200, 'items operation revision updated'),
+    'reading-list-conflict': (409, 'error list'),
+    'reading-list-invalid': (400, 'error'), 'unknown-api': (404, 'error'),
+    'books-get': (200, '[]'), 'books-post': (400, 'error'),
+    'books-upload-illustrated': (200, 'added author auto chapters cover est genre id lang len progress spent status thin title'),
+    'book-image-illustrated': (200, ''), 'book-delete-illustrated': (200, 'ok'),
+    'books-import': (400, 'error'),
+    'book-get': (200, 'author chapters genre id lang len progress status thin title version'),
+    'book-head': (200, ''),
+    'book-export': (200, 'assets book exported format id kg manual_entities mentions meta notebook progress status version'),
+    'book-offline-manifest': (200, 'assets book chapters frontier graph notebook state version'),
+    'book-chapter': (200, 'blocks kind mentions n notes o0 o1 parent title'),
+    'book-kg': (200, 'before from frontier records state to'),
+    'book-manual-get': (200, 'items'), 'book-manual-put': (200, 'item'),
+    'book-manual-after-put': (200, 'items'), 'book-manual-invalid': (400, 'error'),
+    'book-notebook-get': (200, 'items'), 'book-notebook-put': (200, 'item'),
+    'book-notebook-after-put': (200, 'items'), 'book-notebook-invalid': (400, 'error'),
+    'book-notebook-md': (200, ''),
+    'book-progress': (200, 'ok progress'), 'book-progress-post': (200, 'ok progress'),
+    'book-progress-conflict': (409, 'error progress'),
+    'book-kind': (200, 'genre ok'), 'book-kind-invalid': (400, 'error'),
+    'book-process-post': (200, 'ok status'), 'book-process-delete': (200, 'ok status'),
+    'book-who': (400, 'error'), 'book-who-no-person': (200, 'ok why'),
+    'book-marginalia': (400, 'error'),
+    'book-marginalia-empty-cues': (200, 'cached created items key reason'),
+    'book-marginalia-empty-cues-cached': (200, 'cached created items key reason'),
+    'book-ask': (400, 'error'), 'book-img': (404, 'error'),
+    'book-delete': (200, 'ok'),
+    'books-import-success': (200, 'added author auto chapters cover est genre id lang len progress spent status thin title'),
+    'books-import-duplicate': (200, 'added author auto chapters cover est genre id lang len progress spent status thin title'),
+    'book-delete-imported': (200, 'ok'),
+}
 
 
 def route_cases(book: dict) -> list[dict]:
@@ -334,6 +382,35 @@ def assert_route_acceptance(rows: list[dict]) -> list[dict]:
     positions = {row['route']: index for index, row in enumerate(rows)}
     if len(by_id) != len(rows):
         raise ValueError('HTTP route case IDs are not unique')
+    expected_ids = set(_EXPECTED_REPLIES)
+    case_ids = {case['id'] for case in route_cases({'len': 0, 'blocks': []})}
+    if set(by_id) != expected_ids or case_ids != expected_ids:
+        raise ValueError(f'HTTP route IDs differ from reviewed acceptance contract: '
+                         f'missing={sorted(expected_ids - set(by_id))}; '
+                         f'unreviewed={sorted(set(by_id) - expected_ids)}; '
+                         f'case_mismatch={sorted(case_ids ^ expected_ids)}')
+    for route_id, row in by_id.items():
+        expected_status, shape = _EXPECTED_REPLIES[route_id]
+        reply = row['response']
+        if reply['status'] != expected_status:
+            raise ValueError(f'HTTP {route_id} status {reply["status"]}; expected {expected_status}')
+        if shape == '[]':
+            if not isinstance(reply.get('body_json'), list):
+                raise ValueError(f'HTTP {route_id} expected a JSON list')
+        elif shape:
+            body = reply.get('body_json')
+            if not isinstance(body, dict) or set(body) != set(shape.split()):
+                raise ValueError(f'HTTP {route_id} JSON keys differ from reviewed shape')
+        else:
+            encoded = reply.get('body_base64')
+            if not isinstance(encoded, str) or 'body_json' in reply:
+                raise ValueError(f'HTTP {route_id} expected a binary or empty body')
+            raw = base64.b64decode(encoded, validate=True)
+            if route_id in ('healthz-head', 'static-304', 'book-head'):
+                if raw:
+                    raise ValueError(f'HTTP {route_id} expected an empty body')
+            elif not raw:
+                raise ValueError(f'HTTP {route_id} unexpectedly returned an empty body')
     required_success = ('books-upload-illustrated', 'book-image-illustrated',
                         'book-export', 'books-import-success', 'books-import-duplicate',
                         'book-process-post', 'book-process-delete', 'book-who-no-person',
@@ -367,6 +444,7 @@ def assert_route_acceptance(rows: list[dict]) -> list[dict]:
 
 
 def main() -> None:
+    require_reference_runtime()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('book', type=Path, help='isolated corpus book directory, named by book id')
     parser.add_argument('--baseline', type=Path, required=True,
