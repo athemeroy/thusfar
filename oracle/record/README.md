@@ -29,6 +29,24 @@ The corpus includes an intentionally empty TXT. `expected_rejections.json` state
 Python exception and text; any other unexpected parser error stops recording. Test workloads
 can use loopback fake servers, while the function recorder blocks non-loopback connections.
 
+`verify_function_goldens.py` audits the exact ordinary `pipeline/` and `server/` JSONL file
+set against `record-report.json`, every physical sample count (maximum 200), sorted unique
+input digests, the 128 selected pure-function IDs in the current inventory, zero conflicts,
+and the five unobserved functions' named special fixtures. It checks the report byte hash and
+provenance totals. The final two-pass provenance must declare this explicit tree algorithm:
+SHA-256 over files sorted by POSIX relative path, feeding each UTF-8 path, one NUL byte, and
+the raw 32-byte SHA-256 digest of that file's bytes. The tree includes 123 ordinary function
+JSONL files plus `record-report.json`, and excludes special goldens and provenance itself.
+Run `--tree-sha` after both passes match to calculate the value before writing provenance;
+the default command then checks that declared digest. The earlier provenance has an
+undocumented tree hash and fails this stricter check until the final double recording updates
+it; the old value is retained as historical evidence.
+
+```bash
+$PY311 -m oracle.record.verify_function_goldens --tree-sha
+$PY311 -m oracle.record.verify_function_goldens
+```
+
 After actual model cassettes exist, add `--replay-book oracle/corpus/snapshots/<book_id>` and
 `--cassettes oracle/cassettes` to the same command. Use `--book-start fresh` for a new book and
 `--book-start resume` for a 1.7.x partial snapshot. A single workload can repeat
