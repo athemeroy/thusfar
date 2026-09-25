@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 123,
-    "pending_port": 48,
+    "translated_skipped": 132,
+    "pending_port": 39,
     "scope_exception": 0
   },
   "tests": [
@@ -3890,8 +3890,11 @@
       "direct_targets": [
         "pipeline.run.drop_unsupported"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.run.drop_unsupported is pending (A3, A4, A5); required to check 'added worded relation gets own check and negative is dropped'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_changed_existing_wording_invalidates_only_its_old_check",
@@ -3912,8 +3915,11 @@
       "direct_targets": [
         "pipeline.run.drop_unsupported"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.run.drop_unsupported is pending (A3, A4, A5); required to check 'changed existing wording invalidates only its old check'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_confident_context_judge_corrects_a_canonical_reversed_role",
@@ -3932,8 +3938,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.llm, pipeline.run is pending (A3, A4, A5); required to check 'confident context judge corrects a canonical reversed role'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_legacy_cached_rewrite_is_checked_once_and_other_keys_survive",
@@ -3952,8 +3961,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.llm, pipeline.run is pending (A3, A4, A5); required to check 'legacy cached rewrite is checked once and other keys survive'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_fingerprints_detect_changed_claim_and_complete_passage",
@@ -3972,8 +3984,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.llm, pipeline.run is pending (A3, A4, A5); required to check 'fingerprints detect changed claim and complete passage'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_fresh_event_sampling_is_stable_and_legacy_sampling_is_preserved",
@@ -3992,8 +4007,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.llm, pipeline.run is pending (A3, A4, A5); required to check 'fresh event sampling is stable and legacy sampling is preserved'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_failed_check_retries_from_cache_without_reextracting",
@@ -4012,8 +4030,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.llm, pipeline.run is pending (A3, A4, A5); required to check 'failed check retries from cache without reextracting'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_partial_answer_retries_only_missing_question",
@@ -4032,8 +4053,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.llm, pipeline.run is pending (A3, A4, A5); required to check 'partial answer retries only missing question'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     },
     {
       "id": "tests.test_support_cache.SupportCache.test_relation_failure_keeps_successful_checks_and_never_reextracts",
@@ -4052,8 +4076,11 @@
         "A5"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of pipeline.extract, pipeline.llm, pipeline.run is pending (A3, A4, A5); required to check 'relation failure keeps successful checks and never reextracts'."
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "A5 Runner support cache, relation judge, and scripted model/file adapters"
+      ]
     }
   ]
 }
