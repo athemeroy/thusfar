@@ -336,6 +336,14 @@ def paused_snapshot_provenance() -> dict:
     }
 
 
+def notebook_history_provenance() -> dict:
+    if __package__:
+        from .notebook_history import provenance
+    else:
+        from notebook_history import provenance
+    return provenance()
+
+
 def make_api_paused_snapshot() -> None:
     if __package__:
         from .paused_annotated_snapshot import write
@@ -364,6 +372,7 @@ def write_manifest() -> None:
             "aq_complete": {"origin": "local 1.7.x library/e3f53d01f830aedf", "state": "done", "rights": "public-domain source text; historical model output", "personal_data": False},
             "aq_annotated": {"origin": "isolated aq_complete copy; synthetic fixture note persisted by actual Python 1.7.5 HTTP notebook PUT with fixed clock", "state": "done with 1 API-written note", "rights": "public-domain source text; historical model output; MIT fixture note", "personal_data": False, "api_code_sha256": api_code_sha256()},
             "aq_paused_annotated": paused_snapshot_provenance(),
+            "aq_notebook_history": notebook_history_provenance(),
             "aq_notebook_overlay": {"origin": "synthetic note on real 阿Q snapshot", "state": "synthetic", "rights": "MIT (this repository)", "personal_data": False},
         },
         "files": files,
@@ -377,6 +386,8 @@ def verify() -> None:
         raise ValueError("Annotated snapshot API code provenance differs from its pinned generator")
     if manifest["snapshots"].get("aq_paused_annotated") != paused_snapshot_provenance():
         raise ValueError("Paused/annotated snapshot provenance differs from pinned replay/API inputs")
+    if manifest["snapshots"].get("aq_notebook_history") != notebook_history_provenance():
+        raise ValueError("Notebook history provenance differs from pinned source/API inputs")
     listed = set(manifest["files"])
     actual = {str(p.relative_to(ROOT)) for p in artifact_files()}
     required = {spec["output"] for spec in SOURCES.values()} | {
@@ -392,6 +403,7 @@ def verify() -> None:
         "snapshots/aq_paused_annotated/status.json",
         "snapshots/aq_paused_annotated/source.txt",
         "snapshots/aq_paused_annotated/notebook.json",
+        "snapshots/aq_notebook_history/book.json", "snapshots/aq_notebook_history/notebook.json",
         *(f"snapshots/aq_paused_annotated/work/segs/{index:04d}.json" for index in range(4)),
         "snapshots/aq_notebook_overlay.json",
     }

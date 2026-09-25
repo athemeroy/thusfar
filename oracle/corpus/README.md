@@ -87,6 +87,27 @@ paused-plus-note API format without asserting any historical human annotation.
 `python3 -m oracle.corpus.paused_annotated_snapshot --verify` regenerates and
 compares the entire snapshot offline.
 
+`snapshots/aq_notebook_history/` is a **fixture-authored, API-generated** copy
+of the completed public-domain 阿Q snapshot. It retains all 48 original files
+byte-for-byte and adds one server-written `notebook.json`. The real Python
+1.7.5 routes create two independent notes at exact UTF-16 quotes, accept an
+idempotent retry without rewriting, edit one note, reject a stale revision
+with HTTP 409, and save a tombstone for the other. Export is then imported
+into a genuinely empty second library, which returns both restored records.
+The 14 actual HTTP responses and source/code hashes are frozen in
+`oracle/goldens/http/aq_notebook_history.json`. Two independent Python 3.11
+processes must produce identical receipts and all 49 snapshot files.
+The notebook stores only each ID's latest revision, operation, timestamps,
+and tombstone; it does not retain every prior text body as an event log.
+
+Export's opaque `version` depends on inode and modification-time signatures.
+The generator verifies the raw version against `snapshot_version` before and
+after export, then records a same-length SHA-256 of the same source file set's
+paths and bytes. It also verifies and omits an inode-stamped `shelf.json` read
+cache created by the isolated server. All note fields and other HTTP bodies
+remain intact. `python3 -m oracle.corpus.notebook_history --verify` recreates
+both API passes with nonloopback sockets blocked.
+
 `snapshots/aq_notebook_overlay.json` is a **synthetic** 1.7.x-format note with a
 verified UTF-16 quote anchor into the real 阿Q snapshot. Apply it as
 `notebook.json` to a copy of `aq_complete/` for a lightweight annotated case.
@@ -94,10 +115,6 @@ The only previously annotated data directory in the accessible local library
 is a copyrighted web novel, so it is intentionally excluded. We still lack a
 public-domain snapshot with historical, human-authored notes; the API-generated
 阿Q copies cover the real 1.7.5 write path without publishing private content.
-Other gaps include a multi-note history involving edits, conflicts, deletion,
-and cross-device import. Existing Python notebook
-tests exercise those behaviors, but this corpus does not yet freeze their full
-data directories.
 
 These fixtures are snapshots for compatibility testing, not a backup of the
 live library. No live service files were changed during capture.
@@ -110,10 +127,11 @@ From the repository root:
 python3 oracle/corpus/build.py --verify
 python3 oracle/corpus/annotate_snapshot.py --verify
 python3 -m oracle.corpus.paused_annotated_snapshot --verify
+python3 -m oracle.corpus.notebook_history --verify
 python3 oracle/corpus/build.py --source-dir /path/to/pinned-downloads
 ```
 
-The three `--verify` commands read local files only. The final build command
+The four `--verify` commands read local files only. The final build command
 recreates published-book and synthetic inputs and refreshes the manifest; the
 five pinned downloads must be named `aq.txt`, `jekyll.txt`, `rulin.txt`,
 `french.txt`, and `kokoro.zip`. Without `--source-dir`, the builder fetches the
@@ -130,11 +148,14 @@ requires `--force`. It also checks or creates `aq_paused_annotated/` from the
 checked-in cassette. To create that snapshot alone after reviewing the pinned
 inputs, run `python3 -m oracle.corpus.paused_annotated_snapshot --write`.
 The generator refuses to replace changed bytes without a separate review.
+Create the separate notebook-history snapshot and HTTP receipt once with
+`python3 -m oracle.corpus.notebook_history --write`; it refuses to replace
+existing bytes and refreshes the corpus manifest.
 
 The initial capture contained 117 data files. Removing the rights-unverified
 partial translation removed 52; the API-generated completed/annotated snapshot
-adds 49, and the paused/annotated fixture adds 67. The current corpus contains
-181 pinned files; `build.py --verify` prints their total byte count.
+adds 49, the paused/annotated fixture adds 67, and notebook history adds 49.
+The current corpus contains 230 pinned files; `build.py --verify` prints their total byte count.
 Python `parse_file` read every nonempty text and both EPUBs;
 it extracted one footnote and both generated PNGs. `server.notebook.restore`
 accepted the synthetic note with an exact UTF-16 source quote.
