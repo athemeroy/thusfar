@@ -109,6 +109,7 @@
 .library-action:disabled { opacity: .6; }
 .library-ai-description { font-size: 13px; display: flex; align-items: center; gap: 8px; margin: 10px 0; }
 .library-ai-explanation { font-size: 12px; color: var(--ink-2); margin: 8px 0; line-height: 1.9; }
+.library-ai-note { font-size: 12px; color: var(--ink-2); margin: 4px 0 0; line-height: 1.6; overflow-wrap: anywhere; }
 .library-ai-error { font-size: 12px; color: var(--zhu); margin: 8px 0; line-height: 1.8; overflow-wrap: anywhere; }
 .library-action-message { font-size: 13px; color: var(--zhu); margin: 12px 0; }
 .library-action-message:empty { display: none; }

@@ -1775,6 +1775,9 @@ class Runner:
                 futures[next_job[0]] = local_pool.submit(self._local_job, next_job[0], model, hint, relation_memory)
                 next_job[0] += 1
         submit_upto(done + concurrency - 1)
+        if done < end:
+            # A slow model can take minutes per passage; say what the 0% is waiting for.
+            self.notify(f'已把 {min(concurrency, end - done)} 段发给 {model.split("+")[0]}，正在等它回复；每整理完一段，进度会更新')
         t_start = time.time()
         for i in range(done, end):
             self.checkpoint()

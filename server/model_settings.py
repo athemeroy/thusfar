@@ -72,7 +72,12 @@ def test() -> dict:
                            max_tokens=16, temperature=0, timeout=30, retries=0)
     except Exception as exc:        # noqa: BLE001 - every failure is reported to the reader
         return {'ok': False, 'message': llm.explain(exc) or f'连接失败：{str(exc)[:200]}'}
-    return {'ok': True, 'message': f'连接成功：{settings["model"]} 用 {time.time() - started:.1f} 秒回复了「{text.strip()[:20]}」'}
+    seconds = time.time() - started
+    message = f'连接成功：{settings["model"]} 用 {seconds:.1f} 秒回复了「{text.strip()[:20]}」'
+    if seconds > 8:
+        # a two-word reply this slow means minutes per passage when processing a book
+        message += '。这个模型回复很慢，整理一本书会花很长时间（每段可能要几分钟）；想快一些可以换 deepseek-flash+nothink'
+    return {'ok': True, 'message': message}
 
 
 def save(payload: dict) -> dict:

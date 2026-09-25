@@ -135,6 +135,7 @@ export async function openShelf(root, options = {}) {
         standalone && !['done', 'queued', 'running', 'finalizing'].includes(b.status?.state)
           ? h('button', { class: 'library-ai-status library-ai-link', type: 'button', onclick: (e) => showBook(b.id, e.currentTarget) }, h('span', { class: `ai-dot ${cls}` }), label, icon('chev'))
           : h('p', { class: 'library-ai-status' }, h('span', { class: `ai-dot ${cls}` }), label),
+        b.status?.notice && ['queued', 'running'].includes(b.status.state) ? h('p', { class: 'library-ai-note' }, b.status.notice) : null,
         b.thin ? h('p', { class: 'library-thin' }, tr('可能是试读片段')) : null),
       h('button', { class: 'library-book-menu', type: 'button', 'aria-label': tr("《{0}》书籍菜单", [b.title || tr('未命名')]), 'aria-haspopup': 'dialog', onclick: (e) => showBook(b.id, e.currentTarget) }, icon('more')));
   }
