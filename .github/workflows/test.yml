@@ -19,6 +19,7 @@ jobs:
           python docs/port/manifest.py --list-pending
           python core/tool/generate_ported_tests.py --check
           python docs/port/check_test_scope.py
+          python docs/port/check_deferred_markers.py
           python oracle/corpus/build.py --verify
           python oracle/corpus/annotate_snapshot.py --verify
           python -m oracle.corpus.paused_annotated_snapshot --verify
