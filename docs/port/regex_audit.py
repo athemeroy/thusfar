@@ -391,10 +391,14 @@ def scan() -> tuple[list[dict], list[dict]]:
                     row["flags"] = origin["flags"]
                     row["dependencies"] = origin["dependencies"]
                 row["assignment_sources"] = scanner.assignments_for(row)
-                if row["id"] == "pipeline/parse.py:696:24:findall" and isinstance(scanner.env.get("LANG_WORDS"), dict):
+                if (row["module"] == "pipeline.parse" and row["scope"] == "detect_lang"
+                        and row["pattern_expression"] == "pat" and isinstance(scanner.env.get("LANG_WORDS"), dict)):
                     row["dynamic_variants"] = scanner.env["LANG_WORDS"]
-                if row["module"] == "pipeline.run" and row["line"] == 788 and row["operation"] == "search":
-                    row["dynamic_variants"] = {k: f"<{k}>(.*?)</{k}>" if row["column"] == 23 else f"<{k}>(.*)" for k in ("recap", "saga")}
+                if (row["module"] == "pipeline.run" and row["scope"] == "Runner._recap_job"
+                        and row["operation"] == "search"
+                        and row["pattern_expression"] in {"f'<{k}>(.*?)</{k}>'", "f'<{k}>(.*)'"}):
+                    full_tag = row["pattern_expression"] == "f'<{k}>(.*?)</{k}>'"
+                    row["dynamic_variants"] = {k: f"<{k}>(.*?)</{k}>" if full_tag else f"<{k}>(.*)" for k in ("recap", "saga")}
                 if row.get("dynamic_variants") and row["flags"] is not None:
                     flags = sum(FLAGS[name] for name in row["flags"])
                     mode = row["operation"] if row["operation"] in {"match", "fullmatch"} else "search"
@@ -445,11 +449,11 @@ def report(data: dict) -> str:
             strategy += f" Compiled at `{row['compiled_from']}`."
         if row.get("dynamic_variants"):
             strategy += f" Static variants: {', '.join(row['dynamic_variants'])}; their cases are executable in both engines."
-        if row["module"] == "pipeline.kg" and row["line"] in {265, 269}:
+        if row["module"] == "pipeline.kg" and row["scope"] == "KG.plan" and "surf" in row["dependencies"]:
             strategy += " `surf` is built from filtered `data['surfaces']` model output; record escaped Latin and CJK forms, overlapping names, punctuation, and empty input."
-        elif row["module"] == "pipeline.parse" and row["line"] == 696:
+        elif row["module"] == "pipeline.parse" and row["scope"] == "detect_lang" and row["pattern_expression"] == "pat":
             strategy += " `pat` is drawn from the eight constant `LANG_WORDS` entries."
-        elif row["module"] == "pipeline.run" and row["line"] == 788:
+        elif row["module"] == "pipeline.run" and row["scope"] == "Runner._recap_job":
             strategy += " `k` is limited by the literal tuple `('recap', 'saga')`."
         out.append(f"| [`{row['id']}`]({source_link}) | `{row['operation']}` | `{(row['pattern_expression'] or '').replace('|','&#124;')}` | {deps}. {assignments} {strategy} |")
     out.extend(["", "## Static patterns requiring translation", "", "| Site | Operation | Python pattern | Flags | Dart changes | Positive / negative |", "|---|---|---|---|---|---|"])
