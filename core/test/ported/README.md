@@ -5,14 +5,20 @@
 `core/tool/generate_ported_tests.py` derives the set from the Python AST and
 `docs/port/inventory.json`; `--check` rejects missing or duplicate mappings,
 changed Python sources, mismatched Dart names, missing owner modules or reasons,
-and stale status counts.
+and stale status counts. For translated callbacks it also checks an explicit
+`contract_owners` ID against the production inventory, an existing script-tool
+function, or a reviewed test-only adapter; validates its module against the
+test ledger; and requires an executable assertion plus a call through a
+reviewed `callPorted` fixture path. This structural check cannot prove that a
+skipped assertion matches the Python test's complete behavior.
 
 Current counts are in `manifest.json` and checked by the generator. Translated
 but skipped Dart assertion contracts are distinct from untranslated failing
 placeholders; all skip reasons identify an implementation or adapter owner.
 The translated callbacks retain their original cases and assertions and
-call test-only adapters by inventory ID or data-tool function ID; those adapters have no production
-implementation yet. The `judge_client` contracts use a deterministic scripted
+call test-only adapters by inventory ID, data-tool function ID, or an explicitly
+listed scenario adapter ID; those adapters have no production implementation
+yet. The `judge_client` contracts use a deterministic scripted
 transport, clock and file adapter shape so their future Dart owners can be
 checked without network calls. The `judge_data` contracts name their exact
 data-tool owners in `contract_owners`; the frozen inventory's broad

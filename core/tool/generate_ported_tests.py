@@ -1,8 +1,8 @@
 """Index the frozen Python 1.7.5 tests and scaffold their Dart counterparts.
 
-The generated Dart callbacks are deliberately failing placeholders under
-explicit skips. They are NOT translated tests. Replace each callback with its
-assertions when its Dart owner exists, remove the skip, and update manifest.json.
+The initial generated callbacks are failing placeholders under explicit skips.
+Translation adds the original assertions and a reviewed adapter binding while
+keeping the skip until the Dart owner exists; activation removes the skip.
 """
 
 from __future__ import annotations
@@ -22,6 +22,52 @@ OUT = ROOT / "core/test/ported"
 MANIFEST = OUT / "manifest.json"
 PYTHON_ONLY = {"scripts.export_judge_data", "scripts.build_release"}
 TEST_CALL = re.compile(r'\btest\s*\(\s*"([^"]+)"', re.M)
+ASSERTION_CALL = re.compile(r'\b(?:expect|expectLater|expectClientError)\s*\(')
+CONTRACT_CALL = re.compile(r'\bcallPorted\s*\(')
+DART_TRIVIA = re.compile(
+    r"//[^\n]*|/\*[\s\S]*?\*/|r?'''[\s\S]*?'''|r?\"\"\"[\s\S]*?\"\"\"|"
+    r"r?'(?:\\.|[^'\\])*'|r?\"(?:\\.|[^\"\\])*\""
+)
+TOP_LEVEL_FUNCTION = re.compile(r'(?m)^[A-Za-z_][^\n]*\b[A-Za-z_]\w*\s*\(')
+
+# These are explicitly reviewed test-only entry points, never production Dart APIs.
+TEST_ONLY_CONTRACTS = {
+    "tests.test_kg.generic_reveal_merge_setup",
+    "tests.test_kg.reveal_setup",
+    *(f"tests.test_pipeline_repair.{name}_scenario" for name in
+      ("budget", "classify", "judge", "kg", "llm", "parse", "runner")),
+}
+SCRIPTED_CONTRACTS = {
+    "server.app.Handler#scripted_http",
+    "server.ask.answer#scripted",
+    "server.ask.retrieval_query#scripted",
+    "server.ask.retrieve#scripted",
+    "server.ask.who_is#scripted",
+    "server.jobs.Worker#scripted",
+    "server.marginalia#scripted_http",
+    "server.storage.JsonCache#scripted",
+}
+# The value is the call a helper must make. A test must call a listed helper or
+# callPorted directly, and must contain an executable assertion.
+CONTRACT_BINDINGS = {
+    "test_export_exact_context_ported_test.dart": {"_export": "callPorted", "_decisionId": "callPorted"},
+    "test_judge_client_ported_test.dart": {"scripted": "callPorted", "classifierBatches": "callPorted"},
+    "test_judge_data_ported_test.dart": {"dataCall": "callPorted"},
+    "test_kg_ported_test.dart": {"_revealSetup": "callPorted"},
+    "test_llm_ported_test.dart": {},
+    "test_manual_entities_ported_test.dart": {"_apply": "callPorted", "_rows": "callPorted"},
+    "test_marginalia_ported_test.dart": {"marginaliaRun": "callPorted", "_u16": "callPorted"},
+    "test_notebook_ported_test.dart": {"_run": "callPorted"},
+    "test_parse_japanese_ported_test.dart": {"_parse": "callPorted"},
+    "test_pipeline_repair_ported_test.dart": {
+        "_scenario": "callPorted", "_runner": "_scenario", "_quarantine": "callPorted"},
+    "test_reading_list_ported_test.dart": {"_run": "callPorted"},
+    "test_release_ported_test.dart": {"_run": "callPorted"},
+    "test_server_repair_ported_test.dart": {
+        "httpRun": "callPorted", "answerRun": "callPorted", "stateRun": "callPorted"},
+    "test_standalone_ported_test.dart": {"_scenario": "callPorted"},
+    "test_support_cache_ported_test.dart": {"_run": "callPorted", "_tuple": "callPorted"},
+}
 
 
 def sha256(path: Path) -> str:
@@ -44,6 +90,101 @@ def ast_ids(path: Path) -> list[str]:
                 if isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)) and member.name.startswith("test_"):
                     ids.append(f"{module}.{node.name}.{member.name}")
     return ids
+
+
+def contract_owner_module(owner: str, row: dict, inventory: list[dict]) -> str | None:
+    """Resolve an explicit production, old tool, or reviewed test-only owner."""
+    if not isinstance(owner, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z_0-9.]*?(?:#scripted(?:_http)?)?", owner):
+        raise ValueError(f"Invalid contract owner ID for {row['id']}: {owner!r}")
+    if owner.startswith("tests."):
+        if owner not in TEST_ONLY_CONTRACTS or owner.split(".")[1] != Path(row["python_source"]).stem:
+            raise ValueError(f"Unreviewed test-only contract owner for {row['id']}: {owner}")
+        return None
+    if owner.startswith("scripts."):
+        parts = owner.split(".")
+        if len(parts) != 3:
+            raise ValueError(f"Script-tool owner must name a function: {owner}")
+        path = ROOT / "scripts" / f"{parts[1]}.py"
+        if not path.is_file() or parts[2] not in {
+            node.name for node in ast.parse(path.read_text(encoding="utf-8")).body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }:
+            raise ValueError(f"Script-tool contract owner is absent: {owner}")
+        module = ".".join(parts[:2])
+        if module not in row["owner_modules"] and row["python_source"] != "tests/test_judge_data.py":
+            raise ValueError(f"Script-tool owner is unrelated to {row['id']}: {owner}")
+        return module
+    if "#" in owner and owner not in SCRIPTED_CONTRACTS:
+        raise ValueError(f"Unreviewed scripted adapter ID for {row['id']}: {owner}")
+    base = owner.split("#", 1)[0]
+    matches = [entry for entry in inventory
+               if entry["id"] == base or entry["id"].startswith(base + ".")]
+    modules = {entry["module"] for entry in matches}
+    if len(modules) != 1:
+        raise ValueError(f"Contract owner is not an inventory function/module/class: {owner}")
+    module = modules.pop()
+    manual_http = row["id"] == (
+        "tests.test_manual_entities.ManualHTTP."
+        "test_manual_endpoint_cutoff_retry_export_and_delete")
+    if module not in row["owner_modules"] and not (manual_http and owner == "server.app.Handler.route"):
+        raise ValueError(f"Contract owner module is unrelated to {row['id']}: {owner}")
+    return module
+
+
+def helper_source(source: str, name: str) -> str:
+    """Return one reviewed top-level Dart fixture helper, excluding the next one."""
+    prefix = source.split("void main()", 1)[0]
+    functions = list(TOP_LEVEL_FUNCTION.finditer(prefix))
+    found = [index for index, match in enumerate(functions)
+             if re.search(rf"\b{re.escape(name)}\s*\(", match.group())]
+    if len(found) != 1:
+        raise ValueError(f"Contract fixture helper {name} is missing or ambiguous")
+    index = found[0]
+    return prefix[functions[index].start():
+                  functions[index + 1].start() if index + 1 < len(functions) else len(prefix)]
+
+
+def check_contract(row: dict, source: str, body: str, inventory: list[dict]) -> None:
+    owners = row.get("contract_owners")
+    if not isinstance(owners, list) or not owners or len(owners) != len(set(owners)):
+        raise ValueError(f"Translated contract has no unique explicit owner IDs: {row['id']}")
+    for owner in owners:
+        contract_owner_module(owner, row, inventory)
+
+    # TEST_CALL splits at the next test. A real skip label is outside literals.
+    cleaned = DART_TRIVIA.sub(lambda match: " " * len(match.group()), body)
+    skips = list(re.finditer(r"\bskip\s*:", cleaned))
+    callback = body[:skips[-1].start()] if skips else body
+    executable = DART_TRIVIA.sub(" ", callback)
+    if not ASSERTION_CALL.search(executable):
+        raise ValueError(f"Translated callback has no executable assertion: {row['id']}")
+    helpers = CONTRACT_BINDINGS.get(Path(row["dart_file"]).name)
+    if helpers is None:
+        raise ValueError(f"Translated callback has no reviewed binding list: {row['id']}")
+    reached = [callback] if CONTRACT_CALL.search(executable) else []
+    for name, target in helpers.items():
+        code = helper_source(source, name)
+        if not re.search(rf"\b{re.escape(target)}\s*\(", DART_TRIVIA.sub(" ", code)):
+            raise ValueError(f"Contract helper {name} no longer reaches {target}")
+        if re.search(rf"\b{re.escape(name)}\s*\(", executable):
+            reached.append(code)
+            if target != "callPorted":
+                reached.append(helper_source(source, target))
+    if not reached:
+        raise ValueError(f"Translated callback never invokes a reviewed contract adapter: {row['id']}")
+    primary = owners[0]
+    evidence = "\n".join([callback, *reached])
+    if primary.startswith("tests.test_pipeline_repair."):
+        scenario = primary.rsplit(".", 1)[-1]
+        if scenario == "runner_scenario":
+            bound = ("_runner(" in executable and "'runner_scenario'" in evidence or
+                     "_scenario('runner_scenario'" in callback)
+        else:
+            bound = f"'{scenario}'" in callback
+    else:
+        bound = f"'{primary}'" in evidence or f'"{primary}"' in evidence
+    if not bound:
+        raise ValueError(f"Primary owner is not bound by the callback/fixture: {row['id']}: {primary}")
 
 
 def owner_modules(row: dict) -> list[str]:
@@ -166,6 +307,7 @@ def write(force: bool) -> None:
 
 def check() -> None:
     expected = expected_manifest()
+    inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))["functions"]
     actual = json.loads(MANIFEST.read_text(encoding="utf-8"))
     if actual["test_catalog_sha256"] != expected["test_catalog_sha256"]:
         raise ValueError("Inventory test catalog changed; reconcile test mapping")
@@ -210,7 +352,7 @@ def check() -> None:
         blocks = {parts[i]: parts[i + 1] for i in range(1, len(parts) - 1, 2)}
         for row in rows:
             body = blocks[row["dart_name"]]
-            skipped = "skip:" in body
+            skipped = bool(re.search(r"\bskip\s*:", DART_TRIVIA.sub(" ", body)))
             if row["status"] == "translated" and skipped:
                 raise ValueError(f"Translated test is still skipped: {row['id']}")
             if row["status"] in ("translated", "translated_skipped") and "Dart port not implemented:" in body:
@@ -221,6 +363,8 @@ def check() -> None:
                 raise ValueError(f"Untranslated test has no skip: {row['id']}")
             if row["status"] not in ("pending_port", "scope_exception", "translated_skipped", "translated"):
                 raise ValueError(f"Unknown mapping status: {row['id']}")
+            if row["status"] in ("translated_skipped", "translated"):
+                check_contract(row, source, body, inventory)
         found.extend(names)
     if len(found) != 171 or len(set(found)) != 171:
         raise ValueError("Dart test inventory does not contain 171 unique names")
