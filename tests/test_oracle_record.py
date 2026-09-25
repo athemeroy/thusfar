@@ -41,6 +41,30 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_cassette_replay_rejects_changed_or_linked_source_fixture(self):
+        from oracle.record.artifacts import replay, stage_book
+
+        with tempfile.TemporaryDirectory(prefix='thusfar-replay-source-test-') as tmp:
+            root = Path(tmp)
+            source = root / 'source'
+            source.mkdir()
+            (source / 'book.json').write_text('{}')
+            (source / 'source.txt').write_text('public text')
+            (source / '.oracle-stage.json').write_text(json.dumps({
+                'source': 'checked-in public-domain corpus and Python 3.11 parser golden',
+                'book_id': 'fixture', 'book_json_sha256': 'wrong',
+                'source_sha256': 'wrong',
+            }))
+            with self.assertRaisesRegex(ValueError, 'provenance'):
+                replay(source, root / 'tapes', root / 'out', 'fresh', 2, 1, 1)
+            (source / '.oracle-stage.json').unlink()
+            (source / 'source.txt').unlink()
+            (source / 'source.txt').symlink_to(root / 'outside.txt')
+            with self.assertRaisesRegex(UnsafeValue, 'symlink'):
+                stage_book(source, root / 'staged', 'fresh')
+            with self.assertRaisesRegex(UnsafeValue, 'symlink'):
+                replay(source, root / 'tapes', root / 'out', 'fresh', 2, 1, 1)
+
     def test_book_snapshot_rejects_symlinked_files_and_directories(self):
         from oracle.record.artifacts import snapshot
 

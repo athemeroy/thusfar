@@ -81,6 +81,8 @@ def snapshot(root: Path, out: Path) -> dict[str, str]:
 
 
 def stage_book(source: Path, target: Path, start: str) -> None:
+    if source.is_symlink() or any(path.is_symlink() for path in source.rglob('*')):
+        raise UnsafeValue('source book contains a symlink')
     if start == 'resume':
         shutil.copytree(source, target, symlinks=False)
         return
@@ -104,8 +106,20 @@ def replay(source: Path, cassette_dir: Path, out: Path, start: str, repeat: int,
         raise ValueError('at least two replays are required before publishing')
     if limit is not None and limit < 1:
         raise ValueError('partial replay limit must be positive')
+    if source.is_symlink() or any(path.is_symlink() for path in source.rglob('*')):
+        raise UnsafeValue('source book contains a symlink')
     if not (source / 'book.json').is_file():
         raise ValueError('source book directory has no book.json')
+    staged = source / '.oracle-stage.json'
+    fixture = json.loads(staged.read_text(encoding='utf-8')) if staged.is_file() else None
+    if fixture is not None:
+        if (fixture.get('source') != 'checked-in public-domain corpus and Python 3.11 parser golden'
+                or not isinstance(fixture.get('book_id'), str)
+                or hashlib.sha256((source / 'book.json').read_bytes()).hexdigest()
+                != fixture.get('book_json_sha256')
+                or hashlib.sha256((source / 'source.txt').read_bytes()).hexdigest()
+                != fixture.get('source_sha256')):
+            raise ValueError('staged corpus source differs from its provenance')
     runs = []
     with tempfile.TemporaryDirectory(prefix='thusfar-artifacts-') as temp:
         tmp = Path(temp)
@@ -133,12 +147,15 @@ def replay(source: Path, cassette_dir: Path, out: Path, start: str, repeat: int,
         shutil.copytree(runs[0][0], out)
         provenance = {
             'schema': 1, 'source': 'deepseek-flash+nothink cassette replay',
-            'source_snapshot': source.name, 'book_start': start,
+            'source_snapshot': fixture['book_id'] if fixture else source.name,
+            'book_start': start,
             'passes': repeat, 'artifact_sha256': reference,
             'normalizations': sorted(_TIME_KEYS) + [
                 f'{artifact}:{".".join(path)}' for artifact, path in sorted(_RUNTIME_TIME_PATHS)]}
         if limit is not None:
             provenance['partial_limit'] = limit
+        if fixture is not None:
+            provenance['source_fixture'] = fixture
         write_json(out / 'provenance.json', provenance)
         return reference
 
