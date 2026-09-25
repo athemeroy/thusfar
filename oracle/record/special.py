@@ -1,9 +1,10 @@
 """Record helpers requiring explicit, typed fixtures beyond the general tracer.
 
 The general function tracer cannot encode a returned closure, a callback argument, or
-Runner's live lock. Integration tests also pass variable file revisions and wall-clock
-fields into several otherwise deterministic helpers. These cases record fixed state
-and observable calls instead. Every fixture is synthetic; no external service is used.
+Runner's live lock. It also misses changes to mutable arguments when the return value
+is None. Integration tests pass variable file revisions and wall-clock fields into
+several otherwise deterministic helpers. These cases record fixed state and observable
+calls instead. Every fixture is synthetic; no external service is used.
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from .functions import LoopbackOnly
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = ROOT / 'oracle/goldens/special'
-SOURCES = ('pipeline/run.py', 'pipeline/kg.py', 'pipeline/lang.py',
+SOURCES = ('pipeline/run.py', 'pipeline/parse.py', 'pipeline/kg.py', 'pipeline/lang.py',
            'server/manual_entities.py', 'server/marginalia.py',
            'server/notebook.py', 'server/storage.py',
            'oracle/record/common.py', 'oracle/record/special.py')
@@ -49,9 +50,28 @@ def case(function: str, label: str, inputs: dict, call, secrets: tuple[str, ...]
             'input': frozen_input, 'output': encode(value, secrets)}
 
 
+def state_case(function: str, label: str, arguments: dict, call,
+               secrets: tuple[str, ...], *, aliases=None) -> dict:
+    """Record argument state on both sides of a call, including its return value.
+
+    ``arguments`` contains the actual objects passed to ``call``. Encoding before the
+    call makes a detached snapshot, so mutations cannot rewrite the input golden.
+    ``aliases`` observes identities that JSON values cannot represent.
+    """
+    before = encode(arguments, secrets)
+    value = call()
+    row = {'schema': 1, 'function': function, 'case': label,
+           'before': before, 'after': encode(arguments, secrets),
+           'return': encode(value, secrets)}
+    if aliases is not None:
+        row['aliases'] = encode(aliases(value), secrets)
+    return row
+
+
 def rows() -> dict[str, list[dict]]:
     from pipeline.kg import KG
-    from pipeline.run import Runner, attr_facts
+    from pipeline.parse import classify, finish
+    from pipeline.run import Runner, attr_facts, settle_rewrites
     from server import manual_entities, marginalia, notebook
 
     secrets = known_secrets()
@@ -219,6 +239,80 @@ def rows() -> dict[str, list[dict]]:
              lambda: notebook.validate({**note, 'start': 1, 'quote': 'Alice'}, notebook_book),
              secrets, error='摘录位置已变化，请重新选择原文'),
     ]
+
+    # These functions return None (or a result that aliases an input) while changing
+    # their arguments. A return-only recording would silently lose that contract.
+    # ``settle_rewrites`` reads only guard/data; no wall-clock timing field is needed.
+    rollback = {
+        'data': {'profiles': [{'who': 'P1', 'tagline': '改写称号', 'bio': '改写介绍'}]},
+        'guard': {'checks': {'P1': {'verdict': 'rewritten', 'verified': False,
+                                   'first': 0.8, 'jev': 0.7}},
+                  'rewrites': {'P1': {'before': {'tagline': '原称号', 'bio': '原介绍'}}}},
+    }
+    threshold = {
+        'data': {'profiles': [{'who': 'P1', 'tagline': '改写称号', 'bio': '改写介绍'}]},
+        'guard': {'checks': {'P1': {'verdict': 'rewritten', 'verified': False,
+                                   'first': 0.3, 'jev': 0.5}},
+                  'rewrites': {'P1': {'before': {'tagline': '原称号', 'bio': '原介绍'}}}},
+    }
+    verified = {
+        'data': {'profiles': [{'who': 'P1', 'tagline': '改写称号', 'bio': '改写介绍'}]},
+        'guard': {'checks': {'P1': {'verdict': 'rewritten', 'verified': True,
+                                   'after_verdict': 'ok', 'first': 0.8, 'jev': 0.1}},
+                  'rewrites': {'P1': {'before': {'tagline': '原称号', 'bio': '原介绍'}}}},
+    }
+    result['settle_rewrites_state.jsonl'] = [
+        state_case('pipeline.run.settle_rewrites', label, {'rec': rec},
+                   lambda rec=rec: settle_rewrites(rec), secrets)
+        for label, rec in (
+            ('below_jev_threshold_reverts_profile_and_verdict', rollback),
+            ('equal_jev_threshold_keeps_rewrite', threshold),
+            ('verified_ok_keeps_low_jev_rewrite', verified),
+        )
+    ]
+
+    chapters = [
+        {'title': '前言', 'o0': 0, 'o1': 500},
+        {'title': '短章', 'o0': 500, 'o1': 799},
+        {'title': '第一章', 'o0': 799, 'o1': 1099},
+        {'title': '附录', 'o0': 1099, 'o1': 1399},
+        {'title': '致谢', 'o0': 1399, 'o1': 1699},
+    ]
+    middle_back = [
+        {'title': '第一章', 'o0': 0, 'o1': 300},
+        {'title': '附录', 'o0': 300, 'o1': 600},
+        {'title': '第二章', 'o0': 600, 'o1': 900},
+    ]
+    classify_blocks = [{'t': '原文', 'o': 0}]
+    result['classify_state.jsonl'] = [
+        state_case('pipeline.parse.classify', label,
+                   {'chapters': cs, 'blocks': classify_blocks},
+                   lambda cs=cs: classify(cs, classify_blocks), secrets)
+        for label, cs in (
+            ('front_size_299_body_size_300_and_trailing_back', chapters),
+            ('back_word_in_middle_remains_body', middle_back),
+        )
+    ]
+
+    blocks = [
+        {'t': '😀', 'cls': 'lead', 'ids': ['old'],
+         'fn': [[0, 'note-a'], [0, 'missing']]},
+        {'t': '甲' * 300, 'fn': []},
+    ]
+    starts = [(1, '第一章', 0)]
+    notes = {'note-a': '脚注原文', 'unused': '未引用'}
+    arguments = {'blocks': blocks, 'starts': starts, 'notes': notes,
+                 'title': '测试书', 'author': '测试作者'}
+    result['finish_state.jsonl'] = [
+        state_case('pipeline.parse.finish', 'utf16_offset_cover_cleanup_and_footnote',
+                   arguments,
+                   lambda: finish(blocks, starts, notes, '测试书', '测试作者'),
+                   secrets,
+                   aliases=lambda value: {
+                       'return_blocks_is_input_blocks': value['blocks'] is blocks,
+                       'return_first_block_is_input_first_block': value['blocks'][0] is blocks[0],
+                   }),
+    ]
     return result
 
 
@@ -253,7 +347,7 @@ def expected_files() -> dict[str, bytes]:
         actual = captures[0]
     provenance = {
         'schema': 1,
-        'source': 'Python 1.7.5 synthetic direct calls; no model or network',
+        'source': 'checked-out Thusfar Python source; handwritten synthetic direct calls; no model or network',
         'python': sys.version.split()[0],
         'unicode': unicodedata.unidata_version,
         'passes': 2,
