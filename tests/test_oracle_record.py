@@ -47,13 +47,14 @@ class OracleRecordSafety(unittest.TestCase):
             ('pipeline/llm.py', llm.parse_json.__code__.co_firstlineno): 'pipeline.llm.parse_json',
         }
         collector = Collector(set(locations.values()), locations, (), 100)
+        previous_trace = sys.gettrace()
         sys.settrace(collector.trace)
         try:
             self.assertIsNone(llm.explain(llm.LLMError('HTTP 429: not JSON')))
             with self.assertRaises(ValueError):
                 llm.parse_json('plain text without JSON')
         finally:
-            sys.settrace(None)
+            sys.settrace(previous_trace)
         self.assertEqual(len(collector.samples['pipeline.llm.explain']), 1)
         sample = next(iter(collector.samples['pipeline.llm.explain'].values()))
         self.assertIsNone(sample['output'])
