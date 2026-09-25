@@ -2,6 +2,21 @@
 // Skipped failing callbacks are unported assertions, not translations.
 import 'package:test/test.dart';
 
+import 'contract_invoker.dart';
+
+List<Object?> _quarantine(
+  List<Map<String, Object?>> records,
+  List<List<Object?>> mentions,
+  Map<String, int> seeds,
+) =>
+    (callPorted('pipeline.kg.quarantine_identities', {
+              'records': records,
+              'mentions': mentions,
+              'seeds': seeds,
+            })
+            as Map<String, Object?>)['\$tuple']
+        as List<Object?>;
+
 void main() {
   test(
     "tests.test_pipeline_repair.PipelineRepair.test_relation_status_survives_conversion_and_kg",
@@ -149,17 +164,80 @@ void main() {
   );
   test(
     "tests.test_pipeline_repair.PipelineRepair.test_identity_taint_propagates_at_temporal_merge_boundaries",
-    () => fail(
-      "Dart port not implemented: tests.test_pipeline_repair.PipelineRepair.test_identity_taint_propagates_at_temporal_merge_boundaries",
-    ),
+    () {
+      final rows = <Map<String, Object?>>[
+        {'t': 'merge', 'p': 5, 'from': 'P1', 'into': 'P2'},
+        {'t': 'merge', 'p': 20, 'from': 'P2', 'into': 'P3'},
+        {
+          't': 'event',
+          'p': 8,
+          'who': ['P2'],
+          'text': 'early',
+        },
+        {
+          't': 'event',
+          'p': 12,
+          'who': ['P2'],
+          'text': 'tainted',
+        },
+        {
+          't': 'event',
+          'p': 19,
+          'who': ['P3'],
+          'text': 'before later merge',
+        },
+        {
+          't': 'event',
+          'p': 21,
+          'who': ['P3'],
+          'text': 'after later merge',
+        },
+      ];
+      final result = _quarantine(
+        rows,
+        [
+          [9, 11, 'P2', 0],
+          [18, 19, 'P3', 0],
+        ],
+        {'P1': 10},
+      );
+      final kept = result[0] as List<Object?>;
+      final mentions = result[1] as List<Object?>;
+      final dropped = result[2] as List<Object?>;
+      final taint = result[4];
+      expect(taint, {'P1': 10, 'P2': 10, 'P3': 20});
+      expect(
+        kept
+            .cast<Map<String, Object?>>()
+            .where((row) => row['t'] == 'event')
+            .map((row) => row['text'])
+            .toList(),
+        ['early', 'before later merge'],
+      );
+      expect(mentions, [
+        [18, 19, 'P3', 0],
+      ]);
+      expect(dropped, hasLength(3));
+    },
     skip:
         "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'identity taint propagates at temporal merge boundaries'.",
   );
   test(
     "tests.test_pipeline_repair.PipelineRepair.test_tainted_person_retains_source_identity_without_unverified_intro",
-    () => fail(
-      "Dart port not implemented: tests.test_pipeline_repair.PipelineRepair.test_tainted_person_retains_source_identity_without_unverified_intro",
-    ),
+    () {
+      final person = <String, Object?>{
+        't': 'person',
+        'p': 1,
+        'id': 'P1',
+        'name': 'Alice',
+        'intro': 'Secret identity claim',
+      };
+      final result = _quarantine([person], [], {'P1': 0});
+      expect(result[0], [
+        {...person, 'intro': ''},
+      ]);
+      expect(result[2], [person]);
+    },
     skip:
         "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'tainted person retains source identity without unverified intro'.",
   );
@@ -269,9 +347,27 @@ void main() {
   );
   test(
     "tests.test_pipeline_repair.PipelineRepair.test_flagged_cache_needs_explicit_deterministic_fallback",
-    () => fail(
-      "Dart port not implemented: tests.test_pipeline_repair.PipelineRepair.test_flagged_cache_needs_explicit_deterministic_fallback",
-    ),
+    () {
+      final record = <String, Object?>{
+        'recap': 'claim',
+        'guard': {
+          'recap': {'verdict': 'flag'},
+        },
+      };
+      Object? verified() => callPorted('pipeline.run.Runner.verified_summary', {
+        'record': record,
+        'fields': {
+          '\$tuple': ['recap'],
+        },
+      });
+
+      expect(verified(), isFalse);
+      record.addAll({
+        'recap_flagged': 'original',
+        'fallback_kind': 'verified-input-excerpt',
+      });
+      expect(verified(), isTrue);
+    },
     skip:
         "Dart implementation of pipeline.run.Runner.verified_summary is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'flagged cache needs explicit deterministic fallback'.",
   );
