@@ -32,6 +32,20 @@
   The function recorder retains the original dictionary order and call
   counters, so the final two-pass comparison must still detect any drift.
 
+## Larger corpus displaced handwritten boundary samples
+
+- Symptom: the first byte-stable Aq/French/Jekyll function recording retained
+  7,482 samples, but a separate manual-only trace showed that 11 of its 127
+  observed samples were missing from the capped output (`is_latin`, `zh`, and
+  `related`). Two identical recordings alone did not prove boundary coverage.
+- Cause: the sampler kept the lowest input digests, so adding English inputs
+  could evict previously recorded manual cases when a function reached 200.
+- Resolution: preserve manual-phase input digests first, then choose the
+  remaining samples deterministically within the same total limit. A limit
+  too small for the mandatory manual samples must fail explicitly. Final
+  acceptance includes a separate manual-only subset comparison, in addition
+  to the complete two-pass byte comparison.
+
 ## Python 版本会改变标准答案
 
 - 症状：系统 Python 3.13 跑得通部分录制，但字符类别和大小写转换结果与 Android 1.7.5 不完全相同。
