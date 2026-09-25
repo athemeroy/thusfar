@@ -4,8 +4,10 @@ import json
 import unittest
 from pathlib import Path
 
+from oracle.semantics.record_general import evaluate
 
 CASES = Path(__file__).resolve().parents[1] / "oracle" / "semantics" / "py_json.jsonl"
+GENERAL = CASES.with_name("general.jsonl")
 
 
 class TestPyJsonOracle(unittest.TestCase):
@@ -29,6 +31,19 @@ class TestPyJsonOracle(unittest.TestCase):
                                     sort_keys=True), '{"\ue000": 2, "𠮷": 1}')
         with self.assertRaises(ValueError):
             json.dumps(float("nan"), allow_nan=False)
+
+
+class TestGeneralSemanticOracle(unittest.TestCase):
+    def test_recorded_general_cases_match_python(self):
+        count = 0
+        with GENERAL.open(encoding="utf-8") as source:
+            for line in source:
+                case = json.loads(line)
+                with self.subTest(case=case["id"], op=case["op"]):
+                    self.assertEqual(evaluate(case["op"], case["args"]),
+                                     case["expected"])
+                count += 1
+        self.assertEqual(count, 5726)
 
 
 if __name__ == "__main__":
