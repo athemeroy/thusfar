@@ -18,7 +18,7 @@
 
 ## 工具链与边界
 
-- 当前本机 Flutter stable：**3.47.5**，Dart **3.13.4**；安装于 `/home/dev/.local/share/flutter`。CI 使用 Flutter 官方 Dart stable 安装动作，尚未通过远端 CI 验证（本分支未推送）。
+- 当前本机 Flutter stable：**3.47.5**，Dart **3.13.4**；安装于 `/home/dev/.local/share/flutter`。2026-09-26 对照 Flutter 官方 Git `stable` 分支，远端与本机同为 `6a19cca56475dbfba1478ee68d7bd0c2ef891da1`。CI 使用 Flutter 官方 Dart stable 安装动作，尚未通过远端 CI 验证（本分支未推送）。
 - Python 标准答案固定使用 Android 1.7.5 对应的 **Python 3.11**，本机为 3.11.13；系统的 Python 3.13 不用于录制。
 - 当前仅执行 A0；未创建 Flutter App、未更换 HTTP 服务、未删除 Python 运行时、未打存档标签，也未推送或发布。
 
