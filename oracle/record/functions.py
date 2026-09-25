@@ -14,6 +14,7 @@ import argparse
 import importlib
 import ipaddress
 import json
+import os
 import runpy
 import socket
 import sys
@@ -23,7 +24,7 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
-from .common import UnsafeValue, digest, encode, known_secrets, write_json, write_jsonl
+from .common import ObjectView, UnsafeValue, digest, encode, known_secrets, write_json, write_jsonl
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -60,6 +61,7 @@ class Collector:
         self.calls = Counter()
         self.skipped = Counter()
         self.rejected_corpus = []
+        self.conflicts: dict[str, set[str]] = {}
         self.lock = threading.Lock()
 
     def trace(self, frame, event, arg):
@@ -85,6 +87,8 @@ class Collector:
         if frame.f_code.co_flags & 0x08:  # **kwargs
             names += frame.f_code.co_varnames[var_count:var_count + 1]
         inputs = {name: frame.f_locals[name] for name in names if name in frame.f_locals}
+        if 'self' in inputs:
+            inputs['self'] = ObjectView(inputs['self'], frozenset(frame.f_code.co_names))
         try:
             encoded = encode(inputs, self.secrets)
         except UnsafeValue as exc:
@@ -119,7 +123,8 @@ class Collector:
             self.calls[function] += 1
             prior = self.outputs.setdefault(function, {}).setdefault(key, out_hash)
             if prior != out_hash:
-                raise RuntimeError(f'non-deterministic output for {function}, input sha256={key}')
+                self.conflicts.setdefault(function, set()).add(key)
+                return
             items = self.samples.setdefault(function, {})
             if key not in items:
                 items[key] = {'input': inputs, 'output': output}
@@ -128,6 +133,8 @@ class Collector:
 
     def save(self, out: Path) -> dict:
         for function, items in sorted(self.samples.items()):
+            if function in self.conflicts:
+                continue
             pieces = function.split('.')
             target = out.joinpath(*pieces[:-1], pieces[-1] + '.jsonl')
             write_jsonl(target, [items[key] for key in sorted(items)])
@@ -135,9 +142,12 @@ class Collector:
             'selected': sorted(self.include),
             'unobserved': sorted(self.include - self.calls.keys()),
             'calls': {key: self.calls[key] for key in sorted(self.calls)},
-            'sample_counts': {key: len(value) for key, value in sorted(self.samples.items())},
+            'sample_counts': {key: len(value) for key, value in sorted(self.samples.items())
+                              if key not in self.conflicts},
             'skipped': [{'function': function, 'reason': reason, 'count': count}
                         for (function, reason), count in sorted(self.skipped.items())],
+            'non_deterministic': [{'function': function, 'input_sha256': key}
+                                  for function, keys in sorted(self.conflicts.items()) for key in sorted(keys)],
             'rejected_corpus': self.rejected_corpus,
         }
         write_json(out / 'record-report.json', report)
@@ -219,6 +229,33 @@ def run_manual(path: Path) -> None:
             raise RuntimeError(f'manual case {number} ({name}) failed') from exc
 
 
+def run_book_replay(source: Path, cassettes: Path, start: str, concurrency: int) -> None:
+    from .artifacts import stage_book
+    from .cassettes import install
+    model = 'deepseek-flash+nothink'
+    names = ('LLM_BASE_URL', 'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY',
+             'JEV_ROUTE', 'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG')
+    previous = {name: os.environ.get(name) for name in names}
+    with tempfile.TemporaryDirectory(prefix='thusfar-oracle-function-book-') as tmp:
+        root = Path(tmp) / source.name
+        os.environ.update(LLM_BASE_URL='https://open.xiaojingai.com/v1',
+                          LLM_KEY_NAME='ORACLE_REPLAY_KEY', LLM_KEY_MAP='',
+                          ORACLE_REPLAY_KEY='oracle-placeholder', JEV_ROUTE='free-only',
+                          CLASSIFIER_URL='https://classifier.dev/v1/classify',
+                          JUDGE_LOG_DIR=str(Path(tmp) / 'judge'), JUDGE_LOG='0')
+        try:
+            stage_book(source, root, start)
+            from pipeline.run import run_book
+            with install(cassettes, 'replay'):
+                run_book(root, model=model, local_model=model, concurrency=concurrency)
+        finally:
+            for name, value in previous.items():
+                if value is None:
+                    os.environ.pop(name, None)
+                else:
+                    os.environ[name] = value
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--include', type=Path)
@@ -227,13 +264,19 @@ def main() -> int:
     parser.add_argument('--corpus', type=Path)
     parser.add_argument('--manual', type=Path)
     parser.add_argument('--script', type=Path, help='additional Python workload to execute')
+    parser.add_argument('--replay-book', type=Path, action='append', default=[])
+    parser.add_argument('--cassettes', type=Path, default=ROOT / 'oracle/cassettes')
+    parser.add_argument('--book-start', choices=('fresh', 'resume'), default='fresh')
+    parser.add_argument('--concurrency', type=int, default=12)
     parser.add_argument('--out', type=Path, default=ROOT / 'oracle/goldens')
     parser.add_argument('--maximum', type=int, default=200)
     args = parser.parse_args()
     if args.maximum < 1 or args.maximum > 200:
         parser.error('--maximum must be between 1 and 200')
-    if not any((args.unittest, args.corpus, args.manual, args.script)):
+    if not any((args.unittest, args.corpus, args.manual, args.script, args.replay_book)):
         parser.error('choose at least one workload')
+    if args.out.exists() and any(args.out.iterdir()):
+        parser.error('--out must be empty to prevent stale goldens from a previous run')
     include, locations = included_functions(args.include, args.inventory)
     collector = Collector(include, locations, known_secrets(), args.maximum)
     old_trace, old_thread_trace = sys.gettrace(), threading.gettrace()
@@ -250,14 +293,17 @@ def main() -> int:
                 run_corpus(args.corpus, collector)
             if args.script:
                 runpy.run_path(str(args.script), run_name='__main__')
+            for source in args.replay_book:
+                run_book_replay(source, args.cassettes, args.book_start, args.concurrency)
     finally:
         sys.settrace(old_trace)
         threading.settrace(old_thread_trace)
     report = collector.save(args.out)
     print(f"recorded {sum(report['sample_counts'].values())} samples across "
           f"{len(report['sample_counts'])} functions; unobserved={len(report['unobserved'])}; "
-          f"skipped={sum(row['count'] for row in report['skipped'])}")
-    return 0 if ok else 1
+          f"skipped={sum(row['count'] for row in report['skipped'])}; "
+          f"non-deterministic={len(report['non_deterministic'])}")
+    return 0 if ok and not report['non_deterministic'] else 1
 
 
 if __name__ == '__main__':

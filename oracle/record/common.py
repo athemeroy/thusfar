@@ -16,6 +16,12 @@ class UnsafeValue(ValueError):
     """A value cannot safely or faithfully be included in a committed oracle."""
 
 
+@dataclasses.dataclass(frozen=True)
+class ObjectView:
+    value: object
+    fields: frozenset[str]
+
+
 _SECRET_NAME = re.compile(r'(?:^|_)(?:api_?key|password|passcode|secret|token|authorization|cookie)(?:$|_)', re.I)
 _SECRET_LITERAL = re.compile(r'(?i)\b(?:bearer\s+|sk-)[A-Za-z0-9_\-]{12,}')
 
@@ -56,9 +62,14 @@ def encode(value: object, secrets: tuple[str, ...] = (), seen: set[int] | None =
     if isinstance(value, bytes):
         return {'$bytes': base64.b64encode(value).decode('ascii')}
     if isinstance(value, Path):
-        return {'$path': encode(str(value), secrets)}
+        path = str(value)
+        path = re.sub(r'^/tmp/(?:tmp|thusfar-)[^/]+', '<temp>', path)
+        return {'$path': encode(path, secrets)}
     if isinstance(value, ElementTree.Element):
         return {'$xml': encode(ElementTree.tostring(value, encoding='unicode'), secrets)}
+    if isinstance(value, BaseException):
+        return {'$error': {'type': f'{type(value).__module__}.{type(value).__qualname__}',
+                           'message': encode(str(value), secrets)}}
     seen = seen if seen is not None else set()
     ident = id(value)
     if ident in seen:
@@ -81,8 +92,17 @@ def encode(value: object, secrets: tuple[str, ...] = (), seen: set[int] | None =
             return {'$map': [[encode(key, secrets, seen), encode(item, secrets, seen)]
                              for key, item in value.items()]}
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            if isinstance(value, ObjectView):
+                target = value.value
+                state = vars(target)
+                fields = {name: encode(state[name], secrets, seen)
+                          for name in sorted(value.fields) if name in state}
+                return {'$object': f'{type(target).__module__}.{type(target).__qualname__}', 'fields': fields}
             fields = {field.name: encode(getattr(value, field.name), secrets, seen)
                       for field in dataclasses.fields(value)}
+            return {'$object': f'{type(value).__module__}.{type(value).__qualname__}', 'fields': fields}
+        if type(value).__module__.startswith(('pipeline.', 'server.')) and hasattr(value, '__dict__'):
+            fields = {name: encode(item, secrets, seen) for name, item in vars(value).items()}
             return {'$object': f'{type(value).__module__}.{type(value).__qualname__}', 'fields': fields}
         raise UnsafeValue(f'unsupported type {type(value).__module__}.{type(value).__qualname__}')
     finally:
@@ -90,7 +110,10 @@ def encode(value: object, secrets: tuple[str, ...] = (), seen: set[int] | None =
 
 
 def canonical(value: object) -> str:
-    return json.dumps(value, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
+    result = json.dumps(value, ensure_ascii=False, separators=(',', ':'), allow_nan=False)
+    # JSON permits these characters, but many JSONL readers (including str.splitlines)
+    # treat them as physical line breaks inside an otherwise valid JSON string.
+    return result.replace('\x85', '\\u0085').replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
 
 
 def digest(value: object) -> str:
