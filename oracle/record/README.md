@@ -13,6 +13,10 @@ optional book replays. Inputs are copied at call entry and outputs at return. No
 types carry tags (`$tuple`, `$set`, `$map`, `$bytes`, `$xml`, `$path`). Unsupported values are
 counted in `record-report.json`, never silently discarded. Duplicate inputs with different
 outputs are reported as non-deterministic and receive no golden file.
+Up to 200 samples are kept per function. Every distinct handwritten `manual` sample is
+reserved first; remaining slots keep the lowest input hashes from later workloads. If
+`--maximum` cannot hold the manual samples, recording fails with the function and required
+count instead of dropping an edge case.
 
 The committed ordinary goldens came from two independent Python 3.11.13 runs at frozen
 input commit `1f532d942b7c1c2d4a1cdcaed4e8825056749b34`. They used hash seeds 1 and 2

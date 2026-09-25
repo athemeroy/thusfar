@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from oracle.record.cassettes import CassetteStore, install, request_envelope
-from oracle.record.common import UnsafeValue, canonical, encode, known_secrets, require_reference_runtime
+from oracle.record.common import UnsafeValue, canonical, digest, encode, known_secrets, require_reference_runtime
 from oracle.record.functions import LoopbackOnly
 from oracle.record.functions import Collector
 from oracle.record.http_routes import response_record
@@ -41,6 +41,40 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_manual_edges_survive_later_hash_ranked_workloads(self):
+        function = 'fixture.handwritten'
+        collector = Collector({function}, {}, (), 3)
+        values = sorted((f'case-{index}' for index in range(20)),
+                        key=lambda value: digest({'case': value}))
+        manual, automatic = values[-2:], values[:-2]
+        collector.phase = 'manual'
+        for value in manual:
+            collector.add(function, {'case': value}, {'result': value})
+        collector.phase = 'book-replay-jekyll-prefix'
+        for value in reversed(automatic):
+            collector.add(function, {'case': value}, {'result': value})
+        expected = {digest({'case': value}) for value in [*manual, automatic[0]]}
+        self.assertEqual(set(collector.samples[function]), expected)
+        self.assertEqual(collector.manual_keys[function],
+                         {digest({'case': value}) for value in manual})
+        self.assertEqual(collector.calls[function], len(values))
+
+    def test_manual_sample_cap_fails_even_after_automatic_samples(self):
+        function = 'fixture.handwritten'
+        collector = Collector({function}, {}, (), 2)
+        collector.phase = 'unittest'
+        for value in ('automatic-one', 'automatic-two'):
+            collector.add(function, {'case': value}, value)
+        collector.phase = 'manual'
+        for value in ('edge-one', 'edge-two'):
+            collector.add(function, {'case': value}, value)
+        self.assertEqual(set(collector.samples[function]),
+                         {digest({'case': value}) for value in ('edge-one', 'edge-two')})
+        with self.assertRaisesRegex(ValueError,
+                                    r'--maximum 2 cannot hold 3 distinct manual samples for fixture.handwritten'):
+            collector.add(function, {'case': 'edge-three'}, 'edge-three')
+        self.assertEqual(collector.calls[function], 4)
+
     def test_cassette_replay_rejects_changed_or_linked_source_fixture(self):
         from oracle.record.artifacts import replay, stage_book
 

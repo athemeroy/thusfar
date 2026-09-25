@@ -107,6 +107,7 @@ class Collector:
         self.secrets = secrets
         self.maximum = maximum
         self.samples: dict[str, dict[str, dict]] = {}
+        self.manual_keys: dict[str, set[str]] = {}
         self.outputs: dict[str, dict[str, str]] = {}
         self.calls = Counter()
         self.skipped = Counter()
@@ -194,16 +195,23 @@ class Collector:
         key = digest(inputs)
         out_hash = digest(output)
         with self.lock:
+            required = self.manual_keys.setdefault(function, set())
+            manual = self.phase == 'manual'
+            if manual and key not in required and len(required) >= self.maximum:
+                raise ValueError(f'--maximum {self.maximum} cannot hold '
+                                 f'{len(required) + 1} distinct manual samples for {function}')
             self.calls[function] += 1
             prior = self.outputs.setdefault(function, {}).setdefault(key, out_hash)
             if prior != out_hash:
                 self.conflicts.setdefault(function, set()).add(key)
                 return
+            if manual:
+                required.add(key)
             items = self.samples.setdefault(function, {})
             if key not in items:
                 items[key] = {'input': inputs, 'output': output}
                 if len(items) > self.maximum:
-                    items.pop(max(items))
+                    items.pop(max(candidate for candidate in items if candidate not in required))
 
     def save(self, out: Path) -> dict:
         for function, items in sorted(self.samples.items()):
