@@ -35,6 +35,7 @@ RECORDING_INPUT_PATTERNS = (
     'oracle/goldens/parsed/**/*', 'oracle/goldens/special/**/*',
     'oracle/goldens/http/**/*', 'oracle/goldens/books/**/*',
     'oracle/goldens/fold/**/*', 'oracle/goldens/resume/**/*',
+    'oracle/goldens/concurrency/**/*',
 )
 
 

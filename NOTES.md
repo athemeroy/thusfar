@@ -2,6 +2,17 @@
 
 更新：2026-09-26。每条按症状 → 原因 → 修法记录；未解决的问题明确留在 `STATUS.md`。
 
+## Default concurrency evidence must state its book scope
+
+- Symptom: the previous default-worker comparison for Aq existed only as a
+  one-off observation; it could not be rerun from a committed receipt.
+- Cause: ordinary function and multi-book recordings intentionally use one
+  worker, because Jekyll's lookahead changes prompt inputs at 12 workers.
+- Fix: a separate offline recorder compares Aq at 1 and 12 workers under two
+  independent hash seeds. All 154 artifacts match the existing full-book golden,
+  including paid/free usage and the complete file set. The committed receipt
+  and CI rerun explicitly limit this result to Aq; the other books remain open.
+
 ## Paused continuation preserves results but changes free-JEV telemetry
 
 - Symptom: resuming the API-created Aq fixture from 4/9 to 9/9 matches 152 of
