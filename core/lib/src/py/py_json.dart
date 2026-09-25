@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-/// Python 3.12/3.13 `json.dumps` for JSON-compatible values.
+/// Frozen Python 3.11 `json.dumps` for JSON-compatible values.
 ///
 /// The options expose the variants used for Thusfar's persisted hashes and
 /// protocol bodies. Map insertion order is retained unless [sortKeys] is set.

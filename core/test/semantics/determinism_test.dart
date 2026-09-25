@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -73,12 +74,15 @@ void main() {
   test(
     'Future.wait publishes in input order when completion is reversed',
     () async {
-      final List<Future<int>> pending = <Future<int>>[
-        Future<int>.delayed(const Duration(milliseconds: 2), () => 0),
-        Future<int>.delayed(const Duration(milliseconds: 1), () => 1),
-        Future<int>.value(2),
-      ];
-      expect(await Future.wait(pending), <int>[0, 1, 2]);
+      final Completer<int> first = Completer<int>();
+      final Completer<int> second = Completer<int>();
+      final Future<List<int>> ordered = Future.wait(<Future<int>>[
+        first.future,
+        second.future,
+      ]);
+      second.complete(1);
+      first.complete(0);
+      expect(await ordered, <int>[0, 1]);
     },
   );
 }

@@ -3,7 +3,9 @@
 import json
 import hashlib
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Event
 
 from oracle.semantics.record_general import evaluate
 from oracle.semantics.record_determinism import evaluate as evaluate_retry
@@ -79,6 +81,20 @@ class TestGeneralSemanticOracle(unittest.TestCase):
                     self.assertEqual(evaluate_retry(case), case["expected"])
                 count += 1
         self.assertEqual(count, 4)
+
+    def test_executor_map_publishes_in_input_order(self):
+        second_finished = Event()
+
+        def work(index):
+            if index == 0:
+                if not second_finished.wait(timeout=5):
+                    raise TimeoutError("second task did not finish")
+            else:
+                second_finished.set()
+            return index
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            self.assertEqual(list(pool.map(work, [0, 1])), [0, 1])
 
 
 if __name__ == "__main__":
