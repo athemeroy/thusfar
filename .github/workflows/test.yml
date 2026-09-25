@@ -14,9 +14,12 @@ jobs:
       - name: A0 oracle and port ledgers
         run: |
           python docs/port/generate_inventory.py --check
+          python docs/port/regex_audit.py --check
           python docs/port/manifest.py --list-pending
           python core/tool/generate_ported_tests.py --check
           python oracle/corpus/build.py --verify
+          python oracle/corpus/annotate_snapshot.py --verify
+          python -m oracle.semantics.regex_python
       - name: JavaScript tests
         run: for f in tests/*.test.mjs; do node "$f"; done
       - name: Interface translations

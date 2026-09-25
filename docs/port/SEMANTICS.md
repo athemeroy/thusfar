@@ -1,0 +1,20 @@
+# Python 3.11 → Dart 3.13 语义差异
+
+本表使用 Android 1.7.5 的 Python 3.11 作为标准答案。A0 的语义测试可位于 `core/test/semantics/`，不表示对应业务函数已移植；业务完成状态只看 `MANIFEST.yaml`。生成器输出的 JSONL 是两边读取的同一组输入与 Python 预期输出。每一行都写明尚需完成的逐位点验证，避免把小样本通过误当成全模块通过。
+
+| 主题 | Python / Dart 差异 | 统一规则和两边可运行的测试 | 尚需核对 |
+|---|---|---|---|
+ | 字符串下标与正文位置 | Python `len`、切片和正则 span 按 Unicode 码点；Dart 字符串下标按 UTF-16 码元。`𠮷`、emoji 都占前者 1、后者 2。 | 磁盘和阅读器可见的 `start/end/frontier` 统一用 UTF-16；局部 Python 算法用码点时显式转换。`oracle/semantics/general.jsonl` 中 `code_point_length`、`utf16_length`、`utf16_offset`、`utf16_prefix`、`slice` 共用 `A𠮷😀B` 等样本；Python `tests/test_port_semantics.py` 与 Dart `core/test/semantics/py_compat_test.dart` 运行。 | `INVENTORY.md` 的 `正文长度疑似` 只是保守筛查；逐位点审计未完成，不能据此认为所有源代码偏移已换算。 |
+| 正则 | Python `re` 的 Unicode `\w/\b/\d/\s`、命名组 `(?P<...>)`、绝对结尾 `\Z`、`S/M/X`、`fullmatch`、带组 `split`、`sub` 替换格式与 Dart `RegExp` 有差异；Python span 仍是码点。 | `docs/port/REGEX.json` 按 AST 记录 112 个直接调用（`pipeline.parse` 为 34 个）及 36 个编译模式调用；141 个静态位点、12 个可枚举动态变体均有正反例。`oracle/semantics/regex_python.py` 与 `core/test/semantics/regex_test.dart` 对同一用例执行。模式翻译规则和 5 个真正动态位点的来源见 `REGEX.md`。 | 正反例只证明这些输入上的匹配。捕获组、替换、拆分、span 和任意动态 surface 的逐函数 golden 在 A1–A6 完成；A0 需补足动态输入录制。 |
+| JSON 序列化 | Python `json.dumps` 默认空格、ASCII 转义、键排序和浮点表示影响哈希/缓存键；Dart 默认编码不保证逐字节相同。Python 允许 `NaN/Infinity`。 | `PyJson` 明确 `ensureAscii/sortKeys/compact/allowNan`，保留插入顺序并拒绝无序集合。`oracle/semantics/py_json.jsonl` 固定随机种子录制 10,000 个值；两边测试逐字节比较，另测非有限值、Unicode 键序。 | 只覆盖 JSON 兼容值；业务函数的具体 `json.dumps` 选项要随 golden 核对。 |
+| 哈希和来源校验 | UTF-8 字节、JSON 字节、文件内容只差一个字符，SHA-256 与旧缓存键就失效；`EXTRACTOR_REVISION` 哈希了原 `pipeline/local.py` 源码。 | 固定 Python 1.7.5 `local.py` 的修订哈希 `2ead2ec689628def6e1b12c657e554008571d3717a2b42ab6fbce98184fc0f55`；`oracle/semantics/hashes.jsonl` 的 12 例在 Python 和 Dart 逐字节比 SHA-256。 | 清单中的所有哈希调用点仍需在各自函数 golden 覆盖，特别是 1.7.x 已付费缓存。 |
+| 字符串方法 | Python 默认 `strip/split` 使用 Unicode 14 空白集合；`isdigit` 含非 ASCII 数字；`casefold/title` 与 Dart 小写/大写转换不同。 | 以 Python 3.11 Unicode 14 表生成 `unicode_data.dart`；`general.jsonl` 的 `strip/split/isdigit/casefold/title` 样本由两边测试。包含全角空格、NBSP、Greek sigma、`ß`、阿拉伯数字、上标数字。 | 逐业务函数核对调用参数、空串和 Unicode 异常输入。 |
+| 数字 | Python `//` 向负无穷取整，`%` 的符号随除数，`int(float)` 向零截断；`round` 在正好一半时取偶数，`round(x, n)` 基于二进制浮点值。 | `general.jsonl` 的 `floor_div/modulo/truncate/round/round_digits` 在两边运行，包括负数和 `2.675`。Dart 兼容层显式实现。 | `roundDigits` 当前只实现记录范围，超过 ±308 位会拒绝；A1 前须按 Python 规则补全或证明业务不会触达并在进度表登记。 |
+| 排序 | Python `sorted` 稳定、比较 key 元组时逐元素按码点/数字比较；Dart 的默认排序和字符串顺序不可直接代用。 | Dart 显式附原索引保证相等 key 的顺序；`general.jsonl` 的 `compare/stable_sort` 在两边运行，包含扩展区汉字与重复 key。 | 各业务 `key=`、`reverse=` 与不支持的混合类型须随函数 golden 核对。 |
+| 字典顺序 | Python 3.11 `dict` 保留首次插入位置，覆盖已有 key 不改变位置；Dart `HashMap` 不保证顺序。 | 使用 `LinkedHashMap`；`general.jsonl` 的 `ordered_map` 在两边运行，`PyJson` 对无序 `HashMap` 明确拒绝。 | 各持久化字典的插入顺序仍需整书及接口 golden 证明。 |
+| 时间与随机 | Python `time.time/monotonic` 与 `random.random` 直接读取全局状态会使重试及输出不稳定。 | 核心接口接受 `ClockSource/RandomSource`；`oracle/semantics/determinism.jsonl` 由固定时钟和抖动录制四种 `Retry-After`，Python 和 Dart 测试读取同样的预期。 | A3 业务模型客户端要真正使用注入接口；录制中的导出时间、Cookie 需在复跑中验证稳定。 |
+| 并发完成顺序 | Python `ThreadPoolExecutor` 工作完成时序不固定；`ex.map` 和逐索引取 `Future.result` 仍按输入顺序发出。Dart `Future.wait` 也按输入列表发出。 | Python `test_executor_map_publishes_in_input_order` 用事件迫使第二项先完成；Dart `determinism_test.dart` 用两个 `Completer` 反序完成，同测输出 `[0,1]`。 | `pipeline.run.Runner.queue_final` 的 bio/recap 工人会在完成时改共享日志与缓存；A0.5 须有可复现测试与最小确定性修复，再录最终 goldens。 |
+
+## 用例运行方式
+
+从仓库根目录运行 Python 3.11 的 `python -m unittest tests.test_port_semantics oracle.semantics.regex_python`；从 `core/` 运行 `dart test test/semantics`。`dart analyze --fatal-infos --fatal-warnings` 负责类型与 lint。正式验收以 CI 和 `STATUS.md` 记录的运行结果为准。
