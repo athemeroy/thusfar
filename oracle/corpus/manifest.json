@@ -90,7 +90,7 @@
         "server/jobs.py": "0f51c97fd0b3303c801937a5ada77c7c5de4481e3c570b361867e2cae24b4671"
       },
       "replay_code_sha256": {
-        "pipeline/run.py": "24a8ac0bb5268dcfadbdcff9fbcd398b54c1634feaa51fe7eae7b5963358857f",
+        "pipeline/run.py": "9c3061cd104a3af53fd085e2a5917eacce2882ab0fc39f00dd3dd424cbf10391",
         "pipeline/llm.py": "fbfe37508d962af7c36d503983ba52aa7d6fc840d79cfa70b008c7983b9b9675",
         "pipeline/link.py": "672378817e72934f756f85d88deabddb698b95cd1815641727c5c2f7cc1622b3",
         "pipeline/kg.py": "64a971a252aabceb85ef801964e86302811b81e023d3209032c50f03581c2994",
@@ -1038,8 +1038,8 @@
       "sha256": "41da127df9629b471810834aa056c0cd3605ea68b491d5a25b95dbae99e7be17"
     },
     "snapshots/aq_paused_annotated/work/usage.json": {
-      "bytes": 248,
-      "sha256": "b12f0475cf9d93467ff4c9cd42156c9647af28bda960a676bec1c2dc189b39c4"
+      "bytes": 261,
+      "sha256": "adbc6a08ccb5a57c3788ac8ee9ddb77cd47a7118f4ec74a22916feeeef29b17b"
     },
     "snapshots/aq_paused_annotated/work/verification/0000.json": {
       "bytes": 29,

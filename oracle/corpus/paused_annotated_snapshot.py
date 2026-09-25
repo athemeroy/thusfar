@@ -43,7 +43,7 @@ CASSETTES = REPO / 'oracle/cassettes/live'
 CASSETTE_AUDIT = REPO / 'oracle/record/live-a0-audit.json'
 LIMIT = 4
 PINNED_REPLAY_SHA256 = {
-    'pipeline/run.py': '24a8ac0bb5268dcfadbdcff9fbcd398b54c1634feaa51fe7eae7b5963358857f',
+    'pipeline/run.py': '9c3061cd104a3af53fd085e2a5917eacce2882ab0fc39f00dd3dd424cbf10391',
     'pipeline/llm.py': 'fbfe37508d962af7c36d503983ba52aa7d6fc840d79cfa70b008c7983b9b9675',
     'pipeline/link.py': '672378817e72934f756f85d88deabddb698b95cd1815641727c5c2f7cc1622b3',
     'pipeline/kg.py': '64a971a252aabceb85ef801964e86302811b81e023d3209032c50f03581c2994',
