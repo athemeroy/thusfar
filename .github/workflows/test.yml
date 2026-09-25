@@ -29,6 +29,7 @@ jobs:
         run: |
           python -m oracle.record.special --verify
           python -m oracle.record.parse_books --verify
+          python -m oracle.record.verify_function_goldens
           python -m oracle.record.verify_book_artifacts
           python -m oracle.record.verify_folds
       - name: Live cassette audit contracts (synthetic, no network)

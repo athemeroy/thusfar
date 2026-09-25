@@ -14,15 +14,24 @@ types carry tags (`$tuple`, `$set`, `$map`, `$bytes`, `$xml`, `$path`). Unsuppor
 counted in `record-report.json`, never silently discarded. Duplicate inputs with different
 outputs are reported as non-deterministic and receive no golden file.
 
+The committed ordinary goldens came from two independent Python 3.11.13 runs at source
+commit `796b9016d33e7b05ccee59ef0828ec51b9b784ac`. They used different hash seeds and
+the same checked-in Aq wire tape. Both runs passed 287 Python tests, completed the 9-segment
+offline book replay, and produced byte-identical output trees. The complete workload is:
+
 ```bash
 PY311=/home/dev/.local/share/uv/python/cpython-3.11.13-linux-x86_64-gnu/bin/python3.11
-$PY311 -m oracle.record.functions \
+env PYTHONHASHSEED=1 $PY311 -m oracle.record.functions \
   --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
-  --out /tmp/thusfar-functions-pass-1
-$PY311 -m oracle.record.functions \
+  --replay-book oracle/corpus/snapshots/aq_complete \
+  --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
+  --maximum 200 --out /tmp/thusfar-functions-pass-1
+env PYTHONHASHSEED=2 $PY311 -m oracle.record.functions \
   --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
-  --out /tmp/thusfar-functions-pass-2
-diff -r /tmp/thusfar-functions-pass-1 /tmp/thusfar-functions-pass-2
+  --replay-book oracle/corpus/snapshots/aq_complete \
+  --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
+  --maximum 200 --out /tmp/thusfar-functions-pass-2
+diff -rq /tmp/thusfar-functions-pass-1 /tmp/thusfar-functions-pass-2
 ```
 
 The corpus includes an intentionally empty TXT. `expected_rejections.json` states its exact
@@ -31,26 +40,29 @@ can use loopback fake servers, while the function recorder blocks non-loopback c
 
 `verify_function_goldens.py` audits the exact ordinary `pipeline/` and `server/` JSONL file
 set against `record-report.json`, every physical sample count (maximum 200), sorted unique
-input digests, the 128 selected pure-function IDs in the current inventory, zero conflicts,
+input digests, the 125 selected pure-function IDs in the current inventory, zero conflicts,
 and the five unobserved functions' named special fixtures. It checks the report byte hash and
-provenance totals. The final two-pass provenance must declare this explicit tree algorithm:
+provenance totals. `KG.canon` inputs retain only the visited `merged_into` chain; unrelated
+graph mentions cannot change this function's golden. `classify`, `finish`, and
+`settle_rewrites` mutate their input objects and have stateful special goldens instead of
+ordinary pure-function goldens. The two-pass provenance declares this explicit tree algorithm:
 SHA-256 over files sorted by POSIX relative path, feeding each UTF-8 path, one NUL byte, and
-the raw 32-byte SHA-256 digest of that file's bytes. The tree includes 123 ordinary function
+the raw 32-byte SHA-256 digest of that file's bytes. The tree includes 120 ordinary function
 JSONL files plus `record-report.json`, and excludes special goldens and provenance itself.
+The current result is 120 ordinary functions, 4,652 samples, and 44 tagged exception outputs;
+both passes produced tree SHA-256
+`2ef15bffba67e7fd74fac8e97951bbc282d250ff2cfc0b4986f709c75b837d14`.
 Run `--tree-sha` after both passes match to calculate the value before writing provenance;
-the default command then checks that declared digest. The earlier provenance has an
-undocumented tree hash and fails this stricter check until the final double recording updates
-it; the old value is retained as historical evidence.
+the default command checks the declared digest and inventory against the checked-in files.
 
 ```bash
 $PY311 -m oracle.record.verify_function_goldens --tree-sha
 $PY311 -m oracle.record.verify_function_goldens
 ```
 
-After actual model cassettes exist, add `--replay-book oracle/corpus/snapshots/<book_id>` and
-`--cassettes oracle/cassettes` to the same command. Use `--book-start fresh` for a new book and
-`--book-start resume` for a 1.7.x partial snapshot. A single workload can repeat
-`--replay-book` for several books.
+The checked-in tape covers Aq's complete book replay. Other books require matching request
+cassettes before they can be included in the same offline function workload. Use
+`--book-start fresh` for a new book and `--book-start resume` for a 1.7.x partial snapshot.
 
 ## Model and free JEV cassettes
 
