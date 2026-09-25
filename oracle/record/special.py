@@ -1,8 +1,9 @@
-"""Record three stateful or higher-order helpers with explicit, typed fixtures.
+"""Record helpers requiring explicit, typed fixtures beyond the general tracer.
 
 The general function tracer cannot encode a returned closure, a callback argument, or
-Runner's live lock. These cases record the value-bearing state and the observable calls
-instead. Every fixture is synthetic; no model, book file, or external service is used.
+Runner's live lock. Integration tests also pass variable file revisions and wall-clock
+fields into several otherwise deterministic helpers. These cases record fixed state
+and observable calls instead. Every fixture is synthetic; no external service is used.
 """
 
 from __future__ import annotations
@@ -22,6 +23,8 @@ from .functions import LoopbackOnly
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = ROOT / 'oracle/goldens/special'
 SOURCES = ('pipeline/run.py', 'pipeline/kg.py', 'pipeline/lang.py',
+           'server/manual_entities.py', 'server/marginalia.py',
+           'server/notebook.py', 'server/storage.py',
            'oracle/record/common.py', 'oracle/record/special.py')
 
 
@@ -29,9 +32,27 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def case(function: str, label: str, inputs: dict, call, secrets: tuple[str, ...],
+         *, error: str | None = None) -> dict:
+    """Record a successful result or one exact, expected Python rejection."""
+    frozen_input = encode(inputs, secrets)
+    try:
+        value = call()
+    except ValueError as exc:
+        if error is None or str(exc) != error:
+            raise
+        value = exc
+    else:
+        if error is not None:
+            raise AssertionError(f'{function}/{label} no longer rejects: {error}')
+    return {'schema': 1, 'function': function, 'case': label,
+            'input': frozen_input, 'output': encode(value, secrets)}
+
+
 def rows() -> dict[str, list[dict]]:
     from pipeline.kg import KG
     from pipeline.run import Runner, attr_facts
+    from server import manual_entities, marginalia, notebook
 
     secrets = known_secrets()
     book = {'lang': 'zh', 'blocks': []}
@@ -91,6 +112,113 @@ def rows() -> dict[str, list[dict]]:
         'case': 'strict_cutoff_and_fallback',
         'input': saga_input, 'output': saga_output,
     }]
+
+    manual_book = {'len': 30, 'blocks': [{'k': 'p', 'o': 0, 't': '😀尼尔遇见黑月。'}]}
+    manual_item = {
+        'id': '12345678-abcd', 'kind': 'person', 'name': ' 尼尔 ',
+        'knowledge_cutoff': 20, 'note': ' 后来才知道 ',
+        'created': 1730000000.0, 'updated': 1730000030.0,
+    }
+    result['manual_base.jsonl'] = [
+        case('server.manual_entities._base', 'trimmed_valid_item',
+             {'item': manual_item, 'book': manual_book},
+             lambda: manual_entities._base(manual_item, manual_book), secrets),
+        case('server.manual_entities._base', 'invalid_id',
+             {'item': {**manual_item, 'id': 'short'}, 'book': manual_book},
+             lambda: manual_entities._base({**manual_item, 'id': 'short'}, manual_book),
+             secrets, error='手动条目编号无效'),
+    ]
+
+    stored_item = {
+        'id': '12345678-abcd', 'kind': 'person', 'name': '尼尔',
+        'knowledge_cutoff': 20, 'source_start': 2,
+        'versions': [{'p': 10, 'note': '已出现'}, {'p': 20, 'note': '后来才知道'}],
+        'deleted': False, 'revision': 2, 'operation': 'cccccccc-dddd',
+        'created': 1730000000.0, 'updated': 1730000030.0,
+    }
+    result['manual_rows.jsonl'] = [
+        case('server.manual_entities.rows', 'versioned_visible_entry',
+             {'items': [stored_item]}, lambda: manual_entities.rows([stored_item]), secrets),
+        case('server.manual_entities.rows', 'deleted_entry_hidden',
+             {'items': [{**stored_item, 'deleted': True}]},
+             lambda: manual_entities.rows([{**stored_item, 'deleted': True}]), secrets),
+    ]
+
+    overlay_items = [
+        {'id': '12345678-abcd', 'name': '尼尔', 'deleted': False,
+         'created': 1730000000.0, 'updated': 1730000030.0},
+        {'id': 'abcdefgh-1234', 'name': '黑月', 'deleted': False,
+         'created': 1730000000.0, 'updated': 1730000030.0},
+        {'id': 'deleted-1234', 'name': '遇见', 'deleted': True,
+         'created': 1730000000.0, 'updated': 1730000030.0},
+    ]
+    generated_mentions = [[2, 4, 'P1']]
+    result['manual_mentions.jsonl'] = [
+        case('server.manual_entities.mentions', 'generated_mention_wins_overlap',
+             {'blocks': manual_book['blocks'], 'items': overlay_items,
+              'existing': generated_mentions},
+             lambda: manual_entities.mentions(manual_book['blocks'], overlay_items,
+                                              generated_mentions), secrets),
+        case('server.manual_entities.mentions', 'all_manual_names_deleted',
+             {'blocks': manual_book['blocks'],
+              'items': [{**item, 'deleted': True} for item in overlay_items],
+              'existing': generated_mentions},
+             lambda: manual_entities.mentions(
+                 manual_book['blocks'], [{**item, 'deleted': True} for item in overlay_items],
+                 generated_mentions), secrets),
+    ]
+
+    result['manual_restore.jsonl'] = [
+        case('server.manual_entities.restore', 'fixed_timestamps_and_anchor',
+             {'items': [stored_item], 'book': manual_book},
+             lambda: manual_entities.restore([stored_item], manual_book), secrets),
+        case('server.manual_entities.restore', 'changed_source_anchor',
+             {'items': [{**stored_item, 'source_start': 3}], 'book': manual_book},
+             lambda: manual_entities.restore([{**stored_item, 'source_start': 3}], manual_book),
+             secrets, error='手动条目原文位置无效'),
+    ]
+
+    graph_revision = (1730000000123456789, 481, 7001)
+    manual_payload = {
+        'mode': 'manual', 'pos': 20, 'persona': 'cold',
+        'knowledge_frontier': 18, 'graph_revision': graph_revision,
+        'start': 2, 'end': 4, 'quote': '尼尔',
+    }
+    cues_payload = {
+        'mode': 'cues', 'pos': 20, 'persona': 'auto',
+        'knowledge_frontier': 18, 'graph_revision': graph_revision,
+        'page_start': 0, 'page_end': 20,
+    }
+    result['marginalia_key.jsonl'] = [
+        case('server.marginalia._key', 'manual_fixed_graph_revision',
+             {'payload': manual_payload}, lambda: marginalia._key(manual_payload), secrets),
+        case('server.marginalia._key', 'cues_version_fixed_graph_revision',
+             {'payload': cues_payload}, lambda: marginalia._key(cues_payload), secrets),
+        case('server.marginalia._key', 'changed_inode_changes_key',
+             {'payload': {**manual_payload, 'graph_revision': graph_revision[:2] + (7002,)}},
+             lambda: marginalia._key({**manual_payload,
+                                      'graph_revision': graph_revision[:2] + (7002,)}), secrets),
+    ]
+
+    notebook_book = {'len': 30, 'blocks': [{'k': 'p', 'o': 0, 't': '😀Alice met Bob.'}]}
+    note = {
+        'id': 'note-test-0001', 'kind': 'note', 'start': 2, 'end': 7,
+        'quote': 'Alice', 'text': 'A first thought', 'knowledge_cutoff': 10,
+        'created': 1730000000.0, 'updated': 1730000030.0,
+    }
+    result['notebook_validate.jsonl'] = [
+        case('server.notebook.validate', 'source_exact_after_supplementary_char',
+             {'item': note, 'book': notebook_book},
+             lambda: notebook.validate(note, notebook_book), secrets),
+        case('server.notebook.validate', 'mismatched_quote_rejected',
+             {'item': {**note, 'quote': 'Alicé'}, 'book': notebook_book},
+             lambda: notebook.validate({**note, 'quote': 'Alicé'}, notebook_book),
+             secrets, error='摘录与原文不一致，未保存到错误位置'),
+        case('server.notebook.validate', 'surrogate_split_rejected',
+             {'item': {**note, 'start': 1, 'quote': 'Alice'}, 'book': notebook_book},
+             lambda: notebook.validate({**note, 'start': 1, 'quote': 'Alice'}, notebook_book),
+             secrets, error='摘录位置已变化，请重新选择原文'),
+    ]
     return result
 
 
