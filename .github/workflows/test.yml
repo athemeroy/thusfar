@@ -34,6 +34,18 @@ jobs:
           python -m oracle.record.verify_function_goldens
           python -m oracle.record.verify_book_artifacts
           python -m oracle.record.verify_folds
+      - name: A0 function golden replay against committed bytes (offline)
+        run: |
+          output=$(mktemp -d)
+          trap 'rm -rf "$output"' EXIT
+          PYTHONHASHSEED=1 python -m oracle.record.functions \
+            --unittest --corpus oracle/corpus --manual oracle/record/manual.jsonl \
+            --replay-book oracle/corpus/snapshots/aq_complete \
+            --cassettes oracle/cassettes/live --book-start fresh --concurrency 1 \
+            --maximum 200 --out "$output"
+          actual=$(python -m oracle.record.verify_function_goldens --root "$output" --tree-sha)
+          expected=$(python -c 'import json; print(json.load(open("oracle/goldens/function-provenance.json"))["output_tree_sha256"])')
+          test "$actual" = "$expected"
       - name: Live cassette audit contracts (synthetic, no network)
         run: python -m unittest tests.test_verify_live_cassettes -v
       - name: Checked-in live cassette integrity and budget (read-only, no network)

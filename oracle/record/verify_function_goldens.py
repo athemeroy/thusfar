@@ -22,6 +22,20 @@ TREE_ALGORITHM = 'sha256(sorted POSIX relative path UTF-8 + NUL + raw SHA-256 fi
 IDENTIFIER = re.compile(r'[A-Za-z_][A-Za-z_0-9]*\Z')
 SHA256 = re.compile(r'[0-9a-f]{64}\Z')
 MAXIMUM = 200
+RECORDING_INPUT_PATTERNS = (
+    'pipeline/**/*.py', 'server/**/*.py', 'tests/**/*',
+    'oracle/record/*.py', 'oracle/record/manual.jsonl',
+    'oracle/record/expected_rejections.json', 'oracle/record/live-a0-audit.json',
+    'oracle/corpus/*.py', 'oracle/corpus/manifest.json',
+    'oracle/corpus/books/**/*', 'oracle/corpus/synthetic/**/*',
+    'oracle/corpus/snapshots/**/*', 'oracle/cassettes/live/**/*',
+    'oracle/cassettes/synthetic/**/*', 'oracle/semantics/**/*',
+    'docs/port/inventory.json', 'scripts/*.py', 'web/**/*',
+    # These are unittest inputs, not the ordinary function outputs being verified.
+    'oracle/goldens/parsed/**/*', 'oracle/goldens/special/**/*',
+    'oracle/goldens/http/**/*', 'oracle/goldens/books/**/*',
+    'oracle/goldens/fold/**/*',
+)
 
 
 def _fail(reason: str) -> None:
@@ -81,6 +95,36 @@ def tree_sha256(files: dict[Path, bytes]) -> str:
         outer.update(b'\0')
         outer.update(hashlib.sha256(content).digest())
     return outer.hexdigest()
+
+
+def audit_recording_inputs(root: Path = ROOT) -> dict:
+    """Fingerprint the exact local files that can affect the formal workload.
+
+    The selection deliberately omits the ordinary function golden tree, its report,
+    its provenance, Dart sources, and documentation. It includes non-function
+    goldens because Python unittests read and compare those fixtures.
+    """
+    if root.is_symlink() or not root.is_dir():
+        _fail('recording input root is missing or linked')
+    paths: set[Path] = set()
+    for pattern in RECORDING_INPUT_PATTERNS:
+        for candidate in root.glob(pattern):
+            if candidate.is_symlink():
+                _fail('recording input contains a symlink')
+            if candidate.is_file() and '__pycache__' not in candidate.relative_to(root).parts \
+                    and candidate.suffix not in ('.pyc', '.pyo'):
+                paths.add(candidate.relative_to(root))
+    if not paths:
+        _fail('recording input set is empty')
+    ordered = sorted(paths, key=lambda path: path.as_posix())
+    files = {path: _file(root / path) for path in ordered}
+    return {
+        'patterns': list(RECORDING_INPUT_PATTERNS),
+        'paths': [path.as_posix() for path in ordered],
+        'file_count': len(files),
+        'tree_algorithm': TREE_ALGORITHM,
+        'tree_sha256': tree_sha256(files),
+    }
 
 
 def audit_files(goldens: Path = GOLDENS, inventory: Path | None = None) -> dict:
@@ -164,13 +208,17 @@ def audit_files(goldens: Path = GOLDENS, inventory: Path | None = None) -> dict:
             'output_tree_sha256': tree_sha256(files)}
 
 
-def verify(goldens: Path = GOLDENS, inventory: Path | None = INVENTORY) -> dict:
+def verify(goldens: Path = GOLDENS, inventory: Path | None = INVENTORY,
+           input_root: Path = ROOT) -> dict:
     result = audit_files(goldens, inventory)
     provenance = _json(goldens / 'function-provenance.json')
     if not isinstance(provenance, dict) or provenance.get('schema') != 1:
         _fail('function provenance schema is missing')
     if provenance.get('output_tree_algorithm') != TREE_ALGORITHM:
         _fail('function provenance has no recognized explicit tree digest algorithm')
+    measured_inputs = audit_recording_inputs(input_root)
+    if provenance.get('recording_inputs') != measured_inputs:
+        _fail('recording input paths or content tree SHA differs from provenance')
     for field in ('selected_functions', 'observed_functions', 'samples',
                   'tagged_error_samples', 'skipped_calls', 'non_deterministic_inputs',
                   'output_file_count', 'report_sha256', 'output_tree_sha256'):
@@ -205,8 +253,14 @@ def main() -> None:
                         help='function golden root containing report, pipeline/, server/')
     parser.add_argument('--tree-sha', action='store_true',
                         help='calculate a new tree SHA after exact file/report checks; does not verify provenance')
+    parser.add_argument('--input-tree', action='store_true',
+                        help='calculate the current recording input paths and tree SHA')
     args = parser.parse_args()
-    if args.tree_sha:
+    if args.tree_sha and args.input_tree:
+        parser.error('choose one of --tree-sha or --input-tree')
+    if args.input_tree:
+        print(json.dumps(audit_recording_inputs(), ensure_ascii=False, separators=(',', ':')))
+    elif args.tree_sha:
         print(audit_files(args.root, INVENTORY)['output_tree_sha256'])
     else:
         result = verify(args.root)
