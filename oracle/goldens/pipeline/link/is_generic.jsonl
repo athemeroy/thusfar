@@ -19,6 +19,7 @@
 {"input":{"name":"Alice"},"output":false}
 {"input":{"name":"阿Q哥"},"output":false}
 {"input":{"name":"喝采的人们"},"output":false}
+{"input":{"name":"Madame"},"output":false}
 {"input":{"name":"长衫和短衫人物"},"output":false}
 {"input":{"name":"老尼姑"},"output":true}
 {"input":{"name":"三个闲人"},"output":false}
@@ -34,6 +35,7 @@
 {"input":{"name":"秃儿"},"output":false}
 {"input":{"name":"老头子"},"output":true}
 {"input":{"name":"人们"},"output":false}
+{"input":{"name":"Mme Aubain"},"output":false}
 {"input":{"name":"假洋鬼子的老婆"},"output":false}
 {"input":{"name":"贾宝玉"},"output":false}
 {"input":{"name":"*先生"},"output":true}
@@ -56,6 +58,7 @@
 {"input":{"name":"*old gentleman"},"output":true}
 {"input":{"name":"假洋鬼子"},"output":false}
 {"input":{"name":"阿Q"},"output":false}
+{"input":{"name":"Félicité"},"output":false}
 {"input":{"name":"*少爷"},"output":true}
 {"input":{"name":"洪哥"},"output":false}
 {"input":{"name":"太太"},"output":true}
@@ -68,6 +71,7 @@
 {"input":{"name":"钱太爷的大儿子"},"output":false}
 {"input":{"name":"赵司晨"},"output":false}
 {"input":{"name":"陈独秀"},"output":false}
+{"input":{"name":"Monsieur"},"output":false}
 {"input":{"name":"尼姑"},"output":true}
 {"input":{"name":"孔子"},"output":false}
 {"input":{"name":"光头的老头子"},"output":false}

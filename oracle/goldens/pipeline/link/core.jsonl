@@ -17,6 +17,7 @@
 {"input":{"name":"小Don"},"output":""}
 {"input":{"name":"阿Q哥"},"output":""}
 {"input":{"name":"喝采的人们"},"output":""}
+{"input":{"name":"Madame"},"output":""}
 {"input":{"name":"长衫和短衫人物"},"output":""}
 {"input":{"name":"老尼姑"},"output":""}
 {"input":{"name":"三个闲人"},"output":""}
@@ -32,6 +33,7 @@
 {"input":{"name":"秃儿"},"output":""}
 {"input":{"name":"老头子"},"output":""}
 {"input":{"name":"人们"},"output":""}
+{"input":{"name":"Mme Aubain"},"output":""}
 {"input":{"name":"假洋鬼子的老婆"},"output":""}
 {"input":{"name":"贾宝玉"},"output":""}
 {"input":{"name":"赵白眼"},"output":""}
@@ -47,6 +49,7 @@
 {"input":{"name":"😀"},"output":""}
 {"input":{"name":"假洋鬼子"},"output":""}
 {"input":{"name":"阿Q"},"output":""}
+{"input":{"name":"Félicité"},"output":""}
 {"input":{"name":"洪哥"},"output":""}
 {"input":{"name":"太太"},"output":""}
 {"input":{"name":"举人老爷"},"output":"举人"}
@@ -58,6 +61,7 @@
 {"input":{"name":"赵司晨"},"output":""}
 {"input":{"name":"陈独秀"},"output":""}
 {"input":{"name":"Dr. Jean-Luc"},"output":"Jean-Luc"}
+{"input":{"name":"Monsieur"},"output":""}
 {"input":{"name":"尼姑"},"output":""}
 {"input":{"name":"孔子"},"output":""}
 {"input":{"name":"光头的老头子"},"output":"光头的"}

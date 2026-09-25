@@ -42,10 +42,12 @@
 {"input":{"f":"酒店里的人"},"output":false}
 {"input":{"f":"Dr. Q"},"output":false}
 {"input":{"f":"三个闲人"},"output":false}
+{"input":{"f":"Madame"},"output":false}
 {"input":{"f":"小D"},"output":false}
 {"input":{"f":"王子"},"output":false}
 {"input":{"f":"老尼姑"},"output":true}
 {"input":{"f":"阿Q哥"},"output":false}
+{"input":{"f":"Monsieur"},"output":false}
 {"input":{"f":"桩家"},"output":false}
 {"input":{"f":"邹七嫂"},"output":false}
 {"input":{"f":"里通外国的人"},"output":false}
@@ -64,12 +66,14 @@
 {"input":{"f":"长衫人物"},"output":false}
 {"input":{"f":"老头子"},"output":true}
 {"input":{"f":"茂才先生"},"output":false}
+{"input":{"f":"Mme Aubain"},"output":false}
 {"input":{"f":"郝麦夫人"},"output":false}
 {"input":{"f":"Anne"},"output":false}
 {"input":{"f":"李四"},"output":false}
 {"input":{"f":"赵太爷"},"output":false}
 {"input":{"f":"小孤孀"},"output":false}
 {"input":{"f":"阿Quei"},"output":false}
+{"input":{"f":"Félicité"},"output":false}
 {"input":{"f":"洪哥"},"output":false}
 {"input":{"f":"黑月"},"output":false}
 {"input":{"f":"他"},"output":false}

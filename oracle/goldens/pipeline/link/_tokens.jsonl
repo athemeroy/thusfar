@@ -1,5 +1,7 @@
 {"input":{"name":"Mr. Pocket"},"output":{"$set":["pocket"]}}
 {"input":{"name":"贾宝玉与𠮷😀"},"output":{"$set":[]}}
+{"input":{"name":"Madame"},"output":{"$set":["madame"]}}
+{"input":{"name":"Mme Aubain"},"output":{"$set":["aubain","mme"]}}
 {"input":{"name":"Mme. Bovary"},"output":{"$set":["bovary","mme"]}}
 {"input":{"name":"Mr. Jean-Luc O'Neill and the Lady"},"output":{"$set":["jean-luc","o'neill"]}}
 {"input":{"name":"Herbert Pocket"},"output":{"$set":["herbert","pocket"]}}

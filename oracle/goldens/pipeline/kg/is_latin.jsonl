@@ -42,6 +42,7 @@
 {"input":{"s":"假洋鬼子的老婆"},"output":false}
 {"input":{"s":"Anne"},"output":true}
 {"input":{"s":"X"},"output":true}
+{"input":{"s":"Mme Aubain"},"output":true}
 {"input":{"s":"里通外国的人"},"output":false}
 {"input":{"s":"包法利先生"},"output":false}
 {"input":{"s":"Dr. Q"},"output":true}
@@ -56,6 +57,7 @@
 {"input":{"s":"老Q"},"output":false}
 {"input":{"s":"邹七嫂的女儿"},"output":false}
 {"input":{"s":"老余"},"output":false}
+{"input":{"s":"Félicité"},"output":true}
 {"input":{"s":"小Don"},"output":false}
 {"input":{"s":"他"},"output":false}
 {"input":{"s":"邹七嫂"},"output":false}
@@ -65,6 +67,7 @@
 {"input":{"s":"钱太爷"},"output":false}
 {"input":{"s":"我"},"output":false}
 {"input":{"s":"郝麦"},"output":false}
+{"input":{"s":"Madame"},"output":true}
 {"input":{"s":"小孤孀"},"output":false}
 {"input":{"s":"王(叔)"},"output":false}
 {"input":{"s":"光头的老头子"},"output":false}
@@ -90,6 +93,7 @@
 {"input":{"s":"蚂蚁似的人"},"output":false}
 {"input":{"s":"Dr. Jean-Luc"},"output":true}
 {"input":{"s":"丛雨"},"output":false}
+{"input":{"s":"Monsieur"},"output":true}
 {"input":{"s":"Ann"},"output":true}
 {"input":{"s":"满面剃得精光的老头子"},"output":false}
 {"input":{"s":"Herbert Pocket"},"output":true}

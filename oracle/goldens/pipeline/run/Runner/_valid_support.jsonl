@@ -8,6 +8,7 @@
 {"input":{"answer":{"p":0.96,"choice":"supported","probs":{"supported":0.96,"not_in_passage":0.01,"contradicted":0.03}}},"output":true}
 {"input":{"answer":{"p":0.88,"choice":"supported","probs":{"supported":0.88,"not_in_passage":0.11,"contradicted":0.01}}},"output":true}
 {"input":{"answer":{"p":0.96,"choice":"supported","probs":{"supported":0.96,"not_in_passage":0.03,"contradicted":0.01}}},"output":true}
+{"input":{"answer":{"p":0.25,"choice":"not_in_passage","probs":{"supported":0.25,"not_in_passage":0.42,"contradicted":0.33}}},"output":true}
 {"input":{"answer":{"p":0.89,"choice":"supported","probs":{"supported":0.89,"not_in_passage":0.1,"contradicted":0.01}}},"output":true}
 {"input":{"answer":{"p":0.98,"choice":"supported","probs":{"supported":0.98,"not_in_passage":0.01,"contradicted":0.01}}},"output":true}
 {"input":{"answer":{"p":0.69,"choice":"supported","probs":{"supported":0.69,"not_in_passage":0.01,"contradicted":0.3}}},"output":true}
@@ -38,6 +39,7 @@
 {"input":{"answer":{"p":1,"choice":"supported","probs":{"supported":1,"not_in_passage":0,"contradicted":0}}},"output":true}
 {"input":{"answer":{"p":0.81,"choice":"supported","probs":{"supported":0.81,"not_in_passage":0.19,"contradicted":0}}},"output":true}
 {"input":{"answer":{"p":0.2,"choice":"not_in_passage","probs":{"supported":0.2,"not_in_passage":0.77,"contradicted":0.03}}},"output":true}
+{"input":{"answer":{"p":0.52,"choice":"supported","probs":{"supported":0.52,"not_in_passage":0.2,"contradicted":0.28}}},"output":true}
 {"input":{"answer":{"p":0.89,"choice":"supported","probs":{"supported":0.89,"not_in_passage":0.11,"contradicted":0}}},"output":true}
 {"input":{"answer":{"p":0.73,"choice":"supported","probs":{"supported":0.73,"not_in_passage":0.21,"contradicted":0.06}}},"output":true}
 {"input":{"answer":{"choice":"supported","p":1.0,"probs":{"supported":1.0}}},"output":true}
@@ -47,5 +49,6 @@
 {"input":{"answer":{"p":0.93,"choice":"supported","probs":{"supported":0.93,"not_in_passage":0.07,"contradicted":0}}},"output":true}
 {"input":{"answer":{"p":0.95,"choice":"supported","probs":{"supported":0.95,"not_in_passage":0.05,"contradicted":0}}},"output":true}
 {"input":{"answer":{"p":0.1,"choice":"not_in_passage","probs":{"supported":0.1,"not_in_passage":0.81,"contradicted":0.09}}},"output":true}
+{"input":{"answer":{"p":0.83,"choice":"supported","probs":{"supported":0.83,"not_in_passage":0.15,"contradicted":0.02}}},"output":true}
 {"input":{"answer":{"p":0.16,"choice":"not_in_passage","probs":{"supported":0.16,"not_in_passage":0.81,"contradicted":0.03}}},"output":true}
 {"input":{"answer":{"p":0.59,"choice":"supported","probs":{"supported":0.59,"not_in_passage":0.39,"contradicted":0.02}}},"output":true}

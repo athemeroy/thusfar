@@ -28,6 +28,7 @@
 {"input":{"p":{"id":"h","known":"P5","name":"秀才","names":["秀才"],"gender":"男","role":"上城报官被翦辫子的赵家子","para":46,"quote":"非特秀才因为上城去报官","known_name":"赵太爷的儿子茂才先生"}},"output":{"$set":["秀才"]}}
 {"input":{"p":{"id":"b","name":"Bob","names":["Bob"],"para":1,"quote":"Alice met Bob"}},"output":{"$set":["Bob"]}}
 {"input":{"p":{"name":"*the doctor","names":["Dr. Jekyll","he"]}},"output":{"$set":["Dr. Jekyll"]}}
+{"input":{"p":{"id":"b","known":"","name":"Félicité","names":["Félicité"],"gender":"女","role":"欧班太太的忠实女仆","para":2,"quote":"sa servante Félicité"}},"output":{"$set":["Félicité"]}}
 {"input":{"p":{"id":"o","known":"","name":"假洋鬼子的老婆","names":["假洋鬼子的老婆"],"gender":"女","role":"阿Q梦中骂其不是好东西","para":28,"quote":"假洋鬼子的老婆会和没有辫子的男人睡觉"}},"output":{"$set":["假洋鬼子的老婆"]}}
 {"input":{"p":{"id":"d","known":"P3","name":"赵太爷","names":["赵太爷","*老爷"],"gender":"男","role":"未庄有权势者，阿Q的雇主","para":16,"quote":"阿Q在赵太爷家里舂了一天米","known_name":"赵太爷"}},"output":{"$set":["赵太爷"]}}
 {"input":{"p":{"id":"i","known":"","name":"邹七嫂","names":["邹七嫂"],"gender":"女","role":"间壁邻居，劝吴妈","para":32,"quote":"还有间壁的邹七嫂"}},"output":{"$set":["邹七嫂"]}}
@@ -39,6 +40,7 @@
 {"input":{"p":{"id":"d","known":"","name":"地保","names":["地保"],"gender":"男","role":"传唤并训斥阿Q的村中差役","para":4,"quote":"那知道第二天，地保便叫阿Q到赵太爷家里去"}},"output":{"$set":["地保"]}}
 {"input":{"p":{"id":"e","known":"","name":"把总","names":["把总"],"gender":"男","role":"主张示众、抓阿Q的革命党武官","para":2,"quote":"把总焦急起来了"}},"output":{"$set":["把总"]}}
 {"input":{"p":{"id":"c","known":"P23","name":"赵司晨","names":["赵司晨"],"gender":"男","role":"赵家本家，盘辫被称革命党","para":3,"quote":"其次便是赵司晨和赵白眼","known_name":"赵司晨"}},"output":{"$set":["赵司晨"]}}
+{"input":{"p":{"id":"c","known":"","name":"Monsieur","names":["Monsieur"],"gender":"男","role":"欧班太太已故的丈夫，画像中人","para":6,"quote":"le portrait de \"Monsieur\" en costume de muscadin"}},"output":{"$set":["Monsieur"]}}
 {"input":{"p":{"id":"k","known":"P14","name":"王胡","names":["王胡"],"gender":"男","role":"阿Q梦中说本来还可留","para":26,"quote":"王胡本来还可留，但也不要了","known_name":"王胡"}},"output":{"$set":["王胡"]}}
 {"input":{"p":{"id":"a","known":"P1","name":"阿Q","names":["阿Q","老Q","阿Q哥"],"gender":"男","role":"未庄穷人，自称投降革命党","para":5,"quote":"阿Q的耳朵里，本来早听到过革命党这一句话","known_name":"阿Q"}},"output":{"$set":["老Q","阿Q","阿Q哥"]}}
 {"input":{"p":{"id":"c","known":"","name":"长衫人物","names":["长衫人物","长衫和短衫人物"],"gender":"未知","role":"大堂上吆喝并令阿Q画押的人","para":5,"quote":"案旁又站着十几个长衫人物"}},"output":{"$set":["长衫人物","长衫和短衫人物"]}}
@@ -69,6 +71,7 @@
 {"input":{"p":{"id":"h","known":"","name":"陈独秀","names":["陈独秀"],"gender":"男","role":"被提及办新青年提倡洋字者","para":11,"quote":"是因为陈独秀办了新青年提倡洋字"}},"output":{"$set":["陈独秀"]}}
 {"input":{"p":{"id":"b","known":"P3","name":"赵太爷","names":["赵太爷"],"gender":"男","role":"未庄有权势者，打过阿Q嘴巴","para":2,"quote":"却直待蒙赵太爷打他嘴巴之后，这才出了名。","known_name":"赵太爷"}},"output":{"$set":["赵太爷"]}}
 {"input":{"p":{"id":"b","known":"","name":"我","names":["我"],"gender":"未知","role":"为阿Q作传的叙述者","para":2,"quote":"我要给阿Q做正传，已经不止一两年了"}},"output":{"$set":[]}}
+{"input":{"p":{"id":"a","known":"","name":"Mme Aubain","names":["Mme Aubain","Madame"],"gender":"女","role":"费莉西泰的女主人，彭莱韦克的中产妇女","para":2,"quote":"les bourgeoises de Pont l'Evêque envièrent à Mme Aubain sa servante Félicité"}},"output":{"$set":["Madame","Mme Aubain"]}}
 {"input":{"p":{"name":"贾宝玉","names":["宝玉","*少爷","他"]}},"output":{"$set":["宝玉","贾宝玉"]}}
 {"input":{"p":{"id":"c","known":"P3","name":"赵太爷","names":["赵太爷"],"gender":"男","role":"未庄受尊敬的有钱人，文童的爹爹","para":5,"quote":"赵太爷、钱太爷大受居民的尊敬","known_name":"赵太爷"}},"output":{"$set":["赵太爷"]}}
 {"input":{"p":{"id":"d","known":"","name":"王胡","names":["王胡","王癞胡"],"gender":"男","role":"又癞又胡的未庄人，扭打阿Q使其受辱","para":6,"quote":"看见王胡在那里赤着膊捉虱子"}},"output":{"$set":["王癞胡","王胡"]}}

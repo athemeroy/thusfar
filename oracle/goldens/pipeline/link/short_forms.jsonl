@@ -18,6 +18,7 @@
 {"input":{"name":"小Don"},"output":{"$set":["Don"]}}
 {"input":{"name":"阿Q哥"},"output":{"$set":["Q哥"]}}
 {"input":{"name":"喝采的人们"},"output":{"$set":[]}}
+{"input":{"name":"Madame"},"output":{"$set":[]}}
 {"input":{"name":"长衫和短衫人物"},"output":{"$set":[]}}
 {"input":{"name":"三个闲人"},"output":{"$set":["个闲人"]}}
 {"input":{"name":"洋先生"},"output":{"$set":[]}}
@@ -31,6 +32,7 @@
 {"input":{"name":"秃儿"},"output":{"$set":[]}}
 {"input":{"name":"老头子"},"output":{"$set":[]}}
 {"input":{"name":"人们"},"output":{"$set":[]}}
+{"input":{"name":"Mme Aubain"},"output":{"$set":["Aubain","Mme"]}}
 {"input":{"name":"假洋鬼子的老婆"},"output":{"$set":[]}}
 {"input":{"name":"贾宝玉"},"output":{"$set":["宝玉"]}}
 {"input":{"name":"赵白眼"},"output":{"$set":["白眼"]}}
@@ -45,6 +47,7 @@
 {"input":{"name":"我"},"output":{"$set":[]}}
 {"input":{"name":"假洋鬼子"},"output":{"$set":["洋鬼子"]}}
 {"input":{"name":"阿Q"},"output":{"$set":[]}}
+{"input":{"name":"Félicité"},"output":{"$set":[]}}
 {"input":{"name":"洪哥"},"output":{"$set":[]}}
 {"input":{"name":"太太"},"output":{"$set":[]}}
 {"input":{"name":"举人老爷"},"output":{"$set":[]}}
@@ -54,6 +57,7 @@
 {"input":{"name":"钱太爷的大儿子"},"output":{"$set":[]}}
 {"input":{"name":"赵司晨"},"output":{"$set":["司晨"]}}
 {"input":{"name":"陈独秀"},"output":{"$set":["独秀"]}}
+{"input":{"name":"Monsieur"},"output":{"$set":[]}}
 {"input":{"name":"孔子"},"output":{"$set":[]}}
 {"input":{"name":"光头的老头子"},"output":{"$set":[]}}
 {"input":{"name":"长衫人物"},"output":{"$set":["衫人物"]}}

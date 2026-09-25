@@ -1,4 +1,5 @@
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"i":4},"output":{"$path":"<temp>/aq_complete/work/local/0004.json"}}
+{"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/french/work"}}},"i":0},"output":{"$path":"<temp>/french/work/local/0000.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"i":0},"output":{"$path":"<temp>/aq_complete/work/local/0000.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"i":8},"output":{"$path":"<temp>/aq_complete/work/local/0008.json"}}
 {"input":{"self":{"$object":"pipeline.run.Runner","fields":{"work":{"$path":"<temp>/aq_complete/work"}}},"i":5},"output":{"$path":"<temp>/aq_complete/work/local/0005.json"}}
