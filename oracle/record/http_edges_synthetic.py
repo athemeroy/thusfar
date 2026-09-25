@@ -6,20 +6,27 @@ credential, or external network connection is used or represented as observed.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
+import http.client
 import io
 import json
 import os
 import shutil
 import sys
 import tempfile
+import threading
 import urllib.error
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 
-from .common import canonical, digest, require_reference_runtime, write_json, write_jsonl
-from .http_model_synthetic import (CHAT_URL, CLASSIFIER_URL, FAKE_KEY,
+from .common import (canonical, digest, known_secrets, require_reference_runtime,
+                     write_json, write_jsonl)
+from .http_model_synthetic import (CHAT_URL, FAKE_KEY,
                                    SyntheticModelTransport, _sse_events)
-from .http_routes import ROOT, coverage_report, reset_from_baseline, run_once, tree_hashes
+from .http_routes import (ROOT, coverage_report, reset_from_baseline,
+                          response_record, run_once, tree_hashes)
+from .functions import LoopbackOnly
 
 FUTURE_QUESTION = '后面的阿Q会怎么样？'
 GUARD_QUESTION = '读到这里，阿Q穿了什么颜色的衣服？'
@@ -230,6 +237,75 @@ def assert_edges(rows: list[dict], calls: list[dict]) -> None:
         raise ValueError('synthetic auto marginalia or cache response differs')
 
 
+def protocol_once(data: Path, bid: str) -> list[dict]:
+    """Exercise real HTTP 429 admission and 408 incomplete-body timeout paths."""
+    from server import app
+
+    if app.DATA != data or app.WORKER.is_alive():
+        raise RuntimeError('synthetic protocol fixture requires the isolated idle server')
+    cases = [
+        ('ask-admission-429-synthetic', 'POST', f'/api/books/{bid}/ask',
+         {'q': '读到这里发生了什么？', 'pos': 900}, None),
+        ('who-admission-429-synthetic', 'POST', f'/api/books/{bid}/who',
+         {'pos': 900, 'start': 751, 'end': 753}, None),
+        ('marginalia-admission-429-synthetic', 'POST', f'/api/books/{bid}/marginalia',
+         {'mode': 'auto', 'pos': 900, 'page_start': 820, 'page_end': 847}, None),
+        ('incomplete-body-408-synthetic', 'POST', '/api/login', None, b'{}'),
+    ]
+    previous_gate, previous_timeout = app._ask_gate, app.READ_TIMEOUT
+    app._ask_gate = threading.BoundedSemaphore(0)
+    app.READ_TIMEOUT = 0.15
+    server = ThreadingHTTPServer(('127.0.0.1', 0), app.Handler)
+    server.daemon_threads = True
+    worker = threading.Thread(target=server.serve_forever, daemon=True)
+    worker.start()
+    rows = []
+    try:
+        with LoopbackOnly():
+            conn = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=3)
+            prior_socket = None
+            connection_number = 0
+            try:
+                for route_id, method, path, body, raw in cases:
+                    payload = canonical(body).encode('utf-8') if body is not None else raw
+                    headers = {'Content-Type': 'application/json'}
+                    if route_id == 'incomplete-body-408-synthetic':
+                        headers['Content-Length'] = '20'  # send 2 bytes and let the handler time out
+                    conn.request(method, path, body=payload, headers=headers)
+                    current_socket = conn.sock
+                    reused = current_socket is prior_socket and current_socket is not None
+                    if not reused:
+                        connection_number += 1
+                    prior_socket = current_socket
+                    response = conn.getresponse()
+                    if response.version != 11:
+                        raise RuntimeError('synthetic protocol fixture expected HTTP/1.1')
+                    reply = response_record(response, known_secrets(), method, route_id)
+                    request = {'method': method, 'path': path, 'headers': headers}
+                    if body is not None:
+                        request['body_json'] = body
+                    else:
+                        request['body_base64'] = base64.b64encode(raw).decode('ascii')
+                    rows.append({'route': route_id, 'request': request, 'response': reply,
+                                 'transport': {'http_version': 'HTTP/1.1',
+                                               'connection': connection_number,
+                                               'reused_previous': reused}})
+            finally:
+                conn.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join(timeout=5)
+        app._ask_gate, app.READ_TIMEOUT = previous_gate, previous_timeout
+    if [row['response']['status'] for row in rows] != [429, 429, 429, 408]:
+        raise ValueError('synthetic HTTP admission or body timeout statuses differ')
+    if [row['response']['body_json']['error'] for row in rows] != [
+            '正在回答其他问题，请稍后重试', '正在回答其他问题，请稍后重试',
+            'AI 正在写另一条批注，请稍后再试', '请求超时']:
+        raise ValueError('synthetic HTTP admission or body timeout messages differ')
+    return rows
+
+
 def main() -> None:
     require_reference_runtime()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -267,6 +343,7 @@ def main() -> None:
                 calls = sorted(transport.calls, key=lambda call: (call['kind'],
                                                                     call['request_body_sha256']))
             assert_edges(rows, calls)
+            rows.extend(protocol_once(data, SOURCE.name))
             observed.append((rows, calls))
             if tree_hashes(baseline) != source_hashes:
                 raise ValueError('synthetic HTTP route mutated the hard-linked baseline')
@@ -283,10 +360,13 @@ def main() -> None:
         'recorded_response_sha256': digest([row['response'] for row in rows]),
         'normalizations': [], 'families': coverage_report(rows),
         'synthetic_graph_revision': list(FIXED_KG_REVISION),
-        'transport': {'version': 'HTTP/1.1', 'outbound_model_network': False},
+        'transport': {'version': 'HTTP/1.1', 'outbound_model_network': False,
+                      'synthetic_admission_gate': 'zero slots for ask, who, marginalia',
+                      'body_timeout': '2 sent bytes with Content-Length 20; isolated handler timeout 0.15s'},
         'acceptance': {'settings_success': True, 'settings_http401': True,
                        'settings_timeout': True, 'future_refusal': True,
-                       'ask_guard_withheld': True, 'auto_marginalia_and_cache': True},
+                       'ask_guard_withheld': True, 'auto_marginalia_and_cache': True,
+                       'admission_429': True, 'incomplete_body_408': True},
     })
     print(f'recorded {len(rows)} synthetic edge HTTP routes; {args.repeat} passes byte-identical')
 
