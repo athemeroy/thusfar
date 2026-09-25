@@ -12,8 +12,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
-from oracle.record.cassettes import CassetteStore, request_envelope
+from oracle.record.cassettes import CassetteStore, install, request_envelope
 from oracle.record.common import UnsafeValue, canonical, known_secrets, require_reference_runtime
+from oracle.record.functions import LoopbackOnly
 from oracle.record.scan import scan
 from oracle.record.workload import prepare_working_book
 
@@ -37,6 +38,33 @@ def response(text: str, usage: bool = False) -> dict:
 
 
 class OracleRecordSafety(unittest.TestCase):
+    def test_synthetic_stream_http_error_and_free_jev_replay_offline(self):
+        from pipeline import llm
+        cassettes = Path(__file__).resolve().parents[1] / 'oracle/cassettes/synthetic'
+        previous_classifier = llm.CLASSIFIER_URL
+        try:
+            with patch.dict(os.environ, {'LLM_BASE_URL_OPENAI': 'https://open.xiaojingai.com/v1',
+                                         'ORACLE_REPLAY_KEY': 'oracle-placeholder'}):
+                llm.CLASSIFIER_URL = 'https://classifier.dev/v1/classify'
+                with LoopbackOnly(), install(cassettes, 'replay') as tape:
+                    def fixture(name):
+                        return llm.chat('deepseek-flash+nothink',
+                                        [{'role': 'user', 'content': 'oracle fixture: ' + name}],
+                                        max_tokens=16, temperature=0, retries=0,
+                                        key_name='ORACLE_REPLAY_KEY')
+
+                    self.assertEqual(fixture('split-stream')[0], '可以')
+                    with self.assertRaisesRegex(llm.LLMError, 'HTTP 401'):
+                        fixture('http-401')
+                    state = {'passage': '𠮷😀 asked a question.'}
+                    questions = {'q1': {'type': 'choice', 'instructions': 'Is this supported?',
+                                        'criteria': {'yes': 'Supported', 'no': 'Not supported'}}}
+                    answers = llm.jev_free(state, questions, retries=0)
+                    self.assertEqual(answers['q1']['choice'], 'yes')
+                    self.assertEqual(tape.count, 3)
+        finally:
+            llm.CLASSIFIER_URL = previous_classifier
+
     def test_replay_overrides_and_restores_hostile_model_environment(self):
         from oracle.record import artifacts, functions
         from pipeline import run
