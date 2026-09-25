@@ -80,13 +80,15 @@ an excluded recorder consequence in a separate report.
 ```bash
 python3.11 -m oracle.record.http_notebook_live verify-failure \
   --route marginalia \
-  --receipt /home/dev/.local/share/thusfar-oracle/marginalia-http-live-20260926 \
+  --receipt oracle/goldens/http/live/marginalia-rejected \
   --out oracle/goldens/http/aq_marginalia_first400_live.jsonl
 ```
 
 This is an observed application **rejection** golden. It does not satisfy the
-manual marginalia HTTP success requirement. The original receipt remains
-unchanged; no substitute model response or expected comment is created.
+manual marginalia HTTP success requirement. The checked-in receipt is an
+exact-byte copy of the original private intent, outbound journal, both HTTP
+attempt rows, failure marker, and working tree. The original private receipt
+remains unchanged; no substitute model response or expected comment is created.
 
 The narrow deterministic controls are: omit HTTP `Date`/`Server` through the
 existing response header allowlist; use a fixed response clock for `ask.ms`
