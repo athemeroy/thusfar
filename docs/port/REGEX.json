@@ -1,0 +1,5214 @@
+{
+  "schema": 1,
+  "scope": [
+    "pipeline/**/*.py",
+    "server/**/*.py"
+  ],
+  "count": 148,
+  "calls": [
+    {
+      "id": "pipeline/judge.py:31:8:search",
+      "module": "pipeline.judge",
+      "source": "pipeline/judge.py",
+      "line": 31,
+      "column": 8,
+      "scope": "_context",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[。！？!?…」”]', text[j:b])",
+      "pattern_expression": "r'[。！？!?…」”]'",
+      "pattern": "[。！？!?…」”]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "“你好”",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[。！？!?…」”]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/judge.py:546:11:compile",
+      "module": "pipeline.judge",
+      "source": "pipeline/judge.py",
+      "line": 546,
+      "column": 11,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|'\n                      r'娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|'\n                      # who did it: a suspicion must not become a fact (DeepSeek on Great Expectations:\n                      # \"identified by his hammer as the attacker\", 36 chapters before the confession)\n                      r'凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|'\n                      r'\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|'\n                      r'\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|'\n                      r'marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b', re.I)",
+      "pattern_expression": "r'死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|'\n                      r'娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|'\n                      # who did it: a suspicion must not become a fact (DeepSeek on Great Expectations:\n                      # \"identified by his hammer as the attacker\", 36 chapters before the confession)\n                      r'凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|'\n                      r'\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|'\n                      r'\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|'\n                      r'marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b'",
+      "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "死",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:54:12:compile",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 54,
+      "column": 12,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r\"^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)\\s+\", re.I)",
+      "pattern_expression": "r\"^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)\\s+\"",
+      "pattern": "^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "the old man",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:58:16:search",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 58,
+      "column": 16,
+      "scope": "is_latin",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[A-Za-z]', s or '')",
+      "pattern_expression": "r'[A-Za-z]'",
+      "pattern": "[A-Za-z]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/kg.py:58:57:search",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 58,
+      "column": 57,
+      "scope": "is_latin",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[\\u3400-\\u9fff]', s or '')",
+      "pattern_expression": "r'[\\u3400-\\u9fff]'",
+      "pattern": "[\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/kg.py:66:14:match",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 66,
+      "column": 14,
+      "scope": "generic_word",
+      "operation": "match",
+      "receiver": "EN_PREFIX",
+      "expression": "EN_PREFIX.match(g)",
+      "pattern_expression": "r\"^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)\\s+\"",
+      "pattern": "^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/kg.py:54:12:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "the old man",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:67:16:sub",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 67,
+      "column": 16,
+      "scope": "generic_word",
+      "operation": "sub",
+      "receiver": "EN_PREFIX",
+      "expression": "EN_PREFIX.sub('', g, count=1)",
+      "pattern_expression": "r\"^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)\\s+\"",
+      "pattern": "^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/kg.py:54:12:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "the old man",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:the|a|an|this|that|these|those|my|his|her|their|our|your|old|young|little|poor|dear|good|elder|younger)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:70:8:compile",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 70,
+      "column": 8,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'[\\s，。、；：？！“”‘’「」『』（）()《》〈〉…—\\-·・,.;:?!\"\\'\\[\\]【】]')",
+      "pattern_expression": "r'[\\s，。、；：？！“”‘’「」『』（）()《》〈〉…—\\-·・,.;:?!\"\\'\\[\\]【】]'",
+      "pattern": "[\\s，。、；：？！“”‘’「」『』（）()《》〈〉…—\\-·・,.;:?!\"\\'\\[\\]【】]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000，。、；：？！“”‘’「」『』（）()《》〈〉…—\\-·・,.;:?!\"'\\[\\]【】]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "identity quote escapes",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:81:11:sub",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 81,
+      "column": 11,
+      "scope": "zh",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'\"([^\"\\n]{1,60})\"', r'“\\1”', text)",
+      "pattern_expression": "r'\"([^\"\\n]{1,60})\"'",
+      "pattern": "\"([^\"\\n]{1,60})\"",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "\"hello\"",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "\"([^\"\\n]{1,60})\"",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/kg.py:82:11:sub",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 82,
+      "column": 11,
+      "scope": "zh",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'(?<=' + CJK + r')\\s*([,;:?!()])\\s*|\\s*([,;:?!()])\\s*(?=' + CJK + r')',\n                  lambda m: _PUNCT_MAP[m.group(1) or m.group(2)], text)",
+      "pattern_expression": "r'(?<=' + CJK + r')\\s*([,;:?!()])\\s*|\\s*([,;:?!()])\\s*(?=' + CJK + r')'",
+      "pattern": "(?<=[\\u3400-\\u9fff\\uff00-\\uffef\\u3000-\\u303f“”‘’])\\s*([,;:?!()])\\s*|\\s*([,;:?!()])\\s*(?=[\\u3400-\\u9fff\\uff00-\\uffef\\u3000-\\u303f“”‘’])",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "中,",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(?<=[\\u3400-\\u9fff\\uff00-\\uffef\\u3000-\\u303f“”‘’])[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*([,;:?!()])[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*|[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*([,;:?!()])[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?=[\\u3400-\\u9fff\\uff00-\\uffef\\u3000-\\u303f“”‘’])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:91:19:search",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 91,
+      "column": 19,
+      "scope": "good_alias",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r\"\\b(?:and|family|brothers|sisters|folks|people)\\b|'s\\b\", a, re.I)",
+      "pattern_expression": "r\"\\b(?:and|family|brothers|sisters|folks|people)\\b|'s\\b\"",
+      "pattern": "\\b(?:and|family|brothers|sisters|folks|people)\\b|'s\\b",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "and",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:and|family|brothers|sisters|folks|people)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))|'s(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:98:15:match",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 98,
+      "column": 15,
+      "scope": "_norm",
+      "operation": "match",
+      "receiver": "PUNCT",
+      "expression": "PUNCT.match(ch)",
+      "pattern_expression": "r'[\\s，。、；：？！“”‘’「」『』（）()《》〈〉…—\\-·・,.;:?!\"\\'\\[\\]【】]'",
+      "pattern": "[\\s，。、；：？！“”‘’「」『』（）()《》〈〉…—\\-·・,.;:?!\"\\'\\[\\]【】]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/kg.py:70:8:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": " 文字 ",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000，。、；：？！“”‘’「」『』（）()《》〈〉…—\\-·・,.;:?!\"'\\[\\]【】]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "identity quote escapes",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kg.py:265:17:compile",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 265,
+      "column": 17,
+      "scope": "KG.plan",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile('|'.join(r'(?<![A-Za-z])' + re.escape(s) + r'(?![A-Za-z])' if re.match(r'[A-Za-z]', s[-1:] or ' ') else re.escape(s)\n                                     for s in sorted(surf, key=len, reverse=True)))",
+      "pattern_expression": "'|'.join(r'(?<![A-Za-z])' + re.escape(s) + r'(?![A-Za-z])' if re.match(r'[A-Za-z]', s[-1:] or ' ') else re.escape(s)\n                                     for s in sorted(surf, key=len, reverse=True))",
+      "pattern": null,
+      "pattern_encoding": null,
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [
+        "len",
+        "re",
+        "s",
+        "sorted",
+        "surf"
+      ],
+      "compiled_from": null,
+      "assignment_sources": {
+        "surf": [
+          "{}"
+        ]
+      },
+      "examples": null,
+      "dart": null
+    },
+    {
+      "id": "pipeline/kg.py:265:56:escape",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 265,
+      "column": 56,
+      "scope": "KG.plan",
+      "operation": "escape",
+      "receiver": null,
+      "expression": "re.escape(s)",
+      "pattern_expression": null,
+      "pattern": null,
+      "pattern_encoding": null,
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": null,
+      "dart": null
+    },
+    {
+      "id": "pipeline/kg.py:265:90:match",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 265,
+      "column": 90,
+      "scope": "KG.plan",
+      "operation": "match",
+      "receiver": null,
+      "expression": "re.match(r'[A-Za-z]', s[-1:] or ' ')",
+      "pattern_expression": "r'[A-Za-z]'",
+      "pattern": "[A-Za-z]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "[A-Za-z]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/kg.py:265:132:escape",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 265,
+      "column": 132,
+      "scope": "KG.plan",
+      "operation": "escape",
+      "receiver": null,
+      "expression": "re.escape(s)",
+      "pattern_expression": null,
+      "pattern": null,
+      "pattern_encoding": null,
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": null,
+      "dart": null
+    },
+    {
+      "id": "pipeline/kg.py:269:25:finditer",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 269,
+      "column": 25,
+      "scope": "KG.plan",
+      "operation": "finditer",
+      "receiver": "rx",
+      "expression": "rx.finditer(b['t'])",
+      "pattern_expression": "'|'.join(r'(?<![A-Za-z])' + re.escape(s) + r'(?![A-Za-z])' if re.match(r'[A-Za-z]', s[-1:] or ' ') else re.escape(s)\n                                     for s in sorted(surf, key=len, reverse=True))",
+      "pattern": null,
+      "pattern_encoding": null,
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [
+        "len",
+        "re",
+        "s",
+        "sorted",
+        "surf"
+      ],
+      "compiled_from": "pipeline/kg.py:265:17:compile",
+      "assignment_sources": {
+        "surf": [
+          "{}"
+        ]
+      },
+      "examples": null,
+      "dart": null
+    },
+    {
+      "id": "pipeline/kg.py:387:27:sub",
+      "module": "pipeline.kg",
+      "source": "pipeline/kg.py",
+      "line": 387,
+      "column": 27,
+      "scope": "KG.commit",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'^[abAB]\\s*的\\s*', '', r[f].strip())",
+      "pattern_expression": "r'^[abAB]\\s*的\\s*'",
+      "pattern": "^[abAB]\\s*的\\s*",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a 的 ",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[abAB][\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*的[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kind.py:62:10:compile",
+      "module": "pipeline.kind",
+      "source": "pipeline/kind.py",
+      "line": 62,
+      "column": 10,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'^\\s*(?:第\\s*([0-9]+|[零一二三四五六七八九十百千]+)\\s*[部章回卷节篇集]|'\n                     r'(?:chapter|part|book|volume)\\s+([0-9]+|[ivxlcdm]+)|([0-9]{1,3})[.、])', re.I)",
+      "pattern_expression": "r'^\\s*(?:第\\s*([0-9]+|[零一二三四五六七八九十百千]+)\\s*[部章回卷节篇集]|'\n                     r'(?:chapter|part|book|volume)\\s+([0-9]+|[ivxlcdm]+)|([0-9]{1,3})[.、])'",
+      "pattern": "^\\s*(?:第\\s*([0-9]+|[零一二三四五六七八九十百千]+)\\s*[部章回卷节篇集]|(?:chapter|part|book|volume)\\s+([0-9]+|[ivxlcdm]+)|([0-9]{1,3})[.、])",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "第一章",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:第[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*([0-9]+|[零一二三四五六七八九十百千]+)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[部章回卷节篇集]|(?:chapter|part|book|volume)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+([0-9]+|[ivxlcdm]+)|([0-9]{1,3})[.、])",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kind.py:64:9:compile",
+      "module": "pipeline.kind",
+      "source": "pipeline/kind.py",
+      "line": 64,
+      "column": 9,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'^\\s*(楔子|序章|序幕|序言|引子|前言|自序|开篇|prologue|preface|foreword)', re.I)",
+      "pattern_expression": "r'^\\s*(楔子|序章|序幕|序言|引子|前言|自序|开篇|prologue|preface|foreword)'",
+      "pattern": "^\\s*(楔子|序章|序幕|序言|引子|前言|自序|开篇|prologue|preface|foreword)",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "序章",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(楔子|序章|序幕|序言|引子|前言|自序|开篇|prologue|preface|foreword)",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kind.py:85:8:match",
+      "module": "pipeline.kind",
+      "source": "pipeline/kind.py",
+      "line": 85,
+      "column": 8,
+      "scope": "ordinal",
+      "operation": "match",
+      "receiver": "ORDINAL",
+      "expression": "ORDINAL.match(title or '')",
+      "pattern_expression": "r'^\\s*(?:第\\s*([0-9]+|[零一二三四五六七八九十百千]+)\\s*[部章回卷节篇集]|'\n                     r'(?:chapter|part|book|volume)\\s+([0-9]+|[ivxlcdm]+)|([0-9]{1,3})[.、])'",
+      "pattern": "^\\s*(?:第\\s*([0-9]+|[零一二三四五六七八九十百千]+)\\s*[部章回卷节篇集]|(?:chapter|part|book|volume)\\s+([0-9]+|[ivxlcdm]+)|([0-9]{1,3})[.、])",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/kind.py:62:10:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "第一章",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:第[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*([0-9]+|[零一二三四五六七八九十百千]+)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[部章回卷节篇集]|(?:chapter|part|book|volume)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+([0-9]+|[ivxlcdm]+)|([0-9]{1,3})[.、])",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/kind.py:91:7:fullmatch",
+      "module": "pipeline.kind",
+      "source": "pipeline/kind.py",
+      "line": 91,
+      "column": 7,
+      "scope": "ordinal",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'[ivxlcdm]+', raw, re.I)",
+      "pattern_expression": "r'[ivxlcdm]+'",
+      "pattern": "[ivxlcdm]+",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "i",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[ivxlcdm]+",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/kind.py:116:26:match",
+      "module": "pipeline.kind",
+      "source": "pipeline/kind.py",
+      "line": 116,
+      "column": 26,
+      "scope": "works",
+      "operation": "match",
+      "receiver": "OPENER",
+      "expression": "OPENER.match(c['title'] or '')",
+      "pattern_expression": "r'^\\s*(楔子|序章|序幕|序言|引子|前言|自序|开篇|prologue|preface|foreword)'",
+      "pattern": "^\\s*(楔子|序章|序幕|序言|引子|前言|自序|开篇|prologue|preface|foreword)",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/kind.py:64:9:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "序章",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(楔子|序章|序幕|序言|引子|前言|自序|开篇|prologue|preface|foreword)",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/lang.py:19:16:findall",
+      "module": "pipeline.lang",
+      "source": "pipeline/lang.py",
+      "line": 19,
+      "column": 16,
+      "scope": "book_lang",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[A-Za-z]', sample)",
+      "pattern_expression": "r'[A-Za-z]'",
+      "pattern": "[A-Za-z]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/lang.py:20:14:findall",
+      "module": "pipeline.lang",
+      "source": "pipeline/lang.py",
+      "line": 20,
+      "column": 14,
+      "scope": "book_lang",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[㐀-鿿]', sample)",
+      "pattern_expression": "r'[㐀-鿿]'",
+      "pattern": "[㐀-鿿]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[㐀-鿿]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:45:9:compile",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 45,
+      "column": 9,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶'\n                    r'|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖'\n                    r'|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$')",
+      "pattern_expression": "r'(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶'\n                    r'|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖'\n                    r'|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$'",
+      "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "赵太爷",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:48:7:compile",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 48,
+      "column": 7,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$')",
+      "pattern_expression": "r'(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$'",
+      "pattern": "(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "赵太爷",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:49:11:compile",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 49,
+      "column": 11,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r\"^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle\"\n                      r\"|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?\\s+\", re.I)",
+      "pattern_expression": "r\"^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle\"\n                      r\"|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?\\s+\"",
+      "pattern": "^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/link.py:59:14:match",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 59,
+      "column": 14,
+      "scope": "core",
+      "operation": "match",
+      "receiver": "EN_TITLE",
+      "expression": "EN_TITLE.match(c)",
+      "pattern_expression": "r\"^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle\"\n                      r\"|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?\\s+\"",
+      "pattern": "^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/link.py:49:11:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/link.py:60:16:sub",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 60,
+      "column": 16,
+      "scope": "core",
+      "operation": "sub",
+      "receiver": "EN_TITLE",
+      "expression": "EN_TITLE.sub('', c, count=1)",
+      "pattern_expression": "r\"^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle\"\n                      r\"|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?\\s+\"",
+      "pattern": "^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/link.py:49:11:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:mr|mrs|miss|ms|dr|sir|lady|lord|uncle|aunt|captain|capt|master|mister|madame|madam|monsieur|mademoiselle|father|mother|brother|sister|old|young|little|professor|colonel|major|general|reverend|rev)\\.?[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/link.py:62:8:sub",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 62,
+      "column": 8,
+      "scope": "core",
+      "operation": "sub",
+      "receiver": "SUFFIX",
+      "expression": "SUFFIX.sub('', name)",
+      "pattern_expression": "r'(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶'\n                    r'|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖'\n                    r'|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$'",
+      "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/link.py:45:9:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "赵太爷",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:67:31:findall",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 67,
+      "column": 31,
+      "scope": "_tokens",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r\"[A-Za-z][A-Za-z'’\\-]+\", name)",
+      "pattern_expression": "r\"[A-Za-z][A-Za-z'’\\-]+\"",
+      "pattern": "[A-Za-z][A-Za-z'’\\-]+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "abc",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z][A-Za-z'’\\-]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:72:8:sub",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 72,
+      "column": 8,
+      "scope": "_stem",
+      "operation": "sub",
+      "receiver": "SUFFIX",
+      "expression": "SUFFIX.sub('', name.lstrip('*'))",
+      "pattern_expression": "r'(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶'\n                    r'|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖'\n                    r'|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$'",
+      "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/link.py:45:9:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "赵太爷",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:73:8:sub",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 73,
+      "column": 8,
+      "scope": "_stem",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'^(老|小|阿)', '', n)",
+      "pattern_expression": "r'^(老|小|阿)'",
+      "pattern": "^(老|小|阿)",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(老|小|阿)",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:74:23:search",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 74,
+      "column": 23,
+      "scope": "_stem",
+      "operation": "search",
+      "receiver": "KIN1",
+      "expression": "KIN1.search(n)",
+      "pattern_expression": "r'(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$'",
+      "pattern": "(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/link.py:48:7:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "赵太爷",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:75:12:sub",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 75,
+      "column": 12,
+      "scope": "_stem",
+      "operation": "sub",
+      "receiver": "KIN1",
+      "expression": "KIN1.sub('', n)",
+      "pattern_expression": "r'(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$'",
+      "pattern": "(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/link.py:48:7:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "赵太爷",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(叔|伯|哥|姐|嫂|婶|爷|总|董|老|兄|弟|妹)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:119:28:split",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 119,
+      "column": 28,
+      "scope": "short_forms",
+      "operation": "split",
+      "receiver": null,
+      "expression": "re.split(r'\\s+', c)",
+      "pattern_expression": "r'\\s+'",
+      "pattern": "\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/link.py:121:7:search",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 121,
+      "column": 7,
+      "scope": "short_forms",
+      "operation": "search",
+      "receiver": "SUFFIX",
+      "expression": "SUFFIX.search(name)",
+      "pattern_expression": "r'(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶'\n                    r'|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖'\n                    r'|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$'",
+      "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/link.py:45:9:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "赵太爷",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(先生|太太|夫人|小姐|老爹|老头子|老头|嫂子|大妈|大娘|大爷|老爷|少爷|姑娘|女士|博士|医生|律师|师傅|掌柜|老板|公子|奶奶|大师|禅师|法师|道长|真人|长老|方丈|师太|道人|居士|上人|掌门|宗主|城主|门主|帮主|盟主|会长|队长|团长|将军|前辈|老祖|师兄|师姐|师弟|师妹|师父|师尊|大哥|大姐|爷|嫂|娘)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/link.py:161:39:search",
+      "module": "pipeline.link",
+      "source": "pipeline/link.py",
+      "line": 161,
+      "column": 39,
+      "scope": "link_segment",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'夫妇|夫妻|们$|一家|众人|全家|大伙', q.get('name') or '')",
+      "pattern_expression": "r'夫妇|夫妻|们$|一家|众人|全家|大伙'",
+      "pattern": "夫妇|夫妻|们$|一家|众人|全家|大伙",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "夫妇",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "夫妇|夫妻|们$|一家|众人|全家|大伙",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/llm.py:45:28:match",
+      "module": "pipeline.llm",
+      "source": "pipeline/llm.py",
+      "line": 45,
+      "column": 28,
+      "scope": "_env",
+      "operation": "match",
+      "receiver": null,
+      "expression": "re.match(r'^\\s*(?:export\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.*?)\\s*$', line)",
+      "pattern_expression": "r'^\\s*(?:export\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.*?)\\s*$'",
+      "pattern": "^\\s*(?:export\\s+)?([A-Za-z_][A-Za-z0-9_]*)\\s*=\\s*(.*?)\\s*$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "yedu=v1.123456.abcdef0123456789abcdef01.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:export[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+)?([A-Za-z_][A-Za-z0-9_]*)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*=[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(.*?)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/llm.py:83:8:search",
+      "module": "pipeline.llm",
+      "source": "pipeline/llm.py",
+      "line": 83,
+      "column": 8,
+      "scope": "explain",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'HTTP (\\d{3}): ?(.*)', text, re.S)",
+      "pattern_expression": "r'HTTP (\\d{3}): ?(.*)'",
+      "pattern": "HTTP (\\d{3}): ?(.*)",
+      "pattern_encoding": "text",
+      "flags_expression": "re.S",
+      "flags": [
+        "S"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "HTTP 401: bad key",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "HTTP (\\p{Nd}{3}): ?(.*)",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": true,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/llm.py:403:11:sub",
+      "module": "pipeline.llm",
+      "source": "pipeline/llm.py",
+      "line": 403,
+      "column": 11,
+      "scope": "repair_json",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r',\\s*([}\\]])', r'\\1', ''.join(out))",
+      "pattern_expression": "r',\\s*([}\\]])'",
+      "pattern": ",\\s*([}\\]])",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "foo,}",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": ",[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*([}\\]])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/llm.py:408:8:search",
+      "module": "pipeline.llm",
+      "source": "pipeline/llm.py",
+      "line": 408,
+      "column": 8,
+      "scope": "parse_json",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'```(?:json)?\\s*(.*?)```', text, re.S)",
+      "pattern_expression": "r'```(?:json)?\\s*(.*?)```'",
+      "pattern": "```(?:json)?\\s*(.*?)```",
+      "pattern_encoding": "text",
+      "flags_expression": "re.S",
+      "flags": [
+        "S"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "```json\n{}\n```",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "```(?:json)?[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(.*?)```",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": true,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:43:8:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 43,
+      "column": 8,
+      "scope": "clean",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[​‌‍﻿]', '', s)",
+      "pattern_expression": "r'[​‌‍﻿]'",
+      "pattern": "[​‌‍﻿]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "​",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[​‌‍﻿]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:44:8:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 44,
+      "column": 8,
+      "scope": "clean",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[ \\t\\r\\n ]+', ' ', s)",
+      "pattern_expression": "r'[ \\t\\r\\n ]+'",
+      "pattern": "[ \\t\\r\\n ]+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[ \\t\\r\\n ]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:77:21:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 77,
+      "column": 21,
+      "scope": "math_text",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'<[^>]+>', '', html.unescape(source))",
+      "pattern_expression": "r'<[^>]+>'",
+      "pattern": "<[^>]+>",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "<h1>",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "<[^>]+>",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:130:12:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 130,
+      "column": 12,
+      "scope": "DocParser.handle_starttag",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'display\\s*:\\s*none', a.get('style') or '', re.I)",
+      "pattern_expression": "r'display\\s*:\\s*none'",
+      "pattern": "display\\s*:\\s*none",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "display:none",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "display[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*:[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*none",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:142:26:fullmatch",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 142,
+      "column": 26,
+      "scope": "DocParser.handle_starttag",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'h[1-6]', tag)",
+      "pattern_expression": "r'h[1-6]'",
+      "pattern": "h[1-6]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "h1",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "h[1-6]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:181:40:fullmatch",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 181,
+      "column": 40,
+      "scope": "DocParser.handle_endtag",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'[\\[\\(（〔【]?\\s*(?:注)?\\d{1,3}\\s*[\\]\\)）〕】]?|[*†‡]+', label or '')",
+      "pattern_expression": "r'[\\[\\(（〔【]?\\s*(?:注)?\\d{1,3}\\s*[\\]\\)）〕】]?|[*†‡]+'",
+      "pattern": "[\\[\\(（〔【]?\\s*(?:注)?\\d{1,3}\\s*[\\]\\)）〕】]?|[*†‡]+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "1",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[\\[\\(（〔【]?[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:注)?\\p{Nd}{1,3}[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[\\]\\)）〕】]?|[*†‡]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:225:10:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 225,
+      "column": 10,
+      "scope": "_xml",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(rb'<!DOCTYPE[^>]*>', b'', raw)",
+      "pattern_expression": "rb'<!DOCTYPE[^>]*>'",
+      "pattern": "<!DOCTYPE[^>]*>",
+      "pattern_encoding": "bytes",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "<!DOCTYPEq>",
+        "negative": "",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "<!DOCTYPE[^>]*>",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:370:40:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 370,
+      "column": 40,
+      "scope": "parse_epub",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'^[\\[\\(（〔【]?\\d{1,3}[\\]\\)）〕】]?\\s*', '', b['t'])",
+      "pattern_expression": "r'^[\\[\\(（〔【]?\\d{1,3}[\\]\\)）〕】]?\\s*'",
+      "pattern": "^[\\[\\(（〔【]?\\d{1,3}[\\]\\)）〕】]?\\s*",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "1",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[\\[\\(（〔【]?\\p{Nd}{1,3}[\\]\\)）〕】]?[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:451:13:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 451,
+      "column": 13,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(\n    r'^\\s*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|'      # a line that is only a numeral: 一 / 二、\n    r'(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|'\n    r'(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter\\s+\\d+[^\\n]{0,40}|CHAPTER\\s+[IVXLC\\d]+[^\\n]{0,40}))\\s*$',\n    re.I)",
+      "pattern_expression": "r'^\\s*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|'      # a line that is only a numeral: 一 / 二、\n    r'(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|'\n    r'(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter\\s+\\d+[^\\n]{0,40}|CHAPTER\\s+[IVXLC\\d]+[^\\n]{0,40}))\\s*$'",
+      "pattern": "^\\s*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter\\s+\\d+[^\\n]{0,40}|CHAPTER\\s+[IVXLC\\d]+[^\\n]{0,40}))\\s*$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "第一章",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+\\p{Nd}+[^\\n]{0,40}|CHAPTER[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+[IVXLC\\p{Nd}]+[^\\n]{0,40}))[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:458:14:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 458,
+      "column": 14,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'［＃(.*?)］')",
+      "pattern_expression": "r'［＃(.*?)］'",
+      "pattern": "［＃(.*?)］",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "［＃x］",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "［＃(.*?)］",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:459:14:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 459,
+      "column": 14,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'「(.+?)」は(大|中|小)見出し')",
+      "pattern_expression": "r'「(.+?)」は(大|中|小)見出し'",
+      "pattern": "「(.+?)」は(大|中|小)見出し",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "「x」は大見出し",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "「(.+?)」は(大|中|小)見出し",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:463:13:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 463,
+      "column": 13,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(\n    r'^(?:第[零〇一二三四五六七八九十百千万0-9０-９]+(?:の手記|[\\s　]+\\S.{0,29})|'\n    r'[上中下][\\s　]+\\S.{0,29})$')",
+      "pattern_expression": "r'^(?:第[零〇一二三四五六七八九十百千万0-9０-９]+(?:の手記|[\\s　]+\\S.{0,29})|'\n    r'[上中下][\\s　]+\\S.{0,29})$'",
+      "pattern": "^(?:第[零〇一二三四五六七八九十百千万0-9０-９]+(?:の手記|[\\s　]+\\S.{0,29})|[上中下][\\s　]+\\S.{0,29})$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "第零の手記",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:第[零〇一二三四五六七八九十百千万0-9０-９]+(?:の手記|[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000　]+[^\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000].{0,29})|[上中下][\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000　]+[^\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000].{0,29})$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:466:14:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 466,
+      "column": 14,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'^(?:はしがき|あとがき|附記(?:[\\s　]+.{1,30})?)$')",
+      "pattern_expression": "r'^(?:はしがき|あとがき|附記(?:[\\s　]+.{1,30})?)$'",
+      "pattern": "^(?:はしがき|あとがき|附記(?:[\\s　]+.{1,30})?)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "はしがき",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:はしがき|あとがき|附記(?:[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000　]+.{1,30})?)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:488:16:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 488,
+      "column": 16,
+      "scope": "parse_aozora",
+      "operation": "findall",
+      "receiver": "AOZORA_NOTE",
+      "expression": "AOZORA_NOTE.findall(raw)",
+      "pattern_expression": "r'［＃(.*?)］'",
+      "pattern": "［＃(.*?)］",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:458:14:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "［＃x］",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "［＃(.*?)］",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:491:16:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 491,
+      "column": 16,
+      "scope": "parse_aozora",
+      "operation": "search",
+      "receiver": "AOZORA_HEAD",
+      "expression": "AOZORA_HEAD.search(n)",
+      "pattern_expression": "r'「(.+?)」は(大|中|小)見出し'",
+      "pattern": "「(.+?)」は(大|中|小)見出し",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:459:14:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "「x」は大見出し",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "「(.+?)」は(大|中|小)見出し",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:494:12:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 494,
+      "column": 12,
+      "scope": "parse_aozora",
+      "operation": "sub",
+      "receiver": "AOZORA_NOTE",
+      "expression": "AOZORA_NOTE.sub('', raw)",
+      "pattern_expression": "r'［＃(.*?)］'",
+      "pattern": "［＃(.*?)］",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:458:14:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "［＃x］",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "［＃(.*?)］",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:495:12:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 495,
+      "column": 12,
+      "scope": "parse_aozora",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[｜|]', '', t)",
+      "pattern_expression": "r'[｜|]'",
+      "pattern": "[｜|]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "｜",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[｜|]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:496:12:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 496,
+      "column": 12,
+      "scope": "parse_aozora",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'《[^》]*》', '', t)",
+      "pattern_expression": "r'《[^》]*》'",
+      "pattern": "《[^》]*》",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "《q》",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "《[^》]*》",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:544:16:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 544,
+      "column": 16,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(\n    rf\"^(?:(?:{HEAD_WORDS})\\s*(?:{HEAD_NUMS})\\b[.:]?.{{0,60}}\"\n    rf\"|(?:{HEAD_NUMS})\\s+(?:{HEAD_WORDS})\\b[.:]?.{{0,60}}\"\n    rf\"|[IVXLC]{{1,7}}\\.?)$\", re.I)",
+      "pattern_expression": "rf\"^(?:(?:{HEAD_WORDS})\\s*(?:{HEAD_NUMS})\\b[.:]?.{{0,60}}\"\n    rf\"|(?:{HEAD_NUMS})\\s+(?:{HEAD_WORDS})\\b[.:]?.{{0,60}}\"\n    rf\"|[IVXLC]{{1,7}}\\.?)$\"",
+      "pattern": "^(?:(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)\\s*(?:[0-9]+|[ivxlcdm]+|the\\s+\\w+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв\\w*|втор\\w*|трет\\w*|четв\\w*|пят\\w*|шест\\w*|седьм\\w*|последн\\w*)\\b[.:]?.{0,60}|(?:[0-9]+|[ivxlcdm]+|the\\s+\\w+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв\\w*|втор\\w*|трет\\w*|четв\\w*|пят\\w*|шест\\w*|седьм\\w*|последн\\w*)\\s+(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)\\b[.:]?.{0,60}|[IVXLC]{1,7}\\.?)$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "CHAPTER I",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:[0-9]+|[ivxlcdm]+|the[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+[\\p{L}\\p{N}_]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв[\\p{L}\\p{N}_]*|втор[\\p{L}\\p{N}_]*|трет[\\p{L}\\p{N}_]*|четв[\\p{L}\\p{N}_]*|пят[\\p{L}\\p{N}_]*|шест[\\p{L}\\p{N}_]*|седьм[\\p{L}\\p{N}_]*|последн[\\p{L}\\p{N}_]*)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))[.:]?.{0,60}|(?:[0-9]+|[ivxlcdm]+|the[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+[\\p{L}\\p{N}_]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв[\\p{L}\\p{N}_]*|втор[\\p{L}\\p{N}_]*|трет[\\p{L}\\p{N}_]*|четв[\\p{L}\\p{N}_]*|пят[\\p{L}\\p{N}_]*|шест[\\p{L}\\p{N}_]*|седьм[\\p{L}\\p{N}_]*|последн[\\p{L}\\p{N}_]*)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))[.:]?.{0,60}|[IVXLC]{1,7}\\.?)$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:551:15:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 551,
+      "column": 15,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'^(?:[IVXLCDM]{1,7}\\.?|[0-9]{1,3}\\.?|'\n                          r'[一二三四五六七八九十百]{1,4}|第[一二三四五六七八九十百千0-9]{1,5}[章回節节部篇卷])$', re.I)",
+      "pattern_expression": "r'^(?:[IVXLCDM]{1,7}\\.?|[0-9]{1,3}\\.?|'\n                          r'[一二三四五六七八九十百]{1,4}|第[一二三四五六七八九十百千0-9]{1,5}[章回節节部篇卷])$'",
+      "pattern": "^(?:[IVXLCDM]{1,7}\\.?|[0-9]{1,3}\\.?|[一二三四五六七八九十百]{1,4}|第[一二三四五六七八九十百千0-9]{1,5}[章回節节部篇卷])$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "1",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?:[IVXLCDM]{1,7}\\.?|[0-9]{1,3}\\.?|[一二三四五六七八九十百]{1,4}|第[一二三四五六七八九十百千0-9]{1,5}[章回節节部篇卷])$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:558:8:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 558,
+      "column": 8,
+      "scope": "_gutenberg",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'^\\*\\*\\*\\s*START OF (?:THE|THIS) PROJECT GUTENBERG.*$', text, re.M | re.I)",
+      "pattern_expression": "r'^\\*\\*\\*\\s*START OF (?:THE|THIS) PROJECT GUTENBERG.*$'",
+      "pattern": "^\\*\\*\\*\\s*START OF (?:THE|THIS) PROJECT GUTENBERG.*$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.M | re.I",
+      "flags": [
+        "I",
+        "M"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "*** START OF THE PROJECT GUTENBERG EBOOK ***",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^\\*\\*\\*[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*START OF (?:THE|THIS) PROJECT GUTENBERG.*$",
+        "case_sensitive": false,
+        "multi_line": true,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:561:12:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 561,
+      "column": 12,
+      "scope": "_gutenberg",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'^Title:\\s*(.+)$', head, re.M)",
+      "pattern_expression": "r'^Title:\\s*(.+)$'",
+      "pattern": "^Title:\\s*(.+)$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.M",
+      "flags": [
+        "M"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Title: Sample",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^Title:[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(.+)$",
+        "case_sensitive": true,
+        "multi_line": true,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:562:12:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 562,
+      "column": 12,
+      "scope": "_gutenberg",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'^Author:\\s*(.+)$', head, re.M)",
+      "pattern_expression": "r'^Author:\\s*(.+)$'",
+      "pattern": "^Author:\\s*(.+)$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.M",
+      "flags": [
+        "M"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Author: Name",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^Author:[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(.+)$",
+        "case_sensitive": true,
+        "multi_line": true,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:565:12:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 565,
+      "column": 12,
+      "scope": "_gutenberg",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'^\\*\\*\\*\\s*END OF (?:THE|THIS) PROJECT GUTENBERG.*$', text, re.M | re.I)",
+      "pattern_expression": "r'^\\*\\*\\*\\s*END OF (?:THE|THIS) PROJECT GUTENBERG.*$'",
+      "pattern": "^\\*\\*\\*\\s*END OF (?:THE|THIS) PROJECT GUTENBERG.*$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.M | re.I",
+      "flags": [
+        "I",
+        "M"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "*** END OF THE PROJECT GUTENBERG EBOOK ***",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^\\*\\*\\*[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*END OF (?:THE|THIS) PROJECT GUTENBERG.*$",
+        "case_sensitive": false,
+        "multi_line": true,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:575:13:sub",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 575,
+      "column": 13,
+      "scope": "parse_latin_txt",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'\\s+', ' ', p)",
+      "pattern_expression": "r'\\s+'",
+      "pattern": "\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:575:53:split",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 575,
+      "column": 53,
+      "scope": "parse_latin_txt",
+      "operation": "split",
+      "receiver": null,
+      "expression": "re.split(r'\\n\\s*\\n', text.replace('\\r', ''))",
+      "pattern_expression": "r'\\n\\s*\\n'",
+      "pattern": "\\n\\s*\\n",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a\n\nb",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "\\n[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*\\n",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:579:32:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 579,
+      "column": 32,
+      "scope": "parse_latin_txt.caps",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[A-Z]{2}', t)",
+      "pattern_expression": "r'[A-Z]{2}'",
+      "pattern": "[A-Z]{2}",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "HTTP 401: bad key",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Z]{2}",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:579:66:search",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 579,
+      "column": 66,
+      "scope": "parse_latin_txt.caps",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[a-z]', t)",
+      "pattern_expression": "r'[a-z]'",
+      "pattern": "[a-z]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[a-z]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:585:14:compile",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 585,
+      "column": 14,
+      "scope": "parse_latin_txt",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(rf'^({HEAD_WORDS})\\b', re.I)",
+      "pattern_expression": "rf'^({HEAD_WORDS})\\b'",
+      "pattern": "^(chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)\\b",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "CHAPTER I",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:593:11:match",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 593,
+      "column": 11,
+      "scope": "parse_latin_txt",
+      "operation": "match",
+      "receiver": "EN_CHAPTER_RE",
+      "expression": "EN_CHAPTER_RE.match(t)",
+      "pattern_expression": "rf\"^(?:(?:{HEAD_WORDS})\\s*(?:{HEAD_NUMS})\\b[.:]?.{{0,60}}\"\n    rf\"|(?:{HEAD_NUMS})\\s+(?:{HEAD_WORDS})\\b[.:]?.{{0,60}}\"\n    rf\"|[IVXLC]{{1,7}}\\.?)$\"",
+      "pattern": "^(?:(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)\\s*(?:[0-9]+|[ivxlcdm]+|the\\s+\\w+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв\\w*|втор\\w*|трет\\w*|четв\\w*|пят\\w*|шест\\w*|седьм\\w*|последн\\w*)\\b[.:]?.{0,60}|(?:[0-9]+|[ivxlcdm]+|the\\s+\\w+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв\\w*|втор\\w*|трет\\w*|четв\\w*|пят\\w*|шест\\w*|седьм\\w*|последн\\w*)\\s+(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)\\b[.:]?.{0,60}|[IVXLC]{1,7}\\.?)$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:544:16:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "CHAPTER I",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^(?:(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:[0-9]+|[ivxlcdm]+|the[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+[\\p{L}\\p{N}_]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв[\\p{L}\\p{N}_]*|втор[\\p{L}\\p{N}_]*|трет[\\p{L}\\p{N}_]*|четв[\\p{L}\\p{N}_]*|пят[\\p{L}\\p{N}_]*|шест[\\p{L}\\p{N}_]*|седьм[\\p{L}\\p{N}_]*|последн[\\p{L}\\p{N}_]*)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))[.:]?.{0,60}|(?:[0-9]+|[ivxlcdm]+|the[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+[\\p{L}\\p{N}_]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|first|second|third|fourth|fifth|last|premi[eè]re?|deuxi[eè]me|second[e]?|troisi[eè]me|quatri[eè]me|cinqui[eè]me|derni[eè]re?|erste[rsn]?|zweite[rsn]?|dritte[rsn]?|vierte[rsn]?|f[uü]nfte[rsn]?|letzte[rsn]?|primer[ao]?|segund[ao]|tercer[ao]?|cuart[ao]|quint[ao]|[úu]ltim[ao]|перв[\\p{L}\\p{N}_]*|втор[\\p{L}\\p{N}_]*|трет[\\p{L}\\p{N}_]*|четв[\\p{L}\\p{N}_]*|пят[\\p{L}\\p{N}_]*|шест[\\p{L}\\p{N}_]*|седьм[\\p{L}\\p{N}_]*|последн[\\p{L}\\p{N}_]*)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+(?:chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))[.:]?.{0,60}|[IVXLC]{1,7}\\.?)$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:594:16:match",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 594,
+      "column": 16,
+      "scope": "parse_latin_txt",
+      "operation": "match",
+      "receiver": "KEYWORD",
+      "expression": "KEYWORD.match(t)",
+      "pattern_expression": "rf'^({HEAD_WORDS})\\b'",
+      "pattern": "^(chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)\\b",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:585:14:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "CHAPTER I",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^(chapter|book|part|stave|letter|volume|section|canto|act|scene|problem|chapitre|livre|partie|acte|sc[eè]ne|kapitel|buch|teil|abschnitt|aufzug|auftritt|cap[ií]tulo|libro|parte|acto|escena|cap[ií]tulo|capitolo|atto|глава|часть|книга|действие|явление)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:596:13:match",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 596,
+      "column": 13,
+      "scope": "parse_latin_txt",
+      "operation": "match",
+      "receiver": "BARE_HEAD_RE",
+      "expression": "BARE_HEAD_RE.match(t)",
+      "pattern_expression": "r'^(?:[IVXLCDM]{1,7}\\.?|[0-9]{1,3}\\.?|'\n                          r'[一二三四五六七八九十百]{1,4}|第[一二三四五六七八九十百千0-9]{1,5}[章回節节部篇卷])$'",
+      "pattern": "^(?:[IVXLCDM]{1,7}\\.?|[0-9]{1,3}\\.?|[一二三四五六七八九十百]{1,4}|第[一二三四五六七八九十百千0-9]{1,5}[章回節节部篇卷])$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:551:15:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "1",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^(?:[IVXLCDM]{1,7}\\.?|[0-9]{1,3}\\.?|[一二三四五六七八九十百]{1,4}|第[一二三四五六七八九十百千0-9]{1,5}[章回節节部篇卷])$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:636:20:fullmatch",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 636,
+      "column": 20,
+      "scope": "parse_latin_txt",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'(?:PREFACE|INTRODUCTION|CONTENTS|APPENDIX)\\.?', t)",
+      "pattern_expression": "r'(?:PREFACE|INTRODUCTION|CONTENTS|APPENDIX)\\.?'",
+      "pattern": "(?:PREFACE|INTRODUCTION|CONTENTS|APPENDIX)\\.?",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "PREFACE.",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "(?:PREFACE|INTRODUCTION|CONTENTS|APPENDIX)\\.?",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:654:16:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 654,
+      "column": 16,
+      "scope": "is_latin_text",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[A-Za-z]', sample)",
+      "pattern_expression": "r'[A-Za-z]'",
+      "pattern": "[A-Za-z]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:655:14:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 655,
+      "column": 14,
+      "scope": "is_latin_text",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[\\u3400-\\u9fff]', sample)",
+      "pattern_expression": "r'[\\u3400-\\u9fff]'",
+      "pattern": "[\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:660:15:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 660,
+      "column": 15,
+      "scope": "_cyrillic",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[\\u0400-\\u04ff]', sample)",
+      "pattern_expression": "r'[\\u0400-\\u04ff]'",
+      "pattern": "[\\u0400-\\u04ff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Ѐ",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0400-\\u04ff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:689:14:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 689,
+      "column": 14,
+      "scope": "detect_lang",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[\\u3400-\\u9fff]', sample)",
+      "pattern_expression": "r'[\\u3400-\\u9fff]'",
+      "pattern": "[\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:690:15:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 690,
+      "column": 15,
+      "scope": "detect_lang",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[\\u3040-\\u30ff]', sample)",
+      "pattern_expression": "r'[\\u3040-\\u30ff]'",
+      "pattern": "[\\u3040-\\u30ff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "はしがき",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3040-\\u30ff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:693:31:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 693,
+      "column": 31,
+      "scope": "detect_lang",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[A-Za-z]', sample)",
+      "pattern_expression": "r'[A-Za-z]'",
+      "pattern": "[A-Za-z]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/parse.py:696:24:findall",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 696,
+      "column": 24,
+      "scope": "detect_lang",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(pat, low)",
+      "pattern_expression": "pat",
+      "pattern": null,
+      "pattern_encoding": null,
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [
+        "pat"
+      ],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": null,
+      "dart": null,
+      "dynamic_variants": {
+        "en": "\\b(the|and|of|that|with|which|was|his|her)\\b",
+        "fr": "\\b(le|la|les|des|une|qui|que|dans|pour|elle|était)\\b",
+        "de": "\\b(der|die|das|und|nicht|sich|ein|den|mit|war)\\b",
+        "es": "\\b(el|la|los|las|que|con|por|para|una|más)\\b",
+        "it": "\\b(il|la|che|di|per|con|una|gli|nel)\\b",
+        "pt": "\\b(o|a|os|as|que|com|para|uma|não|ele)\\b",
+        "nl": "\\b(de|het|een|van|niet|dat|zijn|met)\\b",
+        "ru": "\\b(и|в|не|на|что|он|с|как|это|она)\\b"
+      },
+      "variant_examples": {
+        "en": {
+          "pattern": "\\b(the|and|of|that|with|which|was|his|her)\\b",
+          "examples": {
+            "positive": "the old man",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(the|and|of|that|with|which|was|his|her)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        },
+        "fr": {
+          "pattern": "\\b(le|la|les|des|une|qui|que|dans|pour|elle|était)\\b",
+          "examples": {
+            "positive": "le",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(le|la|les|des|une|qui|que|dans|pour|elle|était)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        },
+        "de": {
+          "pattern": "\\b(der|die|das|und|nicht|sich|ein|den|mit|war)\\b",
+          "examples": {
+            "positive": "der",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(der|die|das|und|nicht|sich|ein|den|mit|war)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        },
+        "es": {
+          "pattern": "\\b(el|la|los|las|que|con|por|para|una|más)\\b",
+          "examples": {
+            "positive": "el",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(el|la|los|las|que|con|por|para|una|más)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        },
+        "it": {
+          "pattern": "\\b(il|la|che|di|per|con|una|gli|nel)\\b",
+          "examples": {
+            "positive": "il",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(il|la|che|di|per|con|una|gli|nel)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        },
+        "pt": {
+          "pattern": "\\b(o|a|os|as|que|com|para|uma|não|ele)\\b",
+          "examples": {
+            "positive": "a",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(o|a|os|as|que|com|para|uma|não|ele)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        },
+        "nl": {
+          "pattern": "\\b(de|het|een|van|niet|dat|zijn|met)\\b",
+          "examples": {
+            "positive": "de",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(de|het|een|van|niet|dat|zijn|met)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        },
+        "ru": {
+          "pattern": "\\b(и|в|не|на|что|он|с|как|это|она)\\b",
+          "examples": {
+            "positive": "и",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(и|в|не|на|что|он|с|как|это|она)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": false,
+            "unicode": true,
+            "translation": [
+              "Python Unicode word class/boundary"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "pipeline/parse.py:724:34:fullmatch",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 724,
+      "column": 34,
+      "scope": "parse_txt",
+      "operation": "fullmatch",
+      "receiver": "JA_PART_RE",
+      "expression": "JA_PART_RE.fullmatch(t)",
+      "pattern_expression": "r'^(?:第[零〇一二三四五六七八九十百千万0-9０-９]+(?:の手記|[\\s　]+\\S.{0,29})|'\n    r'[上中下][\\s　]+\\S.{0,29})$'",
+      "pattern": "^(?:第[零〇一二三四五六七八九十百千万0-9０-９]+(?:の手記|[\\s　]+\\S.{0,29})|[上中下][\\s　]+\\S.{0,29})$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:463:13:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "第零の手記",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "^(?:第[零〇一二三四五六七八九十百千万0-9０-９]+(?:の手記|[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000　]+[^\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000].{0,29})|[上中下][\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000　]+[^\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000].{0,29})$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:724:61:fullmatch",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 724,
+      "column": 61,
+      "scope": "parse_txt",
+      "operation": "fullmatch",
+      "receiver": "JA_FRAME_RE",
+      "expression": "JA_FRAME_RE.fullmatch(t)",
+      "pattern_expression": "r'^(?:はしがき|あとがき|附記(?:[\\s　]+.{1,30})?)$'",
+      "pattern": "^(?:はしがき|あとがき|附記(?:[\\s　]+.{1,30})?)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:466:14:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "はしがき",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "^(?:はしがき|あとがき|附記(?:[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000　]+.{1,30})?)$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:725:38:match",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 725,
+      "column": 38,
+      "scope": "parse_txt",
+      "operation": "match",
+      "receiver": "CHAPTER_RE",
+      "expression": "CHAPTER_RE.match(t)",
+      "pattern_expression": "r'^\\s*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|'      # a line that is only a numeral: 一 / 二、\n    r'(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|'\n    r'(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter\\s+\\d+[^\\n]{0,40}|CHAPTER\\s+[IVXLC\\d]+[^\\n]{0,40}))\\s*$'",
+      "pattern": "^\\s*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter\\s+\\d+[^\\n]{0,40}|CHAPTER\\s+[IVXLC\\d]+[^\\n]{0,40}))\\s*$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:451:13:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "第一章",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+\\p{Nd}+[^\\n]{0,40}|CHAPTER[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+[IVXLC\\p{Nd}]+[^\\n]{0,40}))[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/parse.py:747:30:match",
+      "module": "pipeline.parse",
+      "source": "pipeline/parse.py",
+      "line": 747,
+      "column": 30,
+      "scope": "_html_book",
+      "operation": "match",
+      "receiver": "CHAPTER_RE",
+      "expression": "CHAPTER_RE.match(b['t'])",
+      "pattern_expression": "r'^\\s*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|'      # a line that is only a numeral: 一 / 二、\n    r'(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|'\n    r'(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter\\s+\\d+[^\\n]{0,40}|CHAPTER\\s+[IVXLC\\d]+[^\\n]{0,40}))\\s*$'",
+      "pattern": "^\\s*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter\\s+\\d+[^\\n]{0,40}|CHAPTER\\s+[IVXLC\\d]+[^\\n]{0,40}))\\s*$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/parse.py:451:13:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "第一章",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:[零〇一二三四五六七八九十百]{1,4}[、.．]?|(?:第[零〇一二三四五六七八九十百千万两0-9０-９]+[章回节卷集部篇幕])[^\\n]{0,30}|(?:序章|序言|序|楔子|引子|尾声|后记|番外[^\\n]{0,20}|chapter[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+\\p{Nd}+[^\\n]{0,40}|CHAPTER[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+[IVXLC\\p{Nd}]+[^\\n]{0,40}))[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:788:23:search",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 788,
+      "column": 23,
+      "scope": "Runner._recap_job",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(f'<{k}>(.*?)</{k}>', txt, re.S)",
+      "pattern_expression": "f'<{k}>(.*?)</{k}>'",
+      "pattern": null,
+      "pattern_encoding": null,
+      "flags_expression": "re.S",
+      "flags": [
+        "S"
+      ],
+      "dependencies": [
+        "k"
+      ],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": null,
+      "dart": null,
+      "dynamic_variants": {
+        "recap": "<recap>(.*?)</recap>",
+        "saga": "<saga>(.*?)</saga>"
+      },
+      "variant_examples": {
+        "recap": {
+          "pattern": "<recap>(.*?)</recap>",
+          "examples": {
+            "positive": "<recap>x</recap>",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "<recap>(.*?)</recap>",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": true,
+            "unicode": true,
+            "translation": []
+          }
+        },
+        "saga": {
+          "pattern": "<saga>(.*?)</saga>",
+          "examples": {
+            "positive": "<saga>x</saga>",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "<saga>(.*?)</saga>",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": true,
+            "unicode": true,
+            "translation": []
+          }
+        }
+      }
+    },
+    {
+      "id": "pipeline/run.py:788:68:search",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 788,
+      "column": 68,
+      "scope": "Runner._recap_job",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(f'<{k}>(.*)', txt, re.S)",
+      "pattern_expression": "f'<{k}>(.*)'",
+      "pattern": null,
+      "pattern_encoding": null,
+      "flags_expression": "re.S",
+      "flags": [
+        "S"
+      ],
+      "dependencies": [
+        "k"
+      ],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": null,
+      "dart": null,
+      "dynamic_variants": {
+        "recap": "<recap>(.*)",
+        "saga": "<saga>(.*)"
+      },
+      "variant_examples": {
+        "recap": {
+          "pattern": "<recap>(.*)",
+          "examples": {
+            "positive": "<recap>x",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "<recap>(.*)",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": true,
+            "unicode": true,
+            "translation": []
+          }
+        },
+        "saga": {
+          "pattern": "<saga>(.*)",
+          "examples": {
+            "positive": "<saga>x",
+            "negative": "☃",
+            "mode": "search"
+          },
+          "dart": {
+            "pattern": "<saga>(.*)",
+            "case_sensitive": true,
+            "multi_line": false,
+            "dot_all": true,
+            "unicode": true,
+            "translation": []
+          }
+        }
+      }
+    },
+    {
+      "id": "pipeline/run.py:897:37:findall",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 897,
+      "column": 37,
+      "scope": "Runner._dedupe_candidates.words",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[A-Za-z]{4,}', txt)",
+      "pattern_expression": "r'[A-Za-z]{4,}'",
+      "pattern": "[A-Za-z]{4,}",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "John",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z]{4,}",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/run.py:898:18:sub",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 898,
+      "column": 18,
+      "scope": "Runner._dedupe_candidates.words",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[^\\u4e00-\\u9fff]', '', txt)",
+      "pattern_expression": "r'[^\\u4e00-\\u9fff]'",
+      "pattern": "[^\\u4e00-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[^\\u4e00-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "pipeline/run.py:1327:25:search",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1327,
+      "column": 25,
+      "scope": "Runner.support_items",
+      "operation": "search",
+      "receiver": "CRITICAL",
+      "expression": "CRITICAL.search(text)",
+      "pattern_expression": "r'死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|'\n                      r'娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|'\n                      # who did it: a suspicion must not become a fact (DeepSeek on Great Expectations:\n                      # \"identified by his hammer as the attacker\", 36 chapters before the confession)\n                      r'凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|'\n                      r'\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|'\n                      r'\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|'\n                      r'marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b'",
+      "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/judge.py:546:11:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "死",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:1427:15:sub",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1427,
+      "column": 15,
+      "scope": "Runner.name_relations",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'\\s+', '', text)",
+      "pattern_expression": "r'\\s+'",
+      "pattern": "\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:1431:20:sub",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1431,
+      "column": 20,
+      "scope": "Runner.name_relations",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'\\s+', '', str(x.get('quote') or ''))",
+      "pattern_expression": "r'\\s+'",
+      "pattern": "\\s+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:1504:96:match",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1504,
+      "column": 96,
+      "scope": "Runner.add_relations",
+      "operation": "match",
+      "receiver": null,
+      "expression": "re.match(r'^[abAB]\\s*的', lab)",
+      "pattern_expression": "r'^[abAB]\\s*的'",
+      "pattern": "^[abAB]\\s*的",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a 的",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^[abAB][\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*的",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:1630:59:search",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1630,
+      "column": 59,
+      "scope": "Runner._local_job",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'\\b(429|5\\d\\d)\\b|timed out|timeout',\n                                                                    str(e), re.I)",
+      "pattern_expression": "r'\\b(429|5\\d\\d)\\b|timed out|timeout'",
+      "pattern": "\\b(429|5\\d\\d)\\b|timed out|timeout",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "429",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(429|5\\p{Nd}\\p{Nd})(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))|timed out|timeout",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary",
+          "Python decimal digits"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:1701:15:search",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1701,
+      "column": 15,
+      "scope": "Runner.verify_critical",
+      "operation": "search",
+      "receiver": "CRITICAL",
+      "expression": "CRITICAL.search(e.get('text') or '')",
+      "pattern_expression": "r'死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|'\n                      r'娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|'\n                      # who did it: a suspicion must not become a fact (DeepSeek on Great Expectations:\n                      # \"identified by his hammer as the attacker\", 36 chapters before the confession)\n                      r'凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|'\n                      r'\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|'\n                      r'\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|'\n                      r'marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b'",
+      "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/judge.py:546:11:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "死",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:1704:61:search",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1704,
+      "column": 61,
+      "scope": "Runner.verify_critical",
+      "operation": "search",
+      "receiver": "CRITICAL",
+      "expression": "CRITICAL.search(a.get('value') or '')",
+      "pattern_expression": "r'死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|'\n                      r'娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|'\n                      # who did it: a suspicion must not become a fact (DeepSeek on Great Expectations:\n                      # \"identified by his hammer as the attacker\", 36 chapters before the confession)\n                      r'凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|'\n                      r'\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|'\n                      r'\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|'\n                      r'marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b'",
+      "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|\\b(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)\\b|\\b(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)\\b",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": "pipeline/judge.py:546:11:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "死",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "死|去世|身亡|亡故|病故|病逝|殁|薨|夭|自尽|自刎|投井|上吊|吞金|咽气|气绝|过世|归天|殒|丧命|遇害|被杀|娶|嫁|成亲|成婚|完婚|拜堂|过门|纳妾|二房|订婚|定亲|婚配|凶手|元凶|主谋|幕后|行凶|刺杀|暗杀|下毒|毒杀|陷害|嫁祸|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:attacker|assailant|culprit|murderer|killer|poisoner|poisoned|framed|behind the attack)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))|(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))(?:die[sd]?|dying|dead|death|killed|murder(?:ed)?|drown(?:s|ed)|suicide|hanged|executed|perish(?:ed|es)|marr(?:y|ies|ied)|wedding|wed|widow(?:ed)?|engaged|betrothed)(?:(?<![\\p{L}\\p{N}_])(?=[\\p{L}\\p{N}_])|(?<=[\\p{L}\\p{N}_])(?![\\p{L}\\p{N}_]))",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "pipeline/run.py:1708:15:search",
+      "module": "pipeline.run",
+      "source": "pipeline/run.py",
+      "line": 1708,
+      "column": 15,
+      "scope": "Runner.verify_critical",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'妻|夫|妾|姨娘|二房|wife|husband|spouse|fianc|betrothed|bride|groom', label, re.I)",
+      "pattern_expression": "r'妻|夫|妾|姨娘|二房|wife|husband|spouse|fianc|betrothed|bride|groom'",
+      "pattern": "妻|夫|妾|姨娘|二房|wife|husband|spouse|fianc|betrothed|bride|groom",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "夫妇",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "妻|夫|妾|姨娘|二房|wife|husband|spouse|fianc|betrothed|bride|groom",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/app.py:89:11:fullmatch",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 89,
+      "column": 11,
+      "scope": "book_dir",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'[A-Za-z0-9_-]{1,64}', bid or '')",
+      "pattern_expression": "r'[A-Za-z0-9_-]{1,64}'",
+      "pattern": "[A-Za-z0-9_-]{1,64}",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{1,64}",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/app.py:177:15:fullmatch",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 177,
+      "column": 15,
+      "scope": "Handler.body",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'[0-9]+', raw.strip())",
+      "pattern_expression": "r'[0-9]+'",
+      "pattern": "[0-9]+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "1",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[0-9]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/app.py:195:12:search",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 195,
+      "column": 12,
+      "scope": "Handler.authed",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'(?:^|;\\s*)yedu=(v1\\.([0-9]+)\\.[a-f0-9]{24})\\.([a-f0-9]{64})(?:;|$)', c)",
+      "pattern_expression": "r'(?:^|;\\s*)yedu=(v1\\.([0-9]+)\\.[a-f0-9]{24})\\.([a-f0-9]{64})(?:;|$)'",
+      "pattern": "(?:^|;\\s*)yedu=(v1\\.([0-9]+)\\.[a-f0-9]{24})\\.([a-f0-9]{64})(?:;|$)",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "yedu=v1.123456.abcdef0123456789abcdef01.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "(?:^|;[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*)yedu=(v1\\.([0-9]+)\\.[a-f0-9]{24})\\.([a-f0-9]{64})(?:;|$)",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/app.py:350:12:fullmatch",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 350,
+      "column": 12,
+      "scope": "Handler.route",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'/api/books/([A-Za-z0-9_-]+)(/.*)?', path)",
+      "pattern_expression": "r'/api/books/([A-Za-z0-9_-]+)(/.*)?'",
+      "pattern": "/api/books/([A-Za-z0-9_-]+)(/.*)?",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "/api/books/abc123",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "/api/books/([A-Za-z0-9_-]+)(/.*)?",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/app.py:389:13:fullmatch",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 389,
+      "column": 13,
+      "scope": "Handler.route",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'/chapters/(\\d+)', rest)",
+      "pattern_expression": "r'/chapters/(\\d+)'",
+      "pattern": "/chapters/(\\d+)",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "/chapters/12",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "/chapters/(\\p{Nd}+)",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits"
+        ]
+      }
+    },
+    {
+      "id": "server/app.py:504:13:fullmatch",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 504,
+      "column": 13,
+      "scope": "Handler.route",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'/img/([A-Za-z0-9_.-]+)', rest)",
+      "pattern_expression": "r'/img/([A-Za-z0-9_.-]+)'",
+      "pattern": "/img/([A-Za-z0-9_.-]+)",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "/img/cover.jpg",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "/img/([A-Za-z0-9_.-]+)",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/app.py:684:16:sub",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 684,
+      "column": 16,
+      "scope": "Handler.export",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[^\\w\\u4e00-\\u9fff-]+', '_', (out['book'].get('title') or bid))",
+      "pattern_expression": "r'[^\\w\\u4e00-\\u9fff-]+'",
+      "pattern": "[^\\w\\u4e00-\\u9fff-]+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[^\\p{L}\\p{N}_\\u4e00-\\u9fff-]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "server/app.py:711:19:fullmatch",
+      "module": "server.app",
+      "source": "server/app.py",
+      "line": 711,
+      "column": 19,
+      "scope": "Handler.restore",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'[0-9]{1,6}', name)",
+      "pattern_expression": "r'[0-9]{1,6}'",
+      "pattern": "[0-9]{1,6}",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "1",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[0-9]{1,6}",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:44:52:findall",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 44,
+      "column": 52,
+      "scope": "_bigrams",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r\"[A-Za-z][A-Za-z'’]{2,}\", s)",
+      "pattern_expression": "r\"[A-Za-z][A-Za-z'’]{2,}\"",
+      "pattern": "[A-Za-z][A-Za-z'’]{2,}",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "abc",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z][A-Za-z'’]{2,}",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:45:8:sub",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 45,
+      "column": 8,
+      "scope": "_bigrams",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[\\sA-Za-z0-9]', '', s)",
+      "pattern_expression": "r'[\\sA-Za-z0-9]'",
+      "pattern": "[\\sA-Za-z0-9]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000A-Za-z0-9]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/ask.py:166:21:search",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 166,
+      "column": 21,
+      "scope": "retrieval_query",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[\\u3040-\\u30ff\\u3400-\\u9fff]', question)",
+      "pattern_expression": "r'[\\u3040-\\u30ff\\u3400-\\u9fff]'",
+      "pattern": "[\\u3040-\\u30ff\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3040-\\u30ff\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:179:10:compile",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 179,
+      "column": 10,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'^(他|她|它|他们|她们|它们|这人|那人|此人|对方|两人|二人|自己|'\n                     r'he|him|his|she|her|they|them|it)$', re.I)",
+      "pattern_expression": "r'^(他|她|它|他们|她们|它们|这人|那人|此人|对方|两人|二人|自己|'\n                     r'he|him|his|she|her|they|them|it)$'",
+      "pattern": "^(他|她|它|他们|她们|它们|这人|那人|此人|对方|两人|二人|自己|he|him|his|she|her|they|them|it)$",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "他",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(他|她|它|他们|她们|它们|这人|那人|此人|对方|两人|二人|自己|he|him|his|she|her|they|them|it)$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:274:16:search",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 274,
+      "column": 16,
+      "scope": "answer",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[\\u3400-\\u9fff]', q)",
+      "pattern_expression": "r'[\\u3400-\\u9fff]'",
+      "pattern": "[\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:382:19:search",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 382,
+      "column": 19,
+      "scope": "answer",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[\\u3400-\\u9fff]', q)",
+      "pattern_expression": "r'[\\u3400-\\u9fff]'",
+      "pattern": "[\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:400:11:sub",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 400,
+      "column": 11,
+      "scope": "answer",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'\"([^\"\\n]{1,80})\"', r'「\\1」', text)",
+      "pattern_expression": "r'\"([^\"\\n]{1,80})\"'",
+      "pattern": "\"([^\"\\n]{1,80})\"",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "\"hello\"",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "\"([^\"\\n]{1,80})\"",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:401:11:sub",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 401,
+      "column": 11,
+      "scope": "answer",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'“([^”\\n]{1,80})”', r'「\\1」', text)",
+      "pattern_expression": "r'“([^”\\n]{1,80})”'",
+      "pattern": "“([^”\\n]{1,80})”",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "“你好”",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "“([^”\\n]{1,80})”",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/ask.py:402:11:sub",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 402,
+      "column": 11,
+      "scope": "answer",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'\\s*\\[(?!\\d+\\])[^\\]]{1,12}\\]', '', text)",
+      "pattern_expression": "r'\\s*\\[(?!\\d+\\])[^\\]]{1,12}\\]'",
+      "pattern": "\\s*\\[(?!\\d+\\])[^\\]]{1,12}\\]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "[注1]",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*\\[(?!\\p{Nd}+\\])[^\\]]{1,12}\\]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/ask.py:404:19:sub",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 404,
+      "column": 19,
+      "scope": "answer",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[\\s，。、；：？！“”‘’「」…—]', '', passages[c['n'] - 1]['t'])",
+      "pattern_expression": "r'[\\s，。、；：？！“”‘’「」…—]'",
+      "pattern": "[\\s，。、；：？！“”‘’「」…—]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000，。、；：？！“”‘’「」…—]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/ask.py:408:16:sub",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 408,
+      "column": 16,
+      "scope": "answer.verify",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[\\s，。、；：？！“”‘’「」…—]', '', body)",
+      "pattern_expression": "r'[\\s，。、；：？！“”‘’「」…—]'",
+      "pattern": "[\\s，。、；：？！“”‘’「」…—]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000，。、；：？！“”‘’「」…—]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/ask.py:411:11:sub",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 411,
+      "column": 11,
+      "scope": "answer",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'「([^」]{1,80})」\\s*(?:\\[(\\d+)\\])?', verify, text)",
+      "pattern_expression": "r'「([^」]{1,80})」\\s*(?:\\[(\\d+)\\])?'",
+      "pattern": "「([^」]{1,80})」\\s*(?:\\[(\\d+)\\])?",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "「q」 [3]",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "「([^」]{1,80})」[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:\\[(\\p{Nd}+)\\])?",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/ask.py:412:35:findall",
+      "module": "server.ask",
+      "source": "server/ask.py",
+      "line": 412,
+      "column": 35,
+      "scope": "answer",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'\\[(\\d+)\\]', text)",
+      "pattern_expression": "r'\\[(\\d+)\\]'",
+      "pattern": "\\[(\\d+)\\]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "[1]",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "\\[(\\p{Nd}+)\\]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python decimal digits"
+        ]
+      }
+    },
+    {
+      "id": "server/manual_entities.py:12:5:compile",
+      "module": "server.manual_entities",
+      "source": "server/manual_entities.py",
+      "line": 12,
+      "column": 5,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'[A-Za-z0-9_-]{8,80}\\Z')",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/manual_entities.py:34:41:fullmatch",
+      "module": "server.manual_entities",
+      "source": "server/manual_entities.py",
+      "line": 34,
+      "column": 41,
+      "scope": "_base",
+      "operation": "fullmatch",
+      "receiver": "ID",
+      "expression": "ID.fullmatch(str(item.get('id', '')))",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/manual_entities.py:12:5:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/manual_entities.py:53:38:fullmatch",
+      "module": "server.manual_entities",
+      "source": "server/manual_entities.py",
+      "line": 53,
+      "column": 38,
+      "scope": "apply",
+      "operation": "fullmatch",
+      "receiver": "ID",
+      "expression": "ID.fullmatch(op)",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/manual_entities.py:12:5:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/manual_entities.py:181:42:fullmatch",
+      "module": "server.manual_entities",
+      "source": "server/manual_entities.py",
+      "line": 181,
+      "column": 42,
+      "scope": "restore",
+      "operation": "fullmatch",
+      "receiver": "ID",
+      "expression": "ID.fullmatch(op)",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/manual_entities.py:12:5:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/manual_entities.py:184:86:fullmatch",
+      "module": "server.manual_entities",
+      "source": "server/manual_entities.py",
+      "line": 184,
+      "column": 86,
+      "scope": "restore",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'[a-f0-9]{64}', operation_hash)",
+      "pattern_expression": "r'[a-f0-9]{64}'",
+      "pattern": "[a-f0-9]{64}",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[a-f0-9]{64}",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/marginalia.py:96:21:finditer",
+      "module": "server.marginalia",
+      "source": "server/marginalia.py",
+      "line": 96,
+      "column": 21,
+      "scope": "_page_candidates",
+      "operation": "finditer",
+      "receiver": null,
+      "expression": "re.finditer(r'[^。！？!?；;.\\n]+(?:[。！？!?；;.]+|$)', visible)",
+      "pattern_expression": "r'[^。！？!?；;.\\n]+(?:[。！？!?；;.]+|$)'",
+      "pattern": "[^。！？!?；;.\\n]+(?:[。！？!?；;.]+|$)",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[^。！？!?；;.\\n]+(?:[。！？!?；;.]+|$)",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/marginalia.py:101:49:search",
+      "module": "server.marginalia",
+      "source": "server/marginalia.py",
+      "line": 101,
+      "column": 49,
+      "scope": "_page_candidates",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'[\\w\\u3400-\\u9fff]', quote)",
+      "pattern_expression": "r'[\\w\\u3400-\\u9fff]'",
+      "pattern": "[\\w\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\p{L}\\p{N}_\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "server/marginalia.py:233:11:sub",
+      "module": "server.marginalia",
+      "source": "server/marginalia.py",
+      "line": 233,
+      "column": 11,
+      "scope": "_clean",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'^\\s*(?:批注|评论|弹幕|短评)\\s*[：:]\\s*', '', text.strip())",
+      "pattern_expression": "r'^\\s*(?:批注|评论|弹幕|短评)\\s*[：:]\\s*'",
+      "pattern": "^\\s*(?:批注|评论|弹幕|短评)\\s*[：:]\\s*",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": " 批注 ： ",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?:批注|评论|弹幕|短评)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[：:][\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/marginalia.py:234:11:sub",
+      "module": "server.marginalia",
+      "source": "server/marginalia.py",
+      "line": 234,
+      "column": 11,
+      "scope": "_clean",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'```.*?```', '', text, flags=re.S)",
+      "pattern_expression": "r'```.*?```'",
+      "pattern": "```.*?```",
+      "pattern_encoding": "text",
+      "flags_expression": "re.S",
+      "flags": [
+        "S"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "```json\n{}\n```",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "```.*?```",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": true,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/marginalia.py:238:12:findall",
+      "module": "server.marginalia",
+      "source": "server/marginalia.py",
+      "line": 238,
+      "column": 12,
+      "scope": "_clean",
+      "operation": "findall",
+      "receiver": null,
+      "expression": "re.findall(r'[\\u3400-\\u9fff]', text)",
+      "pattern_expression": "r'[\\u3400-\\u9fff]'",
+      "pattern": "[\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/marginalia.py:239:15:search",
+      "module": "server.marginalia",
+      "source": "server/marginalia.py",
+      "line": 239,
+      "column": 15,
+      "scope": "_clean",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'Markdown|JSON|系统提示', text, flags=re.I)",
+      "pattern_expression": "r'Markdown|JSON|系统提示'",
+      "pattern": "Markdown|JSON|系统提示",
+      "pattern_encoding": "text",
+      "flags_expression": "re.I",
+      "flags": [
+        "I"
+      ],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "```json\n{}\n```",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "Markdown|JSON|系统提示",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/marginalia.py:319:21:sub",
+      "module": "server.marginalia",
+      "source": "server/marginalia.py",
+      "line": 319,
+      "column": 21,
+      "scope": "_generate_many",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'[^\\w\\u3400-\\u9fff]', '', comment)",
+      "pattern_expression": "r'[^\\w\\u3400-\\u9fff]'",
+      "pattern": "[^\\w\\u3400-\\u9fff]",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "Mr. Smith",
+        "negative": "",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[^\\p{L}\\p{N}_\\u3400-\\u9fff]",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary"
+        ]
+      }
+    },
+    {
+      "id": "server/model_settings.py:111:41:fullmatch",
+      "module": "server.model_settings",
+      "source": "server/model_settings.py",
+      "line": 111,
+      "column": 41,
+      "scope": "save",
+      "operation": "fullmatch",
+      "receiver": null,
+      "expression": "re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._/+:-]{0,99}', model)",
+      "pattern_expression": "r'[A-Za-z0-9][A-Za-z0-9._/+:-]{0,99}'",
+      "pattern": "[A-Za-z0-9][A-Za-z0-9._/+:-]{0,99}",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9][A-Za-z0-9._/+:-]{0,99}",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/notebook.py:9:5:compile",
+      "module": "server.notebook",
+      "source": "server/notebook.py",
+      "line": 9,
+      "column": 5,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'[A-Za-z0-9_-]{8,80}\\Z')",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/notebook.py:30:41:fullmatch",
+      "module": "server.notebook",
+      "source": "server/notebook.py",
+      "line": 30,
+      "column": 41,
+      "scope": "validate",
+      "operation": "fullmatch",
+      "receiver": "ID",
+      "expression": "ID.fullmatch(str(item.get('id', '')))",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/notebook.py:9:5:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/notebook.py:53:38:fullmatch",
+      "module": "server.notebook",
+      "source": "server/notebook.py",
+      "line": 53,
+      "column": 38,
+      "scope": "apply",
+      "operation": "fullmatch",
+      "receiver": "ID",
+      "expression": "ID.fullmatch(op)",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/notebook.py:9:5:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/reading_list.py:9:10:compile",
+      "module": "server.reading_list",
+      "source": "server/reading_list.py",
+      "line": 9,
+      "column": 10,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'[A-Za-z0-9_-]{1,160}\\Z')",
+      "pattern_expression": "r'[A-Za-z0-9_-]{1,160}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{1,160}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{1,160}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/reading_list.py:10:12:compile",
+      "module": "server.reading_list",
+      "source": "server/reading_list.py",
+      "line": 10,
+      "column": 12,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'[A-Za-z0-9_-]{8,80}\\Z')",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/reading_list.py:22:46:fullmatch",
+      "module": "server.reading_list",
+      "source": "server/reading_list.py",
+      "line": 22,
+      "column": 46,
+      "scope": "apply",
+      "operation": "fullmatch",
+      "receiver": "BOOK_ID",
+      "expression": "BOOK_ID.fullmatch(x)",
+      "pattern_expression": "r'[A-Za-z0-9_-]{1,160}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{1,160}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/reading_list.py:9:10:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{1,160}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/reading_list.py:26:45:fullmatch",
+      "module": "server.reading_list",
+      "source": "server/reading_list.py",
+      "line": 26,
+      "column": 45,
+      "scope": "apply",
+      "operation": "fullmatch",
+      "receiver": "OPERATION",
+      "expression": "OPERATION.fullmatch(operation)",
+      "pattern_expression": "r'[A-Za-z0-9_-]{8,80}\\Z'",
+      "pattern": "[A-Za-z0-9_-]{8,80}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/reading_list.py:10:12:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "12345678",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-]{8,80}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/storage.py:17:13:compile",
+      "module": "server.storage",
+      "source": "server/storage.py",
+      "line": 17,
+      "column": 13,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}\\Z')",
+      "pattern_expression": "r'[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}\\Z'",
+      "pattern": "[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "阿Q",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/storage.py:97:10:compile",
+      "module": "server.storage",
+      "source": "server/storage.py",
+      "line": 97,
+      "column": 10,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'^(?P<title>.*?)\\s*[-_—\\s]*作者\\s*[:：]\\s*(?P<author>.*?)\\s*$')",
+      "pattern_expression": "r'^(?P<title>.*?)\\s*[-_—\\s]*作者\\s*[:：]\\s*(?P<author>.*?)\\s*$'",
+      "pattern": "^(?P<title>.*?)\\s*[-_—\\s]*作者\\s*[:：]\\s*(?P<author>.*?)\\s*$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "x -作者 : x ",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^(?<title>.*?)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[-_—\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*作者[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[:：][\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?<author>.*?)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "named groups",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/storage.py:98:8:compile",
+      "module": "server.storage",
+      "source": "server/storage.py",
+      "line": 98,
+      "column": 8,
+      "scope": "",
+      "operation": "compile",
+      "receiver": null,
+      "expression": "re.compile(r'(?i)^[\\w.-]+\\.(com|net|org|cn|cc)$')",
+      "pattern_expression": "r'(?i)^[\\w.-]+\\.(com|net|org|cn|cc)$'",
+      "pattern": "(?i)^[\\w.-]+\\.(com|net|org|cn|cc)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "example.com",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[\\p{L}\\p{N}_.-]+\\.(com|net|org|cn|cc)$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary",
+          "inline flags"
+        ]
+      }
+    },
+    {
+      "id": "server/storage.py:105:8:match",
+      "module": "server.storage",
+      "source": "server/storage.py",
+      "line": 105,
+      "column": 8,
+      "scope": "display_title",
+      "operation": "match",
+      "receiver": "_BYLINE",
+      "expression": "_BYLINE.match(title)",
+      "pattern_expression": "r'^(?P<title>.*?)\\s*[-_—\\s]*作者\\s*[:：]\\s*(?P<author>.*?)\\s*$'",
+      "pattern": "^(?P<title>.*?)\\s*[-_—\\s]*作者\\s*[:：]\\s*(?P<author>.*?)\\s*$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/storage.py:97:10:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "x -作者 : x ",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^(?<title>.*?)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[-_—\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*作者[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*[:：][\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(?<author>.*?)[\\u0009-\\u000D\\u001C-\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "named groups",
+          "Python whitespace"
+        ]
+      }
+    },
+    {
+      "id": "server/storage.py:109:40:match",
+      "module": "server.storage",
+      "source": "server/storage.py",
+      "line": 109,
+      "column": 40,
+      "scope": "display_title",
+      "operation": "match",
+      "receiver": "_SITE",
+      "expression": "_SITE.match(found)",
+      "pattern_expression": "r'(?i)^[\\w.-]+\\.(com|net|org|cn|cc)$'",
+      "pattern": "(?i)^[\\w.-]+\\.(com|net|org|cn|cc)$",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/storage.py:98:8:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "example.com",
+        "negative": "☃",
+        "mode": "match"
+      },
+      "dart": {
+        "pattern": "^[\\p{L}\\p{N}_.-]+\\.(com|net|org|cn|cc)$",
+        "case_sensitive": false,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "Python Unicode word class/boundary",
+          "inline flags"
+        ]
+      }
+    },
+    {
+      "id": "server/storage.py:154:40:fullmatch",
+      "module": "server.storage",
+      "source": "server/storage.py",
+      "line": 154,
+      "column": 40,
+      "scope": "asset_name",
+      "operation": "fullmatch",
+      "receiver": "ASSET_NAME",
+      "expression": "ASSET_NAME.fullmatch(name)",
+      "pattern_expression": "r'[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}\\Z'",
+      "pattern": "[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}\\Z",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": "server/storage.py:17:13:compile",
+      "assignment_sources": {},
+      "examples": {
+        "positive": "a",
+        "negative": "☃",
+        "mode": "fullmatch"
+      },
+      "dart": {
+        "pattern": "[A-Za-z0-9_-][A-Za-z0-9_.-]{0,127}(?![\\s\\S])",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": [
+          "absolute end"
+        ]
+      }
+    },
+    {
+      "id": "server/temporal.py:83:37:sub",
+      "module": "server.temporal",
+      "source": "server/temporal.py",
+      "line": 83,
+      "column": 37,
+      "scope": "fold",
+      "operation": "sub",
+      "receiver": null,
+      "expression": "re.sub(r'^[他她的老小未]+', '', x)",
+      "pattern_expression": "r'^[他她的老小未]+'",
+      "pattern": "^[他她的老小未]+",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "他",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "^[他她的老小未]+",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    },
+    {
+      "id": "server/temporal.py:84:20:search",
+      "module": "server.temporal",
+      "source": "server/temporal.py",
+      "line": 84,
+      "column": 20,
+      "scope": "fold",
+      "operation": "search",
+      "receiver": null,
+      "expression": "re.search(r'的|夫妇|夫妻|们|一家|俩', x)",
+      "pattern_expression": "r'的|夫妇|夫妻|们|一家|俩'",
+      "pattern": "的|夫妇|夫妻|们|一家|俩",
+      "pattern_encoding": "text",
+      "flags_expression": null,
+      "flags": [],
+      "dependencies": [],
+      "compiled_from": null,
+      "assignment_sources": {},
+      "examples": {
+        "positive": "夫妇",
+        "negative": "☃",
+        "mode": "search"
+      },
+      "dart": {
+        "pattern": "的|夫妇|夫妻|们|一家|俩",
+        "case_sensitive": true,
+        "multi_line": false,
+        "dot_all": false,
+        "unicode": true,
+        "translation": []
+      }
+    }
+  ],
+  "unresolved_method_candidates": [
+    {
+      "id": "pipeline/link.py:124:27:split",
+      "receiver": "name",
+      "expression": "name.split('·')"
+    },
+    {
+      "id": "pipeline/llm.py:183:28:split",
+      "receiver": "pending",
+      "expression": "pending.split(b'\\n', 1)"
+    },
+    {
+      "id": "pipeline/models.py:118:21:split",
+      "receiver": "model",
+      "expression": "model.split('+')"
+    },
+    {
+      "id": "pipeline/run.py:1075:23:split",
+      "receiver": "k",
+      "expression": "k.split('|', 1)"
+    },
+    {
+      "id": "pipeline/run.py:1586:29:split",
+      "receiver": "row",
+      "expression": "row.split('｜')"
+    },
+    {
+      "id": "pipeline/run.py:1665:30:split",
+      "receiver": "k",
+      "expression": "k.split(':', 1)"
+    },
+    {
+      "id": "pipeline/run.py:1804:75:split",
+      "receiver": "model",
+      "expression": "model.split(\"+\")"
+    }
+  ]
+}
