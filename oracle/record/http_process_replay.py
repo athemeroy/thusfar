@@ -85,7 +85,11 @@ def normalized_response(response, route: str) -> dict:
 
 def validate_run(result: dict, reference: dict[str, str], status: dict) -> None:
     if result['artifact_sha256'] != reference:
-        raise ValueError('HTTP worker output differs from the complete book golden')
+        actual = result['artifact_sha256']
+        changed = sorted(name for name in actual.keys() | reference.keys()
+                         if actual.get(name) != reference.get(name))
+        raise ValueError('HTTP worker output differs from the complete book golden: '
+                         + ', '.join(changed))
     rows = result['http']
     if len(rows) != 3 or [row.get('route') for row in rows] != \
             ['queue', 'completed-delete', 'completed-shelf']:

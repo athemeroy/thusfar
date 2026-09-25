@@ -30,8 +30,9 @@ class HttpProcessReplayTests(unittest.TestCase):
         changed = copy.deepcopy(self.receipt)
         cache = next(name for name in changed['artifact_sha256'] if name.startswith('work/judge/cache/'))
         changed['artifact_sha256'].pop(cache)
-        with self.assertRaisesRegex(ValueError, 'complete book golden'):
+        with self.assertRaisesRegex(ValueError, 'complete book golden') as caught:
             validate_run(changed, self.reference, self.status)
+        self.assertIn(cache, str(caught.exception))
 
     def test_http_200_does_not_hide_worker_failure_or_missing_calls(self):
         for field, value in (('worker', {'last_error': 'failed'}),
