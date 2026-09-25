@@ -1,0 +1,1895 @@
+schema: 1
+oracle: python-1.7.5
+inventory: docs/port/inventory.json
+tests_manifest: core/test/ported/manifest.json
+functions:
+  - id: pipeline.classify._contiguous
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.classify.classify_by_judge
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.classify.classify_chapters
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.extract.segments
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.extract.seg_text
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.extract.registry_prompt
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.extract.relations_prompt
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.extract.build_messages
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.extract.extract_segment
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.bounded_passage
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge._context
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.resolve_mentions
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.resolve_mentions.run
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.guard_texts
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.check_facts
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.label
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.trees
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.family_questions
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.read_families
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge._relation_state
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.check_and_families
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.relations_by_judge
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.record_questions
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.read_records
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.verify_records
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.importance
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.current_value
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.title_spoilers
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.check_critical
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.same_question
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.check_same
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.judge.route_question
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.is_latin
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.generic_word
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.zh
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.good_alias
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg._norm
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.Anchor.__init__
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.Anchor._g
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.Anchor.block
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.Anchor.find
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.Anchor.para_end
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.Anchor.pos
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.Anchor.first
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.__init__
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.canon
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.lookup
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.prompt_state
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.describe
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.plan
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.commit
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.commit.before
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.commit.scrub
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.merge
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.KG.add_recap
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kg.quarantine_identities
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.kind.detect
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.kind._cn
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.kind.ordinal
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.kind.works
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.lang.book_lang
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.lang.card_lang
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.lang.scale
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.lang.seg_chars
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.lang.local_note
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.lang.out_note
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.link.is_generic
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.strong_names
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.weak_names
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.core
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link._tokens
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link._stem
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.related
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.proper_name
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.names_of
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.short_forms
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.link_segment
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.link_segment.contains
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link._resolve_hint
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.verify_names
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link._gender_clash
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link._ask_jev
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link._ask_jev.desc
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.link.to_classic
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.llm._env
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._opener
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.explain
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.request_budget
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._remaining
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._timeout
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._sleep
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._gate
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._chunks
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._response_json
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._lines
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.key_for
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.protocol_for
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.base_for
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._request
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._delta
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._stall_timeout
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._record_reply
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.chat
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.repair_json
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.parse_json
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.chat_json
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.llm_judge
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._state_text
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._retry_hint
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._retry_after
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._judge_retry
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._judge_attempt
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._validate_answers
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._Breaker.__init__
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._Breaker.open
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._Breaker.allow
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._Breaker.ok
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._Breaker.failed
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._classifier_batches
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._classifier_batches.candidate_size
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.jev_free
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._teacher_log
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.jev_local
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm._jev_uncached
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.llm.jev
+    stage: A3
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A3 has not started"
+  - id: pipeline.local.build
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.local.lang_note
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.local.extract_local
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.local._s
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.local.sanitize
+    stage: A4
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A4 has not started"
+  - id: pipeline.models._overrides
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.models.price_of
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.models.judge_price
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.models.model_now
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.models.estimate
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.models.cost_of
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.parse.u16
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.clean
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.math_text
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.math_text.render
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser.__init__
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser._flush
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser._start
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser.handle_starttag
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser.handle_endtag
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser.handle_startendtag
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser.handle_data
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.DocParser.close
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._xml
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._local
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._ref
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._toc
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._toc.walk@L259
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._toc.walk@L291
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_epub
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._cover
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.is_aozora
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_aozora
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.decode_txt
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._gutenberg
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_latin_txt
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_latin_txt.caps
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_latin_txt.divides
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.is_latin_text
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._cyrillic
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.detect_lang
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.is_cjk
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_txt
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse._html_book
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_mobi
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.finish
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.split_long_chapters
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.classify
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.parse.parse_file
+    stage: A2
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A2 has not started"
+  - id: pipeline.provenance.digest
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.provenance.source_fingerprint
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.provenance.reserve_paid
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.provenance.reserve_paid.update
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: pipeline.run.wjson
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.log
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.settle_rewrites
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.drop_unsupported
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.attr_facts
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.check_attrs
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.__init__
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.checkpoint
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.await_future
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.close
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.seg_path
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.recap_path
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.bio_path
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.chapter_name
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.count
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.cached_generation
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.queue_final
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.execute_final
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.acknowledge_final_cache
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.resume_final_jobs
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.earlier_saga
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.verified_summary
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.quarantined
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.restore_quality_retry_context
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.prepare_quality_retry
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.finish_quality_retry
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.notify
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.status
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._status
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.publish
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._publish
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.process
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.process.who_of
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._describe_factory
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._describe_factory.describe
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.apply
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.recap
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._chapter_recap_job
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.saga_path
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.saga
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._saga_job
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._recap_job
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.dedupe_path
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.dedupe
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._dedupe_candidates
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._dedupe_candidates.names
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._dedupe_candidates.words
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._text_around
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._dedupe_ask
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.consolidate
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.rate_importance
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.settle_attrs
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._dossiers
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._bio_job
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._apply_bios
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.run
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.local_path
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.scope_start
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.cast_hint
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.relation_memory
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.relation_context
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.support_items
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._valid_support
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._pending_support
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._merge_support
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.name_relations
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.add_relations
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.add_support
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._local_job
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.link
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.verify_critical
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.verify_critical.known
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.mark_titles
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.run2
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner.run2.submit_upto
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.Runner._maybe_recap
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.run_book
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: pipeline.run.main
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.app.secret
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.token
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.cached_json
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.wjson
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.book_dir
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.progress_all
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.book_summary
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.setup
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.log_message
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.send
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.json
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.err
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.body_json
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.body
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.authed
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.do_HEAD
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.do_GET
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler._write
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler._discard_unread_body
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.do_POST
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.do_PUT
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.do_DELETE
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.route
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.route.visible
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.import_request
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.publish_import
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.matching_snapshot
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.static
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.chapter
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.kg
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.upload
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.export
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.restore
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.offline_manifest
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.ask
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.answer_stream
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.Handler.answer_stream.emit
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app._static_body
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app._positions
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.snapshot_version
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.book_revision
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.BoundedHTTPServer.__init__
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.BoundedHTTPServer.process_request
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.BoundedHTTPServer.process_request_thread
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.main
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.main.shutdown
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.app.main.shutdown.finish
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask._bigrams
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.evict_index
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask._book_index
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.rank_by_judge
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.retrieve
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.retrieval_query
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.who_is
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.who_is.relevance
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.recent_text
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.answer
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.answer.accepted
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.ask.answer.verify
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.jobs.book_lease
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.jobs.Worker.__init__
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.jobs.Worker.health
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.jobs.Worker.set_auto
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.jobs.Worker.cancel
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.jobs.Worker._one
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.jobs.Worker.run
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.jobs.Worker.stop
+    stage: A5
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A5 has not started"
+  - id: server.manual_entities.anchor
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.manual_entities._base
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.manual_entities.apply
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.manual_entities.rows
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.manual_entities.mentions
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.manual_entities.restore
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._lock_for
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._key_lock
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._slice_u16
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._page_candidates
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._source_before
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._story
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._select
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._material
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._clean
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._write_comment
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._accepted
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._generate
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._comment_personas
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._generate_many
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia._key
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.marginalia.respond
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.model_settings._file
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.model_settings.read
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.model_settings.public
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.model_settings.apply_environment
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.model_settings.normalize
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.model_settings.test
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.model_settings.save
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.notebook.source_quote
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.notebook.validate
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.notebook.apply
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.notebook.restore
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.reading_list.empty
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.reading_list.apply
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.signature
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.JsonCache.__init__
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.JsonCache.get
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.JsonCache._load
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.JsonCache.evict
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.write_json
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.display_title
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.storage.shelf_fields
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.storage.shelf_metadata
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage._shelf_metadata
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.integer
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.storage.asset_name
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.storage.validate_book
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.storage.validate_graph
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.storage.referenced_assets
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.storage.encode_assets
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.storage.decode_assets
+    stage: A1
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A1 has not started"
+  - id: server.temporal.fold
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.temporal.fold.apply
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
+  - id: server.temporal.fold.canon
+    stage: A6
+    status: pending_port
+    dart_symbol: null
+    reason: "Stage A6 has not started"
