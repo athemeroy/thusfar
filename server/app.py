@@ -49,7 +49,7 @@ AUTO = os.environ.get('AUTO_PROCESS', '1') == '1'
 LOCAL_MODE = os.environ.get('YEDU_LOCAL_MODE') == '1'
 MAX_UPLOAD = 200 * 1024 * 1024
 SECRET_FILE = DATA / '.cookie-secret'
-RELEASE = os.environ.get('YEDU_RELEASE_ID') or os.environ.get('RELEASE_ID') or '1.7.1'
+RELEASE = os.environ.get('YEDU_RELEASE_ID') or os.environ.get('RELEASE_ID') or '1.7.2'
 READ_TIMEOUT = float(os.environ.get('HTTP_READ_TIMEOUT', '30'))
 COOKIE_SECURE = os.environ.get('COOKIE_SECURE', '1') == '1'
 _ask_gate = threading.BoundedSemaphore(int(os.environ.get('ASK_CONCURRENCY', '2')))
@@ -281,9 +281,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(model_settings.public())
             payload = self.body_json()
             with WORKER.lock:
-                if WORKER.current is not None:
-                    return self.err(409, '正在整理书籍，请完成或暂停后再修改模型设置')
+                # A new key or address takes effect on the next request; only a different model
+                # would mix two models' output in one book, so that one waits for a pause.
+                if (WORKER.current is not None and 'model' in payload
+                        and payload['model'] != model_settings.read()['model']):
+                    return self.err(409, '正在整理书籍，换模型前请先暂停整理；密钥和接口地址可以直接修改')
                 return self.json(model_settings.save(payload))
+        if path == '/api/settings/test' and LOCAL_MODE and method == 'POST':
+            return self.json(model_settings.test())
         if path == '/api/reading-list' and method in ('GET', 'PUT'):
             payload = self.body_json() if method == 'PUT' else None
             with _lock:
@@ -435,6 +440,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.json({'ok': True, 'genre': kind})
         if rest == '/process' and method in ('POST', 'DELETE'):
             if method == 'POST':
+                if LOCAL_MODE and not model_settings.read()['api_key']:
+                    return self.err(409, '还没有填写模型 API 密钥，请先到「模型设置」填写')
                 WORKER.set_auto(d, True)
             else:
                 WORKER.cancel(d)

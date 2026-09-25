@@ -21,3 +21,4 @@ html:not([lang="zh-CN"]) .model-settings header > p:last-child { font-family: va
 .model-settings-status { min-height: 1.5em; margin: 0; color: var(--zhu); font-size: 13px; }
 .model-settings-form > button { justify-content: center; }
 @media (max-width: 600px) { .model-settings { padding-top: calc(16px + var(--safe-t)); } .model-settings-form { margin-top: 24px; } .language-settings { display: grid; gap: 14px; } .language-settings select { width: 100%; } }
+.model-settings-actions { display: flex; gap: 10px; flex-wrap: wrap; }

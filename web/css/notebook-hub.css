@@ -48,7 +48,7 @@
 .nh-empty { grid-column:1/-1;text-align:center;border:1px dashed var(--rule);border-radius:10px;padding:45px 24px; }
 .nh-empty h2 { font:500 22px/1.6 var(--serif);margin:0 0 12px; }
 .nh-empty p { max-width:440px;margin:0 auto 24px;font:14px/1.9 var(--sans);color:var(--ink-2); }
-.nh-dialog { max-width:650px;width:calc(100% - 32px);max-height:88dvh;padding:25px;border:1px solid var(--rule);border-radius:14px;background:var(--sheet);color:var(--ink);box-shadow:var(--shadow);overscroll-behavior:contain; }
+.nh-dialog { max-width:650px;width:calc(100% - 32px);max-height:88vh;max-height:88dvh;padding:25px;border:1px solid var(--rule);border-radius:14px;background:var(--sheet);color:var(--ink);box-shadow:var(--shadow);overscroll-behavior:contain; }
 .nh-dialog::backdrop { background:rgba(30,24,17,.48);backdrop-filter:blur(3px); }
 .nh-dialog-head { display:flex;justify-content:space-between;gap:15px;align-items:flex-start; }
 .nh-dialog-head h2 { margin:0;font:600 21px/1.6 var(--serif);overflow-wrap:anywhere; }

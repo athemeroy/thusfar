@@ -1,5 +1,6 @@
 // Login gate and route-owned views for the personal library workspace and reader.
 
+import './compat.js';
 import { api, AuthError } from './api.js';
 import { openShelf } from './shelf.js';
 import { openReader } from './readerview.js';

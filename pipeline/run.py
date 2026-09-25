@@ -36,7 +36,7 @@ from .link import core, is_generic, link_segment, related
 
 STOPWORDS = set('that with this from have were been they their them what when where which would could should about into than then there these those will your said says like just very only also some more most much such upon over under after before while being does did'.split())
 from .local import LOCAL_MODEL, extract_local, sanitize
-from .llm import JEV_STATS, chat, chat_json, jev, LLMError
+from .llm import JEV_STATS, chat, chat_json, explain, jev, LLMError
 from .provenance import SCHEMA, digest, source_fingerprint
 
 # cheap by default: reading a book must not be expensive
@@ -248,6 +248,7 @@ class Runner:
         os.environ.setdefault('JUDGE_LOG_DIR', str(self.work / 'judge'))
         self.usage_path = self.work / 'usage.json'
         self.usage = json.loads(self.usage_path.read_text()) if self.usage_path.exists() else {}
+        self.status_lock = threading.Lock()
         for k in ('prompt', 'completion', 'jev_calls', 'llm_calls'):
             self.usage.setdefault(k, 0)
         self.usage.setdefault('by_model', {})
@@ -492,9 +493,25 @@ class Runner:
             transaction['state'] = 'complete'
             wjson(journal, transaction)
 
+    def notify(self, notice: str | None):
+        """Tell the reader why the job is waiting (a retry after a failed model call) without
+        waiting for the segment to finish; cleared by the next regular status write."""
+        path = self.root / 'status.json'
+        with self.status_lock:
+            try:
+                state = json.loads(path.read_text())
+            except (OSError, ValueError):
+                return
+            state.update(notice=notice, updated=time.time())
+            wjson(path, state, compact=False)
+
     def status(self, state: str, done: int, error: str | None = None):
         self.usage['jev'] = dict(JEV_STATS)      # the judge is billed on input: count calls and payload
         seg = self.segs[done - 1] if done else None
+        with self.status_lock:
+            self._status(state, done, seg, error)
+
+    def _status(self, state, done, seg, error):
         wjson(self.root / 'status.json', {
             'state': state, 'done': done, 'total': len(self.segs),
             'frontier': seg['o1'] if seg else 0,
@@ -1575,6 +1592,13 @@ class Runner:
                 break
             except Exception as e:
                 log(f'local segment {i} failed (attempt {attempt + 1}): {e}')
+                reason = explain(e)
+                if reason:
+                    # a missing/invalid key, an empty balance or a wrong model name: retrying only
+                    # hides the cause behind a progress bar that never moves
+                    raise LLMError(reason) from e
+                last_error = e
+                self.notify(f'模型请求失败，正在重试（第 {attempt + 1} 次）：{str(e)[:160]}')
                 # A model that returned malformed JSON is not asking us to slow down — it just
                 # sampled badly, and the next draw is usually fine. Waiting only helps when the
                 # other side is rate limiting or down. Measured on 我真没想重生啊: these blind
@@ -1586,7 +1610,7 @@ class Runner:
         else:
             # A failed check must not repeat a successful extraction: that cache is already
             # persisted above, and the next attempt resumes only its missing judge work.
-            raise LLMError(f'第 {i} 段连续四次抽取失败，已暂停；未生成空白成功缓存')
+            raise LLMError(f'第 {i} 段连续四次请求模型都失败，已暂停：{str(last_error)[:200]}')
         return self.add_support(self.add_relations(rec, i, model), i)
 
     def link(self, i: int, local_rec: dict) -> dict:
@@ -1767,7 +1791,7 @@ class Runner:
                 raise
             except Exception as e:
                 log(f'segment {i}: {type(e).__name__}: {e}')
-                self.status('error', i, error=f'{type(e).__name__}: {e}'[:300])
+                self.status('error', i, error=(str(e) if isinstance(e, LLMError) else f'{type(e).__name__}: {e}')[:300])
                 local_pool.shutdown(wait=False, cancel_futures=True)
                 raise
             done = i + 1
@@ -1850,7 +1874,8 @@ def run_book(root: Path, *, model=DEFAULT_MODEL, limit=None, classic=False,
         except Exception as exc:
             path = root / 'status.json'
             state = json.loads(path.read_text()) if path.exists() else {}
-            state.update(state='error', error=f'{type(exc).__name__}: {exc}'[:300], updated=time.time())
+            state.update(state='error', error=(str(exc) if isinstance(exc, LLMError) else f'{type(exc).__name__}: {exc}')[:300],
+                         notice=None, updated=time.time())
             wjson(path, state, compact=False)
             raise
         finally:

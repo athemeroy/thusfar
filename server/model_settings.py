@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 import urllib.parse
 from pathlib import Path
 
@@ -57,6 +58,21 @@ def apply_environment():
     from pipeline import llm
     with llm._env_lock:
         llm._env_cache = None
+
+
+def test() -> dict:
+    """One tiny request with the saved settings, so a wrong key or model shows up before a book."""
+    from pipeline import llm
+    settings = read()
+    if not settings['api_key']:
+        return {'ok': False, 'message': llm.explain(llm.LLMError('缺少模型访问密钥'))}
+    started = time.time()
+    try:
+        text, _ = llm.chat(settings['model'], [{'role': 'user', 'content': '只回答两个字：可以'}],
+                           max_tokens=16, temperature=0, timeout=30, retries=0)
+    except Exception as exc:        # noqa: BLE001 - every failure is reported to the reader
+        return {'ok': False, 'message': llm.explain(exc) or f'连接失败：{str(exc)[:200]}'}
+    return {'ok': True, 'message': f'连接成功：{settings["model"]} 用 {time.time() - started:.1f} 秒回复了「{text.strip()[:20]}」'}
 
 
 def save(payload: dict) -> dict:

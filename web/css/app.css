@@ -174,7 +174,7 @@ input, textarea, select { font: inherit; color: inherit; }
 @keyframes fadeMark { 0%, 70% { background-color: var(--zhu-soft); } 100% { background-color: transparent; } }
 
 /* chrome (tap centre) */
-.chrome { position: absolute; left: 0; right: 0; z-index: 10; background: color-mix(in srgb, var(--sheet) 92%, transparent);
+.chrome { position: absolute; left: 0; right: 0; z-index: 10; background: var(--sheet); background: color-mix(in srgb, var(--sheet) 92%, transparent);
   backdrop-filter: blur(14px) saturate(1.2); -webkit-backdrop-filter: blur(14px) saturate(1.2);
   transition: transform .28s cubic-bezier(.2, .7, .2, 1), opacity .2s; }
 .chrome.top { top: 0; padding: calc(6px + var(--safe-t)) 8px 6px; display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--rule); }
@@ -372,3 +372,9 @@ button.tiny { background: none; border: 0; padding: 0; font: inherit; color: var
 .empty b { display: block; font: 300 42px/1 var(--num); color: var(--zhu); margin-bottom: 10px; }
 @media (min-width: 700px) { .shelf { padding-left: 40px; padding-right: 40px; } .books { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .flow.anim, .sheet, .chrome { transition: none; } }
+
+/* Android System WebView before Chrome 88 has no aspect-ratio: keep covers book-shaped anyway. */
+@supports not (aspect-ratio: 1 / 1) {
+  .cover::before, .upload-card::before { content: ''; float: left; padding-top: 143%; }
+  .library-card .cover::before, .library-books[data-layout="list"] .cover::before { padding-top: 133%; }
+}

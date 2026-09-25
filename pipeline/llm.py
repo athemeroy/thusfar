@@ -63,6 +63,36 @@ class LLMError(RuntimeError):
     pass
 
 
+_FATAL = {
+    401: 'API 密钥无效或已失效（HTTP 401），请到「模型设置」检查密钥',
+    402: '模型账户余额不足（HTTP 402），请充值后再继续',
+    403: '接口拒绝访问（HTTP 403），请检查密钥权限或接口地址',
+    404: '接口地址或模型名不对（HTTP 404），请到「模型设置」检查',
+}
+
+
+def explain(error) -> str | None:
+    """A reader-facing reason when retrying cannot help (no key, bad key, no balance, wrong model)."""
+    text = str(error)
+    if '缺少模型访问密钥' in text:
+        return '还没有填写模型 API 密钥，请先到「模型设置」填写'
+    m = re.search(r'HTTP (\d{3}): ?(.*)', text, re.S)
+    if not m:
+        return None
+    code, detail = int(m.group(1)), m.group(2).strip()
+    try:
+        body = json.loads(detail)
+        detail = ((body.get('error') or {}).get('message') if isinstance(body.get('error'), dict) else body.get('error')) or detail
+    except ValueError:
+        pass
+    detail = str(detail)[:160]
+    if code in _FATAL:
+        return f'{_FATAL[code]}。接口返回：{detail}' if detail else _FATAL[code]
+    if code in (400, 422):
+        return f'接口不接受这个请求（HTTP {code}），多半是模型名不对。接口返回：{detail}'
+    return None
+
+
 class DeadlineExceeded(LLMError, TimeoutError):
     pass
 
@@ -284,7 +314,7 @@ def chat(model: str, messages: list[dict], *, max_tokens: int = 8000, temperatur
         except urllib.error.HTTPError as e:
             detail = e.read(400).decode('utf-8', errors='replace')
             last = LLMError(f'HTTP {e.code}: {detail}')
-            if e.code in (400, 401, 403, 404):
+            if e.code in (400, 401, 402, 403, 404, 422):
                 raise last
         except DeadlineExceeded:
             raise

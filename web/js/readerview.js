@@ -206,10 +206,11 @@ export async function openReader(root, bookId, options = {}) {
     else if (st.state === 'done') text = tr("AI 已读完全书，整理出 {0} 位人物。所有信息都按你读到的页码截止。", [st.people || tr('若干')]);
     else if (st.state === 'finalizing') text = tr('正文已处理完，正在核对并整理最后的资料。');
     else if (st.state === 'running' || st.state === 'queued') text = tr("AI 正在读这本书：已整理到第 {0} 页（{1}%）。", [reader.pageNumberOf(st.frontier || 0), Math.round(100 * (st.done || 0) / Math.max(1, st.total || 1))]);
-    else if (st.state === 'error') text = tr('AI 整理暂停了，稍后会自动重试。');
+    else if (st.state === 'error') text = tr("AI 整理停下了：{0}", [st.error || tr('原因未知')]);
     else if (st.state === 'paused') text = tr('AI 整理已暂停，已完成的资料仍可查看。');
     else text = tr('这本书还没有让 AI 整理。');
     pane.append(h('p', { class: 'muted', style: { marginTop: '26px' } }, text));
+    if (st.notice && ['queued', 'running'].includes(st.state)) pane.append(h('p', { class: 'note', role: 'status' }, st.notice));
     if (graphError || kg.incomplete) pane.append(h('p', { class: 'note', role: 'status' }, graphError || tr("离线资料只整理到第 {0} 页。连接后可更新。", [reader.pageNumberOf(kg.loadedTo)])));
     if (st.state === 'done' && qualityPending(st)) pane.append(h('button', { class: 'btn zhu', onclick: async (e) => {
       if (!confirm(tr('重试待核对资料会调用模型，可能产生费用。确定继续？'))) return;
@@ -297,9 +298,12 @@ export async function openReader(root, bookId, options = {}) {
     foot.querySelector('.folio').replaceChildren(String(info.global), h('em', {}, ` / ${info.exact ? '' : tr('约 ')}${info.total}`));
     head.lastChild.textContent = chapterTitle(info.ch);
     const st = book.status || {};
-    const behind = st.state && st.state !== 'done' && info.cutoff > (st.frontier || 0) && book.chapters[info.ch].kind === 'body';
+    const behind = ['queued', 'running', 'finalizing', 'error', 'paused'].includes(st.state) && info.cutoff > (st.frontier || 0) && book.chapters[info.ch].kind === 'body';
     banner.hidden = !behind;
-    if (behind) banner.textContent = tr("AI 正在读这本书 · 人物信息整理到第 {0} 页", [reader.pageNumberOf(st.frontier || 0)]);
+    if (behind) banner.textContent = st.state === 'error' ? tr("AI 整理停下了：{0}", [st.error || tr('原因未知')])
+      : st.state === 'paused' ? tr("整理已暂停 · 人物信息整理到第 {0} 页", [reader.pageNumberOf(st.frontier || 0)])
+      : st.notice ? st.notice
+      : tr("AI 正在读这本书 · 人物信息整理到第 {0} 页", [reader.pageNumberOf(st.frontier || 0)]);
   }
 
   function renderChrome() {

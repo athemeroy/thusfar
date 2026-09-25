@@ -1,12 +1,12 @@
 // Shell releases and downloaded book snapshots have independent lifetimes.
-const SHELL = 'yedu-shell-6a161c1f55d57b16a6de';
+const SHELL = 'yedu-shell-a9e966a23b9ec8e6ac6e';
 const VISITED = 'yedu-books-v1'; // Preserve books cached by older releases.
 const META = 'yedu-offline-index-v1';
 const INDEX = '/__yedu_offline_index__';
 const SHELL_URLS = ['/', '/index.html', '/css/app.css', '/css/library.css', '/css/search.css', '/css/source-preview.css', '/css/reading-workspace.css', '/css/marginalia.css', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png',
   '/css/workspace-nav.css', '/css/reading-list.css', '/css/notebook-hub.css', '/css/offline-library.css', '/css/model-settings.css',
   '/fonts/serif.css', '/fonts/kai.css', '/fonts/latin.css',
-  ...['main','api','util','reader','readerview','marginalia','kg','shelf','panes','person','graph','views','text','progress','offline','library','search','notebook','manual','companion','source-preview','workspace-nav','reading-list','notebook-hub','offline-library','model-settings','runtime','i18n','i18n-catalogs'].map((n) => `/js/${n}.js`),
+  ...['main','api','util','reader','readerview','marginalia','kg','shelf','panes','person','graph','views','text','progress','offline','library','search','notebook','manual','companion','source-preview','workspace-nav','reading-list','notebook-hub','offline-library','model-settings','runtime','i18n','i18n-catalogs','compat'].map((n) => `/js/${n}.js`),
   ...['en','es','fr','de','pt-BR','ja','ko'].map((n) => `/js/locales/${n}.js`)];
 const downloads = new Map();
 const removing = new Set();

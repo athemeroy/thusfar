@@ -43,6 +43,13 @@ export async function openModelSettings(root, options = {}) {
   const clearKey = h('input', { type: 'checkbox', 'aria-label': t('清除已保存的密钥') });
   const status = h('p', { class: 'model-settings-status', role: 'status' });
   const submit = h('button', { type: 'submit', class: 'btn zhu' }, t('保存设置'));
+  const test = h('button', { type: 'button', class: 'btn' }, t('测试连接'));
+  test.addEventListener('click', async () => {
+    test.disabled = true; status.textContent = t('正在向模型发一条测试请求…');
+    try { const result = await api.testSettings({ signal, timeout: 60000 }); if (!signal?.aborted) status.textContent = result.message; }
+    catch (error) { if (!signal?.aborted) status.textContent = error.message; }
+    finally { test.disabled = false; }
+  });
   const form = h('form', { class: 'model-settings-form' },
     h('h2', {}, t('模型设置')),
     h('label', {}, t('模型接口地址'), endpoint, h('small', {}, t('填写兼容 OpenAI 接口的 HTTPS 地址，例如 https://api.deepseek.com/v1'))),
@@ -50,7 +57,7 @@ export async function openModelSettings(root, options = {}) {
     h('label', {}, t('API 密钥'), key, keyStatus, h('small', {}, t('留空会保留已保存的密钥。'))),
     h('label', { class: 'model-clear-key' }, clearKey, t('清除已保存的密钥')),
     h('p', { class: 'model-route-note' }, t('人物资料使用所填模型接口。JEV 判断走免费的 classifier.dev；额度用完会暂停，不会自动切到付费通道。')),
-    status, submit);
+    status, h('div', { class: 'model-settings-actions' }, submit, test));
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (signal?.aborted) return;
@@ -61,7 +68,7 @@ export async function openModelSettings(root, options = {}) {
         api_key: key.value, clear_key: clearKey.checked, jev_route: 'free-only' }, { signal });
       key.value = ''; clearKey.checked = false;
       keyStatus.textContent = result.api_key_set ? t('已保存密钥，末尾 {last4}', { last4: result.api_key_last4 }) : t('还没有保存密钥');
-      status.textContent = t('已保存在这台手机。开始整理前，请确认预计费用。');
+      status.textContent = t('已保存在这台手机。可以点「测试连接」确认密钥和模型可用。');
       toast(t('模型设置已保存'));
     } catch (error) { if (!signal?.aborted) status.textContent = error.message; }
     finally { submit.disabled = false; }

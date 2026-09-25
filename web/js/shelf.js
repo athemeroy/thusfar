@@ -38,7 +38,7 @@ export function aiState(st) {
   if (!st || !st.state || st.state === 'idle') return ['', tr('未整理人物')];
   if (st.state === 'done' && qualityPending(st)) return ['', tr('正文已整理 · 部分资料待核对')];
   if (st.state === 'done') return ['done', st.people > 0 ? tr("AI 已读完 · {0} 位人物", [st.people]) : tr('AI 已读完')];
-  if (st.state === 'error') return ['', tr('AI 整理暂停，稍后重试')];
+  if (st.state === 'error') return ['', tr('AI 整理停下了，点开查看原因')];
   if (st.state === 'queued') return ['run', tr('AI 排队中')];
   if (st.state === 'finalizing') return ['run', tr('正在核对并整理最后的资料')];
   if (st.state === 'paused') return ['', tr('整理已暂停')];
@@ -190,6 +190,9 @@ export async function openShelf(root, options = {}) {
       h('h3', {}, tr('随身带走')), standalone ? null : download,
       h('a', { class: 'library-action', href: `/api/books/${id}/export` }, h('span', {}, tr('导出完整备份')), h('small', {}, tr('正文、插图、进度及现有整理资料，一起存成文件'))),
       h('h3', { class: 'library-ai-heading' }, tr('人物与关系')), h('p', { class: 'library-ai-description' }, h('span', { class: `ai-dot ${cls}` }), label),
+      b.status?.state === 'error' && b.status.error ? h('p', { class: 'library-ai-error', role: 'status' }, tr("AI 整理停下了：{0}", [b.status.error])) : null,
+      activeJob && b.status?.notice ? h('p', { class: 'library-ai-error', role: 'status' }, b.status.notice) : null,
+      standalone && /模型设置|API 密钥|HTTP 40[0-4]/.test(b.status?.error || '') ? h('a', { class: 'library-action', href: '#/settings' }, h('span', {}, tr('模型设置')), h('small', {}, tr('填写或检查 API 密钥、接口地址和模型名'))) : null,
       h('p', { class: 'library-ai-explanation' }, retry ? tr('部分资料仍待核对；正文可以照常阅读。重试可能产生费用。') : tr('资料只显示到当前页。往回翻，它也会回退；每条线索都能回到原文核对。')),
       idle || retry ? h('button', { class: 'library-action', type: 'button', 'aria-label': retry ? tr('重试待核对资料') : tr('开始整理人物'), onclick: async (e) => {
         const button = e.currentTarget;
@@ -208,7 +211,11 @@ export async function openShelf(root, options = {}) {
             }
           }
         }
-        catch (e) { if (!signal.aborted) { message.textContent = e.message; button.disabled = false; } }
+        catch (e) {
+          if (signal.aborted) return;
+          message.replaceChildren(e.message, standalone && /模型设置/.test(e.message) ? h('a', { class: 'linkish', href: '#/settings' }, ` ${tr('去填写')}`) : '');
+          button.disabled = false;
+        }
       } }, h('span', {}, retry ? tr('重试待核对资料') : tr('开始整理人物')), h('small', {}, retry ? tr('会重新调用模型；需确认后开始') : estimate(b))) : null,
       activeJob ? h('button', { class: 'library-action', type: 'button', disabled: b.status?.state === 'cancelling', onclick: async (event) => {
         if (!confirm(tr("暂停整理《{0}》？已保存的段落可以在下次继续。", [b.title]))) return;

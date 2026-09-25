@@ -129,5 +129,33 @@ class PrivateSettings(unittest.TestCase):
             case.doCleanups()
 
 
+    def test_processing_without_a_key_is_refused_with_the_reason(self):
+        from test_server_repair import HTTPRepair
+        case = HTTPRepair(methodName='runTest')
+        case.setUp()
+        try:
+            with patch.dict(os.environ, {'SECRETS_FILE': str(case.root / '.model.env')}), \
+                 patch.object(app, 'LOCAL_MODE', True):
+                bid = case.make_book(state='idle').name
+                code, _, raw = case.request('POST', f'/api/books/{bid}/process')
+                self.assertEqual(code, 409)
+                self.assertIn('API 密钥', json.loads(raw)['error'])
+                self.assertNotEqual((app.cached_json(app.BOOKS / bid / 'status.json') or {}).get('state'), 'queued')
+        finally:
+            case.doCleanups()
+
+
+class ModelFailures(unittest.TestCase):
+    def test_hopeless_failures_are_explained_and_transient_ones_are_not(self):
+        from pipeline.llm import LLMError, explain
+        self.assertIn('模型设置', explain(LLMError('缺少模型访问密钥')))
+        self.assertIn('HTTP 401', explain(LLMError('HTTP 401: {"error":{"message":"Authentication Fails"}}')))
+        self.assertIn('Authentication Fails', explain(LLMError('HTTP 401: {"error":{"message":"Authentication Fails"}}')))
+        self.assertIn('余额', explain(LLMError('HTTP 402: {"error":{"message":"Insufficient Balance"}}')))
+        self.assertIn('模型名', explain(LLMError('HTTP 400: Model Not Exist')))
+        self.assertIsNone(explain(LLMError('HTTP 503: busy')))
+        self.assertIsNone(explain(TimeoutError('timed out')))
+
+
 if __name__ == '__main__':
     unittest.main()

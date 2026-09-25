@@ -16,8 +16,13 @@ async function req(method, url, body, options = {}) {
       headers: body == null ? {} : { 'Content-Type': 'application/json' },
       body: body == null ? undefined : JSON.stringify(body), keepalive: !!options.keepalive });
     if (r.status === 401) throw new AuthError(tr('需要口令'));
+    // The phone's local server sheds load with an empty 503; one quiet retry covers a busy moment.
+    if (r.status === 503 && method === 'GET' && !options.retried) {
+      d.close(); await new Promise((resolve) => setTimeout(resolve, 1000));
+      return req(method, url, body, { ...options, retried: true });
+    }
     let data;
-    try { data = await r.json(); } catch { throw new Error(tr('服务器返回了无法识别的数据，请重试')); }
+    try { data = await r.json(); } catch { throw new Error(`${tr('服务器返回了无法识别的数据，请重试')} (HTTP ${r.status})`); }
     if (r.status === 409) throw new ConflictError(data.error ? localizeServerMessage(data.error) : tr('其他设备更新了阅读进度'), data);
     if (!r.ok) {
       const error = new Error(data.error ? localizeServerMessage(data.error) : tr("请求失败（{0}）", [r.status]));
@@ -33,6 +38,7 @@ export const api = {
   me: (o) => req('GET', '/api/me', null, o),
   settings: (o) => req('GET', '/api/settings', null, o),
   saveSettings: (settings, o) => req('PUT', '/api/settings', settings, o),
+  testSettings: (o) => req('POST', '/api/settings/test', {}, o),
   login: (code, o) => req('POST', '/api/login', { code }, o),
   books: (o) => req('GET', '/api/books', null, { ...o, array: true }),
   readingList: (o) => req('GET', '/api/reading-list', null, o),

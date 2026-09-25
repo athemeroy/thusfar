@@ -58,7 +58,7 @@ Thusfar reads the book once, ahead of time, and pins every fact to the position 
 
 1. Download the APK from [**Releases**](https://github.com/athemeroy/thusfar/releases/latest) and install it (Android 8.0 or later).
 2. Import a TXT or EPUB book. Reading works right away, fully offline.
-3. To build the character guide, open **AI settings** on the shelf, enter any OpenAI-compatible API (DeepSeek is suggested by default) and your key, then tap **Build the character guide** on the book. Nothing is sent and nothing is spent until you press it.
+3. To build the character guide, open **AI settings** on the shelf, enter any OpenAI-compatible API (DeepSeek is suggested by default) and your key, tap **Test connection** to check the key and model, then tap **Build the character guide** on the book. Nothing is sent and nothing is spent until you press it. If processing stops, the book menu shows why (missing key, wrong model name, no balance…).
 
 The whole app — the Python server, the reading pipeline and the web interface — runs inside the phone. There is no account and no server of ours.
 

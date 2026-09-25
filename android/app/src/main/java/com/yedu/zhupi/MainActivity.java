@@ -1,9 +1,11 @@
 package com.yedu.zhupi;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,6 +17,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsResult;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -56,6 +59,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        // Debug builds only: lets a desktop inspector drive the reader during device tests.
+        if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) WebView.setWebContentsDebuggingEnabled(true);
         web = new WebView(this);
         web.setBackgroundColor(0xFFF4EFE4);
         WebSettings s = web.getSettings();
@@ -68,7 +73,7 @@ public class MainActivity extends Activity {
         s.setSupportZoom(true);
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
-        s.setUserAgentString(s.getUserAgentString() + " YeduApp/1.7.0 YeduStandalone/1");
+        s.setUserAgentString(s.getUserAgentString() + " YeduApp/1.7.2 YeduStandalone/1");
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, false);
         web.addJavascriptInterface(new Bridge(), "YeduApp");
@@ -94,6 +99,17 @@ public class MainActivity extends Activity {
             }
         });
         web.setWebChromeClient(new WebChromeClient() {
+            // The system default titles these "The page at http://127.0.0.1 says"; the app has no page.
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                return dialog(message, result, false);
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                return dialog(message, result, true);
+            }
+
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (pendingPick != null) pendingPick.onReceiveValue(null);
@@ -153,6 +169,17 @@ public class MainActivity extends Activity {
                 toast(UiLanguage.get(this, R.string.local_start_failed));
             }
         });
+    }
+
+    private boolean dialog(String message, JsResult result, boolean cancellable) {
+        if (destroyed || isFinishing()) { result.cancel(); return true; }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, (d, w) -> result.confirm())
+                .setOnCancelListener(d -> result.cancel());
+        if (cancellable) builder.setNegativeButton(android.R.string.cancel, (d, w) -> result.cancel());
+        builder.show();
+        return true;
     }
 
     private void toast(String text) {

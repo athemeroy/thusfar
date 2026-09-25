@@ -95,7 +95,7 @@
 .library-import-row.is-failed p, .library-import-row.is-interrupted p { color: var(--zhu); }
 .library-import-row .btn { color: var(--ink); flex-shrink: 0; font-size: 12px; padding: 0 12px; text-decoration: none; }
 .library-import-stage { flex-shrink: 0; font-size: 12px; color: var(--ink-3); }
-.library-dialog { width: min(520px,calc(100% - 32px)); max-height: min(86dvh,900px); padding: 26px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px; box-shadow: var(--shadow); overscroll-behavior: contain; }
+.library-dialog { width: min(520px,calc(100% - 32px)); max-height: min(86vh,900px); max-height: min(86dvh,900px); padding: 26px; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 16px; box-shadow: var(--shadow); overscroll-behavior: contain; }
 .library-dialog::backdrop { background: rgba(25,20,15,.45); backdrop-filter: blur(3px); }
 .library-dialog-head { display: flex; align-items: flex-start; gap: 16px; justify-content: space-between; }
 .library-dialog-head h2 { font: 600 23px/1.5 var(--serif); margin: 0; overflow-wrap: anywhere; }
@@ -109,6 +109,7 @@
 .library-action:disabled { opacity: .6; }
 .library-ai-description { font-size: 13px; display: flex; align-items: center; gap: 8px; margin: 10px 0; }
 .library-ai-explanation { font-size: 12px; color: var(--ink-2); margin: 8px 0; line-height: 1.9; }
+.library-ai-error { font-size: 12px; color: var(--zhu); margin: 8px 0; line-height: 1.8; overflow-wrap: anywhere; }
 .library-action-message { font-size: 13px; color: var(--zhu); margin: 12px 0; }
 .library-action-message:empty { display: none; }
 .library-delete { margin-top: 24px; color: var(--ink-3); font-size: 12px; }
@@ -166,6 +167,6 @@
   .library-books[data-layout="list"] .library-book-menu { width: 36px; }
   .library-books[data-layout="list"] .library-ai-status { margin-top: 2px; }
   .library-imports { margin-top: 20px; }
-  .library-dialog { width: 100%; max-height: 90dvh; margin: auto 0 0; border-radius: 20px 20px 0 0; padding: 24px 24px calc(24px + var(--safe-b)); }
+  .library-dialog { width: 100%; max-height: 90vh; max-height: 90dvh; margin: auto 0 0; border-radius: 20px 20px 0 0; padding: 24px 24px calc(24px + var(--safe-b)); }
 }
 @media (max-width: 359px) { .reading-home { padding-left: 12px; padding-right: 12px; } .library-tagline { display: none; } .library-filters button { padding: 8px 6px; } .library-resume { gap: 10px; padding: 11px; } .library-resume-cover { width: 53px; } }
