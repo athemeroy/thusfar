@@ -165,9 +165,8 @@ final class PyCompat {
   static double roundDigits(double value, int digits) {
     if (!value.isFinite) return value;
     if (value == 0) return value;
-    if (digits.abs() > 308) {
-      throw RangeError.value(digits, 'digits', 'Outside the recorded range');
-    }
+    if (digits > 323) return value;
+    if (digits < -308) return value.isNegative ? -0.0 : 0.0;
     final ByteData bytes = ByteData(8)..setFloat64(0, value, Endian.big);
     final int hi = bytes.getUint32(0, Endian.big);
     final int low = bytes.getUint32(4, Endian.big);
@@ -197,10 +196,25 @@ final class PyCompat {
         comparison > 0 || (comparison == 0 && quotient.isOdd)
             ? quotient + BigInt.one
             : quotient;
-    final double result =
-        digits >= 0
-            ? rounded.toDouble() / math.pow(10, digits)
-            : rounded.toDouble() * math.pow(10, -digits);
+    final String roundedText = rounded.toString();
+    final String decimal;
+    if (digits > 0) {
+      final String padded = roundedText.padLeft(digits + 1, '0');
+      final int point = padded.length - digits;
+      decimal = '${padded.substring(0, point)}.${padded.substring(point)}';
+    } else if (digits < 0) {
+      decimal = '$roundedText${List<String>.filled(-digits, '0').join()}';
+    } else {
+      decimal = '$roundedText.0';
+    }
+    final double result = double.parse(decimal);
+    if (!result.isFinite) {
+      throw RangeError.value(
+        value,
+        'value',
+        'Rounded value exceeds double range',
+      );
+    }
     return negative ? -result : result;
   }
 
