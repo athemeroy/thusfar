@@ -22,8 +22,8 @@
   "counts": {
     "total": 171,
     "translated": 0,
-    "translated_skipped": 94,
-    "pending_port": 77,
+    "translated_skipped": 123,
+    "pending_port": 48,
     "scope_exception": 0
   },
   "tests": [
@@ -2772,8 +2772,12 @@
         "server.storage.shelf_metadata",
         "server.storage.signature"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.wjson, server.storage.shelf_metadata, server.storage.signature is pending (A1/A6, A5, A6); required to check 'old epub without language gets english shelf estimate'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.storage and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.storage"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_upload_never_calls_judge_and_concurrent_same_upload_is_idempotent",
@@ -2794,8 +2798,12 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'upload never calls judge and concurrent same upload is idempotent'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.jobs.Worker and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.jobs.Worker"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_export_import_preserves_images_graph_progress_and_snapshot_state",
@@ -2818,8 +2826,11 @@
       "direct_targets": [
         "server.app.wjson"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.wjson is pending (A1/A6, A5, A6); required to check 'export import preserves images graph progress and snapshot state'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_import_rejects_bad_hash_and_unsorted_graph_without_publication",
@@ -2840,8 +2851,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'import rejects bad hash and unsorted graph without publication'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_legacy_text_export_import_works_but_missing_images_are_explicit",
@@ -2862,8 +2876,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'legacy text export import works but missing images are explicit'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_conflicting_snapshot_is_not_silently_reused_or_overwritten",
@@ -2884,8 +2901,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'conflicting snapshot is not silently reused or overwritten'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_negative_length_and_transfer_encoding_rejected",
@@ -2906,8 +2926,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'negative length and transfer encoding rejected'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_malformed_json_shape_and_expensive_request_admission",
@@ -2928,8 +2951,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'malformed json shape and expensive request admission'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_slow_incomplete_body_has_deadline",
@@ -2950,8 +2976,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'slow incomplete body has deadline'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_static_sibling_cannot_escape_root",
@@ -2972,8 +3001,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'static sibling cannot escape root'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_static_revalidation_and_compression",
@@ -2994,8 +3026,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'static revalidation and compression'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_byline_in_file_name_is_shown_as_title_and_author",
@@ -3019,8 +3054,12 @@
         "server.app.wjson",
         "server.storage.display_title"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.wjson, server.storage.display_title is pending (A1/A6, A5, A6); required to check 'byline in file name is shown as title and author'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.storage and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.storage"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_optimistic_progress_does_not_overwrite_other_device",
@@ -3041,8 +3080,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'optimistic progress does not overwrite other device'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_explicit_process_queues_completed_pending_quality",
@@ -3066,8 +3108,12 @@
         "server.app.cached_json",
         "server.app.wjson"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.cached_json, server.app.wjson is pending (A1/A6, A5, A6); required to check 'explicit process queues completed pending quality'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.jobs.Worker and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.jobs.Worker"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_progress_end_cutoff_reaches_100_without_losing_resume_anchor",
@@ -3088,8 +3134,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'progress end cutoff reaches 100 without losing resume anchor'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_cookie_is_secure_expiring_and_authentication_required",
@@ -3110,8 +3159,11 @@
         "A6"
       ],
       "direct_targets": [],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app, server.ask, server.jobs, server.storage, server.temporal is pending (A1/A6, A5, A6); required to check 'cookie is secure expiring and authentication required'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_health_disabled_worker_and_manifest_revision",
@@ -3134,8 +3186,11 @@
       "direct_targets": [
         "server.app.wjson"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.wjson is pending (A1/A6, A5, A6); required to check 'health disabled worker and manifest revision'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_delete_busy_external_book_refuses_and_keeps_content",
@@ -3158,8 +3213,12 @@
       "direct_targets": [
         "server.jobs.book_lease"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.jobs.book_lease is pending (A1/A6, A5, A6); required to check 'delete busy external book refuses and keeps content'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.jobs.Worker and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.jobs.Worker"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_delete_archives_data_and_clears_progress",
@@ -3183,8 +3242,11 @@
         "server.app.progress_all",
         "server.app.wjson"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.progress_all, server.app.wjson is pending (A1/A6, A5, A6); required to check 'delete archives data and clears progress'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
     },
     {
       "id": "tests.test_server_repair.HTTPRepair.test_shelf_uses_small_metadata_and_reflects_book_updates",
@@ -3207,8 +3269,12 @@
       "direct_targets": [
         "server.app.wjson"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.app.wjson is pending (A1/A6, A5, A6); required to check 'shelf uses small metadata and reflects book updates'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.storage and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.storage"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_shared_temporal_contract",
@@ -3279,8 +3345,11 @@
       "direct_targets": [
         "server.ask.answer"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.ask.answer is pending (A1/A6, A5, A6); required to check 'failed guard never publishes rejected prose'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.answer#scripted and scripted route/retrieve/chat/guard callbacks and emitted-event capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.answer#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_ended_relationship_is_explicitly_historical_in_answer_evidence",
@@ -3303,8 +3372,11 @@
       "direct_targets": [
         "server.ask.answer"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.ask.answer is pending (A1/A6, A5, A6); required to check 'ended relationship is explicitly historical in answer evidence'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.answer#scripted and scripted route/retrieve/chat/guard callbacks and emitted-event capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.answer#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_multilingual_fallback_and_query_translation",
@@ -3328,8 +3400,12 @@
         "server.ask.retrieval_query",
         "server.ask.retrieve"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.ask.retrieval_query, server.ask.retrieve is pending (A1/A6, A5, A6); required to check 'multilingual fallback and query translation'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.retrieve#scripted, server.ask.retrieval_query#scripted and synthetic book and chat-reply capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.retrieve#scripted",
+        "server.ask.retrieval_query#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_pronoun_exact_span_and_local_candidate",
@@ -3352,8 +3428,11 @@
       "direct_targets": [
         "server.ask.who_is"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.ask.who_is is pending (A1/A6, A5, A6); required to check 'pronoun exact span and local candidate'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.who_is#scripted and synthetic graph, exact-span and judge-call capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.who_is#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_cache_budget_and_corruption_visibility",
@@ -3377,8 +3456,11 @@
         "server.storage.JsonCache.__init__",
         "server.storage.write_json"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.storage.JsonCache.__init__, server.storage.write_json is pending (A1/A6, A5, A6); required to check 'cache budget and corruption visibility'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.storage.JsonCache#scripted and isolated cache/filesystem and read-count capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.storage.JsonCache#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_concurrent_cache_read_parses_one_body",
@@ -3402,8 +3484,11 @@
         "server.storage.JsonCache.__init__",
         "server.storage.write_json"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.storage.JsonCache.__init__, server.storage.write_json is pending (A1/A6, A5, A6); required to check 'concurrent cache read parses one body'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.storage.JsonCache#scripted and isolated cache/filesystem and read-count capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.storage.JsonCache#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_worker_cancel_owned_process_and_spawn_error_cleanup",
@@ -3428,8 +3513,11 @@
         "server.storage.JsonCache.__init__",
         "server.storage.write_json"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.jobs.Worker.__init__, server.storage.JsonCache.__init__, server.storage.write_json is pending (A1/A6, A5, A6); required to check 'worker cancel owned process and spawn error cleanup'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.jobs.Worker#scripted and isolated worker/process fault injection and state snapshots are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.jobs.Worker#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_worker_loop_survives_spawn_failure",
@@ -3454,8 +3542,11 @@
         "server.storage.JsonCache.__init__",
         "server.storage.write_json"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.jobs.Worker.__init__, server.storage.JsonCache.__init__, server.storage.write_json is pending (A1/A6, A5, A6); required to check 'worker loop survives spawn failure'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.jobs.Worker#scripted and isolated worker/process fault injection and state snapshots are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.jobs.Worker#scripted"
+      ]
     },
     {
       "id": "tests.test_server_repair.QualityRepair.test_quality_retry_requires_explicit_request_and_survives_launch_failure",
@@ -3480,8 +3571,11 @@
         "server.storage.JsonCache.__init__",
         "server.storage.write_json"
       ],
-      "status": "pending_port",
-      "skip_reason": "Dart implementation of server.jobs.Worker.__init__, server.storage.JsonCache.__init__, server.storage.write_json is pending (A1/A6, A5, A6); required to check 'quality retry requires explicit request and survives launch failure'."
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.jobs.Worker#scripted and isolated worker/process fault injection and state snapshots are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.jobs.Worker#scripted"
+      ]
     },
     {
       "id": "tests.test_standalone.ThreadWorker.test_manual_start_cancel_resume_and_lock_release",
