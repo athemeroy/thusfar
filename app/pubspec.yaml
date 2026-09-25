@@ -1,0 +1,31 @@
+name: thusfar_app
+description: 页读 / Thusfar — reads only up to your page.
+publish_to: none
+version: 2.0.0-dev.1+20
+
+environment:
+  sdk: '>=3.9.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  thusfar_core:
+    path: ../core
+  path_provider: ^2.1.5
+  crypto: ^3.0.7
+  file_picker: ^10.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: NotoSerifSC
+      fonts:
+        - asset: assets/fonts/NotoSerifSC-Regular.otf
+    - family: ZCOOLXiaoWei
+      fonts:
+        - asset: assets/fonts/ZCOOLXiaoWei-Regular.ttf
