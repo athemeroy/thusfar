@@ -2,6 +2,21 @@
 
 更新：2026-09-26。每条按症状 → 原因 → 修法记录；未解决的问题明确留在 `STATUS.md`。
 
+## Paused continuation preserves results but changes free-JEV telemetry
+
+- Symptom: resuming the API-created Aq fixture from 4/9 to 9/9 matches 152 of
+  the 154 fresh-run artifacts; `status.json` and `work/usage.json` differ.
+- Cause: the resumed run reuses free-JEV caches. The full fresh run makes
+  82 JEV attempts; the prefix makes 36 and continuation makes 46. Paid-model
+  requests partition exactly as 21 = 8 + 13, with no cached model request
+  repeated. The raw notebook and source files remain byte-identical.
+- Resolution: retain the exact JEV fields in a dedicated continuation receipt
+  rather than excluding all usage data from comparison. Two independent hash
+  seeds reproduce the receipt. The literal A5 fresh/continuation equality gate
+  remains unproven for usage telemetry; this observation does not waive the
+  gate or change Python behavior. Concurrency 1 is the evidenced scope. See
+  `oracle/record/RESUME.md` and its tamper regressions.
+
 ## Python 版本会改变标准答案
 
 - 症状：系统 Python 3.13 跑得通部分录制，但字符类别和大小写转换结果与 Android 1.7.5 不完全相同。

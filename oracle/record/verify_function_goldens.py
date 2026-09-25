@@ -34,7 +34,7 @@ RECORDING_INPUT_PATTERNS = (
     # These are unittest inputs, not the ordinary function outputs being verified.
     'oracle/goldens/parsed/**/*', 'oracle/goldens/special/**/*',
     'oracle/goldens/http/**/*', 'oracle/goldens/books/**/*',
-    'oracle/goldens/fold/**/*',
+    'oracle/goldens/fold/**/*', 'oracle/goldens/resume/**/*',
 )
 
 
