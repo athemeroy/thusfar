@@ -230,6 +230,7 @@ def assert_tape_no_key_suffix(path: Path, key: str) -> None:
         return
     tape = json.loads(path.read_text(encoding='utf-8'))
     for attempt in tape.get('attempts', []):
+        assert_no_key_suffix(canonical(attempt), key)
         encoded = list(attempt.get('chunks_base64', []))
         if 'body_base64' in attempt:
             encoded.append(attempt['body_base64'])
