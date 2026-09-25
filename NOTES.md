@@ -17,6 +17,21 @@
   gate or change Python behavior. Concurrency 1 is the evidenced scope. See
   `oracle/record/RESUME.md` and its tamper regressions.
 
+## English prefix exposes two remaining unordered traversals
+
+- Symptom: Jekyll's 19-segment offline function recordings differed between
+  hash seeds. The name-index argument to `_resolve_hint` had unstable insertion
+  order, and `is_generic`, `generic_word`, and `is_latin` call counts differed
+  by 12 even though the book artifacts were unchanged.
+- Cause: `link_segment` inserted a set of English short names directly into
+  its index. Two `any()` checks in `_dedupe_candidates` also iterated name sets,
+  so their early exits evaluated a different number of generic aliases.
+- Resolution: sort only the short-name index traversal and those two name
+  inputs. Five hash seeds now check the Latin index order and the exact
+  generic-name call count, including a mixed proper/generic alias fixture.
+  The function recorder retains the original dictionary order and call
+  counters, so the final two-pass comparison must still detect any drift.
+
 ## Python 版本会改变标准答案
 
 - 症状：系统 Python 3.13 跑得通部分录制，但字符类别和大小写转换结果与 Android 1.7.5 不完全相同。
