@@ -11,6 +11,7 @@ from oracle.semantics.record_general import evaluate
 from oracle.semantics.record_determinism import evaluate as evaluate_retry
 from oracle.semantics.record_round_extremes import cases as round_cases
 from oracle.semantics.record_title_context import cases as title_cases
+from oracle.semantics.record_numeric_boundaries import cases as numeric_cases
 
 CASES = Path(__file__).resolve().parents[1] / "oracle" / "semantics" / "py_json.jsonl"
 GENERAL = CASES.with_name("general.jsonl")
@@ -18,6 +19,7 @@ HASHES = CASES.with_name("hashes.jsonl")
 DETERMINISM = CASES.with_name("determinism.jsonl")
 ROUND_EXTREMES = CASES.with_name("round_extremes.jsonl")
 TITLE_CONTEXT = CASES.with_name("title_context.jsonl")
+NUMERIC_BOUNDARIES = CASES.with_name("numeric_boundaries.jsonl")
 
 
 class TestPyJsonOracle(unittest.TestCase):
@@ -112,6 +114,12 @@ class TestGeneralSemanticOracle(unittest.TestCase):
             recorded = [json.loads(line) for line in source]
         self.assertEqual(recorded, list(title_cases()))
         self.assertGreaterEqual(len(recorded), 300)
+
+    def test_numeric_boundaries_match_frozen_python(self):
+        with NUMERIC_BOUNDARIES.open(encoding="utf-8") as source:
+            recorded = [json.loads(line) for line in source]
+        self.assertEqual(recorded, list(numeric_cases()))
+        self.assertGreaterEqual(len(recorded), 50)
 
 
 if __name__ == "__main__":

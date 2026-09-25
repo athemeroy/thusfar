@@ -1,5 +1,7 @@
 import 'dart:collection';
 
+import 'py_compat.dart';
+
 /// Frozen Python 3.11 `json.dumps` for JSON-compatible values.
 ///
 /// The options expose the variants used for Thusfar's persisted hashes and
@@ -33,7 +35,7 @@ final class PyJson {
       out.write(value ? 'true' : 'false');
     } else if (value is String) {
       _writeString(value, out, ensureAscii);
-    } else if (value is int) {
+    } else if (value is int || value is BigInt) {
       out.write(value);
     } else if (value is double) {
       if (!allowNan && !value.isFinite) {
@@ -59,8 +61,8 @@ final class PyJson {
           if (a.key is String && b.key is String) {
             return _compareCodePoints(a.key! as String, b.key! as String);
           }
-          if (a.key is num && b.key is num) {
-            return (a.key! as num).compareTo(b.key! as num);
+          if (_numericKey(a.key) && _numericKey(b.key)) {
+            return PyCompat.compare(a.key, b.key);
           }
           throw ArgumentError('Python cannot sort mixed JSON key types');
         });
@@ -84,10 +86,13 @@ final class PyJson {
     if (key is String) return key;
     if (key == null) return 'null';
     if (key is bool) return key ? 'true' : 'false';
-    if (key is int) return key.toString();
+    if (key is int || key is BigInt) return key.toString();
     if (key is double) return _float(key);
     throw ArgumentError.value(key, 'key', 'Not a JSON object key');
   }
+
+  static bool _numericKey(Object? value) =>
+      value is bool || value is int || value is BigInt || value is double;
 
   static int _compareCodePoints(String a, String b) {
     final Iterator<int> ai = a.runes.iterator;

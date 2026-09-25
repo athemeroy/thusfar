@@ -155,24 +155,90 @@ final class PyCompat {
     return result.toString();
   }
 
-  static int floorDiv(int a, int b) {
+  static Object floorDiv(int a, int b) {
     if (b == 0) throw const PyZeroDivisionError();
-    final int q = a ~/ b;
-    final int r = a.remainder(b);
-    return r != 0 && ((r < 0) != (b < 0)) ? q - 1 : q;
+    return _narrow(_floorDivBig(BigInt.from(a), BigInt.from(b)));
   }
 
-  static int modulo(int a, int b) => a - floorDiv(a, b) * b;
+  static Object modulo(int a, int b) {
+    if (b == 0) throw const PyZeroDivisionError();
+    final BigInt left = BigInt.from(a);
+    final BigInt right = BigInt.from(b);
+    return _narrow(left - _floorDivBig(left, right) * right);
+  }
 
-  static int truncate(double value) => value.truncate();
+  static BigInt _floorDivBig(BigInt a, BigInt b) {
+    final BigInt quotient = a ~/ b;
+    final BigInt remainder = a.remainder(b);
+    return remainder != BigInt.zero && remainder.isNegative != b.isNegative
+        ? quotient - BigInt.one
+        : quotient;
+  }
 
-  static int round(double value) {
-    if (!value.isFinite) throw ArgumentError.value(value, 'value');
-    final int lower = value.floor();
-    final double fraction = value - lower;
-    if (fraction < 0.5) return lower;
-    if (fraction > 0.5) return lower + 1;
-    return lower.isEven ? lower : lower + 1;
+  static Object _narrow(BigInt value) {
+    if (value >= BigInt.parse('-9223372036854775808') &&
+        value <= BigInt.parse('9223372036854775807')) {
+      return value.toInt();
+    }
+    return value;
+  }
+
+  /// Exact rational represented by a finite IEEE-754 double.
+  static (BigInt, BigInt) _floatRatio(double value) {
+    final ByteData bytes = ByteData(8)..setFloat64(0, value, Endian.big);
+    final int hi = bytes.getUint32(0, Endian.big);
+    final int low = bytes.getUint32(4, Endian.big);
+    final bool negative = (hi & 0x80000000) != 0;
+    final int rawExponent = (hi >> 20) & 0x7ff;
+    BigInt mantissa = (BigInt.from(hi & 0xfffff) << 32) | BigInt.from(low);
+    if (rawExponent != 0) mantissa |= BigInt.one << 52;
+    final int exponent = (rawExponent == 0 ? -1022 : rawExponent - 1023) - 52;
+    BigInt numerator = mantissa;
+    BigInt denominator = BigInt.one;
+    if (exponent >= 0) {
+      numerator <<= exponent;
+    } else {
+      denominator <<= -exponent;
+    }
+    return (negative ? -numerator : numerator, denominator);
+  }
+
+  static void _requireFiniteIntegerInput(double value) {
+    if (value.isNaN) {
+      throw ArgumentError.value(
+        value,
+        'value',
+        'cannot convert NaN to integer',
+      );
+    }
+    if (!value.isFinite) {
+      throw RangeError.value(
+        value,
+        'value',
+        'cannot convert infinity to integer',
+      );
+    }
+  }
+
+  static Object truncate(double value) {
+    _requireFiniteIntegerInput(value);
+    final (BigInt numerator, BigInt denominator) = _floatRatio(value);
+    return _narrow(numerator ~/ denominator);
+  }
+
+  static Object round(double value) {
+    _requireFiniteIntegerInput(value);
+    final (BigInt numerator, BigInt denominator) = _floatRatio(value);
+    final bool negative = numerator.isNegative;
+    final BigInt magnitude = numerator.abs();
+    final BigInt quotient = magnitude ~/ denominator;
+    final BigInt remainder = magnitude.remainder(denominator);
+    final int half = (remainder * BigInt.two).compareTo(denominator);
+    final BigInt rounded =
+        half > 0 || (half == 0 && quotient.isOdd)
+            ? quotient + BigInt.one
+            : quotient;
+    return _narrow(negative ? -rounded : rounded);
   }
 
   /// Decimal-place rounding against the exact binary value, with ties to even.
@@ -235,7 +301,22 @@ final class PyCompat {
   static int compare(Object? a, Object? b) {
     if (a is bool) a = a ? 1 : 0;
     if (b is bool) b = b ? 1 : 0;
-    if (a is num && b is num) return a.compareTo(b);
+    if (a is double && b is double) return (a > b ? 1 : 0) - (a < b ? 1 : 0);
+    if (a is int || a is BigInt) {
+      final BigInt left = a is int ? BigInt.from(a) : a! as BigInt;
+      if (b is int || b is BigInt) {
+        final BigInt right = b is int ? BigInt.from(b) : b! as BigInt;
+        return left.compareTo(right);
+      }
+      if (b is double) {
+        if (b.isNaN) return 0;
+        if (b == double.infinity) return -1;
+        if (b == double.negativeInfinity) return 1;
+        final (BigInt numerator, BigInt denominator) = _floatRatio(b);
+        return (left * denominator).compareTo(numerator);
+      }
+    }
+    if (a is double && (b is int || b is BigInt)) return -compare(b, a);
     if (a is String && b is String) {
       final Iterator<int> left = a.runes.iterator;
       final Iterator<int> right = b.runes.iterator;
