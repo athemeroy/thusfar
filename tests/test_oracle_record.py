@@ -201,9 +201,11 @@ class OracleRecordSafety(unittest.TestCase):
             yield types.SimpleNamespace(count=1)
 
         seen = []
+        limits = []
 
         def fake_run_book(_path, **kwargs):
             seen.append({name: os.environ[name] for name in _MODEL_ENV})
+            limits.append(kwargs.get('limit'))
             self.assertEqual(kwargs['model'], 'deepseek-flash+nothink')
             self.assertEqual(kwargs['local_model'], 'deepseek-flash+nothink')
 
@@ -219,10 +221,11 @@ class OracleRecordSafety(unittest.TestCase):
                     patch('oracle.record.artifacts.install', fake_install):
                 functions.run_book_replay(source, Path(tmp) / 'tapes', 'fresh', 1)
                 book.mkdir()
-                artifacts.one_pass(book, Path(tmp) / 'tapes', 1)
+                artifacts.one_pass(book, Path(tmp) / 'tapes', 1, limit=19)
                 self.assertEqual({name: os.environ[name] for name in _MODEL_ENV}, hostile)
                 self.assertEqual(run.RECAP_MODEL, original_recap)
         self.assertEqual(len(seen), 2)
+        self.assertEqual(limits, [None, 19])
         self.assertTrue(all(all(value == 'deepseek-flash+nothink' for value in row.values())
                             for row in seen))
 

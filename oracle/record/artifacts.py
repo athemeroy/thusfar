@@ -99,9 +99,11 @@ def stage_book(source: Path, target: Path, start: str) -> None:
 
 
 def replay(source: Path, cassette_dir: Path, out: Path, start: str, repeat: int,
-           concurrency: int) -> dict[str, str]:
+           concurrency: int, limit: int | None = None) -> dict[str, str]:
     if repeat < 2:
         raise ValueError('at least two replays are required before publishing')
+    if limit is not None and limit < 1:
+        raise ValueError('partial replay limit must be positive')
     if not (source / 'book.json').is_file():
         raise ValueError('source book directory has no book.json')
     runs = []
@@ -110,9 +112,12 @@ def replay(source: Path, cassette_dir: Path, out: Path, start: str, repeat: int,
         for index in range(repeat):
             book = tmp / f'book-{index}'
             stage_book(source, book, start)
-            subprocess.run([sys.executable, '-m', 'oracle.record.artifacts', '--one-pass',
-                            str(book), '--cassettes', str(cassette_dir.resolve()),
-                            '--concurrency', str(concurrency)], cwd=ROOT, check=True)
+            command = [sys.executable, '-m', 'oracle.record.artifacts', '--one-pass',
+                       str(book), '--cassettes', str(cassette_dir.resolve()),
+                       '--concurrency', str(concurrency)]
+            if limit is not None:
+                command.extend(('--limit', str(limit)))
+            subprocess.run(command, cwd=ROOT, check=True)
             artifact_dir = tmp / f'artifacts-{index}'
             hashes = snapshot(book, artifact_dir)
             runs.append((artifact_dir, hashes))
@@ -126,12 +131,15 @@ def replay(source: Path, cassette_dir: Path, out: Path, start: str, repeat: int,
         if out.exists():
             raise FileExistsError(f'output exists: {out}')
         shutil.copytree(runs[0][0], out)
-        write_json(out / 'provenance.json', {
+        provenance = {
             'schema': 1, 'source': 'deepseek-flash+nothink cassette replay',
             'source_snapshot': source.name, 'book_start': start,
             'passes': repeat, 'artifact_sha256': reference,
             'normalizations': sorted(_TIME_KEYS) + [
-                f'{artifact}:{".".join(path)}' for artifact, path in sorted(_RUNTIME_TIME_PATHS)]})
+                f'{artifact}:{".".join(path)}' for artifact, path in sorted(_RUNTIME_TIME_PATHS)]}
+        if limit is not None:
+            provenance['partial_limit'] = limit
+        write_json(out / 'provenance.json', provenance)
         return reference
 
 
@@ -163,7 +171,7 @@ def historical_cache(source: Path, out: Path, repeat: int) -> dict[str, str]:
     return reference
 
 
-def one_pass(book: Path, cassette_dir: Path, concurrency: int) -> None:
+def one_pass(book: Path, cassette_dir: Path, concurrency: int, limit: int | None = None) -> None:
     names = ('LLM_BASE_URL', 'LLM_BASE_URL_OPENAI', 'LLM_PROTOCOL', 'LLM_PROTOCOL_MAP',
              'LLM_KEY_NAME', 'LLM_KEY_MAP', 'ORACLE_REPLAY_KEY', 'JEV_ROUTE',
              'CLASSIFIER_URL', 'JUDGE_LOG_DIR', 'JUDGE_LOG',
@@ -183,7 +191,7 @@ def one_pass(book: Path, cassette_dir: Path, concurrency: int) -> None:
     try:
         from pipeline.run import run_book
         with LoopbackOnly(), install(cassette_dir, 'replay') as tape:
-            run_book(book, model=model, local_model=model, concurrency=concurrency)
+            run_book(book, model=model, local_model=model, concurrency=concurrency, limit=limit)
         if tape.count == 0:
             raise ValueError('cassette replay consumed no model or JEV responses')
     finally:
@@ -201,8 +209,9 @@ def main() -> None:
         inner.add_argument('--one-pass', dest='book', type=Path, required=True)
         inner.add_argument('--cassettes', type=Path, required=True)
         inner.add_argument('--concurrency', type=int, default=12)
+        inner.add_argument('--limit', type=int)
         args = inner.parse_args()
-        one_pass(args.book, args.cassettes, args.concurrency)
+        one_pass(args.book, args.cassettes, args.concurrency, args.limit)
         return
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('book', type=Path)
@@ -212,10 +221,14 @@ def main() -> None:
     parser.add_argument('--start', choices=('fresh', 'resume'), default='fresh')
     parser.add_argument('--repeat', type=int, default=2)
     parser.add_argument('--concurrency', type=int, default=12)
+    parser.add_argument('--limit', type=int, help='record a deliberate partial-book cutoff')
     args = parser.parse_args()
+    if args.mode == 'historical-cache' and args.limit is not None:
+        parser.error('--limit is only for cassette replay')
     hashes = (historical_cache(args.book, args.out, args.repeat)
               if args.mode == 'historical-cache' else
-              replay(args.book, args.cassettes, args.out, args.start, args.repeat, args.concurrency))
+              replay(args.book, args.cassettes, args.out, args.start, args.repeat,
+                     args.concurrency, args.limit))
     print(f'{len(hashes)} book artifact files match across {args.repeat} {args.mode} passes')
 
 
