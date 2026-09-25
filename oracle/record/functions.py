@@ -74,9 +74,12 @@ class Collector:
             return None
         if rel.parts[0] not in ('pipeline', 'server') or rel.suffix != '.py':
             return None
+        actual = '.'.join(rel.with_suffix('').parts) + '.' + frame.f_code.co_qualname.replace('.<locals>.', '.')
         function = self.locations.get((str(rel), frame.f_code.co_firstlineno))
+        if function is not None and function.partition('@L')[0] != actual:
+            raise RuntimeError(f'inventory function identity is stale at {rel}:{frame.f_code.co_firstlineno}')
         if function is None:
-            function = '.'.join(rel.with_suffix('').parts) + '.' + frame.f_code.co_qualname.replace('.<locals>.', '.')
+            function = actual
         if function not in self.include:
             return None
         names = frame.f_code.co_varnames[:frame.f_code.co_argcount + frame.f_code.co_kwonlyargcount]
