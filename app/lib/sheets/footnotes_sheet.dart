@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/library.dart';
 import '../ui/theme.dart';
@@ -65,6 +66,23 @@ class FootnotesPage extends StatelessWidget {
                               color: context.tk.zhu,
                             ),
                           ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          tooltip: '复制注释',
+                          visualDensity: VisualDensity.compact,
+                          icon: const Icon(Icons.copy_outlined, size: 16),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            final String content =
+                                book.footnoteText[notes[i].$2] ?? '';
+                            if (content.isNotEmpty) {
+                              Clipboard.setData(ClipboardData(text: content));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('已复制注释')),
+                              );
+                            }
+                          },
                         ),
                       ],
                     ),

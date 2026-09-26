@@ -106,27 +106,36 @@ class _SearchPageState extends State<SearchPage> {
               },
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                child: Text.rich(
-                  TextSpan(
-                    children: <InlineSpan>[
-                      TextSpan(text: h.before.isEmpty ? '' : '…${h.before}'),
-                      TextSpan(
-                        text: h.match,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: Text.rich(
+                        TextSpan(
+                          children: <InlineSpan>[
+                            TextSpan(text: h.before.isEmpty ? '' : '…${h.before}'),
+                            TextSpan(
+                              text: h.match,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: t.zhu,
+                                backgroundColor: t.zhu.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            TextSpan(text: '${h.after}…'),
+                          ],
+                        ),
                         style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: t.zhu,
-                          backgroundColor: t.zhu.withValues(alpha: 0.12),
+                          fontFamily: serif,
+                          fontSize: 14.5,
+                          height: 1.6,
+                          color: t.ink2,
                         ),
                       ),
-                      TextSpan(text: '${h.after}…'),
-                    ],
-                  ),
-                  style: TextStyle(
-                    fontFamily: serif,
-                    fontSize: 14.5,
-                    height: 1.6,
-                    color: t.ink2,
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    Tag('第 ${widget.link.pageNo(h.at)} 页'),
+                  ],
                 ),
               ),
             ),
@@ -199,7 +208,9 @@ class _SearchPageState extends State<SearchPage> {
         ],
       ),
       slivers: <Widget>[
-        if (query.isNotEmpty && hits.isEmpty)
+        if (query.isEmpty)
+          emptyState(context, '输入关键词搜索正文内容')
+        else if (hits.isEmpty)
           emptyState(
             context,
             whole ? '全书没有找到' : '读到这里的部分没有找到。要搜全书吗？',

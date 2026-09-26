@@ -37,13 +37,25 @@ class _TypographyPanel extends StatelessWidget {
         ],
       ),
     );
-    Widget choice(List<String> labels, int index, ValueChanged<int> on) => Row(
+    Widget choice(
+      List<String> labels,
+      int index,
+      ValueChanged<int> on, {
+      List<String?>? fontFamilies,
+    }) => Row(
       children: <Widget>[
         for (int i = 0; i < labels.length; i++)
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: ChoiceChip(
-              label: Text(labels[i]),
+              label: Text(
+                labels[i],
+                style: fontFamilies != null &&
+                        i < fontFamilies.length &&
+                        fontFamilies[i] != null
+                    ? TextStyle(fontFamily: fontFamilies[i])
+                    : null,
+              ),
               selected: i == index,
               onSelected: (_) {
                 HapticFeedback.selectionClick();
@@ -53,6 +65,9 @@ class _TypographyPanel extends StatelessWidget {
               labelStyle: TextStyle(
                 color: i == index ? t.sheet : t.ink,
                 fontSize: 14,
+                fontFamily: fontFamilies != null && i < fontFamilies.length
+                    ? fontFamilies[i]
+                    : null,
               ),
               showCheckmark: false,
               side: BorderSide(color: i == index ? t.ink : t.rule),
@@ -195,6 +210,11 @@ class _TypographyPanel extends StatelessWidget {
                   const <String>['宋', '楷', '黑'],
                   prefs.font,
                   (int i) => prefs.update((Prefs p) => p.font = i),
+                  fontFamilies: const <String?>[
+                    'NotoSerifSC',
+                    'serif',
+                    'sans-serif',
+                  ],
                 ),
               ),
               row(

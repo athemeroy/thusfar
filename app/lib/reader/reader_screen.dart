@@ -1101,7 +1101,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
         if (c.beyondFrontier)
           Text(
             '人物整理到第 ${link.pageNo(book.status.frontier)} 页',
-            style: TextStyle(fontSize: 11, color: t.ink3),
+            style: TextStyle(
+              fontSize: 11,
+              color: t.ink3,
+              fontFeatures: const <FontFeature>[
+                FontFeature.tabularFigures(),
+              ],
+            ),
           ),
       ],
     );
@@ -1147,45 +1153,54 @@ class _ReaderScreenState extends State<ReaderScreen> {
             child: Text('注释 ${notes.length}', style: TextStyle(color: t.ink2)),
           ),
         if (w != null && cast.isNotEmpty)
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              HapticFeedback.lightImpact();
-              _sheet(
-                PeoplePage(link: link, onStartProcessing: _startProcessing),
-              );
-            },
-            child: AnimatedOpacity(
-              opacity: 1,
-              duration: Motion.arrive,
-              child: SizedBox(
-                height: 24,
-                width:
-                    math.min(4, cast.length) * 16.0 +
-                    8 +
-                    (cast.length > 4 ? 26 : 0),
-                child: Stack(
-                  children: <Widget>[
-                    for (int i = 0; i < math.min(4, cast.length); i++)
-                      Positioned(
-                        left: i * 16.0,
-                        top: 1,
-                        child: Avatar(
-                          name: w.people[cast[i]]!['name'].toString(),
-                          color: w.people[cast[i]]!['color']! as String,
-                          isNew: c.isNewOnPage(cast[i]),
+          Tooltip(
+            message: '本页人物 (${cast.length})',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _sheet(
+                  PeoplePage(link: link, onStartProcessing: _startProcessing),
+                );
+              },
+              child: AnimatedOpacity(
+                opacity: 1,
+                duration: Motion.arrive,
+                child: SizedBox(
+                  height: 24,
+                  width:
+                      math.min(4, cast.length) * 16.0 +
+                      8 +
+                      (cast.length > 4 ? 26 : 0),
+                  child: Stack(
+                    children: <Widget>[
+                      for (int i = 0; i < math.min(4, cast.length); i++)
+                        Positioned(
+                          left: i * 16.0,
+                          top: 1,
+                          child: Avatar(
+                            name: w.people[cast[i]]!['name'].toString(),
+                            color: w.people[cast[i]]!['color']! as String,
+                            isNew: c.isNewOnPage(cast[i]),
+                          ),
                         ),
-                      ),
-                    if (cast.length > 4)
-                      Positioned(
-                        right: 0,
-                        top: 4,
-                        child: Text(
-                          '+${cast.length - 4}',
-                          style: TextStyle(fontSize: 11, color: t.ink3),
+                      if (cast.length > 4)
+                        Positioned(
+                          right: 0,
+                          top: 4,
+                          child: Text(
+                            '+${cast.length - 4}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: t.ink3,
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1246,6 +1261,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           InkWell(
             customBorder: const StadiumBorder(),
             onTap: () {
+              HapticFeedback.lightImpact();
               c.returnTo = null;
               _jump(back, remember: false, highlight: (back, back));
             },
@@ -1253,18 +1269,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
               padding: const EdgeInsets.fromLTRB(16, 9, 6, 9),
               child: Text(
                 '↩ 回到第 ${link.pageNo(back)} 页',
-                style: TextStyle(color: t.sheet, fontSize: 14),
+                style: TextStyle(
+                  color: t.sheet,
+                  fontSize: 14,
+                  fontFeatures: const <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
               ),
             ),
           ),
           IconButton(
+            tooltip: '关闭返回提示',
             visualDensity: VisualDensity.compact,
             icon: Icon(
               Icons.close,
               size: 16,
               color: t.sheet.withValues(alpha: 0.7),
             ),
-            onPressed: c.clearReturn,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              c.clearReturn();
+            },
           ),
         ],
       ),
@@ -1733,24 +1759,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final Tokens t = context.tk;
     Widget tool(IconData icon, String label, bool isAi, VoidCallback on) =>
         Expanded(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () {
-              HapticFeedback.lightImpact();
-              on();
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                children: <Widget>[
-                  Icon(
-                    icon,
-                    color: isAi ? (ai ? t.zhu : t.ink3) : t.ink,
-                    size: 22,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(label, style: TextStyle(fontSize: 12, color: t.ink2)),
-                ],
+          child: Tooltip(
+            message: label,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                on();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: <Widget>[
+                    Icon(
+                      icon,
+                      color: isAi ? (ai ? t.zhu : t.ink3) : t.ink,
+                      size: 22,
+                    ),
+                    const SizedBox(height: 3),
+                    Text(label, style: TextStyle(fontSize: 12, color: t.ink2)),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1801,6 +1830,7 @@ class _Ribbon extends CustomPainter {
       ..lineTo(s.width / 2, s.height - 6)
       ..lineTo(0, s.height)
       ..close();
+    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.25), 3, false);
     canvas.drawPath(path, Paint()..color = color);
   }
 

@@ -223,7 +223,12 @@ class SettingsScreen extends StatelessWidget {
                     title: const Text('占用空间'),
                     trailing: Text(
                       '${(_size(library.root) / 1024 / 1024).toStringAsFixed(1)} MB · ${library.books.length} 本书',
-                      style: TextStyle(color: t.ink3),
+                      style: TextStyle(
+                        color: t.ink3,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
                     ),
                   ),
                 ]),
@@ -294,6 +299,15 @@ class _InstalledVersionState extends State<_InstalledVersion> {
   @override
   Widget build(BuildContext context) => FutureBuilder<String>(
     future: version,
-    builder: (context, snapshot) => Text(snapshot.data ?? '读取中…'),
+    builder: (context, snapshot) => Text(
+      snapshot.data ?? '读取中…',
+      style: TextStyle(
+        color: context.tk.ink3,
+        fontSize: 13,
+        fontFeatures: const <FontFeature>[
+          FontFeature.tabularFigures(),
+        ],
+      ),
+    ),
   );
 }

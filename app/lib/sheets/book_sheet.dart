@@ -200,7 +200,15 @@ class _BookSheetState extends State<BookSheet> {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Text('${_noteCount()}', style: TextStyle(color: t.ink3)),
+                  Text(
+                    '${_noteCount()}',
+                    style: TextStyle(
+                      color: t.ink3,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
+                  ),
                   Icon(Icons.chevron_right, color: t.ink3),
                 ],
               ),
@@ -338,7 +346,13 @@ class _BookSheetState extends State<BookSheet> {
         const SizedBox(height: 8),
         Text(
           s.state == 'queued' ? '已加入整理队列' : '已整理 ${s.done} / ${s.total} 段',
-          style: TextStyle(fontSize: 14, color: t.ink),
+          style: TextStyle(
+            fontSize: 14,
+            color: t.ink,
+            fontFeatures: const <FontFeature>[
+              FontFeature.tabularFigures(),
+            ],
+          ),
         ),
         const SizedBox(height: 10),
         Pill(

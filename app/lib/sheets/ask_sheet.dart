@@ -304,9 +304,26 @@ class _AskPageState extends State<AskPage> {
                 color: t.ink,
               ),
             ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                tooltip: '复制回答',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.copy_outlined, size: 16),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  Clipboard.setData(
+                    ClipboardData(text: answer['text']! as String),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('已复制回答')),
+                  );
+                },
+              ),
+            ),
             if (cites.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 12),
+                padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   '原文出处',
                   style: TextStyle(fontSize: 12, color: t.ink3),
@@ -368,6 +385,9 @@ class _AskPageState extends State<AskPage> {
                               fontSize: 13,
                               color: t.ink2,
                               height: 1.5,
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ),

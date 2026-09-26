@@ -348,7 +348,13 @@ class _TocPageState extends State<TocPage> {
                 ),
                 subtitle: Text(
                   '第 ${link.pageNo((m['start']! as num).toInt())} 页 · ${formatDate(m['created'] as num?)}',
-                  style: TextStyle(fontSize: 12, color: t.ink3),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: t.ink3,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -542,6 +548,9 @@ class NoteTile extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: t.ink3,
+                                      fontFeatures: const <FontFeature>[
+                                        FontFeature.tabularFigures(),
+                                      ],
                                     ),
                                   ),
                                 ),
