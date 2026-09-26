@@ -255,3 +255,12 @@
 - Backup validation must happen before publishing a directory. Existing books
   with different personal or graph content require a visible conflict; corrupt
   JSON must not silently become an apparently complete empty backup.
+
+
+## 2026-09-26 晚（Claude 接手）
+
+- **MIUI 拒绝 `adb install`**（`INSTALL_FAILED_USER_RESTRICTED`）。只能把 APK 推到 `/sdcard/Download`，文件名开头要和旧包不同（旧的 `thusfar-dev9…` 会在“最近”里截断成同一个样子），然后从文件管理打开 → 继续安装 → 勾“已了解” → 继续更新。
+- **adb 注入输入被禁**（`INJECT_EVENTS`）。点击用 `phone-exec call tap`，滑动用 `phone-exec call swipe {"startX",…,"duration"}`，文字用 `phone-exec call keyboard/input {"base64_text"}`。密码框在无障碍树里只显示圆点。
+- **DocumentsUI 文件选择器不响应无障碍点击**。导入测试书改用 `am start -a VIEW -d content://media/external/file/<id> --grant-read-uri-permission -n com.yedu.zhupi.v2probe/com.yedu.zhupi.MainActivity`；id 用 `content query --uri content://media/external/file` 查。
+- **叙述者“我”被拆成两个人**：代词不进名字索引，后面段落的“我”带着新称呼（迅哥儿）匹配不到任何人，就成了新人物。现在一部作品里第一人称“我”只合并到唯一的那个“我”；新称呼仍要经过判官核验。
+- 截图测试：`foldable_screens_test` 以 Mini 生成的截图为准，NAS 上有像素差（字体光栅化），不是回归。

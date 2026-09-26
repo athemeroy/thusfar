@@ -97,6 +97,24 @@ remain pending; the scoped dev9 interactions and supporting screenshot tests do
 not close them. Full evidence is in
 [`DEVICE-UI-E2E-DEV9.md`](../../reports/20260926-ui-redesign/dev9/DEVICE-UI-E2E-DEV9.md).
 
+## Claude takeover, evening 2026-09-26 (dev11–dev12)
+
+- Graph relabelled to SPEC S10/S05: one short role pill per edge on the focused
+  person's spokes, an unlabelled ellipse graph plus list in the person card,
+  and focus/view kept after Back from a person card.
+- **First fresh book processed end to end on the Xiaomi with a real model**
+  (鲁迅《故乡》, deepseek-flash+nothink via the default gateway): import → 开始整理 →
+  2 segments in about 3 minutes, still completing with the screen off.
+- That run exposed a split narrator (two “我”). Linking now joins a later
+  first-person 我 to the single existing narrator; Python oracle and Dart
+  changed together (23 link oracles). The Mini full core suite passes 2168 with
+  509 skips, and the Aq replay still matches all 154 Python artifacts. The dev12
+  rerun gives 7 correct people and relations.
+- Open items are listed in
+  [`DEVICE-E2E-DEV11-12.md`](../../reports/20260926-ui-redesign/dev12/DEVICE-E2E-DEV11-12.md).
+  They include the processing estimate being too low, TXT author detection,
+  the cover progress dot, and no unprocessed-book hint in the reader.
+
 ## Earlier integrated processing and validation
 
 Three parallel agents completed Runner, Worker and Flutter integration after the
