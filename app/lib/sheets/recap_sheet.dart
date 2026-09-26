@@ -38,13 +38,19 @@ class RecapPage extends StatelessWidget {
         if (saga != null) ...<Widget>[
           const SliverToBoxAdapter(child: SectionTitle('到上一章为止')),
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: t.paper,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: t.rule.withValues(alpha: 0.6)),
+              ),
               child: Text(
                 saga,
                 style: TextStyle(
                   fontFamily: serif,
-                  fontSize: 16,
+                  fontSize: 15,
                   height: 1.8,
                   color: t.ink,
                 ),
@@ -83,6 +89,17 @@ class RecapPage extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(top: 7, right: 12),
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: t.zhu,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
                         Expanded(
                           child: Text(
                             '${e['text']}',

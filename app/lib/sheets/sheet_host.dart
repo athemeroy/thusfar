@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../ui/theme.dart';
 
@@ -99,12 +100,16 @@ class SheetFrameState extends State<SheetFrame> {
     attempt(Duration.zero);
   }
 
-  void push(Widget page) => setState(() {
-    _forward = true;
-    _stack.add(page);
-  });
+  void push(Widget page) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _forward = true;
+      _stack.add(page);
+    });
+  }
 
   void pop() {
+    HapticFeedback.lightImpact();
     if (_stack.length > 1) {
       setState(() {
         _forward = false;
@@ -404,7 +409,10 @@ class Segmented extends StatelessWidget {
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(i),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(i);
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 160),
                   padding: const EdgeInsets.symmetric(vertical: 7),

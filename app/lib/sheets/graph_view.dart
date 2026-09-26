@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
 import '../ui/theme.dart';
@@ -515,7 +516,10 @@ class _RelationGraphState extends State<RelationGraph> {
                   child: InkWell(
                     key: ValueKey<String>('relation-label-$index'),
                     customBorder: const StadiumBorder(),
-                    onTap: () => _details(context, relation),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      _details(context, relation);
+                    },
                     child: Center(
                       child: ExcludeSemantics(
                         child: Text(
@@ -564,7 +568,10 @@ class _RelationGraphState extends State<RelationGraph> {
                   child: GestureDetector(
                     key: ValueKey<String>('graph-person-${entry.key}'),
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => widget.onTap(entry.key),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      widget.onTap(entry.key);
+                    },
                     child: Opacity(
                       opacity: dim ? .5 : 1,
                       child: Column(
@@ -1226,7 +1233,10 @@ class _GraphPageState extends State<GraphPage> {
                           compact: graphFocus != null,
                           selected: selected,
                           onLayoutReady: _layoutReady,
-                          onTap: (String id) => setState(() => selected = id),
+                          onTap: (String id) {
+                            HapticFeedback.selectionClick();
+                            setState(() => selected = id);
+                          },
                           onRelationTap: (Json relation) {
                             _openRelation(context, world, relation, asOf);
                           },

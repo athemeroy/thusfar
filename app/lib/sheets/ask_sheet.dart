@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thusfar_core/ask.dart';
 import 'package:thusfar_core/llm.dart' as llm;
 
@@ -81,6 +82,7 @@ class _AskPageState extends State<AskPage> {
 
   Future<void> _submit({_Exchange? retry}) async {
     if (_busy) return;
+    HapticFeedback.lightImpact();
     final String input = _input.text.trim();
     final String draft =
         retry?.question ??
@@ -192,11 +194,15 @@ class _AskPageState extends State<AskPage> {
                   for (final String q in <String>[
                     '刚才发生了什么？',
                     '这里有哪些人物？',
+                    '他们之间是什么关系？',
                     '这段话是什么意思？',
                   ])
                     ActionChip(
                       label: Text(q),
-                      onPressed: () => setState(() => _input.text = q),
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _input.text = q);
+                      },
                     ),
                 ],
               ),

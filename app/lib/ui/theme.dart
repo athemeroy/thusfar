@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Design tokens from docs/flutter-rewrite/design/spec.json.
 ///
@@ -257,7 +258,12 @@ class Pill extends StatelessWidget {
       shape: StadiumBorder(side: BorderSide(color: filled ? c : t.rule)),
       child: InkWell(
         customBorder: const StadiumBorder(),
-        onTap: onTap,
+        onTap: onTap == null
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                onTap!();
+              },
         child: Padding(
           padding: EdgeInsets.symmetric(
             horizontal: dense ? 10 : 16,
@@ -317,7 +323,10 @@ class Tag extends StatelessWidget {
     return onTap == null
         ? body
         : GestureDetector(
-            onTap: onTap,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap!();
+            },
             behavior: HitTestBehavior.opaque,
             child: body,
           );

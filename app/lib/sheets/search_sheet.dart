@@ -136,6 +136,13 @@ class _SearchPageState extends State<SearchPage> {
                 decoration: InputDecoration(
                   hintText: '搜索书里的一句话',
                   prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: query.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: '清空搜索',
+                          icon: const Icon(Icons.close, size: 18),
+                          onPressed: () => setState(() => query = ''),
+                        ),
                   filled: true,
                   fillColor: t.paper,
                   contentPadding: EdgeInsets.zero,
@@ -155,9 +162,16 @@ class _SearchPageState extends State<SearchPage> {
           if (whole)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                '会搜到还没读的内容',
-                style: TextStyle(color: t.amber, fontSize: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(Icons.warning_amber_rounded, size: 14, color: t.amber),
+                  const SizedBox(width: 4),
+                  Text(
+                    '会搜到还没读的内容',
+                    style: TextStyle(color: t.amber, fontSize: 12),
+                  ),
+                ],
               ),
             ),
         ],

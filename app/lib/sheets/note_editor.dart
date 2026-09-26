@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/library.dart';
 import '../ui/theme.dart';
@@ -102,6 +103,7 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   void _save() {
+    HapticFeedback.lightImpact();
     try {
       widget.book.notes.save(
         id: widget.existing?['id'] as String?,
@@ -152,6 +154,7 @@ class _NoteEditorState extends State<NoteEditor> {
       ),
     );
     if (!mounted || confirmed != true) return;
+    HapticFeedback.mediumImpact();
     try {
       widget.book.notes.delete(widget.existing!);
       Navigator.of(context).pop();
@@ -187,9 +190,14 @@ class _NoteEditorState extends State<NoteEditor> {
             if (quote.isNotEmpty)
               Container(
                 margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                padding: const EdgeInsets.only(left: 12),
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
                 decoration: BoxDecoration(
-                  border: Border(left: BorderSide(color: t.qing, width: 3)),
+                  color: t.paper,
+                  borderRadius: const BorderRadius.only(
+                    topRight: Radius.circular(10),
+                    bottomRight: Radius.circular(10),
+                  ),
+                  border: Border(left: BorderSide(color: t.qing, width: 3.5)),
                 ),
                 constraints: const BoxConstraints(maxHeight: 120),
                 child: SingleChildScrollView(
