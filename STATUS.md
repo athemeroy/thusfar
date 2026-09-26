@@ -112,8 +112,8 @@ not close them. Full evidence is in
   rerun gives 7 correct people and relations.
 - Open items are listed in
   [`DEVICE-E2E-DEV11-12.md`](../../reports/20260926-ui-redesign/dev12/DEVICE-E2E-DEV11-12.md).
-  They include the processing estimate being too low, TXT author detection,
-  the cover progress dot, and no unprocessed-book hint in the reader.
+  The four follow-ups (estimate, TXT author, cover rule, unprocessed People)
+  were fixed and verified on the phone with dev13–dev14; the Mini core suite passes 2180.
 
 ## Earlier integrated processing and validation
 
