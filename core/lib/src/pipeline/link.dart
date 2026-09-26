@@ -17,6 +17,8 @@ Future<Json> Function(Object? state, Json questions) linkCall =
 
 int _len(String s) => s.runes.length;
 String _unstar(String s) => s.replaceFirst(RegExp(r'^\*+'), '');
+
+const Set<String> _firstPerson = <String>{'我', 'i'};
 List<String> _sorted(Iterable<String> names) =>
     names.toList()..sort((String a, String b) => PyCompat.compare(a, b));
 Set<String> _set(Object? value) =>
@@ -300,7 +302,25 @@ Future<(Json, Json)> linkSegment(
               !genderClash(lp, e.value))
             e.key,
     };
-    if (distinct.length == 1) {
+    final String me =
+        PyCompat.strip(_unstar(lp['name'] as String? ?? '')).toLowerCase();
+    final List<String> narrator = <String>[
+      if (_firstPerson.contains(me))
+        for (final MapEntry<String, Json> e in cast.entries)
+          if (PyCompat.strip(
+                _unstar(e.value['name'] as String? ?? ''),
+              ).toLowerCase() ==
+              me)
+            e.key,
+    ];
+    if (narrator.length == 1 && distinct.isEmpty) {
+      // A work has one first-person narrator: a later "我" (now also called
+      // 迅哥儿) is the same one.
+      decisions[lid] = <String, Object?>{
+        'to': narrator.first,
+        'how': 'narrator',
+      };
+    } else if (distinct.length == 1) {
       decisions[lid] = <String, Object?>{
         'to': distinct.first,
         'how':

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "source_sha256": "672378817e72934f756f85d88deabddb698b95cd1815641727c5c2f7cc1622b3",
+  "source_sha256": "1455763fe776796318c9c868942cacc9da8a5aebb7cf21a8728ebde2df374bd0",
   "cases": [
     {
       "case": "sequential_link_plan_commit_preserves_prior_cast_and_utf16",
@@ -955,6 +955,219 @@
               "a": {
                 "to": "P1",
                 "how": "name-over-hint"
+              }
+            },
+            "jev": {},
+            "verify": {}
+          }
+        ]
+      }
+    },
+    {
+      "case": "first_person_narrator_regains_name",
+      "function": "link_segment",
+      "input": {
+        "people": {
+          "P1": {
+            "name": "我",
+            "aliases": {
+              "$set": [
+                "我"
+              ]
+            },
+            "first": 0,
+            "mentions": 1
+          },
+          "P2": {
+            "name": "闰土",
+            "aliases": {
+              "$set": [
+                "闰土"
+              ]
+            },
+            "first": 0,
+            "mentions": 1
+          }
+        },
+        "local": {
+          "people": [
+            {
+              "id": "a",
+              "name": "我",
+              "names": [
+                "迅哥儿",
+                "大伯"
+              ],
+              "role": ""
+            },
+            {
+              "id": "b",
+              "name": "闰土",
+              "names": [],
+              "role": ""
+            }
+          ]
+        },
+        "seg": {
+          "i": 0,
+          "blocks": []
+        },
+        "context_text": "段落原文",
+        "scope_start": 0,
+        "k": 1
+      },
+      "answers": [
+        {
+          "a1": {
+            "choice": "yes",
+            "probabilities": {
+              "yes": 0.9
+            }
+          },
+          "a2": {
+            "choice": "yes",
+            "probabilities": {
+              "yes": 0.9
+            }
+          }
+        }
+      ],
+      "calls": [
+        {
+          "state": {
+            "this_passage": "段落原文"
+          },
+          "questions": {
+            "a1": {
+              "type": "choice",
+              "instructions": "In this_passage, is the name 「大伯」 used to refer to the character 我（）?",
+              "criteria": {
+                "yes": "Yes — in this passage 「大伯」 is a name/nickname/title used for this very character.",
+                "no": "No — 「大伯」 is someone else (e.g. a person being talked about or addressed), or is not used for this character here."
+              }
+            },
+            "a2": {
+              "type": "choice",
+              "instructions": "In this_passage, is the name 「迅哥儿」 used to refer to the character 我（）?",
+              "criteria": {
+                "yes": "Yes — in this passage 「迅哥儿」 is a name/nickname/title used for this very character.",
+                "no": "No — 「迅哥儿」 is someone else (e.g. a person being talked about or addressed), or is not used for this character here."
+              }
+            }
+          }
+        }
+      ],
+      "output": {
+        "$tuple": [
+          {
+            "new_people": [],
+            "surfaces": {
+              "P1": [
+                "我",
+                "迅哥儿",
+                "大伯"
+              ],
+              "P2": [
+                "闰土"
+              ]
+            },
+            "aliases": [],
+            "merges": [],
+            "events": [],
+            "attrs": [],
+            "rels": [],
+            "profiles": []
+          },
+          {
+            "decisions": {
+              "a": {
+                "to": "P1",
+                "how": "narrator"
+              },
+              "b": {
+                "to": "P2",
+                "how": "name"
+              }
+            },
+            "jev": {},
+            "verify": {
+              "form:a:大伯": 0.9,
+              "form:a:迅哥儿": 0.9
+            }
+          }
+        ]
+      }
+    },
+    {
+      "case": "first_person_distinct_name_wins",
+      "function": "link_segment",
+      "input": {
+        "people": {
+          "P1": {
+            "name": "我",
+            "aliases": {
+              "$set": [
+                "我"
+              ]
+            },
+            "first": 0,
+            "mentions": 1
+          },
+          "P2": {
+            "name": "迅哥儿",
+            "aliases": {
+              "$set": [
+                "迅哥儿"
+              ]
+            },
+            "first": 0,
+            "mentions": 1
+          }
+        },
+        "local": {
+          "people": [
+            {
+              "id": "a",
+              "name": "我",
+              "names": [
+                "迅哥儿"
+              ],
+              "role": ""
+            }
+          ]
+        },
+        "seg": {
+          "i": 0,
+          "blocks": []
+        },
+        "context_text": "段落原文",
+        "scope_start": 0,
+        "k": 1
+      },
+      "answers": [],
+      "calls": [],
+      "output": {
+        "$tuple": [
+          {
+            "new_people": [],
+            "surfaces": {
+              "P2": [
+                "我",
+                "迅哥儿"
+              ]
+            },
+            "aliases": [],
+            "merges": [],
+            "events": [],
+            "attrs": [],
+            "rels": [],
+            "profiles": []
+          },
+          {
+            "decisions": {
+              "a": {
+                "to": "P2",
+                "how": "name"
               }
             },
             "jev": {},

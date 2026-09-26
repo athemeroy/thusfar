@@ -391,7 +391,7 @@ class _BookSheetState extends State<BookSheet> {
       );
       final String cost = estimate['minutes'] == null
           ? '费用按你的模型接口计费。'
-          : '预计约 ${estimate['minutes']} 分钟、约 ¥${estimate['high']}（${estimate['model']}）';
+          : '预计${(estimate['minutes']! as num) < 1 ? '不到 1 分钟' : '约 ${estimate['minutes']} 分钟'}、约 ¥${estimate['high']}（${estimate['model']}）';
       body.add(
         Text(
           '让 AI 读完这本书，整理人物、关系和前情。只显示到你读到的那一页。',

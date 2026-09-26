@@ -99,6 +99,9 @@ def related(new: str, known: str) -> bool:
     return False
 
 
+FIRST_PERSON = {'我', 'i'}
+
+
 def proper_name(p: dict) -> str:
     """The name to use when asking about a person: a real name if they have one (not 老和尚)."""
     if not is_generic(p['name']):
@@ -186,7 +189,13 @@ def link_segment(kg, seg: dict, local: dict, context_text: str, scope_start: int
         cores = {core(n) for n in mine} - {''}
         same_core = {pid for pid, p in cast.items() if cores & ({core(n) for n in names_of(p)} - {''})
                      and not _gender_clash(lp, p)} if cores else set()
-        if len(distinct) == 1:
+        me = (lp.get('name') or '').lstrip('*').strip().lower()
+        narrator = [pid for pid, p in cast.items()
+                    if me in FIRST_PERSON and (p.get('name') or '').lstrip('*').strip().lower() == me]
+        if len(narrator) == 1 and not distinct:
+            # a work has one first-person narrator: a later "我" (now also called 迅哥儿) is the same one
+            decisions[lid] = {'to': narrator[0], 'how': 'narrator'}
+        elif len(distinct) == 1:
             # the safest evidence there is: a name only one person has ever been called
             decisions[lid] = {'to': next(iter(distinct)), 'how': 'name' if not hint or hint in distinct else 'name-over-hint'}
         elif len(distinct) > 1 or hint or exact or fuzzy or weak_c or near or same_core or local_c:

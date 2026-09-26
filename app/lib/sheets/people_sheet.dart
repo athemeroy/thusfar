@@ -220,16 +220,19 @@ class _PeoplePageState extends State<PeoplePage> {
                               ],
                             ),
                           ),
-                          Text(
-                            '${p.mentions}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: t.ink3,
-                              fontFeatures: const <FontFeature>[
-                                FontFeature.tabularFigures(),
-                              ],
+                          // A narrator "我" is never linked in the text, so
+                          // a count of 0 would read as "never appears".
+                          if (p.mentions > 0)
+                            Text(
+                              '${p.mentions}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: t.ink3,
+                                fontFeatures: const <FontFeature>[
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),

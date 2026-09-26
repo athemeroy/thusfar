@@ -113,6 +113,13 @@ def cases():
     yield segment('distinct_name_over_conflicting_hint', {
         'P1': person('Alice'), 'P2': person('Bob'),
     }, {'people': [lp('a', 'Alice', known='P2')]})
+    yield segment('first_person_narrator_regains_name', {
+        'P1': person('我'), 'P2': person('闰土'),
+    }, {'people': [lp('a', '我', names=['迅哥儿', '大伯']), lp('b', '闰土')]},
+        [{'a1': answer('yes', .9), 'a2': answer('yes', .9)}])
+    yield segment('first_person_distinct_name_wins', {
+        'P1': person('我'), 'P2': person('迅哥儿'),
+    }, {'people': [lp('a', '我', names=['迅哥儿'])]})
     yield segment('scope_and_merged_people_excluded', {
         'P1': person('Alice', first=2), 'P2': person('Bob', first=10, merged_into='P3'),
         'P3': person('Carol', first=10),
