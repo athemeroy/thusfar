@@ -26,17 +26,35 @@ Future<void> main() async {
   // Let Android resize and rotate the window for folded, unfolded, and
   // tabletop postures. Reader pagination follows the available pane size.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  const String override = String.fromEnvironment('THUSFAR_DATA');
-  // Same private directory the 1.7.x app used: files/yedu.
-  final Directory root = override.isNotEmpty
-      ? Directory(override)
-      : Directory(
-          '${await const MethodChannel('thusfar/paths').invokeMethod<String>('filesDir')}/yedu',
-        );
+  final Directory root = await dataRoot();
   root.createSync(recursive: true);
   final AppModel model = AppModel(root);
   await model.initialize();
   runApp(ThusfarApp(model: model));
+}
+
+/// Where the library lives. Android keeps the 1.7.x app's files/yedu; the
+/// other platforms use their usual per-user application data directory
+/// (inside the sandbox container on iOS and macOS).
+Future<Directory> dataRoot() async {
+  const String override = String.fromEnvironment('THUSFAR_DATA');
+  if (override.isNotEmpty) return Directory(override);
+  if (Platform.isAndroid) {
+    final String? files = await const MethodChannel(
+      'thusfar/paths',
+    ).invokeMethod<String>('filesDir');
+    return Directory('$files/yedu');
+  }
+  final Map<String, String> env = Platform.environment;
+  if (Platform.isWindows) {
+    return Directory('${env['APPDATA'] ?? env['USERPROFILE'] ?? '.'}\\Thusfar');
+  }
+  final String home = env['HOME'] ?? '.';
+  if (Platform.isMacOS || Platform.isIOS) {
+    return Directory('$home/Library/Application Support/Thusfar');
+  }
+  final String data = env['XDG_DATA_HOME'] ?? '$home/.local/share';
+  return Directory('$data/thusfar');
 }
 
 /// Everything shared by the screens.

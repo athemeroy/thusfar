@@ -249,7 +249,9 @@ class _InstalledVersionState extends State<_InstalledVersion> {
           ).invokeMethod<String>('appVersion') ??
           '版本未知';
     } on MissingPluginException {
-      return '开发预览';
+      // Desktop and iOS builds get their version from the build command.
+      const String version = String.fromEnvironment('THUSFAR_VERSION');
+      return version.isEmpty ? '开发预览' : version;
     } on PlatformException {
       return '版本未知';
     }

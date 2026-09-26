@@ -1,0 +1,96 @@
+name: apps
+# Desktop and iOS builds of the Flutter app. Android is built and signed on the
+# maintainer's machine, because the signing key never leaves it.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v2*']
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.47.5'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: macos, os: macos-latest }
+          - { target: ios, os: macos-latest }
+          - { target: windows, os: windows-latest }
+          - { target: linux, os: ubuntu-latest }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Version
+        run: |
+          v=$(sed -n 's/^version: \([^+]*\).*/\1/p' pubspec.yaml)
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+          mkdir -p ../dist
+      - name: Linux build tools
+        if: matrix.target == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+      - run: flutter pub get
+
+      - name: macOS app and dmg
+        if: matrix.target == 'macos'
+        run: |
+          flutter build macos --release --dart-define=THUSFAR_VERSION=$VERSION
+          stage=$(mktemp -d)
+          cp -R build/macos/Build/Products/Release/Thusfar.app "$stage/"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -volname "Thusfar $VERSION" -srcfolder "$stage" -ov -format UDZO "../dist/Thusfar-$VERSION-macos.dmg"
+
+      - name: iOS unsigned ipa
+        if: matrix.target == 'ios'
+        run: |
+          flutter build ios --release --no-codesign --dart-define=THUSFAR_VERSION=$VERSION
+          stage=$(mktemp -d)
+          mkdir "$stage/Payload"
+          cp -R build/ios/iphoneos/Runner.app "$stage/Payload/"
+          (cd "$stage" && zip -qr "$GITHUB_WORKSPACE/dist/Thusfar-$VERSION-ios-unsigned.ipa" Payload)
+
+      - name: Windows app, zip and installer
+        if: matrix.target == 'windows'
+        run: |
+          flutter build windows --release --dart-define=THUSFAR_VERSION=$VERSION
+          release="build/windows/x64/runner/Release"
+          (cd "$release" && 7z a -tzip "$GITHUB_WORKSPACE/dist/Thusfar-$VERSION-windows-portable.zip" . > /dev/null)
+          iscc_dir="/c/Program Files (x86)/Inno Setup 6"
+          if [ ! -x "$iscc_dir/ISCC.exe" ]; then choco install innosetup -y --no-progress; fi
+          if [ ! -f "$iscc_dir/Languages/ChineseSimplified.isl" ]; then
+            curl -fsSL -o "$iscc_dir/Languages/ChineseSimplified.isl" \
+              https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl
+          fi
+          "$iscc_dir/ISCC.exe" "/DAppVersion=$VERSION" "/DSourceDir=$(cygpath -w "$PWD/$release")" \
+            "/O$(cygpath -w "$GITHUB_WORKSPACE/dist")" packaging/thusfar.iss
+
+      - name: Linux bundle
+        if: matrix.target == 'linux'
+        run: |
+          flutter build linux --release --dart-define=THUSFAR_VERSION=$VERSION
+          tar -C build/linux/x64/release/bundle -czf "../dist/Thusfar-$VERSION-linux-x64.tar.gz" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: thusfar-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" ../dist/* --clobber
