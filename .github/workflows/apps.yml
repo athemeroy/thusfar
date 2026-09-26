@@ -74,7 +74,7 @@ jobs:
           if [ ! -x "$iscc_dir/ISCC.exe" ]; then choco install innosetup -y --no-progress; fi
           if [ ! -f "$iscc_dir/Languages/ChineseSimplified.isl" ]; then
             curl -fsSL -o "$iscc_dir/Languages/ChineseSimplified.isl" \
-              https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/Unofficial/ChineseSimplified.isl
+              https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseSimplified.isl
           fi
           "$iscc_dir/ISCC.exe" "/DAppVersion=$VERSION" "/DSourceDir=$(cygpath -w "$PWD/$release")" \
             "/O$(cygpath -w "$GITHUB_WORKSPACE/dist")" packaging/thusfar.iss
