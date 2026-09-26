@@ -14,7 +14,7 @@ sealed class PyException implements Exception {
 }
 
 /// Python `ValueError`: invalid input or data.
-final class ValueError extends PyException {
+base class ValueError extends PyException {
   const ValueError(super.message);
 
   @override
@@ -22,7 +22,7 @@ final class ValueError extends PyException {
 }
 
 /// Python `RuntimeError`: a policy or state refusal.
-final class RuntimeError extends PyException {
+base class RuntimeError extends PyException {
   const RuntimeError(super.message);
 
   @override
@@ -37,8 +37,8 @@ final class PyTimeoutError extends PyException {
   String get pyType => 'builtins.TimeoutError';
 }
 
-/// Python `json.JSONDecodeError`, raised when model or file text is not JSON.
-final class PyJsonDecodeError extends PyException {
+/// Python `json.JSONDecodeError` (a `ValueError`), raised when text is not JSON.
+final class PyJsonDecodeError extends ValueError {
   const PyJsonDecodeError(super.message);
 
   @override

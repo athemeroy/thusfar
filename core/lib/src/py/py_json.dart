@@ -106,6 +106,9 @@ final class PyJson {
     }
   }
 
+  /// Python `repr(float)`, which `json.dumps` also uses.
+  static String floatRepr(double value) => _float(value);
+
   static String _float(double value) {
     if (value.isNaN) return 'NaN';
     if (value == double.infinity) return 'Infinity';

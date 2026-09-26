@@ -1,0 +1,429 @@
+{"text": "{\"a\":1,}", "error": "Expecting property name enclosed in double quotes: line 1 column 8 (char 7)"}
+{"text": "[1,]", "error": "Expecting value: line 1 column 4 (char 3)"}
+{"text": "{\"a\" 1}", "error": "Expecting ':' delimiter: line 1 column 6 (char 5)"}
+{"text": "{a:1}", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "\"abc", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "[1 2]", "error": "Expecting ',' delimiter: line 1 column 4 (char 3)"}
+{"text": "{\"a\":1} x", "error": "Extra data: line 1 column 9 (char 8)"}
+{"text": "", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " ", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "\"\\x\"", "error": "Invalid \\escape: line 1 column 2 (char 1)"}
+{"text": "\"a\nb\"", "error": "Invalid control character at: line 1 column 3 (char 2)"}
+{"text": "{\"k\":\"v\",\"k\":2}", "ok": "{\"k\": 2}"}
+{"text": "[1e5, 2.0, -0, 0.5, 12345678901234567890]", "ok": "[100000.0, 2.0, 0, 0.5, 12345678901234567890]"}
+{"text": "[NaN, Infinity, -Infinity]", "ok": "[NaN, Infinity, -Infinity]"}
+{"text": "{\"名\":\"阿Q\",\"q\":\"\\u963f\\ud83d\\ude42\"}", "ok": "{\"\\u540d\": \"\\u963fQ\", \"q\": \"\\u963f\\ud83d\\ude42\"}"}
+{"text": "𠮷{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{\"x\": [1, {\"y\": null}], \"z\": true, \"w\": false}", "ok": "{\"x\": [1, {\"y\": null}], \"z\": true, \"w\": false}"}
+{"text": "\n\n  {\"a\":\n 1\n,\n}", "error": "Expecting property name enclosed in double quotes: line 6 column 1 (char 15)"}
+{"text": "[\"\\ud83d\"]", "ok": "[\"\\ud83d\"]"}
+{"text": "{\"a\":\"b\"", "error": "Expecting ',' delimiter: line 1 column 9 (char 8)"}
+{"text": "[", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "{", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "{\"a\":", "error": "Expecting value: line 1 column 6 (char 5)"}
+{"text": "-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "01", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "1.", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": ".5", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "tru", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"\\u12\"", "error": "Invalid \\uXXXX escape: line 1 column 3 (char 2)"}
+{"text": ",u\n}[e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}[ee", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e}阿]\\\n\n阿}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿u}\\}e,ne,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]阿ne:]阿阿\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r]e[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}𠮷\"-eet1阿1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n\\:\\[阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".-t1n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[].e:t,-e}", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "[e阿ttr𠮷-阿1[", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "[ -[}n\n阿1nur{1", "error": "Expecting value: line 1 column 3 (char 2)"}
+{"text": ":𠮷]-}\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n,\\uu-[:1ue ,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "ee eru\\,[:,\\\\{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿: n{,ee", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "𠮷阿t,.𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}1euuuu]-\nu", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "\"1", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "]t𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e]r", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{[\"𠮷u,\n r𠮷", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "-]]-1-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n[,]t -:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{\".r,e{.n", "error": "Unterminated string starting at: line 1 column 2 (char 1)"}
+{"text": "[ .r:r\\ee.t", "error": "Expecting value: line 1 column 3 (char 2)"}
+{"text": "\\𠮷\"\\u\\\".-r{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " ", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": " \"𠮷r1rr[", "error": "Unterminated string starting at: line 1 column 2 (char 1)"}
+{"text": "]\\-\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"-𠮷𠮷{-", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "r\n[]u\"-:e\nt", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[::,{,阿", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "\n,𠮷𠮷-r,e", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": ",{{\n].,e\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"{ \"n.\\阿t ee,}", "error": "Extra data: line 1 column 5 (char 4)"}
+{"text": "r1阿.e.,e,..{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "1:𠮷{,:,-𠮷]e}t.", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "e-]e}\\\" }", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "].1e{[1t𠮷.𠮷.\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " 1.e-.\\. e\"1", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "e]u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "t[\\e[\"n]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",\nr, ,1\\]u-:\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e.u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e\"rt[r", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "11{ut.𠮷n.", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "]\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[ ", "error": "Expecting value: line 1 column 3 (char 2)"}
+{"text": "}: ,e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " u,e.阿-t[ }:e[", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "{\n[ [", "error": "Expecting property name enclosed in double quotes: line 2 column 1 (char 2)"}
+{"text": "\\[ ]1{tee ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",}.\\]: }:\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\nn.\"n", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": ".: r{ }{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\".-\\1]\ne-", "error": "Invalid \\escape: line 1 column 4 (char 3)"}
+{"text": "u.n\"\\t\"\n,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r},{[\n ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":}[u.n𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n}1:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " 1{", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "rtet\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r:{t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[- .\n\"\\", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "{[ [,u阿}u", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n\\[阿.", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": ",𠮷ut-,n𠮷\n,}.\ne", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".,..阿{阿\n\\[{}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\nr]", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "1e}\n{\ne", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "\\- {1[.e[.[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "- [ \\\"\\\n1-u[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n}𠮷\n\n\"[𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "t \n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n𠮷阿,{-}- ]\"-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".n111", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]e\"n[-{n1[.1 ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"\"[阿[,.", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "r,𠮷\n.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]r\\--", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{:{-1un", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": ",erut]t{ttu]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{n r", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "uu", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿[re } ]}n\n,\\ ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".t\"re{\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "ee\"[}e1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",\nn-}e,:-e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "nn \n u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\n-eu]:\n:[\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "-e\\1t1e,e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\[:t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[t\\r 阿\"{e", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "e.\"u t}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " 阿r,..\n\"", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": " \\", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "u\n1en{,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "-阿-{[u.11\\]\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",.]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n1[e}{,\\阿}\nn,\n", "error": "Extra data: line 2 column 2 (char 2)"}
+{"text": ".\ne]]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"u \\𠮷{{en1", "error": "Invalid \\escape: line 1 column 4 (char 3)"}
+{"text": "t\n\\-.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e\\{e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\nn}{\"-\ne[ \\e", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "\\-}ter", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u\"{n.[\"-\"n\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "1\\ n", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "𠮷-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":\\-e}𠮷,u}\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e}}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u1t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "][:t\":\n.1}nu", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "rt1:]{[ [re]e\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "rne[}-\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e1\"tr-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "\\\nu}u}1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "} ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[𠮷tr", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "t𠮷} t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n{𠮷\n[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "-1", "ok": "-1"}
+{"text": "u e-,-:{n,𠮷\\t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "t1r𠮷[.\"u:\\e[\n}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "eet:e][ ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[\"]e-1:\\,e", "error": "Invalid \\escape: line 1 column 8 (char 7)"}
+{"text": "𠮷\\e]nn 阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r  \"1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":\\\\,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿\"t[u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\..\\\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]\n1}]{-\\1r}n\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿\"[r.:1𠮷 {", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n𠮷", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "𠮷r\"}rt,}\" }𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n\"{ter:𠮷n[\"}", "error": "Extra data: line 2 column 11 (char 11)"}
+{"text": "-e-[e]ue,\ne[\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "ne}n阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "ee{r\n\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u\"{e:e]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[u阿r1:,{}e,\nu[", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "𠮷r.:,rn:.:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"n,}-t}𠮷", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "u[𠮷:\n\\𠮷u𠮷\"-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿\"}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".:ur],\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"}e}t]u𠮷1e\nn", "error": "Invalid control character at: line 1 column 11 (char 10)"}
+{"text": "en阿\\eur1.1:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "-1\\1𠮷1:-u]", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": ",r", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r[1..}}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",[t.[}.u\n,{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[𠮷]\",-n:\\[r𠮷 :", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "𠮷 1, .", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"阿 𠮷.\\tr", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "\"", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "u:\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "tu: ]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".}\nr1e.阿] e\nu", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r ur阿,rt[1\\:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}n. n\n阿t{}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",n𠮷\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e.r},-\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n}{}{阿rn].", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "e\\e阿n阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"r𠮷", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "-:,{\\,1][\n, u ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "er𠮷\n阿1𠮷.-\\:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\:}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]{𠮷e\",e\".𠮷\n.\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e𠮷:.n[n\n}-e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e1[\n1:\\] \\\n}]t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " } \nee. n\n\"[", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "{: \\\":t\"u", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "𠮷\\u\ne-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".{{e\\阿n\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "𠮷阿[阿:,}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "𠮷:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",{{},\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}[}[阿r\"e[u]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"\"]}", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "\n", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "\n\n", "error": "Expecting value: line 3 column 1 (char 2)"}
+{"text": "-],]\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "ntte", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{r n}", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "rt𠮷.-n𠮷{e{e.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]r-}e阿\"[阿n:e{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"n}{r-]-:", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "阿r. 阿:n\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\-:]\n[-e]\ntr", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "uu", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[e\n{r\"n ee.:", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "\n\\1,e𠮷𠮷", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "}r阿t.,1et:1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " 阿\\,t1\n\\", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "\" n𠮷,,\\t𠮷", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "r:\\t\" ]:]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u,,n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "ne \"]\n] \"u1}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e\\.\nn1{, 𠮷u{\\e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿阿\ne\\\n\n阿\\:\n]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "et \n]e\\u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n: e-1{𠮷e.:\n", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "{u-]} ", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "\":\".r]阿1e", "error": "Extra data: line 1 column 4 (char 3)"}
+{"text": "-.{\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r.te1\":u.]𠮷r\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " ", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "uu}{[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e\nr阿 ]\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u.\\u1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":,[\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "-\ne\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ",r\ne1ne\n,-r\\ u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " e:-{ r\\\nnt", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "-e𠮷\n[r,n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u}[阿t,.r\n阿{{\"[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n 𠮷]阿,\\:1r,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "ue:𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "𠮷[e\nn\"-\".[1]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "] e\\,--e}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "1,-\\-:e𠮷", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "{:t1阿-n1ree[:\n", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "\n\n{{𠮷}", "error": "Expecting property name enclosed in double quotes: line 3 column 2 (char 3)"}
+{"text": "t].--,}\"e\n,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]rt-.e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"nete e}nnr-u", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": ". .r\"\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]t\"tn,阿\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "eue阿}un]{}\"-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}.e𠮷u𠮷,\n𠮷[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}\n1\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":]:}e]\n{r,ne ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n:e}t{e阿\n阿}-阿.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e阿u1[{u𠮷阿,-ee", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[\n", "error": "Expecting value: line 2 column 1 (char 2)"}
+{"text": "\",\n{e{{]", "error": "Invalid control character at: line 1 column 3 (char 2)"}
+{"text": "[\"],-{ 阿\\1:}r,", "error": "Invalid \\escape: line 1 column 9 (char 8)"}
+{"text": "[n\ne-1 }}{}{", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "𠮷[unn𠮷:-𠮷}t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿1-:,]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n:\ne-u", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "1 阿tn }𠮷\n𠮷t𠮷{", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": ",𠮷n阿e\\uuu𠮷\\1n{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "  e:阿}", "error": "Expecting value: line 1 column 3 (char 2)"}
+{"text": ",阿, e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "-re[ee-u\"\\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}u1\" 阿{u1e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "er", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[\\u阿. .t-.阿\"\"", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "\"[:n", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "阿阿ru.,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}-r]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n1[,t𠮷", "error": "Extra data: line 2 column 2 (char 2)"}
+{"text": "r", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".𠮷{]}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿-阿阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "  e]", "error": "Expecting value: line 1 column 3 (char 2)"}
+{"text": "阿𠮷, }t\":", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[{}}er1", "error": "Expecting ',' delimiter: line 1 column 4 (char 3)"}
+{"text": "[𠮷\nu][ t", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "\\\n[.u:1:r\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\:} r}e{} .\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "-}],t{\"n阿阿1\n]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "tr u]r-u", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "1\\,", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "{1\"}:\\[𠮷r,1", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "u{", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[1tt\\-]\nr,t", "error": "Expecting ',' delimiter: line 1 column 3 (char 2)"}
+{"text": "}:1e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "1, ", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "e\\,{ 阿n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ": -]t1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "],.}\n\"e-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n] \"re \\\\]une:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n{1", "error": "Expecting property name enclosed in double quotes: line 2 column 2 (char 2)"}
+{"text": ".t.,1{.n:re}e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " 阿:,", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": ":.\\:\"𠮷[[𠮷- :\",", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n\"阿n\"{[.e}", "error": "Extra data: line 2 column 5 (char 5)"}
+{"text": "rtn\n-[{e-", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " \\:", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "r}:r阿𠮷{r.1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[]r\\tu阿}n", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "]-1.{.e,{\\[\\𠮷:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]n ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{{]\" {𠮷\n阿", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": ".\\1]r]:}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]1-阿.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " ]]]u,e阿\\\\,阿1", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "u:{\nue𠮷𠮷.}u}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "rtu\\te阿tue}t.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "r\\e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\n{r].:[te\".", "error": "Expecting property name enclosed in double quotes: line 2 column 2 (char 2)"}
+{"text": "{\\,eu1\n}}}\n", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": " 𠮷 \ne}𠮷] ]", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "{e\\}n]nr\n", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "]}𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " [1阿e,1].", "error": "Expecting ',' delimiter: line 1 column 4 (char 3)"}
+{"text": "ne阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " \\[en", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "1𠮷阿\\\nu\"er1en𠮷-", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "n{\\t\\\".e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿u{r:\\t", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "t- n\"n}{:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "[𠮷r1}.u1r", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "].\\,etr,\"𠮷𠮷 ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".]- \n\n,e]{ee阿]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u阿,e 𠮷𠮷]", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "11nrnru", "error": "Extra data: line 1 column 3 (char 2)"}
+{"text": "e𠮷u\nt{-u1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":en,e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u阿\\[tt𠮷\\t\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{{} 阿-n", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "ne𠮷e..eu1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}𠮷r1{[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\]er.u\ne阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"e-", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "1𠮷阿t.[:", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "tr[n.:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\nn", "error": "Expecting value: line 2 column 1 (char 1)"}
+{"text": "t.e\n:.n.\".\"e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}\n阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "]r阿\n\n}e{{n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e{nu]阿{{\":-e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " \ne.,阿\"e𠮷]", "error": "Expecting value: line 2 column 1 (char 2)"}
+{"text": ":..", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{]", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": ":.", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "1𠮷e}\n{阿t", "error": "Extra data: line 1 column 2 (char 1)"}
+{"text": "\\r ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "} \n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "阿[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\"1𠮷u{}", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": "u阿}1", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "𠮷", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\\\}:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":t{1ne𠮷 -[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u阿\\e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u-{\\[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":ru", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{nu", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "r]teutu\n[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "er", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\u\"1nr\\e}", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{t,\\,", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "\" ", "error": "Unterminated string starting at: line 1 column 1 (char 0)"}
+{"text": ",e11\\:rr\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "uu\n阿\"n-.\"\\1,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " 𠮷1阿re\\u𠮷.\",", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "].[e u{阿,n{u[:", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\t\"][er.n\"[n[", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "n,un", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "u1\n\n, ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "{rr", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "{1\\ur\n]", "error": "Expecting property name enclosed in double quotes: line 1 column 2 (char 1)"}
+{"text": "n] ", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\}u}𠮷:e\"n,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}en\n\n:阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "\\阿-. e阿r{]\nn}阿", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "}\\]}t\"r[eu", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "𠮷\\ .[re1t.\n\n", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ".}\"e.,-\"", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "e", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": ":e:\n\\", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": " \\}:rre[\"", "error": "Expecting value: line 1 column 2 (char 1)"}
+{"text": "n,,--\\\\{.1,", "error": "Expecting value: line 1 column 1 (char 0)"}
+{"text": "rn,,阿阿\\t\n]e", "error": "Expecting value: line 1 column 1 (char 0)"}

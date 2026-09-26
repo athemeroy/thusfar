@@ -9,10 +9,15 @@ import 'dart:math' as math;
 
 import '../env.dart';
 import '../errors.dart';
+import '../py/py_json_decode.dart';
+import '../py/py_re.dart';
 
-/// `pipeline.llm.LLMError`.
-base class LLMError extends PyCustomException {
-  const LLMError(String message) : super(message, 'pipeline.llm.LLMError');
+/// `pipeline.llm.LLMError` (a `RuntimeError`).
+base class LLMError extends RuntimeError {
+  const LLMError(super.message);
+
+  @override
+  String get pyType => 'pipeline.llm.LLMError';
 }
 
 /// A request budget ran out (`DeadlineExceeded`).
@@ -295,16 +300,27 @@ abstract interface class ChatTransport {
 
 /// Status, content type and a byte stream of the body.
 final class ChatResponse {
-  const ChatResponse(this.status, this.contentType, this.body);
+  const ChatResponse(
+    this.status,
+    this.contentType,
+    this.body, {
+    this.headers = const <String, String>{},
+  });
 
   final int status;
   final String contentType;
   final Stream<List<int>> body;
+
+  /// Response headers that matter to retries, e.g. `Retry-After`.
+  final Map<String, String> headers;
 }
 
 /// `dart:io` transport honouring system proxies like urllib does.
 final class IoTransport implements ChatTransport {
-  IoTransport([HttpClient? client]) : _client = client ?? HttpClient();
+  IoTransport([HttpClient? client])
+    : _client =
+          client ??
+          (HttpClient()..findProxy = HttpClient.findProxyFromEnvironment);
 
   final HttpClient _client;
 
@@ -316,10 +332,12 @@ final class IoTransport implements ChatTransport {
     request.headers.forEach(req.headers.set);
     req.add(utf8.encode(request.body));
     final HttpClientResponse resp = await req.close().timeout(timeout);
+    final String? retry = resp.headers.value('retry-after');
     return ChatResponse(
       resp.statusCode,
       resp.headers.contentType?.toString() ?? '',
       resp.timeout(timeout),
+      headers: <String, String>{if (retry != null) 'Retry-After': retry},
     );
   }
 }
@@ -488,4 +506,68 @@ final class _Fatal implements Exception {
   const _Fatal(this.error);
 
   final LLMError error;
+}
+
+final RegExp _trailingComma = pyRe(r',\s*([}\]])');
+
+/// Escape stray double quotes inside strings and drop trailing commas.
+String repairJson(String s) {
+  final StringBuffer out = StringBuffer();
+  bool inStr = false;
+  bool esc = false;
+  final int n = s.length;
+  bool ws(String c) => c == ' ' || c == '\t' || c == '\r' || c == '\n';
+  for (int i = 0; i < n; i++) {
+    final String ch = s[i];
+    if (inStr) {
+      if (esc) {
+        esc = false;
+      } else if (ch == r'\') {
+        esc = true;
+      } else if (ch == '"') {
+        int j = i + 1;
+        while (j < n && ws(s[j])) {
+          j++;
+        }
+        bool closes = j >= n || '}]'.contains(s[j]);
+        if (j < n && ',:'.contains(s[j])) {
+          int k = j + 1;
+          while (k < n && ws(s[k])) {
+            k++;
+          }
+          closes = k >= n || '"{[-0123456789tfn]}'.contains(s[k]);
+        }
+        if (!closes) {
+          out.write(r'\"');
+          continue;
+        }
+        inStr = false;
+      } else if (ch == '\n') {
+        out.write(r'\n');
+        continue;
+      }
+    } else if (ch == '"') {
+      inStr = true;
+    }
+    out.write(ch);
+  }
+  return pySub(_trailingComma, out.toString(), r'\1');
+}
+
+final RegExp _fence = pyRe(r'```(?:json)?\s*(.*?)```', dotAll: true);
+
+/// The first JSON object in a model reply (tolerates ```json fences).
+Object? parseJson(String reply) {
+  String text = reply;
+  final RegExpMatch? m = pySearch(_fence, text);
+  if (m != null) text = m.group(1)!;
+  final int start = text.indexOf('{');
+  final int end = text.lastIndexOf('}');
+  if (start < 0 || end < 0) throw const ValueError('回复里没有 JSON');
+  final String body = end + 1 > start ? text.substring(start, end + 1) : '';
+  try {
+    return pyJsonLoads(body);
+  } on PyJsonDecodeError {
+    return pyJsonLoads(repairJson(body));
+  }
 }

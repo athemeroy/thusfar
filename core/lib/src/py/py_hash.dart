@@ -10,3 +10,5 @@ final class LegacyHashes {
 }
 
 String sha256Hex(List<int> bytes) => crypto.sha256.convert(bytes).toString();
+
+String sha1Hex(List<int> bytes) => crypto.sha1.convert(bytes).toString();

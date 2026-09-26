@@ -20,29 +20,29 @@ functions:
     reason: "Stage A4 has not started"
   - id: pipeline.extract.segments
     stage: A4
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A4 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.extract.segments"
+    reason: "Ported"
   - id: pipeline.extract.seg_text
     stage: A4
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A4 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.extract.seg_text"
+    reason: "Ported"
   - id: pipeline.extract.registry_prompt
     stage: A4
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A4 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.extract.registry_prompt"
+    reason: "Ported"
   - id: pipeline.extract.relations_prompt
     stage: A4
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A4 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.extract.relations_prompt"
+    reason: "Ported"
   - id: pipeline.extract.build_messages
     stage: A4
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A4 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.extract.build_messages"
+    reason: "Ported"
   - id: pipeline.extract.extract_segment
     stage: A4
     status: pending_port
@@ -435,9 +435,9 @@ functions:
     reason: "Stage A3 has not started"
   - id: pipeline.llm.explain
     stage: A3
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A3 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.llm.explain"
+    reason: "Ported"
   - id: pipeline.llm.request_budget
     stage: A3
     status: pending_port
@@ -520,14 +520,14 @@ functions:
     reason: "Stage A3 has not started"
   - id: pipeline.llm.repair_json
     stage: A3
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A3 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.llm.repair_json"
+    reason: "Ported"
   - id: pipeline.llm.parse_json
     stage: A3
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A3 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.llm.parse_json"
+    reason: "Ported"
   - id: pipeline.llm.chat_json
     stage: A3
     status: pending_port
@@ -540,9 +540,9 @@ functions:
     reason: "Stage A3 has not started"
   - id: pipeline.llm._state_text
     stage: A3
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A3 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.llm._state_text"
+    reason: "Ported"
   - id: pipeline.llm._retry_hint
     stage: A3
     status: pending_port
@@ -565,9 +565,9 @@ functions:
     reason: "Stage A3 has not started"
   - id: pipeline.llm._validate_answers
     stage: A3
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A3 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.llm._validate_answers"
+    reason: "Ported"
   - id: pipeline.llm._Breaker.__init__
     stage: A3
     status: pending_port
@@ -595,9 +595,9 @@ functions:
     reason: "Stage A3 has not started"
   - id: pipeline.llm._classifier_batches
     stage: A3
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A3 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.llm._classifier_batches"
+    reason: "Ported"
   - id: pipeline.llm._classifier_batches.candidate_size
     stage: A3
     status: pending_port
@@ -635,9 +635,9 @@ functions:
     reason: "Stage A4 has not started"
   - id: pipeline.local.lang_note
     stage: A4
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A4 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.local.lang_note"
+    reason: "Ported"
   - id: pipeline.local.extract_local
     stage: A4
     status: pending_port
@@ -645,9 +645,9 @@ functions:
     reason: "Stage A4 has not started"
   - id: pipeline.local._s
     stage: A4
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A4 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.local._s"
+    reason: "Ported"
   - id: pipeline.local.sanitize
     stage: A4
     status: pending_port
