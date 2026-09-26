@@ -108,6 +108,7 @@ class _TocPageState extends State<TocPage> {
           onSubmitted: (String v) {
             final int? n = int.tryParse(v);
             if (n == null) return;
+            HapticFeedback.lightImpact();
             widget.link.jump(_offsetOfPage(n.clamp(1, total)));
           },
           decoration: InputDecoration(
@@ -154,9 +155,14 @@ class _TocPageState extends State<TocPage> {
           return Column(
             children: <Widget>[
               InkWell(
-                onTap: () => isRead
-                    ? link.jump(c.o0)
-                    : setState(() => confirm = confirm == i ? null : i),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  if (isRead) {
+                    link.jump(c.o0);
+                  } else {
+                    setState(() => confirm = confirm == i ? null : i);
+                  }
+                },
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 52),
                   padding: EdgeInsets.fromLTRB(20.0 + 14 * c.depth, 8, 20, 8),
@@ -213,9 +219,19 @@ class _TocPageState extends State<TocPage> {
                   child: Row(
                     children: <Widget>[
                       Expanded(
-                        child: Text(
-                          '会看到后面的内容',
-                          style: TextStyle(fontSize: 13, color: t.amber),
+                        child: Row(
+                          children: <Widget>[
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: 14,
+                              color: t.amber,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '会看到后面的内容',
+                              style: TextStyle(fontSize: 13, color: t.amber),
+                            ),
+                          ],
                         ),
                       ),
                       Pill(
@@ -429,7 +445,12 @@ class NoteTile extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
+          onTap: onTap == null
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onTap!();
+                },
           child: Container(
             decoration: BoxDecoration(
               border: Border.all(color: t.rule.withValues(alpha: .72)),
@@ -547,7 +568,10 @@ class NoteTile extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 36, right: 8),
                     child: IconButton(
                       tooltip: '编辑笔记',
-                      onPressed: onEdit,
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        onEdit!();
+                      },
                       icon: Icon(Icons.edit_outlined, size: 19, color: t.qing),
                     ),
                   ),

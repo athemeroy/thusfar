@@ -132,7 +132,10 @@ class SettingsScreen extends StatelessWidget {
                         Icon(Icons.chevron_right, color: t.ink3),
                       ],
                     ),
-                    onTap: onModel,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      onModel();
+                    },
                   ),
                 ]),
                 group('阅读', <Widget>[
@@ -145,9 +148,12 @@ class SettingsScreen extends StatelessWidget {
                         for (int s = 16; s <= 26; s++)
                           DropdownMenuItem<int>(value: s, child: Text('$s')),
                       ],
-                      onChanged: (int? v) => prefs.update(
-                        (Prefs p) => p.fontSize = (v ?? 19).toDouble(),
-                      ),
+                      onChanged: (int? v) {
+                        HapticFeedback.selectionClick();
+                        prefs.update(
+                          (Prefs p) => p.fontSize = (v ?? 19).toDouble(),
+                        );
+                      },
                     ),
                   ),
                   ListTile(
@@ -160,17 +166,22 @@ class SettingsScreen extends StatelessWidget {
                         DropdownMenuItem<int>(value: 1, child: Text('覆盖')),
                         DropdownMenuItem<int>(value: 2, child: Text('无')),
                       ],
-                      onChanged: (int? v) => prefs.update(
-                        (Prefs p) => p.anim = PageAnim.values[v ?? 0],
-                      ),
+                      onChanged: (int? v) {
+                        HapticFeedback.selectionClick();
+                        prefs.update(
+                          (Prefs p) => p.anim = PageAnim.values[v ?? 0],
+                        );
+                      },
                     ),
                   ),
                   SwitchListTile(
                     title: const Text('音量键翻页'),
                     value: prefs.volumeKeys,
                     activeThumbColor: t.ink,
-                    onChanged: (bool v) =>
-                        prefs.update((Prefs p) => p.volumeKeys = v),
+                    onChanged: (bool v) {
+                      HapticFeedback.selectionClick();
+                      prefs.update((Prefs p) => p.volumeKeys = v);
+                    },
                   ),
                   ListTile(
                     title: const Text('夜间模式'),
@@ -182,9 +193,12 @@ class SettingsScreen extends StatelessWidget {
                         DropdownMenuItem<int>(value: 1, child: Text('总是')),
                         DropdownMenuItem<int>(value: 2, child: Text('从不')),
                       ],
-                      onChanged: (int? v) => prefs.update(
-                        (Prefs p) => p.night = NightMode.values[v ?? 0],
-                      ),
+                      onChanged: (int? v) {
+                        HapticFeedback.selectionClick();
+                        prefs.update(
+                          (Prefs p) => p.night = NightMode.values[v ?? 0],
+                        );
+                      },
                     ),
                   ),
                 ]),
@@ -192,12 +206,18 @@ class SettingsScreen extends StatelessWidget {
                   ListTile(
                     title: const Text('导出全部备份'),
                     trailing: Icon(Icons.chevron_right, color: t.ink3),
-                    onTap: onExportAll,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      onExportAll();
+                    },
                   ),
                   ListTile(
                     title: const Text('恢复备份'),
                     trailing: Icon(Icons.chevron_right, color: t.ink3),
-                    onTap: onRestore,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      onRestore();
+                    },
                   ),
                   ListTile(
                     title: const Text('占用空间'),
@@ -212,9 +232,21 @@ class SettingsScreen extends StatelessWidget {
                     title: Text('版本'),
                     trailing: _InstalledVersion(),
                   ),
-                  const ListTile(
-                    title: Text('开源地址'),
-                    subtitle: Text('github.com/athemeroy/thusfar'),
+                  ListTile(
+                    title: const Text('开源地址'),
+                    subtitle: const Text('github.com/athemeroy/thusfar'),
+                    trailing: Icon(Icons.copy_outlined, size: 16, color: t.ink3),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Clipboard.setData(
+                        const ClipboardData(
+                          text: 'https://github.com/athemeroy/thusfar',
+                        ),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已复制开源地址')),
+                      );
+                    },
                   ),
                   ListTile(
                     title: const Text('隐私'),

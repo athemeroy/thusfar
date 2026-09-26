@@ -165,7 +165,12 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
   }
 
   Widget _button(String text, VoidCallback on, {String? key}) => FilledButton(
-    onPressed: _busy || _stale ? null : on,
+    onPressed: _busy || _stale
+        ? null
+        : () {
+            HapticFeedback.lightImpact();
+            on();
+          },
     key: key == null ? null : ValueKey<String>(key),
     child: Text(text),
   );
@@ -231,11 +236,14 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                         selected: _persona == entry.key,
                         onSelected: _busy
                             ? null
-                            : (_) => setState(() {
-                                _persona = entry.key;
-                                _result = null;
-                                _error = null;
-                              }),
+                            : (_) {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _persona = entry.key;
+                                  _result = null;
+                                  _error = null;
+                                });
+                              },
                       ),
                   ],
                 ),
@@ -343,7 +351,12 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                       key: 'marginalia-generate',
                     ),
                     OutlinedButton(
-                      onPressed: _busy ? null : () => _request('auto'),
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              HapticFeedback.lightImpact();
+                              _request('auto');
+                            },
                       child: const Text('看看不同角度'),
                     ),
                   ],
@@ -366,15 +379,29 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: t.rule),
+        color: t.paper,
+        border: Border.all(color: t.rule.withValues(alpha: 0.8)),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${personas[item['persona']]?.first ?? '读者'} · 已核对原文',
-            style: TextStyle(color: t.ink3, fontSize: 12),
+          Row(
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: t.zhu,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${personas[item['persona']]?.first ?? '读者'} · 已核对原文',
+                style: TextStyle(color: t.ink3, fontSize: 12),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           SelectableText(
@@ -385,15 +412,19 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(
-                onPressed: () => widget.link.jump(
-                  item['start']! as int,
-                  highlight: (item['start']! as int, item['end']! as int),
-                ),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  widget.link.jump(
+                    item['start']! as int,
+                    highlight: (item['start']! as int, item['end']! as int),
+                  );
+                },
                 child: const Text('回到原句'),
               ),
               IconButton(
                 tooltip: '复制批注',
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   Clipboard.setData(ClipboardData(text: '${item['comment']}'));
                   ScaffoldMessenger.of(
                     context,

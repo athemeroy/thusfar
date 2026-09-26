@@ -333,16 +333,22 @@ class _ShelfScreenState extends State<ShelfScreen> {
                 : IconButton(
                     tooltip: '清空搜索',
                     icon: const Icon(Icons.close),
-                    onPressed: () => setState(() => query = ''),
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => query = '');
+                    },
                   ),
           ),
         ),
         actions: <Widget>[
           TextButton(
-            onPressed: () => setState(() {
-              searching = false;
-              query = '';
-            }),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              setState(() {
+                searching = false;
+                query = '';
+              });
+            },
             child: Text('取消', style: TextStyle(color: t.ink2)),
           ),
         ],
@@ -358,7 +364,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
         IconButton(
           icon: const Icon(Icons.search),
           tooltip: '搜索',
-          onPressed: () => setState(() => searching = true),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            setState(() => searching = true);
+          },
         ),
         const SizedBox(width: 8),
       ],

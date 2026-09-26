@@ -459,6 +459,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   Future<void> _excerpt() async {
+    HapticFeedback.lightImpact();
     final (int s, int e) = c.selection!;
     late Json item;
     if (!_changeNote(() {
@@ -475,6 +476,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         action: SnackBarAction(
           label: '撤销',
           onPressed: () {
+            HapticFeedback.lightImpact();
             BookData? reopened;
             try {
               final NoteStore store = mounted
@@ -1226,6 +1228,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     _openAsk(quote: quote);
                   }),
                   action('复制', () {
+                    HapticFeedback.lightImpact();
                     Clipboard.setData(ClipboardData(text: book.textBetween(s, e)));
                     _clearSelection();
                     ScaffoldMessenger.of(
@@ -1542,10 +1545,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
             children: <Widget>[
               TextButton(
                 onPressed: c.chapter > 0
-                    ? () => _jump(
-                        book.chapters[c.chapter - 1].o0,
-                        remember: false,
-                      )
+                    ? () {
+                        HapticFeedback.lightImpact();
+                        _jump(
+                          book.chapters[c.chapter - 1].o0,
+                          remember: false,
+                        );
+                      }
                     : null,
                 child: const Text('上一章'),
               ),
@@ -1570,9 +1576,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       ),
                       activeColor: t.ink,
                       inactiveColor: t.rule,
-                      onChanged: (double v) =>
-                          setState(() => _drag = v.round()),
+                      onChanged: (double v) {
+                        final int next = v.round();
+                        if (next != _drag) {
+                          HapticFeedback.selectionClick();
+                        }
+                        setState(() => _drag = next);
+                      },
                       onChangeEnd: (double v) {
+                        HapticFeedback.lightImpact();
                         final int target = _offsetOfPage(v.round(), p);
                         setState(() => _drag = null);
                         _jump(target);
@@ -1583,10 +1595,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
               TextButton(
                 onPressed: c.chapter + 1 < book.chapters.length
-                    ? () => _jump(
-                        book.chapters[c.chapter + 1].o0,
-                        remember: false,
-                      )
+                    ? () {
+                        HapticFeedback.lightImpact();
+                        _jump(
+                          book.chapters[c.chapter + 1].o0,
+                          remember: false,
+                        );
+                      }
                     : null,
                 child: const Text('下一章'),
               ),
@@ -1620,7 +1635,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     Widget tool(IconData icon, String label, bool isAi, VoidCallback on) =>
         Expanded(
           child: InkWell(
-            onTap: on,
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              on();
+            },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Column(

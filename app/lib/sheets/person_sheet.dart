@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
 import '../data/seen.dart';
@@ -250,7 +251,10 @@ class _PersonPageState extends State<PersonPage> {
             child: SectionTitle(
               '经历',
               trailing: GestureDetector(
-                onTap: () => setState(() => newestFirst = !newestFirst),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => newestFirst = !newestFirst);
+                },
                 child: Text(
                   newestFirst ? '最新在上 ⇅' : '最早在上 ⇅',
                   style: TextStyle(color: t.ink3, fontSize: 13),

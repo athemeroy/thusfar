@@ -1,13 +1,13 @@
-import 'dart:io';
 import 'dart:convert';
-
-import 'package:thusfar_core/notebook.dart' as notebook;
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:thusfar_core/notebook.dart' as notebook;
 
 import '../data/library.dart';
-import '../sheets/toc_sheet.dart';
 import '../sheets/note_editor.dart';
+import '../sheets/toc_sheet.dart';
 import '../ui/cover.dart';
 import '../ui/theme.dart';
 
@@ -78,6 +78,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   Future<void> _edit(BookEntry entry, Json item) async {
+    HapticFeedback.lightImpact();
     BookData? book;
     try {
       book = BookData.open(entry);
@@ -98,6 +99,7 @@ class _NotesScreenState extends State<NotesScreen> {
   }
 
   bool _delete(BookEntry entry, Json item) {
+    HapticFeedback.mediumImpact();
     BookData? book;
     try {
       book = BookData.open(entry);
@@ -109,6 +111,7 @@ class _NotesScreenState extends State<NotesScreen> {
           action: SnackBarAction(
             label: '撤销',
             onPressed: () {
+              HapticFeedback.lightImpact();
               BookData? current;
               try {
                 current = BookData.open(entry);
@@ -151,9 +154,19 @@ class _NotesScreenState extends State<NotesScreen> {
                 ? TextField(
                     autofocus: true,
                     onChanged: (String v) => setState(() => query = v.trim()),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: '搜索摘记',
                       border: InputBorder.none,
+                      suffixIcon: query.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: '清空搜索',
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () {
+                                HapticFeedback.selectionClick();
+                                setState(() => query = '');
+                              },
+                            ),
                     ),
                   )
                 : Text(
@@ -163,10 +176,13 @@ class _NotesScreenState extends State<NotesScreen> {
             actions: <Widget>[
               IconButton(
                 icon: Icon(searching ? Icons.close : Icons.search),
-                onPressed: () => setState(() {
-                  searching = !searching;
-                  query = '';
-                }),
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  setState(() {
+                    searching = !searching;
+                    query = '';
+                  });
+                },
               ),
             ],
           ),

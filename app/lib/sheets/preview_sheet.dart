@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/library.dart';
 import '../ui/theme.dart';
@@ -72,7 +73,10 @@ class _PreviewPageState extends State<PreviewPage> {
                       const SizedBox(height: 16),
                       Pill(
                         label: '预览未读原文',
-                        onTap: () => setState(() => reveal = true),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => reveal = true);
+                        },
                       ),
                     ],
                   )
@@ -90,6 +94,7 @@ class _PreviewPageState extends State<PreviewPage> {
                           text: target,
                           style: TextStyle(
                             color: t.ink,
+                            backgroundColor: mark.withValues(alpha: 0.12),
                             decoration: TextDecoration.underline,
                             decorationColor: mark,
                             decorationThickness: 1.6,
@@ -117,13 +122,16 @@ class _PreviewPageState extends State<PreviewPage> {
             child: Pill(
               label: ahead && !reveal ? '跳到未读位置' : '跳到这里',
               filled: true,
-              onTap: () => widget.link.jump(
-                widget.start,
-                highlight: (
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.link.jump(
                   widget.start,
-                  math.max(widget.end, widget.start + 1),
-                ),
-              ),
+                  highlight: (
+                    widget.start,
+                    math.max(widget.end, widget.start + 1),
+                  ),
+                );
+              },
             ),
           ),
         ],

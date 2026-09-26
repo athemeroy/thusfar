@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
 import '../ui/theme.dart';
@@ -136,6 +137,17 @@ class _PeoplePageState extends State<PeoplePage> {
                       decoration: InputDecoration(
                         hintText: '搜名字、称呼、身份',
                         prefixIcon: const Icon(Icons.search, size: 20),
+                        suffixIcon: query.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: '清空搜索',
+                                icon: const Icon(Icons.close, size: 18),
+                                onPressed: () {
+                                  HapticFeedback.selectionClick();
+                                  search.clear();
+                                  setState(() => query = '');
+                                },
+                              ),
                         filled: true,
                         fillColor: t.paper,
                         contentPadding: EdgeInsets.zero,
