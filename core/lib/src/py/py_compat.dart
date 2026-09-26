@@ -377,3 +377,11 @@ final class PyZeroDivisionError implements Exception {
   @override
   String toString() => 'division by zero';
 }
+
+/// Python `round(x, n)`: an int stays an int, a float rounds half-even.
+num pyRound(Object? x, int digits) {
+  if (x is int) return x;
+  if (x is double) return PyCompat.roundDigits(x, digits);
+  if (x is bool) return x ? 1 : 0;
+  throw ArgumentError('round() of ${x.runtimeType}');
+}

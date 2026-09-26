@@ -19,6 +19,8 @@ import 'ui/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // A book is read upright; a phone lying flat must not flip the page layout.
+  await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
   const String override = String.fromEnvironment('THUSFAR_DATA');
   // Same private directory the 1.7.x app used: files/yedu.
   final Directory root = override.isNotEmpty
