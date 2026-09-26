@@ -19,6 +19,7 @@ The highest-priority acceptance condition is the interaction the user sees: an a
 - Wait for an observable state (dialog, label, completed request, stable progress), not an arbitrary long delay. For animation/running progress, capture a bounded interval rather than waiting indefinitely for total UI idleness.
 - Expand every enumerated option into a separate result row, for example `T-002/font=楷` and `M-001/protocol=gemini`. A single row marked PASS cannot mean unvisited options passed.
 - Every screen and sheet is subject to `X-001` through `X-010`; every input is subject to the input contract below. Run them on the smallest supported phone and normal font scale, plus large system text on at least one phone. Run the full graph set in light and dark modes.
+- Because the target phones are foldables, **all 155 Android rows in the base result template must also pass separately in the folded outer-display, open-book, and tabletop profiles**. Add `@folded`, `@open`, and `@tabletop` to each case ID. See [FOLDABLE-UI-REGRESSION.md](FOLDABLE-UI-REGRESSION.md) for viewport definitions, exact posture actions, and the separate NOT_RUN template. A flat phone or a widget-only hinge simulation does not close a physical foldable run.
 - A full regression requires all in-scope P0/P1 cases and option variants executed. `BLOCKED`, `UNKNOWN`, `NOT_RUN`, and `NOT_IMPLEMENTED` are never PASS. A missing feature visible in the UI is a failure, not a reason to mark the case N/A.
 
 ## Fixture catalog and exact checkpoints

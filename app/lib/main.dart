@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show DisplayFeature;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -22,10 +23,9 @@ import 'ui/theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // A book is read upright; a phone lying flat must not flip the page layout.
-  await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
-    DeviceOrientation.portraitUp,
-  ]);
+  // Let Android resize and rotate the window for folded, unfolded, and
+  // tabletop postures. Reader pagination follows the available pane size.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   const String override = String.fromEnvironment('THUSFAR_DATA');
   // Same private directory the 1.7.x app used: files/yedu.
   final Directory root = override.isNotEmpty
@@ -200,6 +200,116 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   void _changed() {
     if (mounted) setState(() {});
+  }
+
+  static const List<NavigationDestination> _destinations =
+      <NavigationDestination>[
+        NavigationDestination(
+          icon: Icon(Icons.auto_stories_outlined),
+          selectedIcon: Icon(Icons.auto_stories),
+          label: '书架',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.edit_note_outlined),
+          selectedIcon: Icon(Icons.edit_note),
+          label: '摘记',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.tune_outlined),
+          selectedIcon: Icon(Icons.tune),
+          label: '设置',
+        ),
+      ];
+
+  void _selectTab(int index) => setState(() => tab = index);
+
+  Widget _navigationRail(Tokens t) => NavigationRail(
+    backgroundColor: t.sheet,
+    selectedIndex: tab,
+    onDestinationSelected: _selectTab,
+    labelType: NavigationRailLabelType.all,
+    indicatorColor: t.qingSoft,
+    selectedIconTheme: IconThemeData(color: t.qing, size: 24),
+    unselectedIconTheme: IconThemeData(color: t.ink3, size: 22),
+    selectedLabelTextStyle: TextStyle(
+      color: t.qing,
+      fontSize: 12,
+      fontWeight: FontWeight.w700,
+    ),
+    unselectedLabelTextStyle: TextStyle(color: t.ink3, fontSize: 11),
+    destinations: const <NavigationRailDestination>[
+      NavigationRailDestination(
+        icon: Icon(Icons.auto_stories_outlined),
+        selectedIcon: Icon(Icons.auto_stories),
+        label: Text('书架'),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.edit_note_outlined),
+        selectedIcon: Icon(Icons.edit_note),
+        label: Text('摘记'),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.tune_outlined),
+        selectedIcon: Icon(Icons.tune),
+        label: Text('设置'),
+      ),
+    ],
+  );
+
+  Widget _foldableNavigation(Tokens t) {
+    const List<(IconData, String)> destinations = <(IconData, String)>[
+      (Icons.auto_stories_outlined, '书架'),
+      (Icons.edit_note_outlined, '摘记'),
+      (Icons.tune_outlined, '设置'),
+    ];
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 280),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (int index = 0; index < destinations.length; index++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Material(
+                  color: index == tab ? t.qingSoft : Colors.transparent,
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
+                    key: ValueKey<String>('foldable-nav-$index'),
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () => _selectTab(index),
+                    child: SizedBox(
+                      height: 60,
+                      child: Row(
+                        children: <Widget>[
+                          const SizedBox(width: 20),
+                          Icon(
+                            destinations[index].$1,
+                            color: index == tab ? t.qing : t.ink2,
+                            size: 23,
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            destinations[index].$2,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: index == tab
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: index == tab ? t.qing : t.ink2,
+                            ),
+                          ),
+                          const Spacer(),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _takeSharedImports() async {
@@ -475,31 +585,154 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         onRestore: () => pickAndImport(backupsOnly: true),
       ),
     ];
-    return Scaffold(
-      body: IndexedStack(index: tab, children: pages),
-      bottomNavigationBar: NavigationBar(
-        height: 64,
-        backgroundColor: t.sheet,
-        indicatorColor: t.zhuSoft.withValues(alpha: 0.6),
-        selectedIndex: tab,
-        onDestinationSelected: (int i) => setState(() => tab = i),
-        destinations: const <NavigationDestination>[
-          NavigationDestination(
-            icon: Icon(Icons.auto_stories_outlined),
-            selectedIcon: Icon(Icons.auto_stories),
-            label: '书架',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.edit_note_outlined),
-            selectedIcon: Icon(Icons.edit_note),
-            label: '摘记',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.tune_outlined),
-            selectedIcon: Icon(Icons.tune),
-            label: '设置',
-          ),
-        ],
+    final bool dark = Theme.of(context).brightness == Brightness.dark;
+    final MediaQueryData media = MediaQuery.of(context);
+    final bool verticalSplit = media.displayFeatures.any(
+      (DisplayFeature feature) =>
+          feature.bounds.height >= media.size.height * .85 &&
+          feature.bounds.width < media.size.width * .4,
+    );
+    final bool horizontalSplit = media.displayFeatures.any(
+      (DisplayFeature feature) =>
+          feature.bounds.width >= media.size.width * .85 &&
+          feature.bounds.height < media.size.height * .4,
+    );
+    final Widget pageStack = IndexedStack(index: tab, children: pages);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: t.paper,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: t.sheet,
+        systemNavigationBarIconBrightness: dark
+            ? Brightness.light
+            : Brightness.dark,
+        systemNavigationBarDividerColor: t.rule,
+        systemStatusBarContrastEnforced: false,
+        systemNavigationBarContrastEnforced: false,
+      ),
+      child: Scaffold(
+        body: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final Size window = Size(
+              constraints.maxWidth,
+              constraints.maxHeight,
+            );
+            final DisplayFeature? verticalHinge = media.displayFeatures
+                .where(
+                  (DisplayFeature feature) =>
+                      feature.bounds.height >= window.height * .85 &&
+                      feature.bounds.width < window.width * .4,
+                )
+                .firstOrNull;
+            final DisplayFeature? horizontalHinge = media.displayFeatures
+                .where(
+                  (DisplayFeature feature) =>
+                      feature.bounds.width >= window.width * .85 &&
+                      feature.bounds.height < window.height * .4,
+                )
+                .firstOrNull;
+            if (verticalHinge != null && window.width >= 600) {
+              final double leftWidth = verticalHinge.bounds.left
+                  .clamp(0, window.width)
+                  .toDouble();
+              final double hingeRight = verticalHinge.bounds.right
+                  .clamp(leftWidth, window.width)
+                  .toDouble();
+              final double rightWidth = window.width - hingeRight;
+              return Row(
+                children: <Widget>[
+                  SizedBox(
+                    width: leftWidth,
+                    height: window.height,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: t.sheet,
+                        border: Border(
+                          right: BorderSide(color: t.rule, width: .5),
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: Column(
+                          children: <Widget>[
+                            const SizedBox(height: 20),
+                            Text(
+                              '页读',
+                              style: TextStyle(
+                                fontFamily: display,
+                                fontSize: 26,
+                                color: t.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '只读到你这一页',
+                              style: TextStyle(fontSize: 12, color: t.ink3),
+                            ),
+                            Expanded(child: _foldableNavigation(t)),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: verticalHinge.bounds.width),
+                  SizedBox(
+                    width: rightWidth,
+                    height: window.height,
+                    child: MediaQuery(
+                      data: media.copyWith(
+                        size: Size(rightWidth, window.height),
+                        displayFeatures: const <DisplayFeature>[],
+                      ),
+                      child: pageStack,
+                    ),
+                  ),
+                ],
+              );
+            }
+            if (horizontalHinge != null) {
+              // Keep the active page on the upper display. The navigation bar
+              // remains at the bottom, in the lower display, for tabletop use.
+              final double upperHeight = horizontalHinge.bounds.top
+                  .clamp(0, window.height)
+                  .toDouble();
+              return Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(
+                  width: window.width,
+                  height: upperHeight,
+                  child: MediaQuery(
+                    data: media.copyWith(
+                      size: Size(window.width, upperHeight),
+                      displayFeatures: const <DisplayFeature>[],
+                    ),
+                    child: pageStack,
+                  ),
+                ),
+              );
+            }
+            if (window.width >= 720) {
+              return Row(
+                children: <Widget>[
+                  SafeArea(child: _navigationRail(t)),
+                  VerticalDivider(width: 1, color: t.rule),
+                  Expanded(child: pageStack),
+                ],
+              );
+            }
+            return pageStack;
+          },
+        ),
+        bottomNavigationBar:
+            verticalSplit || (media.size.width >= 720 && !horizontalSplit)
+            ? null
+            : NavigationBar(
+                height: 72,
+                backgroundColor: t.sheet,
+                selectedIndex: tab,
+                onDestinationSelected: _selectTab,
+                destinations: _destinations,
+              ),
       ),
     );
   }

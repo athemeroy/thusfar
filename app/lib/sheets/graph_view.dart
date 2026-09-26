@@ -364,7 +364,6 @@ class _RelationGraphState extends State<RelationGraph> {
         .relsOf(focus)
         .map((Json relation) => relation['other']! as String)
         .toSet()
-        .take(4)
         .toList();
     final Map<String, Offset> out = <String, Offset>{
       focus: const Offset(.5, .5),
@@ -372,8 +371,8 @@ class _RelationGraphState extends State<RelationGraph> {
     for (int i = 0; i < ids.length; i++) {
       final double angle = -math.pi / 2 + i * 2 * math.pi / ids.length;
       out[ids[i]] = Offset(
-        .5 + .42 * math.cos(angle),
-        .5 + .42 * math.sin(angle),
+        .5 + .35 * math.cos(angle),
+        .5 + .35 * math.sin(angle),
       );
     }
     return out;
@@ -852,6 +851,113 @@ class GraphPage extends StatefulWidget {
   State<GraphPage> createState() => _GraphPageState();
 }
 
+class _SparseRelationshipCard extends StatelessWidget {
+  const _SparseRelationshipCard({
+    required this.world,
+    required this.relation,
+    required this.index,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final World world;
+  final Json relation;
+  final int index;
+  final String? selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final Tokens t = context.tk;
+    final List<({String id, String name, String role})> roles = _relationRoles(
+      world,
+      relation,
+      selected: selected,
+    );
+    final String label = relationLabel(world, relation, selected: selected);
+    final String description = '${relation['desc'] ?? ''}'.trim();
+    final bool ended = relation['status'] == 'ended';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: Semantics(
+        button: true,
+        label: '$label，查看关系详情',
+        child: Material(
+          color: t.paper,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            key: ValueKey<String>('relation-card-$index'),
+            borderRadius: BorderRadius.circular(14),
+            onTap: onTap,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                border: Border.all(color: ended ? t.amber : t.rule),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  for (int i = 0; i < roles.length; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(height: 10),
+                    Text(
+                      roles[i].name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: t.ink,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      roles[i].role,
+                      style: TextStyle(color: t.ink2, height: 1.35),
+                    ),
+                  ],
+                  if (description.isNotEmpty) ...<Widget>[
+                    const SizedBox(height: 12),
+                    Text(
+                      description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: t.ink2,
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                  if (ended) ...<Widget>[
+                    const SizedBox(height: 12),
+                    Text(
+                      '已结束',
+                      style: TextStyle(
+                        color: t.amber,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: <Widget>[
+                      Text('查看关系详情', style: TextStyle(color: t.qing)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right, size: 18, color: t.qing),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GraphPageState extends State<GraphPage> {
   String? selected;
   double? replay;
@@ -933,6 +1039,35 @@ class _GraphPageState extends State<GraphPage> {
       );
   }
 
+  /// The draggable reader sheet and its vertical CustomScrollView both sit
+  /// above the graph. Claim a vertical drag that starts on the canvas so it
+  /// pans the graph instead of scrolling or collapsing that outer drawer.
+  void _panVertically(DragUpdateDetails details) {
+    if (_viewport.isEmpty || _canvas.isEmpty) return;
+    final Matrix4 next = _view.value.clone();
+    final double scale = next.getMaxScaleOnAxis();
+    final double minY = math.min(0, _viewport.height - _canvas.height * scale);
+    final double currentY = next.storage[13];
+    final double nextY = (currentY + details.delta.dy)
+        .clamp(minY, 0)
+        .toDouble();
+    if (nextY == currentY) return;
+    next.storage[13] = nextY;
+    _view.value = next;
+  }
+
+  void _openRelation(
+    BuildContext context,
+    World world,
+    Json relation,
+    String asOf,
+  ) {
+    setState(_stop);
+    SheetScope.of(context).state.push(
+      RelationDetailPage(world: world, relation: relation, asOf: asOf),
+    );
+  }
+
   void _layoutReady(Rect label, Rect a, Rect b) {
     bool fits(Rect region) =>
         region.width <= _viewport.width - 8 &&
@@ -975,6 +1110,10 @@ class _GraphPageState extends State<GraphPage> {
     final int at = replay == null ? cutoff : (replay! * cutoff).round();
     final World world = link.c.book.world(at);
     final Person? person = selected == null ? null : world.person(selected!);
+    final String? graphFocus =
+        selected ??
+        widget.focus ??
+        (world.ranked().isEmpty ? null : world.ranked().first['id'] as String);
     final String asOf = '截至第 ${link.pageNo(at > 0 ? at - 1 : 0)} 页';
     final double height = (MediaQuery.sizeOf(context).height * .5).clamp(
       260,
@@ -986,7 +1125,34 @@ class _GraphPageState extends State<GraphPage> {
       slivers: <Widget>[
         if (world.people.isEmpty)
           emptyState(context, '读到这里还没有人物关系')
-        else ...<Widget>[
+        else if (world.people.length <= 2) ...<Widget>[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Text(
+                world.rels.isEmpty
+                    ? '目前只有 ${world.people.length} 位人物，还没有整理出他们之间的关系。'
+                    : '人物较少，关系按列表显示。',
+                style: TextStyle(color: t.ink3, fontSize: 12, height: 1.4),
+              ),
+            ),
+          ),
+          if (world.rels.isEmpty)
+            emptyState(context, '截至此页尚未记录人物关系')
+          else
+            SliverList.builder(
+              itemCount: world.rels.length,
+              itemBuilder: (BuildContext context, int index) =>
+                  _SparseRelationshipCard(
+                    world: world,
+                    relation: world.rels[index],
+                    index: index,
+                    selected: selected ?? graphFocus,
+                    onTap: () =>
+                        _openRelation(context, world, world.rels[index], asOf),
+                  ),
+            ),
+        ] else ...<Widget>[
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -994,9 +1160,20 @@ class _GraphPageState extends State<GraphPage> {
                 alignment: WrapAlignment.end,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: <Widget>[
-                  Text(
-                    '点关系文字看详情',
-                    style: TextStyle(color: t.ink2, fontSize: 12),
+                  Tooltip(
+                    message: '图中展示重点人物的直接关系；点击其他人物可切换重点。人物卡可查看完整关系列表。',
+                    child: Text(
+                      graphFocus == null
+                          ? '点关系文字看详情'
+                          : '人物关系 · ${world.person(graphFocus)?.name ?? '人物'}',
+                      style: TextStyle(
+                        color: graphFocus == null ? t.ink2 : t.qing,
+                        fontSize: 12,
+                        fontWeight: graphFocus == null
+                            ? FontWeight.normal
+                            : FontWeight.w600,
+                      ),
+                    ),
                   ),
                   IconButton(
                     tooltip: '缩小关系图',
@@ -1044,16 +1221,40 @@ class _GraphPageState extends State<GraphPage> {
                   }
                 }
                 final Size viewport = Size(box.maxWidth, panelHeight);
-                final int visible = math.min(40, world.people.length);
+                final List<Json> focusedRelations = graphFocus == null
+                    ? world.rels
+                    : world.rels
+                          .where(
+                            (Json relation) =>
+                                relation['a'] == graphFocus ||
+                                relation['b'] == graphFocus,
+                          )
+                          .toList();
+                final int visible = graphFocus == null
+                    ? math.min(40, world.people.length)
+                    : 1 +
+                          focusedRelations
+                              .map(
+                                (Json relation) => relation['a'] == graphFocus
+                                    ? relation['b'] as String
+                                    : relation['a'] as String,
+                              )
+                              .toSet()
+                              .length;
                 final double expansion = visible <= 6
                     ? 0
-                    : math.sqrt(math.max(visible, world.rels.length)) *
+                    : math.sqrt(math.max(visible, focusedRelations.length)) *
                           190 *
                           (MediaQuery.textScalerOf(context).scale(12) / 12)
                               .clamp(1, 1.8);
+                // Keep the relationship labels and nodes inside a pannable
+                // canvas even when the focused graph is small. The old
+                // viewport-sized child plus a very large boundary margin let
+                // one drag move every edge off-screen.
+                const double panGutter = 160;
                 final Size canvas = Size(
-                  math.max(box.maxWidth, expansion),
-                  math.max(panelHeight, expansion),
+                  math.max(box.maxWidth + panGutter, expansion),
+                  math.max(panelHeight + panGutter, expansion),
                 );
                 if (_canvas != canvas || _viewport != viewport) {
                   _canvas = canvas;
@@ -1074,30 +1275,24 @@ class _GraphPageState extends State<GraphPage> {
                     constrained: false,
                     minScale: .3,
                     maxScale: 4,
-                    boundaryMargin: EdgeInsets.all(
-                      math.max(_viewport.width, _viewport.height) *
-                          (1 / .3 - 1) /
-                          2,
-                    ),
-                    child: SizedBox(
-                      width: canvas.width,
-                      height: canvas.height,
-                      child: RelationGraph(
-                        world: world,
-                        focus: widget.focus,
-                        selected: selected,
-                        onLayoutReady: _layoutReady,
-                        onTap: (String id) => setState(() => selected = id),
-                        onRelationTap: (Json relation) {
-                          setState(_stop);
-                          SheetScope.of(context).state.push(
-                            RelationDetailPage(
-                              world: world,
-                              relation: relation,
-                              asOf: asOf,
-                            ),
-                          );
-                        },
+                    boundaryMargin: EdgeInsets.zero,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragUpdate: _panVertically,
+                      child: SizedBox(
+                        width: canvas.width,
+                        height: canvas.height,
+                        child: RelationGraph(
+                          world: world,
+                          focus: graphFocus,
+                          compact: graphFocus != null,
+                          selected: selected,
+                          onLayoutReady: _layoutReady,
+                          onTap: (String id) => setState(() => selected = id),
+                          onRelationTap: (Json relation) {
+                            _openRelation(context, world, relation, asOf);
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -1109,11 +1304,9 @@ class _GraphPageState extends State<GraphPage> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
               child: Text(
-                world.people.length > 40
-                    ? '显示其中 40 位人物。拖动或放大查看，人物卡中可看各自的直接关系。'
-                    : world.rels.isEmpty
+                world.rels.isEmpty
                     ? '截至此页尚未记录关系，点人物可看资料。'
-                    : '拖动或放大查看；虚线和“已结束”表示关系已经结束。',
+                    : '点其他人物切换关系焦点；人物卡中可看完整关系列表。虚线和“已结束”表示关系已经结束。',
                 style: TextStyle(color: t.ink3, fontSize: 12, height: 1.5),
               ),
             ),

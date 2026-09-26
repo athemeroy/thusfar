@@ -53,6 +53,50 @@ scoped device variants. Whole-paragraph/offscreen reader accessibility spans
 remain a separate known acceptance gap. See
 [the active run record](docs/port/runs/20260926-services/RUN.md).
 
+UI refinement then fixed a Back-stack defect against the Claude design spec:
+closing a reader sheet now restores the prior toolbar state, and Back hides the
+toolbar before leaving the reader. The regression is covered by a widget test;
+the full Flutter suite now passes 90 tests with clean analysis. A dev8 probe
+update was exercised on the Xiaomi: the existing Aq book reopened at page 23,
+real relationship cards remained visible after horizontal pans in both
+directions, and a card opened its two-way relation detail. Reset and the scoped
+Back path returned to the shelf with progress and all 37 people intact. Scoped
+evidence is in the
+[`dev7`](../../reports/20260926-ui-redesign/dev7/DEVICE-UI-E2E-DEV7.md) and
+[`dev8`](../../reports/20260926-ui-redesign/dev8/DEVICE-UI-E2E-DEV8.md) reports.
+
+Applying Claude's S10 graph rule (the canvas pans/zooms without scrolling the
+drawer), dev9+28 adds a vertical-canvas drag handler with translation bounds.
+The real-drawer regression failed before the fix because a canvas swipe left the
+transform unchanged; it now passes. Mini analysis is clean, graph-view tests
+pass 12/12, the new real-drawer pan test passes 1/1, and the foldable-layout
+widget tests pass 3/3 with four vertical/open and tabletop screenshots. The
+dev9 probe was installed over dev8 on the Xiaomi and verified as versionCode
+28. The existing Aq book, 37 people, 28% progress and page23 survived. A real
+vertical swipe moves relationship cards while the graph drawer stays expanded;
+relationship detail, node focus, person-card navigation and drawer collapse
+were also exercised. Full evidence is in
+[`DEVICE-UI-E2E-DEV9.md`](../../reports/20260926-ui-redesign/dev9/DEVICE-UI-E2E-DEV9.md).
+
+The graph screenshot suite initially had four missing PNG baselines in the Mini
+package. Eleven graph baselines are now generated and visually reviewed on the
+NAS; `graph_screens_test.dart` passes 5/5 there in both update and normal runs.
+They and the four foldable baselines are now exempted from the broad screenshot
+ignore rule. The Mini suite has not yet been rerun against NAS-generated graph
+images. The Mini-generated foldable goldens pass on Mini (3/3); the NAS rerun
+shows pixel mismatches on all four vertical-open/tabletop screenshots, while
+the wide-landscape case passes. The layouts appear equivalent on review, and
+cross-platform text rasterization is the likely cause (inference; same Noto
+Sans font hash on both hosts). Keep Mini as the canonical executor for those
+foldable goldens.
+
+The phone is a flat Redmi Note 8 Pro, so physical foldable acceptance remains
+open. Mini had 20.0 GiB free, below Workbench's strict 20 GiB staging reserve,
+and no new Mini test task was started. The 173-case matrix and 488 posture rows
+remain pending; the scoped dev9 interactions and supporting screenshot tests do
+not close them. Full evidence is in
+[`DEVICE-UI-E2E-DEV9.md`](../../reports/20260926-ui-redesign/dev9/DEVICE-UI-E2E-DEV9.md).
+
 ## Earlier integrated processing and validation
 
 Three parallel agents completed Runner, Worker and Flutter integration after the

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,6 +86,83 @@ void main() {
     root.deleteSync(recursive: true);
   });
 
+  testWidgets('vertical fold keeps reader text and tools on separate panes', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(900, 1000)
+      ..devicePixelRatio = 1
+      ..displayFeatures = <ui.DisplayFeature>[
+        const ui.DisplayFeature(
+          bounds: Rect.fromLTWH(440, 0, 20, 1000),
+          type: ui.DisplayFeatureType.hinge,
+          state: ui.DisplayFeatureState.postureHalfOpened,
+        ),
+      ];
+    addTearDown(() {
+      tester.view
+        ..resetDisplayFeatures()
+        ..resetPhysicalSize()
+        ..resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('foldable-nav-0')),
+      findsOneWidget,
+    );
+    expect(find.text('书架'), findsOneWidget);
+    expect(find.byType(NavigationRail), findsNothing);
+    expect(find.byType(NavigationBar), findsNothing);
+    await tester.tap(find.text('Regression book').first);
+    await tester.pumpAndSettle();
+
+    final Rect page = tester.getRect(find.byType(PageBody).first);
+    final Rect tools = tester.getRect(find.text('目录与书签'));
+    expect(page.left, greaterThanOrEqualTo(0));
+    expect(page.right, lessThanOrEqualTo(440));
+    expect(tools.left, greaterThanOrEqualTo(460));
+    expect(find.text('人物与关系'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('horizontal fold places reading above hinge and controls below', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(430, 900)
+      ..devicePixelRatio = 1
+      ..displayFeatures = <ui.DisplayFeature>[
+        const ui.DisplayFeature(
+          bounds: Rect.fromLTWH(0, 430, 430, 20),
+          type: ui.DisplayFeatureType.hinge,
+          state: ui.DisplayFeatureState.postureHalfOpened,
+        ),
+      ];
+    addTearDown(() {
+      tester.view
+        ..resetDisplayFeatures()
+        ..resetPhysicalSize()
+        ..resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Regression book').first);
+    await tester.pumpAndSettle();
+
+    final Rect page = tester.getRect(find.byType(PageBody).first);
+    final Rect controls = tester.getRect(find.text('工具栏'));
+    expect(page.bottom, lessThanOrEqualTo(430));
+    expect(controls.top, greaterThanOrEqualTo(450));
+    expect(find.text('上一页'), findsWidgets);
+    expect(find.text('下一页'), findsWidgets);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   test('footnote at next block start does not leak across page boundary', () {
     final BookData book = BookData.open(model.library.books.single);
     book.blocks[1].raw['fn'] = <Object?>[
@@ -119,7 +197,49 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tapAt(const Offset(215, 500));
       await tester.pumpAndSettle();
+      expect(find.byTooltip('更多操作'), findsOneWidget);
       await tester.tap(find.byTooltip('回书架'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderScreen), findsNothing);
+      expect(find.text('Regression book'), findsWidgets);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'closing a sheet restores the reader toolbar before the next Back leaves reading',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(430, 1000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Regression book').first);
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(215, 500));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('更多操作'), findsOneWidget);
+
+      await tester.tap(find.text('目录'));
+      await tester.pumpAndSettle();
+      expect(find.byType(TocPage), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(TocPage), findsNothing);
+      expect(find.byTooltip('更多操作'), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ReaderScreen), findsOneWidget);
+      final Finder hiddenToolbar = find
+          .ancestor(
+            of: find.byTooltip('更多操作'),
+            matching: find.byType(IgnorePointer),
+          )
+          .first;
+      expect(tester.widget<IgnorePointer>(hiddenToolbar).ignoring, isTrue);
+
+      await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byType(ReaderScreen), findsNothing);
       expect(find.text('Regression book'), findsWidgets);

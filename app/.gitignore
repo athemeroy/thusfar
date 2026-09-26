@@ -46,4 +46,10 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
-test/shots/
+# Keep visual-regression baselines; discard other generated screenshots.
+test/shots/**
+!test/shots/0[1-9]-*.png
+!test/shots/10-ask.png
+!test/shots/11-search-empty.png
+!test/shots/foldable-*.png
+!test/shots/graph-*.png

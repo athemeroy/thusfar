@@ -45,18 +45,42 @@ class SettingsScreen extends StatelessWidget {
     final (_, String model, String key) = settings.read();
     final String provider = settings.protocolLabel;
     Widget group(String title, List<Widget> rows) => Padding(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Text(title, style: TextStyle(fontSize: 13, color: t.ink3)),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  width: 5,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: t.zhu,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: display,
+                    fontSize: 15,
+                    color: t.qing,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
           Material(
-            color: t.raised,
-            borderRadius: BorderRadius.circular(14),
+            color: t.sheet,
             clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: BorderSide(color: t.rule.withValues(alpha: .75)),
+            ),
             child: Column(
               children: <Widget>[
                 for (int i = 0; i < rows.length; i++) ...<Widget>[

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show DisplayFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -77,7 +78,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     widget.prefs.addListener(_relayout);
     book.notes.addListener(_repaint);
     c.addListener(_repaint);
@@ -86,7 +86,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   void dispose() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     widget.prefs.removeListener(_relayout);
     book.notes.removeListener(_repaint);
     c.removeListener(_repaint);
@@ -189,18 +188,68 @@ class _ReaderScreenState extends State<ReaderScreen> {
     Widget page, {
     double initial = 0.45,
     bool full = false,
+    Offset? anchorPoint,
   }) async {
+    final bool restoreToolbar = c.toolbar;
     c.setToolbar(false);
     _sheetOpen = true;
-    await openSheet<void>(context, page, initial: initial, full: full);
-    _sheetOpen = false;
-    if (mounted) setState(() {});
+    try {
+      await openSheet<void>(
+        context,
+        page,
+        initial: initial,
+        full: full,
+        anchorPoint: anchorPoint,
+      );
+    } finally {
+      _sheetOpen = false;
+      if (mounted) {
+        if (restoreToolbar) c.setToolbar(true);
+        setState(() {});
+      }
+    }
   }
 
   void _openPerson(String id) => _sheet(PersonPage(link: link, id: id));
 
-  void _openAsk({String? prefill, String? quote}) =>
-      _sheet(AskPage(link: link, prefill: prefill, quote: quote), full: true);
+  void _openAsk({String? prefill, String? quote, Offset? anchorPoint}) =>
+      _sheet(
+        AskPage(link: link, prefill: prefill, quote: quote),
+        full: true,
+        anchorPoint: anchorPoint,
+      );
+
+  Offset? _foldableAnchor(BuildContext context, {bool lowerPane = false}) {
+    final MediaQueryData media = MediaQuery.of(context);
+    final DisplayFeature? vertical = media.displayFeatures
+        .where(
+          (DisplayFeature feature) =>
+              feature.bounds.height >= media.size.height * .85 &&
+              feature.bounds.width < media.size.width * .4,
+        )
+        .firstOrNull;
+    if (vertical != null) {
+      return Offset(
+        vertical.bounds.right + (media.size.width - vertical.bounds.right) / 2,
+        media.size.height / 2,
+      );
+    }
+    final DisplayFeature? horizontal = media.displayFeatures
+        .where(
+          (DisplayFeature feature) =>
+              feature.bounds.width >= media.size.width * .85 &&
+              feature.bounds.height < media.size.height * .4,
+        )
+        .firstOrNull;
+    if (horizontal == null) return null;
+    return Offset(
+      media.size.width / 2,
+      lowerPane
+          ? horizontal.bounds.bottom +
+                (media.size.height - horizontal.bounds.bottom) / 2
+          : horizontal.bounds.top / 2,
+    );
+  }
 
   void _startProcessing() {
     Navigator.of(context).popUntil((Route<dynamic> r) => r is PageRoute);
@@ -396,94 +445,375 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final MediaQueryData mq = MediaQuery.of(context);
-    // Modal editors handle their own keyboard insets. Keep the book's geometry
-    // fixed while the IME animates; repeatedly repaginating at a rounded page
-    // start would otherwise move the reader backwards without a page gesture.
-    final EdgeInsets pagePadding = mq.viewPadding;
     final Color paper = _paper(t);
-    return PopScope(
-      canPop: c.selection == null && !c.toolbar,
-      onPopInvokedWithResult: (bool didPop, Object? _) {
-        if (didPop) return;
-        if (c.selection != null) {
-          c.select(null);
-        } else if (c.toolbar) {
-          c.setToolbar(false);
-        }
-      },
-      child: Theme(
-        data: buildTheme(
-          _night ? Brightness.dark : Theme.of(context).brightness,
-        ),
-        child: Builder(
-          builder: (BuildContext context) => Scaffold(
-            backgroundColor: paper,
-            resizeToAvoidBottomInset: false,
-            body: Focus(
-              focusNode: _focus,
-              autofocus: true,
-              onKeyEvent: (FocusNode _, KeyEvent e) {
-                if (!widget.prefs.volumeKeys || _sheetOpen || e is KeyUpEvent) {
-                  return KeyEventResult.ignored;
-                }
-                if (e.logicalKey == LogicalKeyboardKey.audioVolumeDown) {
-                  _turn(1);
-                  return KeyEventResult.handled;
-                }
-                if (e.logicalKey == LogicalKeyboardKey.audioVolumeUp) {
-                  _turn(-1);
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              child: LayoutBuilder(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: paper,
+        statusBarIconBrightness: _night ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: paper,
+        systemNavigationBarIconBrightness: _night
+            ? Brightness.light
+            : Brightness.dark,
+        systemNavigationBarDividerColor: t.rule,
+        systemStatusBarContrastEnforced: false,
+        systemNavigationBarContrastEnforced: false,
+      ),
+      child: PopScope(
+        canPop: c.selection == null && !c.toolbar,
+        onPopInvokedWithResult: (bool didPop, Object? _) {
+          if (didPop) return;
+          if (c.selection != null) {
+            c.select(null);
+          } else if (c.toolbar) {
+            c.setToolbar(false);
+          }
+        },
+        child: Theme(
+          data: buildTheme(
+            _night ? Brightness.dark : Theme.of(context).brightness,
+          ),
+          child: Builder(
+            builder: (BuildContext context) => Scaffold(
+              backgroundColor: paper,
+              resizeToAvoidBottomInset: false,
+              body: LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints box) {
-                  final double top = pagePadding.top + 48;
-                  final double bottom = pagePadding.bottom + 56;
-                  final Size area = Size(
-                    box.maxWidth - 48,
-                    box.maxHeight - top - bottom,
-                  );
-                  _ensureLayout(area, context.tk);
-                  return Stack(
-                    children: <Widget>[
-                      Positioned(
-                        left: 24,
-                        right: 24,
-                        top: top,
-                        height: area.height,
-                        child: _pages(context, paper),
-                      ),
-                      Positioned(
-                        left: 24,
-                        right: 24,
-                        top: pagePadding.top + 10,
-                        height: 28,
-                        child: _header(context),
-                      ),
-                      Positioned(
-                        left: 24,
-                        right: 24,
-                        bottom: pagePadding.bottom + 6,
-                        height: 44,
-                        child: _footer(context),
-                      ),
-                      if (book.notes.bookmarkIn(c.start, c.cutoff) != null)
-                        Positioned(right: 28, top: 0, child: _ribbon(context)),
-                      if (c.returnTo != null)
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: pagePadding.bottom + 48,
-                          child: Center(child: _returnPill(context)),
+                  final DisplayFeature? verticalHinge = mq.displayFeatures
+                      .where(
+                        (DisplayFeature feature) =>
+                            feature.bounds.height >= box.maxHeight * .85 &&
+                            feature.bounds.width < box.maxWidth * .4,
+                      )
+                      .firstOrNull;
+                  final DisplayFeature? horizontalHinge = mq.displayFeatures
+                      .where(
+                        (DisplayFeature feature) =>
+                            feature.bounds.width >= box.maxWidth * .85 &&
+                            feature.bounds.height < box.maxHeight * .4,
+                      )
+                      .firstOrNull;
+                  if (verticalHinge != null) {
+                    final double leftWidth = verticalHinge.bounds.left
+                        .clamp(0, box.maxWidth)
+                        .toDouble();
+                    final double right = verticalHinge.bounds.right
+                        .clamp(leftWidth, box.maxWidth)
+                        .toDouble();
+                    return Row(
+                      children: <Widget>[
+                        SizedBox(
+                          width: leftWidth,
+                          height: box.maxHeight,
+                          child: _readerPane(context, paper),
                         ),
-                      if (c.selection != null) _selectionBar(context, top),
-                      _toolbar(context),
-                    ],
-                  );
+                        SizedBox(width: verticalHinge.bounds.width),
+                        SizedBox(
+                          width: box.maxWidth - right,
+                          height: box.maxHeight,
+                          child: _foldableReaderPanel(context),
+                        ),
+                      ],
+                    );
+                  }
+                  if (horizontalHinge != null) {
+                    final double top = horizontalHinge.bounds.top
+                        .clamp(0, box.maxHeight)
+                        .toDouble();
+                    final double hingeBottom = horizontalHinge.bounds.bottom
+                        .clamp(top, box.maxHeight)
+                        .toDouble();
+                    return Column(
+                      children: <Widget>[
+                        SizedBox(
+                          width: box.maxWidth,
+                          height: top,
+                          child: _readerPane(context, paper),
+                        ),
+                        SizedBox(
+                          width: box.maxWidth,
+                          height: horizontalHinge.bounds.height,
+                          child: ColoredBox(color: paper),
+                        ),
+                        SizedBox(
+                          width: box.maxWidth,
+                          height: box.maxHeight - hingeBottom,
+                          child: _foldableControls(context),
+                        ),
+                      ],
+                    );
+                  }
+                  return _readerPane(context, paper);
                 },
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _readerPane(BuildContext context, Color paper) {
+    return Focus(
+      focusNode: _focus,
+      autofocus: true,
+      onKeyEvent: (FocusNode _, KeyEvent e) {
+        if (!widget.prefs.volumeKeys || _sheetOpen || e is KeyUpEvent) {
+          return KeyEventResult.ignored;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.audioVolumeDown) {
+          _turn(1);
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.audioVolumeUp) {
+          _turn(-1);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints box) {
+          // Modal editors handle their own keyboard insets. Keep the book's
+          // geometry fixed while the IME animates or the device changes posture.
+          final EdgeInsets pagePadding = MediaQuery.viewPaddingOf(context);
+          final double top = pagePadding.top + 48;
+          final double bottom = pagePadding.bottom + 56;
+          final double pageWidth = math.min(560, box.maxWidth - 48);
+          final double pageLeft = (box.maxWidth - pageWidth) / 2;
+          final Size area = Size(
+            pageWidth,
+            math.max(1, box.maxHeight - top - bottom),
+          );
+          _ensureLayout(area, context.tk);
+          return Stack(
+            children: <Widget>[
+              Positioned(
+                left: pageLeft,
+                width: pageWidth,
+                top: top,
+                height: area.height,
+                child: _pages(context, paper),
+              ),
+              Positioned(
+                left: pageLeft,
+                width: pageWidth,
+                top: pagePadding.top + 10,
+                height: 28,
+                child: _header(context),
+              ),
+              Positioned(
+                left: pageLeft,
+                width: pageWidth,
+                bottom: pagePadding.bottom + 6,
+                height: 44,
+                child: _footer(context),
+              ),
+              if (book.notes.bookmarkIn(c.start, c.cutoff) != null)
+                Positioned(
+                  left: pageLeft + pageWidth - 16,
+                  top: 0,
+                  child: _ribbon(context),
+                ),
+              if (c.returnTo != null)
+                Positioned(
+                  left: pageLeft,
+                  right: pageLeft,
+                  bottom: pagePadding.bottom + 48,
+                  child: Center(child: _returnPill(context)),
+                ),
+              if (c.selection != null) _selectionBar(context, top),
+              Positioned(
+                left: pageLeft,
+                right: pageLeft,
+                top: 0,
+                bottom: 0,
+                child: _toolbar(context),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _foldableReaderPanel(BuildContext context) {
+    final Tokens t = context.tk;
+    final double progress = book.length == 0 ? 0 : c.cutoff / book.length;
+    final String chapter = c.page == null ? '' : book.chapters[c.chapter].title;
+    final int currentPage = c.pager == null ? 1 : link.pageNo(c.start);
+    Widget action(String label, IconData icon, VoidCallback onPressed) =>
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 19),
+              label: Text(label),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                alignment: Alignment.centerLeft,
+                foregroundColor: t.ink,
+                side: BorderSide(color: t.rule),
+              ),
+            ),
+          ),
+        );
+    return ColoredBox(
+      color: t.sheet,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text('正在阅读', style: TextStyle(fontSize: 12, color: t.ink3)),
+                const SizedBox(height: 8),
+                Text(
+                  widget.entry.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: display,
+                    fontSize: 24,
+                    height: 1.2,
+                    color: t.ink,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$chapter · 第 $currentPage 页',
+                  style: TextStyle(fontSize: 13, color: t.ink2),
+                ),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(value: progress, minHeight: 4),
+                ),
+                const SizedBox(height: 24),
+                action('目录与书签', Icons.list_alt, () {
+                  _sheet(
+                    TocPage(link: link),
+                    full: true,
+                    anchorPoint: _foldableAnchor(context),
+                  );
+                }),
+                action('人物与关系', Icons.hub_outlined, () {
+                  _sheet(
+                    PeoplePage(link: link, tab: 3),
+                    full: true,
+                    anchorPoint: _foldableAnchor(context),
+                  );
+                }),
+                action('本章前情', Icons.history_edu, () {
+                  _sheet(
+                    RecapPage(link: link),
+                    full: true,
+                    anchorPoint: _foldableAnchor(context),
+                  );
+                }),
+                action('问这本书', Icons.question_answer_outlined, () {
+                  _openAsk(anchorPoint: _foldableAnchor(context));
+                }),
+                action('阅读排版', Icons.text_fields, () {
+                  openTypography(context, widget.prefs);
+                }),
+                const Divider(height: 24),
+                Row(
+                  children: <Widget>[
+                    IconButton.filledTonal(
+                      tooltip: '上一页',
+                      onPressed: () => _turn(-1),
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    const Spacer(),
+                    Text('翻页', style: TextStyle(color: t.ink3)),
+                    const Spacer(),
+                    IconButton.filledTonal(
+                      tooltip: '下一页',
+                      onPressed: () => _turn(1),
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _foldableControls(BuildContext context) {
+    final Tokens t = context.tk;
+    Widget control(String label, IconData icon, VoidCallback onPressed) =>
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: OutlinedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 18),
+              label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                foregroundColor: t.ink,
+                side: BorderSide(color: t.rule),
+              ),
+            ),
+          ),
+        );
+    return ColoredBox(
+      color: t.sheet,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+          child: Column(
+            children: <Widget>[
+              Text(
+                widget.entry.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: display,
+                  fontSize: 19,
+                  color: t.ink,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: <Widget>[
+                  control('上一页', Icons.chevron_left, () => _turn(-1)),
+                  control('工具栏', Icons.menu, () => c.setToolbar(!c.toolbar)),
+                  control('下一页', Icons.chevron_right, () => _turn(1)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  control('目录', Icons.list_alt, () {
+                    _sheet(
+                      TocPage(link: link),
+                      full: true,
+                      anchorPoint: _foldableAnchor(context, lowerPane: true),
+                    );
+                  }),
+                  control('人物', Icons.hub_outlined, () {
+                    _sheet(
+                      PeoplePage(link: link, tab: 3),
+                      full: true,
+                      anchorPoint: _foldableAnchor(context, lowerPane: true),
+                    );
+                  }),
+                  control('问书', Icons.question_answer_outlined, () {
+                    _openAsk(
+                      anchorPoint: _foldableAnchor(context, lowerPane: true),
+                    );
+                  }),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -876,6 +1206,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               _sheet(SearchPage(link: link), full: true),
                         ),
                         PopupMenuButton<int>(
+                          tooltip: '更多操作',
                           icon: const Icon(Icons.more_horiz),
                           onSelected: (int i) {
                             switch (i) {

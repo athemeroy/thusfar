@@ -119,8 +119,103 @@ ThemeData buildTheme(Brightness brightness) {
       backgroundColor: t.sheet,
       modalBackgroundColor: t.sheet,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: t.paper,
+      foregroundColor: t.ink,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontFamily: display,
+        color: t.ink,
+        fontSize: 24,
+        height: 1.1,
+      ),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: t.sheet,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: t.qingSoft,
+      elevation: 0,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
+        final bool selected = states.contains(WidgetState.selected);
+        return IconThemeData(
+          color: selected ? t.qing : t.ink3,
+          size: selected ? 24 : 22,
+        );
+      }),
+      labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
+        final bool selected = states.contains(WidgetState.selected);
+        return TextStyle(
+          color: selected ? t.qing : t.ink3,
+          fontSize: selected ? 12 : 11,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+          letterSpacing: 0.2,
+        );
+      }),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: t.raised,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      hintStyle: TextStyle(color: t.ink3, fontSize: 14),
+      labelStyle: TextStyle(color: t.ink2),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: t.rule),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: t.qing, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: t.danger),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide(color: t.danger, width: 1.5),
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      iconColor: t.ink2,
+      textColor: t.ink,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 2),
+      minVerticalPadding: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    cardTheme: CardThemeData(
+      color: t.sheet,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: t.rule.withValues(alpha: 0.78)),
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(0, 48),
+        backgroundColor: t.ink,
+        foregroundColor: t.sheet,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: t.qing,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: t.zhu,
+      linearTrackColor: t.rule,
+      circularTrackColor: t.rule,
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: t.ink,

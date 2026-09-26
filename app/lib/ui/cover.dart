@@ -35,6 +35,7 @@ class BookCover extends StatelessWidget {
   Widget build(BuildContext context) {
     final File? f = entry.coverFile;
     final double h = width * 4 / 3;
+    final Tokens t = context.tk;
     const BorderRadius r = BorderRadius.only(
       topLeft: Radius.circular(3),
       bottomLeft: Radius.circular(3),
@@ -51,17 +52,83 @@ class BookCover extends StatelessWidget {
             height: h,
             color: ink,
             padding: EdgeInsets.all(width * 0.1),
-            alignment: Alignment.topLeft,
-            child: Text(
-              entry.title,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: display,
-                color: const Color(0xFFF4EBDD),
-                fontSize: width * 0.16,
-                height: 1.25,
-              ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                if (width > 108)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Container(
+                      width: width * .25,
+                      height: width * .25,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFF4EBDD).withValues(alpha: .18),
+                          width: width > 88 ? 1.2 : .7,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.auto_stories_outlined,
+                        size: width * .13,
+                        color: const Color(0xFFF4EBDD).withValues(alpha: .42),
+                      ),
+                    ),
+                  ),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    width: width > 78 ? 2 : 1,
+                    height: h,
+                    color: Colors.black.withValues(alpha: .14),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Container(
+                    height: width > 78 ? 1 : .6,
+                    width: width * .62,
+                    color: const Color(0xFFF4EBDD).withValues(alpha: .52),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: width > 108 ? width * .28 : 0,
+                    ),
+                    child: Text(
+                      entry.title,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: display,
+                        color: const Color(0xFFF4EBDD),
+                        fontSize: width * .16,
+                        height: 1.25,
+                        shadows: const <Shadow>[
+                          Shadow(color: Color(0x33000000), blurRadius: 3),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (width > 115)
+                  Positioned(
+                    left: width * .1,
+                    bottom: width * .12,
+                    child: Text(
+                      '页 读 · ${entry.author.isEmpty ? '藏书' : entry.author}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: const Color(0xFFF4EBDD).withValues(alpha: .7),
+                        fontSize: (width * .065).clamp(8, 10),
+                        letterSpacing: .6,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           );
     return SizedBox(
@@ -73,6 +140,7 @@ class BookCover extends StatelessWidget {
           DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: r,
+              border: Border.all(color: t.sheet.withValues(alpha: .72)),
               boxShadow: <BoxShadow>[
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.12),

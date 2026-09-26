@@ -49,13 +49,35 @@ void main() {
     ) async {
       final GraphFixture fixture = GraphFixture(longNames: narrow);
       final ScrollController scroll = ScrollController();
-      if (narrow) {
-        tester.view.physicalSize = const Size(320, 740);
-        tester.view.devicePixelRatio = 1;
-        tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
-      } else {
-        await tester.binding.setSurfaceSize(const Size(430, 1000));
+      if (!narrow) {
+        fixture.records.add(<String, Object?>{
+          't': 'person',
+          'id': 'P3',
+          'name': '旁观者',
+          'p': 0,
+        });
+        fixture.records.sort(
+          (Json left, Json right) =>
+              (left['p']! as int).compareTo(right['p']! as int),
+        );
+        fixture.refresh();
       }
+      if (narrow) tester.view.devicePixelRatio = 1;
+      await tester.binding.setSurfaceSize(
+        narrow ? const Size(320, 740) : const Size(430, 1000),
+      );
+      tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
+      addTearDown(() async {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.binding.setSurfaceSize(null);
+        tester.view
+          ..resetPhysicalSize()
+          ..resetDevicePixelRatio()
+          ..resetPadding()
+          ..resetViewPadding();
+        scroll.dispose();
+        fixture.dispose();
+      });
       await tester.pumpWidget(
         MaterialApp(
           debugShowCheckedModeBanner: false,
@@ -125,15 +147,6 @@ void main() {
         );
       }
       expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.binding.setSurfaceSize(null);
-      if (narrow) {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-        tester.view.resetPadding();
-      }
-      scroll.dispose();
-      fixture.dispose();
     });
   }
 
@@ -198,8 +211,8 @@ void main() {
         openAsk: ({String? prefill, String? quote}) {},
       );
       const Size phone = Size(393, 851);
-      tester.view.physicalSize = phone;
       tester.view.devicePixelRatio = 1;
+      await tester.binding.setSurfaceSize(phone);
       tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
       try {
         await tester.pumpWidget(
@@ -330,9 +343,12 @@ void main() {
         expect(tester.takeException(), isNull);
       } finally {
         await tester.pumpWidget(const SizedBox.shrink());
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-        tester.view.resetPadding();
+        await tester.binding.setSurfaceSize(null);
+        tester.view
+          ..resetPhysicalSize()
+          ..resetDevicePixelRatio()
+          ..resetPadding()
+          ..resetViewPadding();
         reader.dispose();
         book.notes.dispose();
         book.dispose();
@@ -341,4 +357,108 @@ void main() {
       }
     });
   }
+
+  testWidgets('vertical graph pan stays inside the expanded reader drawer', (
+    WidgetTester tester,
+  ) async {
+    final GraphFixture fixture = GraphFixture();
+    for (int i = 3; i <= 8; i++) {
+      fixture.records.addAll(<Json>[
+        <String, Object?>{'t': 'person', 'id': 'P$i', 'name': '人物$i', 'p': 0},
+        <String, Object?>{
+          't': 'rel',
+          'a': 'P1',
+          'b': 'P$i',
+          'a_is': '同行者$i',
+          'b_is': '熟人$i',
+          'desc': '抽屉内纵向平移回归关系$i',
+          'p': 20,
+        },
+      ]);
+    }
+    fixture.records.sort(
+      (Json left, Json right) =>
+          (left['p']! as int).compareTo(right['p']! as int),
+    );
+    fixture.refresh();
+
+    const Size phone = Size(393, 851);
+    tester.view.devicePixelRatio = 1;
+    await tester.binding.setSurfaceSize(phone);
+    tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: buildTheme(Brightness.light),
+          home: Scaffold(
+            body: Builder(
+              builder: (BuildContext context) => Center(
+                child: TextButton(
+                  onPressed: () =>
+                      openSheet<void>(context, PeoplePage(link: fixture.link)),
+                  child: const Text('人物'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('人物'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('关系图'));
+      await tester.pumpAndSettle();
+
+      final Finder viewportFinder = find.byKey(
+        const ValueKey<String>('graph-viewport'),
+      );
+      expect(find.byType(RelationGraph), findsOneWidget);
+      expect(
+        tester.getRect(find.byType(SheetFrame)).height,
+        greaterThan(phone.height * .8),
+        reason: 'Opening the relationship graph must expand its real drawer.',
+      );
+      final InteractiveViewer viewport = tester.widget<InteractiveViewer>(
+        viewportFinder,
+      );
+      final TransformationController transform =
+          viewport.transformationController!;
+      final double initialY = transform.value.storage[13];
+      final Rect graphBounds = tester.getRect(viewportFinder);
+      await tester.dragFrom(graphBounds.center, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(
+        transform.value.storage[13],
+        isNot(initialY),
+        reason: 'Vertical movement on the canvas must pan the graph itself.',
+      );
+      expect(
+        tester.getRect(find.byType(SheetFrame)).height,
+        greaterThan(phone.height * .8),
+        reason: 'A graph pan must not collapse or scroll its outer drawer.',
+      );
+
+      final Rect drawer = tester.getRect(find.byType(SheetFrame));
+      await tester.dragFrom(
+        Offset(phone.width / 2, drawer.top + 10),
+        const Offset(0, 220),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.getRect(find.byType(SheetFrame)).height,
+        lessThan(drawer.height - 60),
+        reason: 'The pinned drawer handle must still resize the sheet.',
+      );
+      expect(tester.takeException(), isNull);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+      tester.view
+        ..resetPhysicalSize()
+        ..resetDevicePixelRatio()
+        ..resetPadding()
+        ..resetViewPadding();
+      fixture.dispose();
+    }
+  });
 }

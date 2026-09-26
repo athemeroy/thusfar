@@ -1,6 +1,6 @@
 # Full UI regression run record
 
-Copy this template to a dated report directory. Do not record mutable run state in the permanent matrix. The specification is [UI-E2E-MATRIX.md](UI-E2E-MATRIX.md). Start from `ui-e2e-results-template.csv`; every row is initially NOT_RUN. Add a separate row per required device, theme, protocol, control option, and input boundary variant. Never fill PASS from a unit-test count.
+Copy this template to a dated report directory. Do not record mutable run state in the permanent matrix. The specification is [UI-E2E-MATRIX.md](UI-E2E-MATRIX.md), with foldable variants in [FOLDABLE-UI-REGRESSION.md](FOLDABLE-UI-REGRESSION.md). Start from `ui-e2e-results-template.csv` and `foldable-e2e-results-template.csv`; every row is initially NOT_RUN. Add a separate row per required device, posture, theme, protocol, control option, and input boundary variant. Never fill PASS from a unit-test count.
 
 ## Identity and environment
 
@@ -9,6 +9,7 @@ Copy this template to a dated report directory. Do not record mutable run state 
 - APK filename / SHA256 / package / versionName / versionCode / signing fingerprint:
 - Upgrade-from version and package (or clean isolated probe):
 - Device alias / model / Android version / OS build / screen pixels / density:
+- Physical foldable model/posture and observed Flutter display-feature bounds/state, or explicit `SIMULATED` profile:
 - System text scale / display scale / keyboard and language / screen-reader mode:
 - App theme / paper / font size / font / line spacing / animation / volume-key setting:
 - Browser / version / viewport / W or standalone S / server commit (if in scope):
@@ -27,6 +28,7 @@ Copy this template to a dated report directory. Do not record mutable run state 
 - [ ] Phone guide read; all GUI actions use one `phone-exec run` lease; actual screenshot proves usable screen, not merely connected ADB.
 - [ ] Source inventory regenerated with `python3 docs/testing/generate-ui-inventory.py` and unassigned changed controls reviewed.
 - [ ] All protocol options and required small-screen/dark/large-text variants are present as separate result rows.
+- [ ] All 155 Android base cases have separate `@folded`, `@open`, and `@tabletop` rows; FL-001–FL-010 are present. Physical posture checks are not substituted by simulated screenshots.
 - [ ] Capture directory ready. Secret entry/reveal uses only dummy test credentials; screenshots redact personal data.
 
 ## Practical run order
@@ -44,7 +46,8 @@ This order reduces repeated setup without removing test cases. Within each group
 9. **Preservation and destructive cases:** B-008–B-015/B-021. Export all personal content and restore a separate copy before removal. Confirm existing data across actual candidate upgrade without reimport.
 10. **Web/PWA:** W-001–W-018 on the relevant platform. Hosted login/sync/offline tests stay separate from Android standalone config. Check keyboard and multi-client conflicts.
 11. **Universal control sweep:** X-001–X-010 for every visited screen. Compare the source inventory to the completed control ledger below; no uncovered field/icon/action is silently omitted.
-12. **Finish:** collect crash logs/request receipts; verify probe library final state; close only task-owned test services and executor leases; turn phone screen off; calculate executed/PASS/FAIL/BLOCKED/NOT_RUN separately.
+12. **Foldable posture sweep:** run the 465 posture variants and FL-001–FL-010 on a real foldable, including every field and button from each base case on the outer display, open-book displays, and tabletop. Preserve `@folded`, `@open`, and `@tabletop` evidence independently. Use viewport simulation only for supporting Flutter layout evidence.
+13. **Finish:** collect crash logs/request receipts; verify probe library final state; close only task-owned test services and executor leases; turn phone screen off; calculate executed/PASS/FAIL/BLOCKED/NOT_RUN separately.
 
 ## Screen-by-screen control sweep
 

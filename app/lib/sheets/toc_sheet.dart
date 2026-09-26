@@ -418,64 +418,142 @@ class NoteTile extends StatelessWidget {
     final Tokens t = context.tk;
     final String quote = '${item['quote'] ?? ''}';
     final String text = '${item['text'] ?? ''}';
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              '“',
-              style: TextStyle(
-                fontFamily: serif,
-                fontSize: 28,
-                height: 1,
-                color: t.qing,
-              ),
+    final bool bookmark = item['kind'] == 'bookmark';
+    final bool writtenNote = text.isNotEmpty;
+    final Color accent = writtenNote ? t.qing : (bookmark ? t.amber : t.zhu);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      child: Material(
+        color: t.sheet,
+        borderRadius: BorderRadius.circular(18),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: t.rule.withValues(alpha: .72)),
+              borderRadius: BorderRadius.circular(18),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  if (quote.isNotEmpty)
-                    Text(
-                      quote,
-                      style: TextStyle(
-                        fontFamily: serif,
-                        fontSize: 15,
-                        height: 1.7,
-                        color: t.ink,
-                      ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: const BorderRadius.horizontal(
+                      left: Radius.circular(18),
                     ),
-                  if (text.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(
-                        text,
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.6,
-                          color: t.qing,
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          14,
+                          12,
+                          onEdit == null ? 16 : 4,
+                          12,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
+                              children: <Widget>[
+                                Icon(
+                                  bookmark
+                                      ? Icons.bookmark_outline
+                                      : writtenNote
+                                      ? Icons.format_quote_rounded
+                                      : Icons.short_text_rounded,
+                                  size: 16,
+                                  color: accent,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  bookmark
+                                      ? '书签'
+                                      : writtenNote
+                                      ? '我的笔记'
+                                      : '摘录',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    letterSpacing: .5,
+                                    fontWeight: FontWeight.w700,
+                                    color: accent,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    '$pageLabel · ${formatDate(item['created'] as num?)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: t.ink3,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (quote.isNotEmpty) ...<Widget>[
+                              const SizedBox(height: 8),
+                              Text(
+                                quote,
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: serif,
+                                  fontSize: 15,
+                                  height: 1.7,
+                                  color: t.ink,
+                                ),
+                              ),
+                            ],
+                            if (text.isNotEmpty) ...<Widget>[
+                              const SizedBox(height: 8),
+                              Container(
+                                padding: const EdgeInsets.only(left: 10),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    left: BorderSide(color: t.qing, width: 2),
+                                  ),
+                                ),
+                                child: Text(
+                                  text,
+                                  maxLines: 6,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.6,
+                                    color: t.qing,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                    ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '$pageLabel · ${formatDate(item['created'] as num?)}',
-                    style: TextStyle(fontSize: 12, color: t.ink3),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                if (onEdit != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 36, right: 8),
+                    child: IconButton(
+                      tooltip: '编辑笔记',
+                      onPressed: onEdit,
+                      icon: Icon(Icons.edit_outlined, size: 19, color: t.qing),
+                    ),
+                  ),
+              ],
             ),
-            if (onEdit != null)
-              IconButton(
-                tooltip: '编辑笔记',
-                onPressed: onEdit,
-                icon: Icon(Icons.edit_outlined, size: 20, color: t.qing),
-              ),
-          ],
+          ),
         ),
       ),
     );

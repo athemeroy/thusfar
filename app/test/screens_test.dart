@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/main.dart';
+import 'package:thusfar_app/ui/cover.dart';
 
 Future<void> _font(String family, String path) async {
   final FontLoader loader = FontLoader(family)
@@ -90,6 +91,7 @@ void main() {
         }
       });
       await shot(tester, '01-shelf');
+      expect(find.byTooltip('更多操作：阿Q正传'), findsOneWidget);
 
       // Open the book: reader page.
       await tester.tap(find.text('继续').first);
@@ -142,8 +144,6 @@ void main() {
       await settle(tester);
 
       // TOC.
-      await tester.tapAt(Offset(size.width / 2, size.height / 2));
-      await settle(tester);
       await tester.tap(find.text('目录'));
       await settle(tester);
       await expectLater(
@@ -154,8 +154,6 @@ void main() {
       await settle(tester);
 
       // Recap.
-      await tester.tapAt(Offset(size.width / 2, size.height / 2));
-      await settle(tester);
       await tester.tap(find.text('前情'));
       await settle(tester);
       await expectLater(
@@ -166,8 +164,6 @@ void main() {
       await settle(tester);
 
       // Native grounded-question sheet, without sending a model request.
-      await tester.tapAt(Offset(size.width / 2, size.height / 2));
-      await settle(tester);
       await tester.tap(find.text('问书'));
       await settle(tester);
       await expectLater(
@@ -178,6 +174,8 @@ void main() {
       await settle(tester);
 
       // Long press to select.
+      await tester.tapAt(Offset(size.width / 2, size.height / 2));
+      await settle(tester);
       await tester.longPressAt(Offset(size.width / 2, size.height * 0.4));
       await settle(tester);
       await expectLater(
@@ -189,5 +187,80 @@ void main() {
       // runs after that check on the pinned Flutter release.
       debugDisableShadows = previousShadows;
     }
+  });
+
+  testWidgets('shelf search explains empty results and can recover', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 2.75;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
+
+    final AppModel model = AppModel(root);
+    await tester.runAsync(model.library.scan);
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await settle(tester);
+
+    final Finder covers = find.byType(BookCover);
+    expect(covers, findsNWidgets(3));
+    expect(tester.getSize(covers.at(1)).width, lessThan(120));
+    expect(tester.getSize(covers.at(2)).width, lessThan(120));
+
+    await tester.tap(find.byTooltip('搜索'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField).first, '不存在的书名');
+    await settle(tester);
+
+    expect(find.text('没有找到匹配的书'), findsOneWidget);
+    expect(find.text('换个书名或作者关键词试试'), findsOneWidget);
+    expect(find.byTooltip('清空搜索'), findsOneWidget);
+    expect(find.text('把第一本书放进来'), findsNothing);
+    await expectLater(
+      find.byType(HomeShell),
+      matchesGoldenFile('shots/11-search-empty.png'),
+    );
+
+    await tester.tap(find.byTooltip('清空搜索'));
+    await settle(tester);
+    expect(find.text('没有找到匹配的书'), findsNothing);
+    expect(find.text('阿Q正传'), findsWidgets);
+
+    await tester.enterText(find.byType(TextField).first, '不存在的书名');
+    await settle(tester);
+    await tester.tap(find.text('取消'));
+    await settle(tester);
+    expect(find.byTooltip('搜索'), findsOneWidget);
+    expect(find.text('没有找到匹配的书'), findsNothing);
+    expect(find.text('阿Q正传'), findsWidgets);
+
+    await tester.tap(find.text('读完'));
+    await settle(tester);
+    expect(find.text('这个分类下还没有书'), findsOneWidget);
+    await tester.tap(find.text('查看全部书籍'));
+    await settle(tester);
+    expect(find.text('这个分类下还没有书'), findsNothing);
+    expect(find.text('阿Q正传'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('shelf cover grid fits the 320dp folded outer-screen profile', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() => tester.view.resetPhysicalSize());
+    addTearDown(() => tester.view.resetDevicePixelRatio());
+
+    final AppModel model = AppModel(root);
+    await tester.runAsync(model.library.scan);
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await settle(tester);
+
+    final Finder covers = find.byType(BookCover);
+    expect(covers, findsNWidgets(3));
+    expect(tester.getSize(covers.at(1)).width, lessThan(100));
+    expect(tester.getSize(covers.at(2)).width, lessThan(100));
+    expect(tester.takeException(), isNull);
   });
 }

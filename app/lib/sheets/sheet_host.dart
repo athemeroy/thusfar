@@ -9,11 +9,13 @@ Future<T?> openSheet<T>(
   Widget root, {
   double initial = 0.45,
   bool full = false,
+  Offset? anchorPoint,
 }) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
+    anchorPoint: anchorPoint,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.28),
     builder: (BuildContext _) =>

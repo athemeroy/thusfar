@@ -25,6 +25,7 @@ void main() {
     WidgetTester tester, {
     Size size = const Size(430, 1000),
     double scale = 1,
+    String? focus,
   }) async {
     await tester.binding.setSurfaceSize(size);
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -40,7 +41,7 @@ void main() {
         home: Scaffold(
           body: SheetFrame(
             scroll: scroll,
-            root: GraphPage(link: fixture.link),
+            root: GraphPage(link: fixture.link, focus: focus),
           ),
         ),
       ),
@@ -83,9 +84,23 @@ void main() {
   Slider slider(WidgetTester tester) =>
       tester.widget<Slider>(find.byKey(const ValueKey<String>('graph-replay')));
 
+  void addThirdPerson() {
+    fixture.records.add(<String, Object?>{
+      't': 'person',
+      'id': 'P3',
+      'name': '旁观者',
+      'p': 0,
+    });
+    fixture.records.sort(
+      (Json left, Json right) =>
+          (left['p']! as int).compareTo(right['p']! as int),
+    );
+    fixture.refresh();
+  }
+
   for (final bool largeText in <bool>[false, true]) {
     testWidgets(
-      'real people drawer expands graph into the physical viewport${largeText ? ' with large text' : ''}',
+      'few people show a full relationship card${largeText ? ' with large text' : ''}',
       (WidgetTester tester) async {
         final Size size = largeText
             ? const Size(320, 740)
@@ -144,41 +159,24 @@ void main() {
         await tester.pumpAndSettle();
         final Rect drawer = tester.getRect(find.byType(SheetFrame));
         final Rect screen = Rect.fromLTRB(0, 24, size.width, size.height - 24);
-        final Rect graph = tester.getRect(
-          find.byKey(const ValueKey<String>('graph-viewport')),
+        final Finder cardFinder = find.byKey(
+          const ValueKey<String>('relation-card-0'),
         );
-        final Rect label = tester.getRect(
-          find.byKey(const ValueKey<String>('relation-label-0')),
-        );
+        await tester.ensureVisible(cardFinder);
+        await tester.pumpAndSettle();
+        final Rect card = tester.getRect(cardFinder);
+        final Rect screenTolerance = screen.inflate(1);
         expect(drawer.height, greaterThan(size.height * .85));
-        expect(screen.contains(graph.topLeft), isTrue);
         expect(
-          screen.contains(graph.bottomRight - const Offset(.1, .1)),
+          screenTolerance.contains(card.topLeft) &&
+              screenTolerance.contains(card.bottomRight - const Offset(.1, .1)),
           isTrue,
           reason:
-              'The graph viewport must fit on the phone, not below the collapsed drawer',
+              'The complete sparse relationship card must fit the foldable cover viewport: screen=$screen card=$card drawer=$drawer',
         );
-        expect(graph.intersect(screen).contains(label.topLeft), isTrue);
-        expect(
-          graph.intersect(screen).contains(label.bottomRight),
-          isTrue,
-          reason:
-              'A complete relationship card must physically be visible after the actual people-to-graph route',
-        );
-        for (final String control in <String>['缩小关系图', '放大关系图', '重置视图']) {
-          final Rect button = tester.getRect(find.byTooltip(control));
-          expect(screen.contains(button.topLeft), isTrue);
-          expect(screen.contains(button.bottomRight), isTrue);
-        }
-        if (!largeText) {
-          final Rect replay = tester.getRect(
-            find.byKey(const ValueKey<String>('graph-replay')),
-          );
-          expect(screen.contains(replay.bottomRight), isTrue);
-        }
-        await tester.tap(
-          find.byKey(const ValueKey<String>('relation-label-0')),
-        );
+        expect(find.byType(RelationGraph), findsNothing);
+        expect(find.text('已结束'), findsOneWidget);
+        await tester.tap(cardFinder);
         await tester.pumpAndSettle();
         expect(find.byType(RelationDetailPage), findsOneWidget);
         await tester.tap(find.byTooltip('返回上一层'));
@@ -210,19 +208,23 @@ void main() {
   );
 
   testWidgets(
-    'two people show an accessible relation label immediately and open complete detail',
+    'two people show a readable relationship list and open complete detail',
     (WidgetTester tester) async {
       final SemanticsHandle semantics = tester.ensureSemantics();
       await open(tester);
-      expect(find.byType(RelationGraph), findsOneWidget);
-      expectVisibleRole(tester, 'P1', '前导师');
-      expectVisibleRole(tester, 'P2', '前学生');
-      expectEndedVisible(tester);
+      expect(find.byType(RelationGraph), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('relation-card-0')),
+        findsOneWidget,
+      );
+      expect(find.text('前导师'), findsOneWidget);
+      expect(find.text('前学生'), findsOneWidget);
+      expect(find.text('已结束'), findsOneWidget);
       expect(
         find.bySemanticsLabel(RegExp('林先生是小明的前导师.*', dotAll: true)),
-        findsWidgets,
+        findsOneWidget,
       );
-      await tester.tap(find.byKey(const ValueKey<String>('relation-label-0')));
+      await tester.tap(find.byKey(const ValueKey<String>('relation-card-0')));
       await tester.pumpAndSettle();
       expect(find.byType(RelationDetailPage), findsOneWidget);
       expect(
@@ -240,9 +242,23 @@ void main() {
     },
   );
 
+  testWidgets('two people without recorded edges get a clear empty state', (
+    WidgetTester tester,
+  ) async {
+    fixture.records.removeWhere((Json row) => row['t'] == 'rel');
+    fixture.refresh();
+    await open(tester);
+    expect(find.byType(RelationGraph), findsNothing);
+    expect(find.text('截至此页尚未记录人物关系'), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('relation-card-0')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets(
     'selection reverses the sentence perspective without changing its meaning or node center',
     (WidgetTester tester) async {
+      addThirdPerson();
       await open(tester);
       final Rect before = tester.getRect(
         find.byKey(const ValueKey<String>('graph-circle-P1')),
@@ -296,6 +312,7 @@ void main() {
   testWidgets('zoom controls enlarge meaningful text and reset the view', (
     WidgetTester tester,
   ) async {
+    addThirdPerson();
     await open(tester);
     InteractiveViewer viewport() => tester.widget<InteractiveViewer>(
       find.byKey(const ValueKey<String>('graph-viewport')),
@@ -331,9 +348,111 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('bounded graph canvas keeps relationships reachable while panning', (
+    WidgetTester tester,
+  ) async {
+    for (int i = 3; i <= 8; i++) {
+      fixture.records.add(<String, Object?>{
+        't': 'person',
+        'id': 'P$i',
+        'name': '人物$i',
+        'p': 0,
+      });
+      fixture.records.add(<String, Object?>{
+        't': 'rel',
+        'a': 'P1',
+        'b': 'P$i',
+        'a_is': '同行者$i',
+        'b_is': '熟人$i',
+        'desc': '图谱边界测试关系$i',
+        'p': 20,
+      });
+    }
+    fixture.records.sort(
+      (Json left, Json right) =>
+          (left['p']! as int).compareTo(right['p']! as int),
+    );
+    fixture.refresh();
+    expect(
+      fixture.data
+          .world(1000)
+          .rels
+          .where((Json row) => row['a'] == 'P1' || row['b'] == 'P1')
+          .length,
+      greaterThan(5),
+      reason:
+          'The focused test graph must contain enough edges to pan in both axes.',
+    );
+    await open(tester, focus: 'P1');
+
+    final Finder viewportFinder = find.byKey(
+      const ValueKey<String>('graph-viewport'),
+    );
+    InteractiveViewer viewport() =>
+        tester.widget<InteractiveViewer>(viewportFinder);
+    Finder cards() => find.byWidgetPredicate(
+      (Widget widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith('relation-label-'),
+    );
+    bool hasCompleteCard() {
+      final Rect bounds = tester.getRect(viewportFinder);
+      return cards().evaluate().any((Element element) {
+        final Rect card = tester.getRect(find.byWidget(element.widget));
+        return bounds.contains(card.topLeft) &&
+            bounds.contains(card.bottomRight - const Offset(.1, .1));
+      });
+    }
+
+    expect(cards().evaluate().length, greaterThan(5));
+    expect(hasCompleteCard(), isTrue);
+    final Rect bounds = tester.getRect(viewportFinder);
+    final Offset start = Offset(bounds.left + 8, bounds.center.dy);
+    await tester.dragFrom(start, const Offset(1200, 0));
+    await tester.pumpAndSettle();
+    expect(
+      hasCompleteCard(),
+      isTrue,
+      reason: 'A bounded horizontal pan must not lose every relationship card.',
+    );
+
+    final double beforeVerticalPan =
+        viewport().transformationController!.value.storage[13];
+    await tester.dragFrom(
+      Offset(bounds.left + 8, bounds.bottom - 8),
+      const Offset(0, -500),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      viewport().transformationController!.value.storage[13],
+      isNot(beforeVerticalPan),
+      reason:
+          'A tall focused graph must be vertically pannable inside its sheet.',
+    );
+    final List<Rect> cardsAfterVerticalPan = cards()
+        .evaluate()
+        .map((Element element) => tester.getRect(find.byWidget(element.widget)))
+        .toList();
+    final Rect viewportAfterVerticalPan = tester.getRect(viewportFinder);
+    expect(
+      hasCompleteCard(),
+      isTrue,
+      reason:
+          'At least one relation card must stay visible after a bounded vertical pan: viewport=$viewportAfterVerticalPan, cards=$cardsAfterVerticalPan, transform=${viewport().transformationController!.value.storage}',
+    );
+
+    await tester.tap(find.byTooltip('重置视图'));
+    await tester.pumpAndSettle();
+    expect(viewport().transformationController!.value.getMaxScaleOnAxis(), 1);
+    expect(hasCompleteCard(), isTrue);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets(
     'replay updates both header and roles and clearly returns to present before a person card',
     (WidgetTester tester) async {
+      addThirdPerson();
       await open(tester);
       slider(tester).onChanged!(.4);
       await tester.pumpAndSettle();
@@ -394,6 +513,7 @@ void main() {
   testWidgets(
     'reader rewind and durable graph changes refresh visible relationships',
     (WidgetTester tester) async {
+      addThirdPerson();
       await open(tester);
       fixture.setCutoff(400);
       await tester.pumpAndSettle();
@@ -411,6 +531,10 @@ void main() {
         'b_is': '朋友',
         'p': 300,
       });
+      fixture.records.sort(
+        (Json left, Json right) =>
+            (left['p']! as int).compareTo(right['p']! as int),
+      );
       fixture.refresh();
       await tester.pumpAndSettle();
       expectVisibleRole(tester, 'P1', '朋友');
@@ -421,38 +545,23 @@ void main() {
   );
 
   testWidgets(
-    'long names and roles remain readable at narrow width and large text scale',
+    'long names and roles remain readable in the sparse list at large text scale',
     (WidgetTester tester) async {
       fixture.dispose();
       fixture = GraphFixture(longNames: true);
       await open(tester, size: const Size(320, 900), scale: 1.8);
-      expectVisibleRole(tester, 'P1', '曾经共同研究草药医理的导师');
-      expectVisibleRole(tester, 'P2', '后来离开故乡继续独立求学的学生');
-      expectEndedVisible(tester);
-      final Rect relation = tester.getRect(
-        find.byKey(const ValueKey<String>('relation-label-0')),
-      );
-      for (final String id in <String>['P1', 'P2']) {
-        final Rect node = tester.getRect(
-          find.byKey(ValueKey<String>('graph-person-$id')),
-        );
-        expect(
-          relation.overlaps(node),
-          isFalse,
-          reason:
-              'A readable role card must not cover the $id node or name: label=$relation, node=$node, graph=${tester.getSize(find.byType(RelationGraph))}',
-        );
-      }
+      expect(find.byType(RelationGraph), findsNothing);
       expect(
-        tester
-            .widget<Text>(
-              find.byKey(const ValueKey<String>('relation-name-0-P1')),
-            )
-            .data,
-        '来自远方的林先生',
+        find.byKey(const ValueKey<String>('relation-card-0')),
+        findsOneWidget,
       );
+      expect(find.text('来自远方的林先生'), findsOneWidget);
+      expect(find.text('正在学习医术的小明'), findsOneWidget);
+      expect(find.text('曾经共同研究草药医理的导师'), findsOneWidget);
+      expect(find.text('后来离开故乡继续独立求学的学生'), findsOneWidget);
+      expect(find.text('已结束'), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byKey(const ValueKey<String>('relation-label-0')));
+      await tester.tap(find.byKey(const ValueKey<String>('relation-card-0')));
       await tester.pumpAndSettle();
       expect(
         find.byWidgetPredicate(

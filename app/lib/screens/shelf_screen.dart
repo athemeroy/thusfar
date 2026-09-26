@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -237,27 +235,63 @@ class _ShelfScreenState extends State<ShelfScreen> {
                       color: t.paper,
                     ),
                   ),
-                  if (widget.prefs.listView)
+                  if (books.isEmpty && (query.isNotEmpty || filter != 0))
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _emptyResults(context),
+                    )
+                  else if (widget.prefs.listView)
                     SliverList.builder(
                       itemCount: books.length,
                       itemBuilder: (BuildContext context, int i) =>
                           _listRow(context, books[i]),
                     )
                   else
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                      sliver: SliverGrid.builder(
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 18,
-                              childAspectRatio: 0.52,
-                            ),
-                        itemCount: books.length,
-                        itemBuilder: (BuildContext context, int i) =>
-                            _gridCell(context, books[i]),
-                      ),
+                    SliverLayoutBuilder(
+                      builder:
+                          (
+                            BuildContext context,
+                            SliverConstraints constraints,
+                          ) {
+                            final double extent = constraints.crossAxisExtent;
+                            final bool compact = extent < 600;
+                            final double inset = extent < 360 ? 12 : 20;
+                            final double gap = extent < 360
+                                ? 8
+                                : compact
+                                ? 12
+                                : 20;
+                            final int columns = compact
+                                ? 3
+                                : (extent / 168).floor().clamp(3, 6);
+                            final double tileWidth =
+                                (extent - inset * 2 - gap * (columns - 1)) /
+                                columns;
+                            final double textScale =
+                                MediaQuery.textScalerOf(context).scale(16) / 16;
+                            final double tileHeight =
+                                (tileWidth - 4) * 4 / 3 + 32 + 56 * textScale;
+                            return SliverPadding(
+                              padding: EdgeInsets.fromLTRB(
+                                inset,
+                                8,
+                                inset,
+                                120,
+                              ),
+                              sliver: SliverGrid.builder(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columns,
+                                      crossAxisSpacing: gap,
+                                      mainAxisSpacing: compact ? 18 : 22,
+                                      mainAxisExtent: tileHeight,
+                                    ),
+                                itemCount: books.length,
+                                itemBuilder: (BuildContext context, int i) =>
+                                    _gridCell(context, books[i]),
+                              ),
+                            );
+                          },
                     ),
                 ],
               ),
@@ -286,9 +320,16 @@ class _ShelfScreenState extends State<ShelfScreen> {
         title: TextField(
           autofocus: true,
           onChanged: (String v) => setState(() => query = v.trim()),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: '书名或作者',
             border: InputBorder.none,
+            suffixIcon: query.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: '清空搜索',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => setState(() => query = ''),
+                  ),
           ),
         ),
         actions: <Widget>[
@@ -360,6 +401,55 @@ class _ShelfScreenState extends State<ShelfScreen> {
     );
   }
 
+  Widget _emptyResults(BuildContext context) {
+    final Tokens t = context.tk;
+    final bool hasQuery = query.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(
+              hasQuery ? Icons.search_off_rounded : Icons.auto_stories_outlined,
+              size: 38,
+              color: t.ink3,
+            ),
+            const SizedBox(height: 14),
+            Text(
+              hasQuery ? '没有找到匹配的书' : '这个分类下还没有书',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: t.ink2,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              hasQuery ? '换个书名或作者关键词试试' : '切换阅读状态，或查看全部书籍',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: t.ink3, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
+              onPressed: () => setState(() {
+                if (hasQuery) {
+                  query = '';
+                } else {
+                  filter = 0;
+                }
+              }),
+              icon: Icon(hasQuery ? Icons.close : Icons.menu_book_outlined),
+              label: Text(hasQuery ? '清空搜索' : '查看全部书籍'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _sortMenu(BuildContext context) {
     final Tokens t = context.tk;
     return PopupMenuButton<int>(
@@ -422,76 +512,84 @@ class _ShelfScreenState extends State<ShelfScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Material(
-        color: t.raised,
-        borderRadius: BorderRadius.circular(14),
+        color: t.sheet,
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(22),
           onTap: () => widget.onOpen(b),
           onLongPress: () => widget.onDrawer(b),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                BookCover(entry: b, width: 64),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        b.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: display,
-                          fontSize: 20,
-                          color: t.ink,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border.all(color: t.rule.withValues(alpha: .8)),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  BookCover(entry: b, width: 64),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          b.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: display,
+                            fontSize: 20,
+                            color: t.ink,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '读到 ${p.pct.round()}%',
-                        style: TextStyle(fontSize: 13, color: t.ink2),
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: p.pct / 100,
-                          minHeight: 3,
-                          color: t.ink2,
-                          backgroundColor: t.rule,
+                        const SizedBox(height: 4),
+                        Text(
+                          '读到 ${p.pct.round()}%',
+                          style: TextStyle(fontSize: 13, color: t.ink2),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: <Widget>[
-                          StatusDot(status: b.status, size: 7),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              _statusLine(b),
-                              style: TextStyle(fontSize: 12, color: t.ink3),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            value: p.pct / 100,
+                            minHeight: 4,
+                            color: t.zhu,
+                            backgroundColor: t.rule,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: <Widget>[
+                            StatusDot(status: b.status, size: 7),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                _statusLine(b),
+                                style: TextStyle(fontSize: 12, color: t.ink3),
+                              ),
                             ),
-                          ),
-                          IconButton(
-                            visualDensity: VisualDensity.compact,
-                            icon: Icon(Icons.more_horiz, color: t.ink3),
-                            onPressed: () => widget.onDrawer(b),
-                          ),
-                          Pill(
-                            label: '继续',
-                            filled: true,
-                            dense: true,
-                            onTap: () => widget.onOpen(b),
-                          ),
-                        ],
-                      ),
-                    ],
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              tooltip: '更多操作：${b.title}',
+                              icon: Icon(Icons.more_horiz, color: t.ink3),
+                              onPressed: () => widget.onDrawer(b),
+                            ),
+                            Pill(
+                              label: '继续',
+                              filled: true,
+                              dense: true,
+                              onTap: () => widget.onOpen(b),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -502,6 +600,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
   Widget _gridCell(BuildContext context, BookEntry b) {
     final Tokens t = context.tk;
     final double pct = widget.library.progressOf(b.id)?.pct ?? 0;
+    final double textScale = MediaQuery.textScalerOf(context).scale(16) / 16;
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints box) =>
           TweenAnimationBuilder<double>(
@@ -515,32 +614,59 @@ class _ShelfScreenState extends State<ShelfScreen> {
                   ),
                   child: child,
                 ),
-            child: GestureDetector(
-              onTap: () => widget.onOpen(b),
-              onLongPress: () => widget.onDrawer(b),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  BookCover(
-                    entry: b,
-                    width: box.maxWidth,
-                    statusDot: true,
-                    onDot: () => widget.onDrawer(b, focus: true),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => widget.onOpen(b),
+                onLongPress: () => widget.onDrawer(b),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 2, 2, 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      BookCover(
+                        entry: b,
+                        width: box.maxWidth - 4,
+                        statusDot: true,
+                        onDot: () => widget.onDrawer(b, focus: true),
+                      ),
+                      const SizedBox(height: 9),
+                      SizedBox(
+                        height: 42 * textScale,
+                        child: Text(
+                          b.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: display,
+                            fontSize: 16,
+                            height: 1.28,
+                            color: t.ink,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${b.author.isEmpty ? '继续阅读' : b.author} · ${pct.round()}%',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12, color: t.ink3),
+                      ),
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: (pct / 100).clamp(0, 1),
+                          minHeight: 3,
+                          color: t.zhu,
+                          backgroundColor: t.rule,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    b.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, height: 1.35, color: t.ink),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    height: 2,
-                    width: box.maxWidth * math.min(1, pct / 100),
-                    color: t.ink3,
-                  ),
-                ],
+                ),
               ),
             ),
           ),
