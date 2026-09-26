@@ -440,6 +440,27 @@ String detectLang(String text) {
 
 bool isCjk(String? lang) => lang == 'zh' || lang == 'ja' || lang == null;
 
+final RegExp _txtAuthorRe = pyRe(r'(?:作者|著者|作\s*者)\s*[:：]\s*(\S.{0,19})');
+final RegExp _txtNameRe = pyRe(r'[\u4e00-\u9fff·]{2,6}');
+
+/// `txt_author`: an explicit 作者：X near the top, or a short name right under
+/// a first line that is the title (故乡 / 鲁迅). Otherwise unknown.
+String txtAuthor(List<String> lines, String stem) {
+  final List<String> head =
+      lines.where((String t) => t.isNotEmpty).take(6).toList();
+  for (final String t in head) {
+    final RegExpMatch? m = pyFullmatch(_txtAuthorRe, t);
+    if (m != null) return PyCompat.strip(m.group(1)!);
+  }
+  if (head.length > 2 &&
+      head[0] == stem &&
+      pyFullmatch(_txtNameRe, head[1]) != null &&
+      pyMatch(chapterRe, head[1]) == null) {
+    return head[1];
+  }
+  return '';
+}
+
 /// `parse_txt` from the decoded text and the file's stem.
 Json parseTxtText(String text, String stem) {
   if (cpLen(text) > maxChars) throw const ValueError('这本书超过 6000 万字，拆成几本再传。');
@@ -448,8 +469,10 @@ Json parseTxtText(String text, String stem) {
   final String lang = detectLang(text);
   final List<Json> blocks = <Json>[];
   final List<(int, String, int)> starts = <(int, String, int)>[];
-  for (final String line in splitlines(text)) {
-    final String t = clean(line);
+  final List<String> lines = <String>[
+    for (final String line in splitlines(text)) clean(line),
+  ];
+  for (final String t in lines) {
     if (t.isEmpty) continue;
     final bool major =
         lang == 'ja' &&
@@ -463,7 +486,13 @@ Json parseTxtText(String text, String stem) {
     }
   }
   if (starts.isEmpty || starts[0].$1 > 0) starts.insert(0, (0, '开始', 0));
-  final Json book = finish(blocks, starts, <String, String>{}, stem, '');
+  final Json book = finish(
+    blocks,
+    starts,
+    <String, String>{},
+    stem,
+    txtAuthor(lines, stem),
+  );
   book['lang'] = lang;
   return book;
 }

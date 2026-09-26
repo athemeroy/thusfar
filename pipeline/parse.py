@@ -707,6 +707,24 @@ def is_cjk(lang: str | None) -> bool:
     return lang in ('zh', 'ja', None)
 
 
+TXT_AUTHOR_RE = re.compile(r'(?:作者|著者|作\s*者)\s*[:：]\s*(\S.{0,19})')
+TXT_NAME_RE = re.compile(r'[\u4e00-\u9fff·]{2,6}')
+
+
+def txt_author(lines: list[str], stem: str) -> str:
+    """The author of a Chinese TXT: an explicit 作者：X near the top, or a short name right
+    under a first line that is the title (故乡 / 鲁迅). Otherwise unknown."""
+    head = [t for t in lines if t][:6]
+    for t in head:
+        m = TXT_AUTHOR_RE.fullmatch(t)
+        if m:
+            return m.group(1).strip()
+    if len(head) > 2 and head[0] == stem and TXT_NAME_RE.fullmatch(head[1]) \
+            and not CHAPTER_RE.match(head[1]):
+        return head[1]
+    return ''
+
+
 def parse_txt(path: Path, out_dir: Path) -> dict:
     text = decode_txt(path.read_bytes())
     if len(text) > MAX_CHARS:
@@ -729,7 +747,7 @@ def parse_txt(path: Path, out_dir: Path) -> dict:
             blocks.append({'k': 'p', 't': t})
     if not starts or starts[0][0] > 0:
         starts.insert(0, (0, '开始', 0))
-    book = finish(blocks, starts, {}, path.stem, '')
+    book = finish(blocks, starts, {}, path.stem, txt_author(lines, path.stem))
     book['lang'] = lang
     return book
 

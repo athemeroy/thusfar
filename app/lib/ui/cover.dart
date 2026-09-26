@@ -83,14 +83,17 @@ class BookCover extends StatelessWidget {
                     color: Colors.black.withValues(alpha: .14),
                   ),
                 ),
-                Align(
-                  alignment: Alignment.bottomLeft,
-                  child: Container(
-                    height: width > 78 ? 1 : .6,
-                    width: width * .62,
-                    color: const Color(0xFFF4EBDD).withValues(alpha: .52),
+                // With the status dot at its left end, this rule read as a
+                // reading-progress bar stuck at 0; keep it only without one.
+                if (!statusDot)
+                  Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Container(
+                      height: width > 78 ? 1 : .6,
+                      width: width * .62,
+                      color: const Color(0xFFF4EBDD).withValues(alpha: .52),
+                    ),
                   ),
-                ),
                 Align(
                   alignment: Alignment.topLeft,
                   child: Padding(

@@ -135,4 +135,95 @@ void main() {
       root.deleteSync(recursive: true);
     }
   });
+
+  testWidgets('an unprocessed book offers to start processing from People', (
+    WidgetTester tester,
+  ) async {
+    const String text = '林舟来到码头。沈砚告诉他，渡船下午开航。';
+    final Directory root = Directory.systemTemp.createTempSync(
+      'people-unprocessed-',
+    );
+    final Directory directory = Directory('${root.path}/books/fixture')
+      ..createSync(recursive: true);
+    writeJson(File('${directory.path}/book.json'), <String, Object?>{
+      'title': '未整理',
+      'len': text.length,
+      'lang': 'zh',
+      'notes': <String, Object?>{},
+      'blocks': <Json>[
+        <String, Object?>{'k': 'p', 't': text, 'o': 0},
+      ],
+      'chapters': <Json>[
+        <String, Object?>{
+          'title': '开始',
+          'b0': 0,
+          'b1': 1,
+          'o0': 0,
+          'o1': text.length,
+          'kind': 'body',
+        },
+      ],
+    });
+    writeJson(File('${directory.path}/status.json'), <String, Object?>{
+      'state': 'idle',
+      'frontier': 0,
+    });
+    final Library library = Library(root);
+    await library.scan();
+    SeenStore.instance.attach(File('${root.path}/seen.json'));
+    final BookData book = BookData.open(library.books.single);
+    final ReaderController reader = ReaderController(
+      library: library,
+      book: book,
+    );
+    reader.layout(
+      Paginator(
+        book,
+        const PageSpec(
+          width: 350,
+          height: 500,
+          fontSize: 16,
+          lineHeight: 1.7,
+          fontFamily: null,
+          color: Colors.black,
+          textScaler: TextScaler.noScaling,
+        ),
+      ),
+      0,
+    );
+    final ReaderLink link = ReaderLink(
+      c: reader,
+      jump: (int _, {(int, int)? highlight}) {},
+      openAsk: ({String? prefill, String? quote}) {},
+    );
+    final ScrollController scroll = ScrollController();
+    int started = 0;
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.light),
+          home: Scaffold(
+            body: SheetFrame(
+              scroll: scroll,
+              root: PeoplePage(link: link, onStartProcessing: () => started++),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('这本书还没整理人物'), findsOneWidget);
+      await tester.tap(find.text('开始整理'));
+      await tester.pump();
+      expect(started, 1);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      scroll.dispose();
+      reader.dispose();
+      book.notes.dispose();
+      book.dispose();
+      library.dispose();
+      root.deleteSync(recursive: true);
+    }
+  });
 }

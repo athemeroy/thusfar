@@ -23,6 +23,10 @@ abstract class BookProcessing extends ChangeNotifier {
 
 /// A single worker isolate owns model settings, queue and in-flight requests.
 /// UI widgets only issue explicit commands and observe durable status files.
+
+/// Model requests a phone runs at once while reading a book.
+const int phoneConcurrency = 4;
+
 class ProcessingController extends BookProcessing {
   ProcessingController(this.library);
 
@@ -188,7 +192,11 @@ Future<void> _processingIsolate(List<Object?> args) async {
     settings.applyEnvironment();
     final String model = settings.read().$2;
     environ['LOCAL_CONCURRENCY'] = '4';
-    return WorkerSettings(model: model, localModel: model, concurrency: 4);
+    return WorkerSettings(
+      model: model,
+      localModel: model,
+      concurrency: phoneConcurrency,
+    );
   }
 
   final Worker worker = Worker(

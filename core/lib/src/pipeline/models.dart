@@ -164,6 +164,38 @@ Map<String, Object?> estimate(
   };
 }
 
+/// Concurrency the per-model [rates] minutes were measured at.
+const Map<String, int> _measuredConcurrency = <String, int>{
+  'gpt-5.6-terra': 16,
+  'deepseek-flash': 32,
+};
+
+/// Fixed steps a book always pays: classification, judging, finishing.
+/// Measured on the Xiaomi: 故乡 (5k characters) took about 3 minutes at 4.
+const double _fixedMinutes = 2.5;
+
+/// Minutes to read a book on a device running [concurrency] requests at a
+/// time. [estimate] keeps the server figure the Python oracle reports; this
+/// Dart-only helper scales it to the phone and adds the fixed overhead, so a
+/// short story no longer reads as "0 分钟". Null when the model is unknown.
+int? deviceMinutes(
+  int chars, {
+  String? model,
+  String? lang = 'zh',
+  int concurrency = 4,
+}) {
+  final String name = _firstPart(
+    model == null || model.isEmpty ? modelNow() : model,
+  );
+  if (!prices.containsKey(name) && !overrides().containsKey(name)) return null;
+  final Rate rate = rates[name] ?? defaultRate;
+  final double units =
+      (chars < 0 ? 0 : chars) / 10000 * (cjk.contains(lang) ? 1 : latinFactor);
+  final double scale =
+      (_measuredConcurrency[name] ?? 16) / (concurrency < 1 ? 1 : concurrency);
+  return (_fixedMinutes + units * rate.minutes * scale).round();
+}
+
 num _num(Object? value) => (value as num?) ?? 0;
 
 /// CNY range actually spent, from a book's recorded usage.
