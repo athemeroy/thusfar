@@ -64,6 +64,9 @@ class FootnotesPage extends StatelessWidget {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: context.tk.zhu,
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ),

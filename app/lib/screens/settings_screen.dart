@@ -240,7 +240,10 @@ class SettingsScreen extends StatelessWidget {
                   ListTile(
                     title: const Text('开源地址'),
                     subtitle: const Text('github.com/athemeroy/thusfar'),
-                    trailing: Icon(Icons.copy_outlined, size: 16, color: t.ink3),
+                    trailing: Tooltip(
+                      message: '复制开源地址',
+                      child: Icon(Icons.copy_outlined, size: 16, color: t.ink3),
+                    ),
                     onTap: () {
                       HapticFeedback.lightImpact();
                       Clipboard.setData(

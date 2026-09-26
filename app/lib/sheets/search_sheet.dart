@@ -147,6 +147,31 @@ class _SearchPageState extends State<SearchPage> {
       title: query.isEmpty
           ? '搜索原文'
           : '找到 ${hits.length}${hits.length >= 500 ? '+' : ''} 处',
+      titleWidget: query.isEmpty
+          ? null
+          : Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  const TextSpan(text: '找到 '),
+                  TextSpan(
+                    text: '${hits.length}${hits.length >= 500 ? '+' : ''}',
+                    style: TextStyle(
+                      color: t.zhu,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
+                  ),
+                  const TextSpan(text: ' 处'),
+                ],
+              ),
+              style: TextStyle(
+                fontSize: 17,
+                color: t.ink,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
       headerExtraHeight: whole ? 126 : 104,
       headerExtra: Column(
         children: <Widget>[

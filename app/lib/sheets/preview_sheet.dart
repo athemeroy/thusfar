@@ -62,49 +62,76 @@ class _PreviewPageState extends State<PreviewPage> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
-            child: ahead && !reveal
-                ? Column(
-                    children: <Widget>[
-                      const SizedBox(height: 24),
-                      Text(
-                        '这段在第 $page 页，你还没读到',
-                        style: TextStyle(fontSize: 16, color: t.ink2),
-                      ),
-                      const SizedBox(height: 16),
-                      Pill(
-                        label: '预览未读原文',
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          setState(() => reveal = true);
-                        },
-                      ),
-                    ],
-                  )
-                : Text.rich(
-                    TextSpan(
-                      style: TextStyle(
-                        fontFamily: serif,
-                        fontSize: 17,
-                        height: 1.85,
-                        color: t.ink2,
-                      ),
-                      children: <InlineSpan>[
-                        TextSpan(text: before.isEmpty ? '' : '…$before'),
-                        TextSpan(
-                          text: target,
-                          style: TextStyle(
-                            color: t.ink,
-                            backgroundColor: mark.withValues(alpha: 0.12),
-                            decoration: TextDecoration.underline,
-                            decorationColor: mark,
-                            decorationThickness: 1.6,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: ahead && !reveal
+                  ? Column(
+                      key: const ValueKey<String>('preview-locked'),
+                      children: <Widget>[
+                        const SizedBox(height: 24),
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: t.amber.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.visibility_off_outlined,
+                            size: 24,
+                            color: t.amber,
                           ),
                         ),
-                        TextSpan(text: after.isEmpty ? '' : '$after…'),
+                        const SizedBox(height: 14),
+                        Text(
+                          '这段在第 $page 页，你还没读到',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: t.ink2,
+                            fontFeatures: const <FontFeature>[
+                              FontFeature.tabularFigures(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Pill(
+                          label: '预览未读原文',
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() => reveal = true);
+                          },
+                        ),
                       ],
+                    )
+                  : KeyedSubtree(
+                      key: const ValueKey<String>('preview-revealed'),
+                      child: Text.rich(
+                        TextSpan(
+                          style: TextStyle(
+                            fontFamily: serif,
+                            fontSize: 17,
+                            height: 1.85,
+                            color: t.ink2,
+                          ),
+                          children: <InlineSpan>[
+                            TextSpan(text: before.isEmpty ? '' : '…$before'),
+                            TextSpan(
+                              text: target,
+                              style: TextStyle(
+                                color: t.ink,
+                                backgroundColor: mark.withValues(alpha: 0.12),
+                                decoration: TextDecoration.underline,
+                                decorationColor: mark,
+                                decorationThickness: 1.6,
+                              ),
+                            ),
+                            TextSpan(text: after.isEmpty ? '' : '$after…'),
+                          ],
+                        ),
+                        textAlign: TextAlign.justify,
+                      ),
                     ),
-                    textAlign: TextAlign.justify,
-                  ),
+            ),
           ),
         ),
       ],

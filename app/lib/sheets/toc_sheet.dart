@@ -98,29 +98,47 @@ class _TocPageState extends State<TocPage> {
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: SizedBox(
         height: 40,
-        child: TextField(
-          controller: pageInput,
-          keyboardType: TextInputType.number,
-          textInputAction: TextInputAction.go,
-          inputFormatters: <TextInputFormatter>[
-            FilteringTextInputFormatter.digitsOnly,
-          ],
-          onSubmitted: (String v) {
-            final int? n = int.tryParse(v);
-            if (n == null) return;
-            HapticFeedback.lightImpact();
-            widget.link.jump(_offsetOfPage(n.clamp(1, total)));
+        child: ListenableBuilder(
+          listenable: pageInput,
+          builder: (BuildContext context, _) {
+            final bool hasText = pageInput.text.isNotEmpty;
+            return TextField(
+              controller: pageInput,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.go,
+              inputFormatters: <TextInputFormatter>[
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              onSubmitted: (String v) {
+                final int? n = int.tryParse(v);
+                if (n == null) return;
+                HapticFeedback.lightImpact();
+                widget.link.jump(_offsetOfPage(n.clamp(1, total)));
+              },
+              decoration: InputDecoration(
+                hintText: '跳到第 __ 页（共${exact ? '' : '约 '}$total 页）',
+                filled: true,
+                fillColor: t.paper,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                suffixIcon: hasText
+                    ? IconButton(
+                        tooltip: '跳转到该页',
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                        onPressed: () {
+                          final int? n = int.tryParse(pageInput.text);
+                          if (n == null) return;
+                          HapticFeedback.lightImpact();
+                          widget.link.jump(_offsetOfPage(n.clamp(1, total)));
+                        },
+                      )
+                    : null,
+              ),
+            );
           },
-          decoration: InputDecoration(
-            hintText: '跳到第 __ 页（共${exact ? '' : '约 '}$total 页）',
-            filled: true,
-            fillColor: t.paper,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
-            ),
-          ),
         ),
       ),
     );

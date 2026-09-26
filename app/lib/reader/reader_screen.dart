@@ -1451,6 +1451,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               icon: Icon(Icons.close, size: 16, color: t.ink3),
               tooltip: '关闭',
               onPressed: () {
+                HapticFeedback.selectionClick();
                 setState(() => _whoIsActive = false);
               },
             ),

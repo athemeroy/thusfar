@@ -229,9 +229,16 @@ class _BookSheetState extends State<BookSheet> {
                 final List<String> list = List<String>.of(
                   widget.library.readingList,
                 );
-                queue >= 0 ? list.remove(b.id) : list.add(b.id);
+                final bool wasIn = queue >= 0;
+                wasIn ? list.remove(b.id) : list.add(b.id);
                 widget.library.setReadingList(list);
                 setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    duration: const Duration(seconds: 2),
+                    content: Text(wasIn ? '已从接下来读移除' : '已加入接下来读'),
+                  ),
+                );
               },
             ),
             ListTile(

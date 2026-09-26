@@ -307,7 +307,23 @@ class _NotesScreenState extends State<NotesScreen> {
                         ),
                       ),
                     ),
-                    Text('${items.length}', style: TextStyle(color: t.ink3)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: t.rule.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${items.length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: t.ink2,
+                          fontFeatures: const <FontFeature>[
+                            FontFeature.tabularFigures(),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
