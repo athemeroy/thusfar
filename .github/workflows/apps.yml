@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
   push:
     tags: ['v2*']
+    branches: [flutter-2.0]
+    paths: ['app/**', 'core/**', '.github/workflows/apps.yml']
 
 permissions:
   contents: write
