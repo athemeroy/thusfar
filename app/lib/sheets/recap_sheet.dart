@@ -138,13 +138,22 @@ class RecapPage extends StatelessWidget {
                     style: TextStyle(fontSize: 15, color: t.ink),
                   ),
                   children: <Widget>[
-                    Text(
-                      '${r['text']}',
-                      style: TextStyle(
-                        fontFamily: serif,
-                        fontSize: 15,
-                        height: 1.75,
-                        color: t.ink2,
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: t.paper,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: t.rule.withValues(alpha: 0.65)),
+                      ),
+                      child: Text(
+                        '${r['text']}',
+                        style: TextStyle(
+                          fontFamily: serif,
+                          fontSize: 15,
+                          height: 1.75,
+                          color: t.ink2,
+                        ),
                       ),
                     ),
                   ],

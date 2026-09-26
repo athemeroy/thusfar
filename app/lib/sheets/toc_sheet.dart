@@ -237,7 +237,10 @@ class _TocPageState extends State<TocPage> {
                       Pill(
                         label: '跳过去',
                         dense: true,
-                        onTap: () => link.jump(c.o0),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          link.jump(c.o0);
+                        },
                       ),
                     ],
                   ),
@@ -271,6 +274,7 @@ class _TocPageState extends State<TocPage> {
                 child: const Icon(Icons.delete_outline, color: Colors.white),
               ),
               confirmDismiss: (_) async {
+                HapticFeedback.mediumImpact();
                 try {
                   final Json receipt = notes.delete(m);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -279,6 +283,7 @@ class _TocPageState extends State<TocPage> {
                       action: SnackBarAction(
                         label: '撤销',
                         onPressed: () {
+                          HapticFeedback.lightImpact();
                           final NoteStore current = NoteStore(
                             notes.file,
                             notes.book,
@@ -309,7 +314,10 @@ class _TocPageState extends State<TocPage> {
               },
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                onTap: () => link.jump((m['start']! as num).toInt()),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  link.jump((m['start']! as num).toInt());
+                },
                 leading: Icon(Icons.bookmark, color: t.qing),
                 title: Text(
                   _firstSentence((m['start']! as num).toInt()),

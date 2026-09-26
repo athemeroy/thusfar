@@ -244,7 +244,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         ),
       ];
 
-  void _selectTab(int index) => setState(() => tab = index);
+  void _selectTab(int index) {
+    if (tab != index) HapticFeedback.selectionClick();
+    setState(() => tab = index);
+  }
 
   Widget _navigationRail(Tokens t) => NavigationRail(
     backgroundColor: t.sheet,

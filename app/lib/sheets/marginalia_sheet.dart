@@ -267,7 +267,13 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                         key: const ValueKey<String>('marginalia-stage'),
                       ),
                     ),
-                    TextButton(onPressed: _cancel, child: const Text('停止')),
+                    TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _cancel();
+                      },
+                      child: const Text('停止'),
+                    ),
                   ],
                 ),
               ),
@@ -289,12 +295,17 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                       spacing: 12,
                       children: [
                         TextButton(
-                          onPressed: () =>
-                              _request(_lastMode, selection: _lastSelection),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            _request(_lastMode, selection: _lastSelection);
+                          },
                           child: const Text('重试'),
                         ),
                         TextButton(
-                          onPressed: _settings,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            _settings();
+                          },
                           child: const Text('模型设置'),
                         ),
                       ],
@@ -327,7 +338,10 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: _busy
                           ? null
-                          : () => _request('auto', selection: item),
+                          : () {
+                              HapticFeedback.lightImpact();
+                              _request('auto', selection: item);
+                            },
                     )
                   : _comment(context, item),
             ),
@@ -361,7 +375,12 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                     ),
                   ],
                   TextButton(
-                    onPressed: _busy ? null : _settings,
+                    onPressed: _busy
+                        ? null
+                        : () {
+                            HapticFeedback.lightImpact();
+                            _settings();
+                          },
                     child: const Text('模型设置'),
                   ),
                 ],
