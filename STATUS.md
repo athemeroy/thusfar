@@ -1,3 +1,22 @@
+# 状态
+
+## 2026-09-26 接手后的进展（Claude 执行，Codex 已停）
+
+用户决定：录制预算不设 ¥1 上限；先做 Flutter 页面主功能，不再在 A0 上反复求证；重编译放 Mac mini。
+
+| 部分 | 状态 | 证据 |
+|---|---|---|
+| A1 基础层 | provenance / lang / models / storage 纯函数已移植 | 12 个函数 367 个 golden 通过 |
+| 正则 | 运行时 Python→Dart 翻译器 `pyRe` | 103 个模式 × 4401 个用例与 Python 一致 |
+| JSON | `pyJsonLoads` 与 Python 3.11 值和报错文本一致 | 429 个用例 |
+| A2 解析 | TXT（含青空文库、古登堡、多语言章节）+ EPUB（Python html.parser 兼容分词器） | 16 个 parsed golden 全过；本地 40 本真实 EPUB 与 Python 逐字节一致 |
+| 折叠 | `web/js/kg.js fold()` 移植 | 6 本书 × 20 截点共 120 个 golden 一致 |
+| A3/A4 | 模型聊天客户端、JEV（免费/付费/本地/聊天裁判、熔断、缓存）、extract、local、judge | 共 1275 项 golden 通过；judge 常量由生成器从 Python 导出 |
+| 整理编排 | link / kg / run / jobs 尚未移植 | App 里「开始整理」「问书」明确提示引擎移植中 |
+| Flutter App | 书架、首次使用、导入（TXT/EPUB/备份）、阅读页（分页、平移翻页、朱线、页眉页脚、工具栏、选区、书签、回到原位）、人物卡、人物抽屉、关系图、目录/书签/摘记、前情、搜索、排版、摘记页、设置、模型设置（含测试连接） | golden 截图测试渲染全部主界面；导入测试通过；APK 25.4 MB，已装到小米（包名 `com.yedu.zhupi.v2probe`，与 1.7.5 并存） |
+
+录制：法文、Jekyll 两本已录完；日文 57/110、儒林部分段落因免费裁判 402 限额和 400「上下文超限」停止（后者是 1.7.5 真实缺陷）。按 token 估算约 ¥2.8。
+
 # 页读 / Thusfar 2.0 进度
 
 更新：2026-09-26，分支 `flutter-2.0`。本文件只记录可复核的阶段证据；门槛未达到时保持该阶段进行中。

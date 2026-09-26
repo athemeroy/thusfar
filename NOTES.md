@@ -218,3 +218,14 @@
 - Symptom: the ordinary function input fingerprint omitted Dart contract files and their Python generator even though a Python unittest reads them. Changing those dependencies could leave the advertised recording input tree unchanged.
 - Cause: the initial whitelist excluded all Dart files and some support scripts, treating only the direct oracle inputs as dependencies.
 - Fix: commit `66d631c` adds the exact imported generator, deferred-marker helper, and ported Dart test contracts. Mutation tests reject changes to each added dependency. Provenance metadata now validates the two distinct integer seeds, frozen commit identifier, positive test count, and declared workload shapes. Metadata alone is not proof that two processes ran: the final acceptance record must also retain the actual commands, exit codes and independently compared output hashes. Python child-process tests assert their own results; their internal calls are outside the parent's function tracer.
+
+
+## 2026-09-26 Flutter 2.0 第一轮（Claude）
+
+- **NAS 编译 APK 会被杀**：Gradle 守护进程两次“disappeared”，当时 NAS 可用内存约 80 MB、交换区满。→ 改在 Mac mini 编译（`~/.local/share/thusfar-build/`，Flutter 固定到 NAS 同一修订 6a19cca，JDK17 用 brew openjdk@17）。签名密钥不出 NAS：Mini 出包后拉回，用 `apksigner --ks-pass file:` 签名。只传 `--ks-pass`；再加 `--key-pass file:同一文件` 会第二次读文件、报 “end of file reached”。
+- **path_provider 2.1.6 在 Android 用 JNI**，需要 CMake/Ninja。只为拿 `files/` 路径不值得，改成 MainActivity 的 MethodChannel `thusfar/paths`。
+- **全角空格做段首缩进会被两端对齐吃掉**：TextAlign.justify 把行首空格当可伸缩空白。→ 用宽度 2em 的占位（WidgetSpan），分页用的 TextPainter 用相同占位尺寸，偏移换算 +1。
+- **flutter_test 默认关掉阴影**，Material elevation 被画成粗黑带，看起来像 bug；截图测试里 `debugDisableShadows = false` 并在 tearDown 复原。
+- **MIUI 手机平放会把 App 转成横屏**，首次使用页被截断；DocumentsUI 在横屏下不响应自动点击。→ App 固定竖屏。
+- **免费裁判 400 `dimension_context_too_large`**：儒林外史长段落触发，1.7.5 会整本停下。待在整理引擎移植时处理（按段拆问题或给出人话原因）。
+- 录制上限由 ¥1 改为 `MAX_CNY = 20`（用户明确不在乎预算，模型仍只用 deepseek-flash+nothink）。
