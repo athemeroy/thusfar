@@ -101,6 +101,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     book.notes.dispose();
     book.dispose();
     _flashTimer?.cancel();
+    _wheelTimer?.cancel();
     pc?.dispose();
     _focus.dispose();
     super.dispose();
@@ -633,19 +634,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
     LogicalKeyboardKey.keyK,
     LogicalKeyboardKey.keyH,
   };
-  DateTime _lastWheelTurn = DateTime.fromMillisecondsSinceEpoch(0);
+  bool _wheelLocked = false;
+  Timer? _wheelTimer;
 
   /// A mouse wheel or trackpad scroll turns one page per gesture; the
   /// short pause stops one flick from skipping a whole chapter.
   void _wheel(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent || _sheetOpen) return;
+    if (event is! PointerScrollEvent || _sheetOpen || _wheelLocked) return;
     final double dy = event.scrollDelta.dy;
     if (dy.abs() < 4) return;
-    final DateTime now = DateTime.now();
-    if (now.difference(_lastWheelTurn) < const Duration(milliseconds: 350)) {
-      return;
-    }
-    _lastWheelTurn = now;
+    _wheelLocked = true;
+    _wheelTimer?.cancel();
+    _wheelTimer = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) _wheelLocked = false;
+    });
     _turn(dy > 0 ? 1 : -1);
   }
 

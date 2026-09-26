@@ -205,6 +205,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(page(2), findsOneWidget);
 
+    // Mouse wheel scroll backward to page 1
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.sendEventToBinding(mouse.scroll(const Offset(0, -60)));
+    await tester.pumpAndSettle();
+    expect(page(1), findsOneWidget);
+
     // Test N key opens TocPage notes tab
     await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
     await tester.pumpAndSettle();
