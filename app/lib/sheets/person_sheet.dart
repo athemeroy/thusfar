@@ -407,7 +407,11 @@ class _PersonPageState extends State<PersonPage> {
                       ],
                     ],
                   ),
-                  if ((r['desc'] ?? '') != '')
+                  // The model sometimes writes the status or role again as
+                  // the description (父母 · 已结束 · "已结束").
+                  if ((r['desc'] ?? '') != '' &&
+                      r['desc'] != r['role'] &&
+                      !(r['status'] == 'ended' && r['desc'] == '已结束'))
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
                       child: Text(
