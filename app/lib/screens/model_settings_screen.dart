@@ -391,6 +391,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
               decoration: deco(
                 'API 密钥',
                 suffix: IconButton(
+                  tooltip: showKey ? '隐藏密钥' : '显示密钥',
                   icon: Icon(showKey ? Icons.visibility_off : Icons.visibility),
                   onPressed: () {
                     HapticFeedback.selectionClick();
@@ -494,6 +495,9 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                         color: t.ink,
                         height: 1.5,
                         fontSize: 13.5,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
                       ),
                     ),
                   ),

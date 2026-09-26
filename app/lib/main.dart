@@ -638,8 +638,27 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           feature.bounds.height < media.size.height * .4,
     );
     final Widget pageStack = IndexedStack(index: tab, children: pages);
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle(
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.digit1, control: true):
+            () => _selectTab(0),
+        const SingleActivator(LogicalKeyboardKey.digit1, meta: true):
+            () => _selectTab(0),
+        const SingleActivator(LogicalKeyboardKey.digit2, control: true):
+            () => _selectTab(1),
+        const SingleActivator(LogicalKeyboardKey.digit2, meta: true):
+            () => _selectTab(1),
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true):
+            () => _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.digit3, meta: true):
+            () => _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.keyO, control: true):
+            pickAndImport,
+        const SingleActivator(LogicalKeyboardKey.keyO, meta: true):
+            pickAndImport,
+      },
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle(
         statusBarColor: t.paper,
         statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
         systemNavigationBarColor: t.sheet,
@@ -774,6 +793,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 destinations: _destinations,
               ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

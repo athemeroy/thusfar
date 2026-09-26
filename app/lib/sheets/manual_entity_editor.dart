@@ -182,6 +182,29 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
                     maxLines: 8,
                     maxLength: 3000,
                   ),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: note,
+                    builder: (BuildContext context, TextEditingValue val, Widget? _) {
+                      final int count = val.text.trim().length;
+                      if (count == 0) return const SizedBox.shrink();
+                      return Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 4, right: 4),
+                          child: Text(
+                            '$count 字',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: t.ink3,
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   if (_locked)
                     Text(
                       '这条资料在更后面的阅读位置修改过；回到那里才能继续编辑。',

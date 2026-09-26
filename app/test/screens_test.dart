@@ -263,4 +263,37 @@ void main() {
     expect(tester.getSize(covers.at(2)).width, lessThan(100));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('desktop shortcuts switch tabs in HomeShell', (
+    WidgetTester tester,
+  ) async {
+    final AppModel model = AppModel(root);
+    await tester.runAsync(model.library.scan);
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await settle(tester);
+
+    expect(find.text('全部书籍 '), findsOneWidget);
+
+    // Switch to Notes via Ctrl+2
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    await settle(tester);
+    expect(find.text('摘记'), findsOneWidget);
+
+    // Switch to Settings via Ctrl+3
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit3);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    await settle(tester);
+    expect(find.text('设置'), findsOneWidget);
+
+    // Switch back to Shelf via Ctrl+1
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit1);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    await settle(tester);
+    expect(find.text('全部书籍 '), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
