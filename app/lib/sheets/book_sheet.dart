@@ -494,7 +494,15 @@ class _BookSheetState extends State<BookSheet> {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: t.zhu,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: t.zhuSoft, width: 0.5),
+                  boxShadow: <BoxShadow>[
+                    BoxShadow(
+                      color: t.zhu.withValues(alpha: 0.25),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
                 child: const Text(
                   '批',
@@ -502,7 +510,8 @@ class _BookSheetState extends State<BookSheet> {
                     color: Colors.white,
                     fontSize: 13,
                     fontFamily: display,
-                    height: 1,
+                    fontWeight: FontWeight.w600,
+                    height: 1.05,
                   ),
                 ),
               ),

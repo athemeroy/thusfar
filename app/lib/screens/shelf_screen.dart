@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 import '../data/library.dart';
 import '../data/prefs.dart';
@@ -198,7 +199,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
                           separatorBuilder: (_, _) => const SizedBox(width: 12),
                           itemBuilder: (BuildContext context, int i) =>
                               GestureDetector(
-                                onTap: () => widget.onOpen(queue[i]),
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  widget.onOpen(queue[i]);
+                                },
                                 child: BookCover(entry: queue[i], width: 82),
                               ),
                         ),
@@ -510,16 +514,25 @@ class _ShelfScreenState extends State<ShelfScreen> {
   Widget _continueCard(BuildContext context, BookEntry b) {
     final Tokens t = context.tk;
     final Progress p = widget.library.progressOf(b.id)!;
+    final String ch = widget.library.chapterTitleAt(b, p.pos);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
       child: Material(
         color: t.sheet,
         borderRadius: BorderRadius.circular(22),
         clipBehavior: Clip.antiAlias,
+        elevation: 1,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => widget.onOpen(b),
-          onLongPress: () => widget.onDrawer(b),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onOpen(b);
+          },
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            widget.onDrawer(b);
+          },
           child: DecoratedBox(
             decoration: BoxDecoration(
               border: Border.all(color: t.rule.withValues(alpha: .8)),
@@ -548,7 +561,9 @@ class _ShelfScreenState extends State<ShelfScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '读到 ${p.pct.round()}%',
+                          '$ch读到 ${p.pct.round()}%',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(fontSize: 13, color: t.ink2),
                         ),
                         const SizedBox(height: 8),
@@ -569,6 +584,8 @@ class _ShelfScreenState extends State<ShelfScreen> {
                             Expanded(
                               child: Text(
                                 _statusLine(b),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(fontSize: 12, color: t.ink3),
                               ),
                             ),
@@ -576,13 +593,19 @@ class _ShelfScreenState extends State<ShelfScreen> {
                               visualDensity: VisualDensity.compact,
                               tooltip: '更多操作：${b.title}',
                               icon: Icon(Icons.more_horiz, color: t.ink3),
-                              onPressed: () => widget.onDrawer(b),
+                              onPressed: () {
+                                HapticFeedback.selectionClick();
+                                widget.onDrawer(b);
+                              },
                             ),
                             Pill(
                               label: '继续',
                               filled: true,
                               dense: true,
-                              onTap: () => widget.onOpen(b),
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                widget.onOpen(b);
+                              },
                             ),
                           ],
                         ),
@@ -620,8 +643,14 @@ class _ShelfScreenState extends State<ShelfScreen> {
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
-                onTap: () => widget.onOpen(b),
-                onLongPress: () => widget.onDrawer(b),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  widget.onOpen(b);
+                },
+                onLongPress: () {
+                  HapticFeedback.mediumImpact();
+                  widget.onDrawer(b);
+                },
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(2, 2, 2, 4),
                   child: Column(
@@ -631,7 +660,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
                         entry: b,
                         width: box.maxWidth - 4,
                         statusDot: true,
-                        onDot: () => widget.onDrawer(b, focus: true),
+                        onDot: () {
+                          HapticFeedback.selectionClick();
+                          widget.onDrawer(b, focus: true);
+                        },
                       ),
                       const SizedBox(height: 9),
                       SizedBox(
@@ -662,7 +694,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                           value: (pct / 100).clamp(0, 1),
                           minHeight: 3,
                           color: t.zhu,
-                          backgroundColor: t.rule,
+                          backgroundColor: t.rule.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -679,14 +711,55 @@ class _ShelfScreenState extends State<ShelfScreen> {
     final double pct = widget.library.progressOf(b.id)?.pct ?? 0;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      leading: BookCover(entry: b, width: 40),
-      title: Text(b.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(
-        '${b.author.isEmpty ? '' : '${b.author} · '}读到 ${pct.round()}% · ${_statusLine(b)}',
-        style: TextStyle(color: t.ink3, fontSize: 12),
+      leading: BookCover(entry: b, width: 44),
+      title: Text(
+        b.title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontFamily: display,
+          fontSize: 16,
+          color: t.ink,
+        ),
       ),
-      onTap: () => widget.onOpen(b),
-      onLongPress: () => widget.onDrawer(b),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const SizedBox(height: 2),
+          Text(
+            '${b.author.isEmpty ? '' : '${b.author} · '}读到 ${pct.round()}% · ${_statusLine(b)}',
+            style: TextStyle(color: t.ink3, fontSize: 12),
+          ),
+          if (pct > 0) ...<Widget>[
+            const SizedBox(height: 4),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: (pct / 100).clamp(0, 1),
+                minHeight: 2.5,
+                color: t.zhu,
+                backgroundColor: t.rule.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        ],
+      ),
+      trailing: IconButton(
+        icon: Icon(Icons.more_horiz, color: t.ink3),
+        tooltip: '更多操作：${b.title}',
+        onPressed: () {
+          HapticFeedback.selectionClick();
+          widget.onDrawer(b);
+        },
+      ),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onOpen(b);
+      },
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        widget.onDrawer(b);
+      },
     );
   }
 
@@ -961,7 +1034,10 @@ class _FilterBar extends SliverPersistentHeaderDelegate {
                 label: labels[i],
                 dense: true,
                 filled: i == filter,
-                onTap: () => onChanged(i),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onChanged(i);
+                },
               ),
             ),
         ],

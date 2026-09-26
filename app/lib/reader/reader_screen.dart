@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart'
     show PointerScrollEvent, PointerSignalEvent;
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
+import 'package:thusfar_core/ask.dart' as ask;
 
 import '../data/library.dart';
 import '../data/model_settings.dart';
@@ -76,6 +77,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Timer? _flashTimer;
   final FocusNode _focus = FocusNode();
   int? _drag;
+  bool _whoIsActive = false;
+  bool _whoIsLoading = false;
+  Json? _whoIsResult;
+  String? _whoIsWord;
 
   @override
   void initState() {
@@ -212,7 +217,58 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  void _openPerson(String id) => _sheet(PersonPage(link: link, id: id));
+  void _openPerson(String id) {
+    HapticFeedback.lightImpact();
+    _sheet(PersonPage(link: link, id: id));
+  }
+
+  void _clearSelection() {
+    c.select(null);
+    if (_whoIsActive) {
+      setState(() {
+        _whoIsActive = false;
+        _whoIsLoading = false;
+        _whoIsResult = null;
+        _whoIsWord = null;
+      });
+    }
+  }
+
+  Future<void> _identifyWho(int s, int e) async {
+    HapticFeedback.lightImpact();
+    final String word = book.textBetween(s, e).trim();
+    if (word.isEmpty) return;
+    setState(() {
+      _whoIsActive = true;
+      _whoIsLoading = true;
+      _whoIsResult = null;
+      _whoIsWord = word;
+    });
+
+    try {
+      final Json res = await ask.whoIs(
+        book.book,
+        book.records,
+        c.cutoff,
+        s,
+        e,
+      );
+      if (!mounted) return;
+      setState(() {
+        _whoIsLoading = false;
+        _whoIsResult = res;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _whoIsLoading = false;
+        _whoIsResult = <String, Object?>{
+          'ok': false,
+          'word': word,
+        };
+      });
+    }
+  }
 
   void _openAsk({String? prefill, String? quote, Offset? anchorPoint}) =>
       _sheet(
@@ -372,6 +428,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final int? at = _hitOffset(d.localPosition);
     final int? a = _anchor;
     if (at == null || a == null || c.selection == null) return;
+    HapticFeedback.selectionClick();
+    if (_whoIsActive) {
+      _whoIsActive = false;
+      _whoIsResult = null;
+      _whoIsLoading = false;
+    }
     c.select(
       at >= a ? (a, math.max(at + 1, c.selection!.$2)) : (at, c.selection!.$2),
       anchor: a,
@@ -874,7 +936,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       behavior: HitTestBehavior.opaque,
       onTapUp: (TapUpDetails d) {
         if (c.selection != null) {
-          c.select(null);
+          _clearSelection();
           return;
         }
         final double x = d.localPosition.dx / (context.size?.width ?? 1);
@@ -931,12 +993,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   : index.toDouble();
               final double delta = index - pos;
               // The next page stays still underneath; the current one slides away.
-              return delta > 0
-                  ? Transform.translate(
-                      offset: Offset(-delta * (context.size?.width ?? 0), 0),
-                      child: child,
-                    )
-                  : child!;
+              if (delta > 0) {
+                final double width = context.size?.width ?? 0;
+                return Transform.translate(
+                  offset: Offset(-delta * width, 0),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: (0.16 * delta.clamp(0.0, 1.0)),
+                          ),
+                          blurRadius: 16,
+                          spreadRadius: 2,
+                          offset: const Offset(4, 0),
+                        ),
+                      ],
+                    ),
+                    child: child,
+                  ),
+                );
+              }
+              return child!;
             },
             child: body,
           );
@@ -1097,6 +1175,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget _selectionBar(BuildContext context, double top) {
     final Tokens t = context.tk;
     final (int s, int e) = c.selection!;
+    final int len = (e - s).abs();
     final double y = (_pressAt?.dy ?? 100) + top;
     final bool above = y > top + 70;
     Widget action(String label, VoidCallback on) => InkWell(
@@ -1109,47 +1188,144 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return Positioned(
       left: 16,
       right: 16,
-      top: above ? y - 64 : y + 34,
+      top: above ? math.max(top + 8, y - (_whoIsActive ? 120 : 64)) : y + 34,
       child: Center(
-        child: Material(
-          color: t.ink,
-          shape: const StadiumBorder(),
-          elevation: 4,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              action('摘录', _excerpt),
-              action('批注', () {
-                c.select(null);
-                _sheet(
-                  MarginaliaPage(link: link, start: s, end: e),
-                  full: true,
-                );
-              }),
-              action('笔记', () {
-                c.select(null);
-                NoteEditor.open(
-                  context,
-                  book: book,
-                  start: s,
-                  end: e,
-                  cutoff: c.cutoff,
-                );
-              }),
-              action('问书', () {
-                final String quote = book.textBetween(s, e);
-                c.select(null);
-                _openAsk(quote: quote);
-              }),
-              action('复制', () {
-                Clipboard.setData(ClipboardData(text: book.textBetween(s, e)));
-                c.select(null);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('已复制')));
-              }),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Material(
+              color: t.ink,
+              shape: const StadiumBorder(),
+              elevation: 4,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  action('摘录', _excerpt),
+                  action('批注', () {
+                    _clearSelection();
+                    _sheet(
+                      MarginaliaPage(link: link, start: s, end: e),
+                      full: true,
+                    );
+                  }),
+                  action('笔记', () {
+                    _clearSelection();
+                    NoteEditor.open(
+                      context,
+                      book: book,
+                      start: s,
+                      end: e,
+                      cutoff: c.cutoff,
+                    );
+                  }),
+                  if (len <= 12)
+                    action('这是谁', () => _identifyWho(s, e)),
+                  action('问书', () {
+                    final String quote = book.textBetween(s, e);
+                    _clearSelection();
+                    _openAsk(quote: quote);
+                  }),
+                  action('复制', () {
+                    Clipboard.setData(ClipboardData(text: book.textBetween(s, e)));
+                    _clearSelection();
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('已复制')));
+                  }),
+                ],
+              ),
+            ),
+            if (_whoIsActive) ...<Widget>[
+              const SizedBox(height: 8),
+              _whoIsCard(context, s, e),
             ],
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _whoIsCard(BuildContext context, int s, int e) {
+    final Tokens t = context.tk;
+    return Material(
+      color: t.sheet,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: t.rule.withValues(alpha: 0.8)),
+      ),
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (_whoIsLoading) ...<Widget>[
+              SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: t.zhu,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '正在判断…',
+                style: TextStyle(fontSize: 13, color: t.ink2),
+              ),
+            ] else if (_whoIsResult != null && _whoIsResult!['ok'] == true) ...<Widget>[
+              Text(
+                '这里的「${_whoIsResult!['word'] ?? _whoIsWord}」指 ',
+                style: TextStyle(fontSize: 13, color: t.ink2),
+              ),
+              Text(
+                '${_whoIsResult!['name']}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: t.zhu,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Pill(
+                label: '打开人物卡',
+                filled: true,
+                dense: true,
+                onTap: () {
+                  final String personId = '${_whoIsResult!['id']}';
+                  _clearSelection();
+                  _openPerson(personId);
+                },
+              ),
+            ] else ...<Widget>[
+              Icon(Icons.help_outline, size: 16, color: t.ink3),
+              const SizedBox(width: 6),
+              Text(
+                '这里看不出指的是谁',
+                style: TextStyle(fontSize: 13, color: t.ink3),
+              ),
+              const SizedBox(width: 8),
+              Pill(
+                label: '问问这本书',
+                dense: true,
+                onTap: () {
+                  final String quote = book.textBetween(s, e);
+                  _clearSelection();
+                  _openAsk(quote: quote);
+                },
+              ),
+            ],
+            const SizedBox(width: 4),
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: Icon(Icons.close, size: 16, color: t.ink3),
+              tooltip: '关闭',
+              onPressed: () {
+                setState(() => _whoIsActive = false);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -1162,134 +1338,142 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final Paginator? p = c.pager;
     final bool ai = book.hasKnowledge;
     final bool marked = book.notes.bookmarkIn(c.start, c.cutoff) != null;
+    final bool reduceMotion = mq.disableAnimations;
+    final Duration duration = reduceMotion
+        ? const Duration(milliseconds: 120)
+        : Motion.toolbar;
     return IgnorePointer(
       ignoring: !on,
       child: AnimatedOpacity(
         opacity: on ? 1 : 0,
-        duration: MediaQuery.of(context).disableAnimations
-            ? const Duration(milliseconds: 120)
-            : Motion.toolbar,
+        duration: duration,
+        curve: Curves.easeInOut,
         child: Stack(
           children: <Widget>[
             Positioned(
               left: 0,
               right: 0,
               top: 0,
-              child: Material(
-                color: t.sheet,
-                elevation: 2,
-                child: Padding(
-                  padding: EdgeInsets.only(top: mq.padding.top),
-                  child: SizedBox(
-                    height: 56,
-                    child: Row(
-                      children: <Widget>[
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () {
-                            c.select(null);
-                            c.setToolbar(false);
-                            Navigator.of(context).pop();
-                          },
-                          tooltip: '回书架',
-                        ),
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                widget.entry.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: t.ink,
-                                  fontWeight: FontWeight.w600,
+              child: AnimatedSlide(
+                offset: on ? Offset.zero : const Offset(0, -1),
+                duration: duration,
+                curve: Curves.easeOutCubic,
+                child: Material(
+                  color: t.sheet,
+                  elevation: 2,
+                  child: Padding(
+                    padding: EdgeInsets.only(top: mq.padding.top),
+                    child: SizedBox(
+                      height: 56,
+                      child: Row(
+                        children: <Widget>[
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back),
+                            onPressed: () {
+                              _clearSelection();
+                              c.setToolbar(false);
+                              Navigator.of(context).pop();
+                            },
+                            tooltip: '回书架',
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  widget.entry.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: t.ink,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                c.page == null
-                                    ? ''
-                                    : book.chapters[c.chapter].title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, color: t.ink3),
-                              ),
+                                Text(
+                                  c.page == null
+                                      ? ''
+                                      : book.chapters[c.chapter].title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 12, color: t.ink3),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: '书签',
+                            icon: Icon(
+                              marked ? Icons.bookmark : Icons.bookmark_border,
+                              color: marked ? t.qing : t.ink,
+                            ),
+                            onPressed: () => _changeNote(() {
+                              HapticFeedback.lightImpact();
+                              final Json? existing = book.notes.bookmarkIn(
+                                c.start,
+                                c.cutoff,
+                              );
+                              if (existing != null) {
+                                book.notes.delete(existing);
+                              } else {
+                                book.notes.save(
+                                  kind: 'bookmark',
+                                  start: c.start,
+                                  end: c.start,
+                                  cutoff: c.cutoff,
+                                );
+                              }
+                            }),
+                          ),
+                          IconButton(
+                            tooltip: '搜索',
+                            icon: const Icon(Icons.search),
+                            onPressed: () =>
+                                _sheet(SearchPage(link: link), full: true),
+                          ),
+                          PopupMenuButton<int>(
+                            tooltip: '更多操作',
+                            icon: const Icon(Icons.more_horiz),
+                            onSelected: (int i) {
+                              switch (i) {
+                                case 0:
+                                  _openBookSheet();
+                                case 1:
+                                  Clipboard.setData(
+                                    ClipboardData(text: notesMarkdown(book)),
+                                  );
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('摘记已复制为 Markdown'),
+                                    ),
+                                  );
+                                case 2:
+                                  c.setToolbar(false);
+                                  openTypography(context, widget.prefs);
+                                case 3:
+                                  if (c.page != null) {
+                                    _sheet(
+                                      MarginaliaPage(
+                                        link: link,
+                                        start: c.page!.start,
+                                        end: c.page!.end,
+                                        pageMode: true,
+                                      ),
+                                      full: true,
+                                    );
+                                  }
+                              }
+                            },
+                            itemBuilder: (_) => const <PopupMenuEntry<int>>[
+                              PopupMenuItem<int>(value: 0, child: Text('这本书')),
+                              PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
+                              PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
+                              PopupMenuItem<int>(value: 3, child: Text('本页批注')),
                             ],
                           ),
-                        ),
-                        IconButton(
-                          tooltip: '书签',
-                          icon: Icon(
-                            marked ? Icons.bookmark : Icons.bookmark_border,
-                            color: marked ? t.qing : t.ink,
-                          ),
-                          onPressed: () => _changeNote(() {
-                            HapticFeedback.lightImpact();
-                            final Json? existing = book.notes.bookmarkIn(
-                              c.start,
-                              c.cutoff,
-                            );
-                            if (existing != null) {
-                              book.notes.delete(existing);
-                            } else {
-                              book.notes.save(
-                                kind: 'bookmark',
-                                start: c.start,
-                                end: c.start,
-                                cutoff: c.cutoff,
-                              );
-                            }
-                          }),
-                        ),
-                        IconButton(
-                          tooltip: '搜索',
-                          icon: const Icon(Icons.search),
-                          onPressed: () =>
-                              _sheet(SearchPage(link: link), full: true),
-                        ),
-                        PopupMenuButton<int>(
-                          tooltip: '更多操作',
-                          icon: const Icon(Icons.more_horiz),
-                          onSelected: (int i) {
-                            switch (i) {
-                              case 0:
-                                _openBookSheet();
-                              case 1:
-                                Clipboard.setData(
-                                  ClipboardData(text: notesMarkdown(book)),
-                                );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('摘记已复制为 Markdown'),
-                                  ),
-                                );
-                              case 2:
-                                c.setToolbar(false);
-                                openTypography(context, widget.prefs);
-                              case 3:
-                                if (c.page != null) {
-                                  _sheet(
-                                    MarginaliaPage(
-                                      link: link,
-                                      start: c.page!.start,
-                                      end: c.page!.end,
-                                      pageMode: true,
-                                    ),
-                                    full: true,
-                                  );
-                                }
-                            }
-                          },
-                          itemBuilder: (_) => const <PopupMenuEntry<int>>[
-                            PopupMenuItem<int>(value: 0, child: Text('这本书')),
-                            PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
-                            PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
-                            PopupMenuItem<int>(value: 3, child: Text('本页批注')),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1300,17 +1484,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: Material(
-                  color: t.sheet,
-                  elevation: 8,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        _progressRow(context, p),
-                        _toolsRow(context, ai),
-                      ],
+                child: AnimatedSlide(
+                  offset: on ? Offset.zero : const Offset(0, 1),
+                  duration: duration,
+                  curve: Curves.easeOutCubic,
+                  child: Material(
+                    color: t.sheet,
+                    elevation: 8,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 6),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          _progressRow(context, p),
+                          _toolsRow(context, ai),
+                        ],
+                      ),
                     ),
                   ),
                 ),
