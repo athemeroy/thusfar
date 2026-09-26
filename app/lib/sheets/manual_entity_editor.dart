@@ -215,35 +215,47 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
                         ),
                       )
                     else
-                      Column(
-                        children: <Widget>[
-                          Text(
-                            '删除「${name.text}」的手动补充？',
-                            style: TextStyle(color: t.danger),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: <Widget>[
-                              Expanded(
-                                child: Pill(
-                                  label: '取消',
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    setState(() => confirmDelete = false);
-                                  },
-                                ),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: t.danger.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Column(
+                          children: <Widget>[
+                            Text(
+                              '删除「${name.text}」的手动补充？',
+                              style: TextStyle(
+                                color: t.danger,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Pill(
-                                  label: '确认删除',
-                                  color: t.danger,
-                                  onTap: () => _save(deleted: true),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Pill(
+                                    label: '取消',
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      setState(() => confirmDelete = false);
+                                    },
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Pill(
+                                    label: '确认删除',
+                                    filled: true,
+                                    color: t.danger,
+                                    onTap: () => _save(deleted: true),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                   ],
                 ],

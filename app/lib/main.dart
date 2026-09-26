@@ -587,6 +587,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         )
         .firstOrNull;
     if (!mounted) return;
+    if (firstNew != null) HapticFeedback.mediumImpact();
     setState(() => flashId = firstNew?.bookId);
     _importFeedback = Timer(const Duration(seconds: 3), () {
       if (mounted &&

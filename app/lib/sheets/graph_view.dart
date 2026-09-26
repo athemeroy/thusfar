@@ -346,7 +346,10 @@ class _RelationGraphState extends State<RelationGraph> {
           ),
           actions: <Widget>[
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.of(context).pop();
+              },
               child: const Text('关闭'),
             ),
           ],
@@ -1352,7 +1355,13 @@ class _GraphPageState extends State<GraphPage> {
                 ),
                 Text(
                   '第 ${link.pageNo(at > 0 ? at - 1 : 0)} 页',
-                  style: TextStyle(color: t.ink2, fontSize: 12),
+                  style: TextStyle(
+                    color: t.ink2,
+                    fontSize: 12,
+                    fontFeatures: const <FontFeature>[
+                      FontFeature.tabularFigures(),
+                    ],
+                  ),
                 ),
               ],
             ),

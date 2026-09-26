@@ -392,7 +392,10 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 'API 密钥',
                 suffix: IconButton(
                   icon: Icon(showKey ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setState(() => showKey = !showKey),
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => showKey = !showKey);
+                  },
                 ),
               ),
             ),
