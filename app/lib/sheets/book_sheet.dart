@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thusfar_core/models.dart' as models;
 import 'package:thusfar_core/llm.dart' as llm;
 
@@ -180,7 +181,12 @@ class _BookSheetState extends State<BookSheet> {
               child: Pill(
                 label: p == null ? '开始阅读' : '继续阅读',
                 filled: true,
-                onTap: acting ? null : widget.onRead,
+                onTap: acting
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        widget.onRead();
+                      },
               ),
             ),
           ),
@@ -198,7 +204,10 @@ class _BookSheetState extends State<BookSheet> {
                   Icon(Icons.chevron_right, color: t.ink3),
                 ],
               ),
-              onTap: widget.onNotes,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.onNotes();
+              },
             ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -208,6 +217,7 @@ class _BookSheetState extends State<BookSheet> {
                 color: t.ink3,
               ),
               onTap: () {
+                HapticFeedback.lightImpact();
                 final List<String> list = List<String>.of(
                   widget.library.readingList,
                 );
@@ -220,14 +230,20 @@ class _BookSheetState extends State<BookSheet> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               title: const Text('导出完整备份'),
               trailing: Icon(Icons.chevron_right, color: t.ink3),
-              onTap: widget.onExport,
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.onExport();
+              },
             ),
             const SizedBox(height: 12),
             if (!confirmRemove)
               TextButton(
                 onPressed: acting
                     ? null
-                    : () => setState(() => confirmRemove = true),
+                    : () {
+                        HapticFeedback.lightImpact();
+                        setState(() => confirmRemove = true);
+                      },
                 child: Text(
                   '从这台$deviceWord移除',
                   style: TextStyle(color: t.danger),
@@ -255,13 +271,24 @@ class _BookSheetState extends State<BookSheet> {
                     const SizedBox(height: 10),
                     Row(
                       children: <Widget>[
-                        Pill(label: '导出备份', onTap: widget.onExport),
+                        Pill(
+                          label: '导出备份',
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            widget.onExport();
+                          },
+                        ),
                         const SizedBox(width: 10),
                         Pill(
                           label: acting ? '正在移除…' : '移除',
                           filled: true,
                           color: t.danger,
-                          onTap: acting ? null : _remove,
+                          onTap: acting
+                              ? null
+                              : () {
+                                  HapticFeedback.mediumImpact();
+                                  _remove();
+                                },
                         ),
                       ],
                     ),
@@ -286,6 +313,7 @@ class _BookSheetState extends State<BookSheet> {
         Pill(
           label: '去填写',
           onTap: () async {
+            HapticFeedback.lightImpact();
             await widget.onModelSettings();
             if (mounted) setState(() => missingKey = !widget.settings.hasKey);
           },
@@ -313,7 +341,15 @@ class _BookSheetState extends State<BookSheet> {
           style: TextStyle(fontSize: 14, color: t.ink),
         ),
         const SizedBox(height: 10),
-        Pill(label: '暂停整理', onTap: acting ? null : _pause),
+        Pill(
+          label: '暂停整理',
+          onTap: acting
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  _pause();
+                },
+        ),
       ]);
     } else if (s.isDone) {
       body.add(
@@ -340,7 +376,15 @@ class _BookSheetState extends State<BookSheet> {
           const SizedBox(height: 8),
           Text('部分资料待核对', style: TextStyle(fontSize: 13, color: t.ink2)),
           const SizedBox(height: 8),
-          Pill(label: '重试待核对部分', onTap: acting ? null : _start),
+          Pill(
+            label: '重试待核对部分',
+            onTap: acting
+                ? null
+                : () {
+                    HapticFeedback.lightImpact();
+                    _start();
+                  },
+          ),
         ]);
       }
     } else if (s.isPaused) {
@@ -354,7 +398,12 @@ class _BookSheetState extends State<BookSheet> {
           label: '继续整理',
           filled: true,
           color: t.zhu,
-          onTap: acting ? null : _start,
+          onTap: acting
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  _start();
+                },
         ),
       ]);
     } else if (s.isError) {
@@ -381,9 +430,22 @@ class _BookSheetState extends State<BookSheet> {
               label: '重试整理',
               filled: true,
               color: t.zhu,
-              onTap: acting ? null : _start,
+              onTap: acting
+                  ? null
+                  : () {
+                      HapticFeedback.lightImpact();
+                      _start();
+                    },
             ),
-            Pill(label: '去模型设置', onTap: acting ? null : widget.onModelSettings),
+            Pill(
+              label: '去模型设置',
+              onTap: acting
+                  ? null
+                  : () {
+                      HapticFeedback.lightImpact();
+                      widget.onModelSettings();
+                    },
+            ),
           ],
         ),
       ]);
@@ -417,13 +479,16 @@ class _BookSheetState extends State<BookSheet> {
             color: t.zhu,
             onTap: acting
                 ? null
-                : () => setState(() {
-                    if (!widget.settings.hasKey) {
-                      missingKey = true;
-                    } else {
-                      confirmStart = true;
-                    }
-                  }),
+                : () {
+                    HapticFeedback.lightImpact();
+                    setState(() {
+                      if (!widget.settings.hasKey) {
+                        missingKey = true;
+                      } else {
+                        confirmStart = true;
+                      }
+                    });
+                  },
           ),
         );
       } else {
@@ -439,14 +504,22 @@ class _BookSheetState extends State<BookSheet> {
                 label: '取消',
                 onTap: acting
                     ? null
-                    : () => setState(() => confirmStart = false),
+                    : () {
+                        HapticFeedback.lightImpact();
+                        setState(() => confirmStart = false);
+                      },
               ),
               const SizedBox(width: 10),
               Pill(
                 label: '开始',
                 filled: true,
                 color: t.zhu,
-                onTap: acting ? null : _start,
+                onTap: acting
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        _start();
+                      },
               ),
             ],
           ),

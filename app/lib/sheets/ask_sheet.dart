@@ -239,6 +239,17 @@ class _AskPageState extends State<AskPage> {
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide.none,
                   ),
+                  suffixIcon: _input.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          tooltip: '清空',
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            _input.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -307,6 +318,7 @@ class _AskPageState extends State<AskPage> {
                 child: InkWell(
                   key: ValueKey<String>('ask-cite-${cite['n']}'),
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     final int start = cite['o']! as int;
                     widget.link.jump(
                       start,
@@ -321,20 +333,45 @@ class _AskPageState extends State<AskPage> {
                   },
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                     decoration: BoxDecoration(
                       color: t.paper,
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: t.ink.withValues(alpha: 0.08)),
                     ),
-                    child: Text(
-                      '[${cite['n']}] 第 ${widget.link.pageNo(cite['o']! as int)} 页 · ${cite['text']}',
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: t.ink2,
-                        height: 1.5,
-                      ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: t.zhu.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${cite['n']}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: t.zhu,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '第 ${widget.link.pageNo(cite['o']! as int)} 页 · ${cite['text']}',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: t.ink2,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -374,12 +411,18 @@ class _AskPageState extends State<AskPage> {
               spacing: 8,
               children: <Widget>[
                 TextButton(
-                  onPressed: _busy ? null : () => _submit(retry: entry),
+                  onPressed: _busy ? null : () {
+                    HapticFeedback.lightImpact();
+                    _submit(retry: entry);
+                  },
                   child: const Text('重试'),
                 ),
                 if (entry.error != null)
                   TextButton(
-                    onPressed: _busy ? null : _settings,
+                    onPressed: _busy ? null : () {
+                      HapticFeedback.lightImpact();
+                      _settings();
+                    },
                     child: const Text('模型设置'),
                   ),
               ],

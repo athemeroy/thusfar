@@ -845,7 +845,10 @@ class _SparseRelationshipCard extends StatelessWidget {
           child: InkWell(
             key: ValueKey<String>('relation-card-$index'),
             borderRadius: BorderRadius.circular(14),
-            onTap: onTap,
+            onTap: () {
+              HapticFeedback.lightImpact();
+              onTap();
+            },
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -1035,6 +1038,7 @@ class _GraphPageState extends State<GraphPage> {
     Json relation,
     String asOf,
   ) {
+    HapticFeedback.lightImpact();
     setState(_stop);
     SheetScope.of(context).state.push(
       RelationDetailPage(world: world, relation: relation, asOf: asOf),
@@ -1144,17 +1148,26 @@ class _GraphPageState extends State<GraphPage> {
                   ),
                   IconButton(
                     tooltip: '缩小关系图',
-                    onPressed: () => _zoom(1 / 1.3),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      _zoom(1 / 1.3);
+                    },
                     icon: const Icon(Icons.remove),
                   ),
                   IconButton(
                     tooltip: '放大关系图',
-                    onPressed: () => _zoom(1.3),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      _zoom(1.3);
+                    },
                     icon: const Icon(Icons.add),
                   ),
                   IconButton(
                     tooltip: '重置视图',
-                    onPressed: _resetView,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      _resetView();
+                    },
                     icon: const Icon(Icons.center_focus_strong),
                   ),
                 ],
@@ -1305,7 +1318,10 @@ class _GraphPageState extends State<GraphPage> {
                         ? Icons.play_arrow_rounded
                         : Icons.pause_rounded,
                   ),
-                  onPressed: _play,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _play();
+                  },
                 ),
                 Expanded(
                   child: Slider(
@@ -1318,10 +1334,18 @@ class _GraphPageState extends State<GraphPage> {
                       );
                       return '第 ${link.pageNo(position > 0 ? position - 1 : 0)} 页';
                     },
-                    onChanged: (double value) => setState(() {
-                      _stop();
-                      replay = value;
-                    }),
+                    onChanged: (double value) {
+                      final int prevPage = link.pageNo(at > 0 ? at - 1 : 0);
+                      final int newAt = (value * cutoff).round();
+                      final int newPage = link.pageNo(newAt > 0 ? newAt - 1 : 0);
+                      if (newPage != prevPage) {
+                        HapticFeedback.selectionClick();
+                      }
+                      setState(() {
+                        _stop();
+                        replay = value;
+                      });
+                    },
                     activeColor: t.zhu,
                     inactiveColor: t.rule,
                   ),
@@ -1337,10 +1361,13 @@ class _GraphPageState extends State<GraphPage> {
         if (replay != null)
           SliverToBoxAdapter(
             child: TextButton(
-              onPressed: () => setState(() {
-                _stop();
-                replay = null;
-              }),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  _stop();
+                  replay = null;
+                });
+              },
               child: const Text('回到当前页'),
             ),
           ),

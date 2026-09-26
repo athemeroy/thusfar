@@ -658,6 +658,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
       autofocus: true,
       onKeyEvent: (FocusNode _, KeyEvent e) {
         if (_sheetOpen || e is KeyUpEvent) return KeyEventResult.ignored;
+        if (e.logicalKey == LogicalKeyboardKey.escape) {
+          if (c.selection != null || _whoIsActive) {
+            _clearSelection();
+            return KeyEventResult.handled;
+          }
+          if (c.toolbar) {
+            c.setToolbar(false);
+            return KeyEventResult.handled;
+          }
+          Navigator.of(context).maybePop();
+          return KeyEventResult.handled;
+        }
         // Computers: arrows, space and page keys turn pages.
         if (_nextKeys.contains(e.logicalKey)) {
           _turn(1);

@@ -127,7 +127,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
           child: fabWide
               ? FloatingActionButton.extended(
                   heroTag: 'import',
-                  onPressed: widget.onImport,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.onImport();
+                  },
                   backgroundColor: t.ink,
                   foregroundColor: t.sheet,
                   shape: const StadiumBorder(),
@@ -136,7 +139,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
                 )
               : FloatingActionButton(
                   heroTag: 'import',
-                  onPressed: widget.onImport,
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    widget.onImport();
+                  },
                   backgroundColor: t.ink,
                   foregroundColor: t.sheet,
                   shape: const CircleBorder(),
@@ -178,7 +184,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
                             Tooltip(
                               message: '编辑接下来读',
                               child: TextButton(
-                                onPressed: () => _editQueue(context),
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  _editQueue(context);
+                                },
                                 child: Text(
                                   '编辑',
                                   style: TextStyle(color: t.ink2),
@@ -448,13 +457,16 @@ class _ShelfScreenState extends State<ShelfScreen> {
             const SizedBox(height: 12),
             TextButton.icon(
               style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
-              onPressed: () => setState(() {
-                if (hasQuery) {
-                  query = '';
-                } else {
-                  filter = 0;
-                }
-              }),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                setState(() {
+                  if (hasQuery) {
+                    query = '';
+                  } else {
+                    filter = 0;
+                  }
+                });
+              },
               icon: Icon(hasQuery ? Icons.close : Icons.menu_book_outlined),
               label: Text(hasQuery ? '清空搜索' : '查看全部书籍'),
             ),
@@ -467,13 +479,16 @@ class _ShelfScreenState extends State<ShelfScreen> {
   Widget _sortMenu(BuildContext context) {
     final Tokens t = context.tk;
     return PopupMenuButton<int>(
-      onSelected: (int i) => widget.prefs.update((Prefs p) {
-        if (i < 4) {
-          p.sort = i;
-        } else {
-          p.listView = i == 5;
-        }
-      }),
+      onSelected: (int i) {
+        HapticFeedback.lightImpact();
+        widget.prefs.update((Prefs p) {
+          if (i < 4) {
+            p.sort = i;
+          } else {
+            p.listView = i == 5;
+          }
+        });
+      },
       itemBuilder: (_) => <PopupMenuEntry<int>>[
         for (int i = 0; i < sorts.length; i++)
           CheckedPopupMenuItem<int>(
@@ -852,6 +867,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                 ),
               ),
               onReorderItem: (int a, int b) {
+                HapticFeedback.selectionClick();
                 final String x = items.removeAt(a);
                 items.insert(b, x);
                 lib.setReadingList(items);
@@ -866,6 +882,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                       icon: const Icon(Icons.remove_circle_outline),
                       tooltip: '从接下来读移除《${lib.byId(id)?.title ?? '已不在书架'}》',
                       onPressed: () {
+                        HapticFeedback.lightImpact();
                         lib.setReadingList(items..remove(id));
                         setSheet(() {});
                       },
@@ -947,13 +964,22 @@ class _ShelfScreenState extends State<ShelfScreen> {
                       child: Pill(
                         label: '从$deviceWord选择书',
                         filled: true,
-                        onTap: widget.onImport,
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          widget.onImport();
+                        },
                       ),
                     ),
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
-                      child: Pill(label: '恢复备份', onTap: widget.onRestore),
+                      child: Pill(
+                        label: '恢复备份',
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          widget.onRestore();
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -992,7 +1018,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: widget.onModelSettings,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      widget.onModelSettings();
+                    },
                     child: Text('去填写', style: TextStyle(color: t.ink)),
                   ),
                 ],

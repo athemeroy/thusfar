@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
 import '../ui/theme.dart';
@@ -88,6 +89,11 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
 
   void _save({bool deleted = false}) {
     if (_unavailable || _locked || _rewound) return;
+    if (deleted) {
+      HapticFeedback.mediumImpact();
+    } else {
+      HapticFeedback.lightImpact();
+    }
     try {
       final Json saved = widget.link.c.book.saveManual(<String, Object?>{
         'id': id,
@@ -199,7 +205,10 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
                     const SizedBox(height: 12),
                     if (!confirmDelete)
                       TextButton(
-                        onPressed: () => setState(() => confirmDelete = true),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => confirmDelete = true);
+                        },
                         child: Text(
                           '删除这条补充',
                           style: TextStyle(color: t.danger),
@@ -218,8 +227,10 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
                               Expanded(
                                 child: Pill(
                                   label: '取消',
-                                  onTap: () =>
-                                      setState(() => confirmDelete = false),
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    setState(() => confirmDelete = false);
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 12),
