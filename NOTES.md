@@ -264,3 +264,13 @@
 - **DocumentsUI 文件选择器不响应无障碍点击**。导入测试书改用 `am start -a VIEW -d content://media/external/file/<id> --grant-read-uri-permission -n com.yedu.zhupi.v2probe/com.yedu.zhupi.MainActivity`；id 用 `content query --uri content://media/external/file` 查。
 - **叙述者“我”被拆成两个人**：代词不进名字索引，后面段落的“我”带着新称呼（迅哥儿）匹配不到任何人，就成了新人物。现在一部作品里第一人称“我”只合并到唯一的那个“我”；新称呼仍要经过判官核验。
 - 截图测试：`foldable_screens_test` 以 Mini 生成的截图为准，NAS 上有像素差（字体光栅化），不是回归。
+
+## 2026-09-26 夜：桌面与 iOS
+
+- **Mini 上没有 Xcode**，只有命令行工具，而且只剩 19 GB；win4090 的 C 盘也快满了。桌面和 iOS 版改由 GitHub Actions 编译，公开仓库免费。
+- **`workflow_dispatch` 需要工作流文件在默认分支上**。main 保持 1.7.5，所以 apps.yml 靠 `flutter-2.0` 分支推送和 `v2*` 标签触发。
+- **Inno Setup**：ChineseSimplified.isl 已经转成官方语言文件（`Files/Languages/`），但 CI 机器上的旧版还没带，要从 issrc 下载。Git Bash 会把 `/D`、`/O` 参数改写成路径，要加 `MSYS_NO_PATHCONV=1`。
+- **macOS 打开文件**：FlutterAppDelegate 实现了 `application(_:open:)`，AppKit 就不会再调 `openFiles`。沙盒要能读访达打开的文件，`CFBundleDocumentTypes` 必须声明 txt/epub。
+- **macOS 窗口大小**：`FlutterViewController` 会在启动后把窗口改回 800×600，所以默认尺寸要在启动之后（`DispatchQueue.main.async`）再设置。
+- **导入的临时文件标记**：安卓分享的是 cache 里的副本，导入后删除。电脑上打开的是用户自己的原文件，所以桥接数据里带 `temporary:false`。
+- **workbench-cua 后台点击**只能点到有无障碍信息的控件；系统的打开面板和阅读页中间的空白区域要占用前台桌面才能点。

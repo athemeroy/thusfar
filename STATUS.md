@@ -115,6 +115,25 @@ not close them. Full evidence is in
   The four follow-ups (estimate, TXT author, cover rule, unprocessed People)
   were fixed and verified on the phone with dev13–dev14; the Mini core suite passes 2180.
 
+## Desktop and iOS (dev.15, 2026-09-26 night)
+
+- Runners for macOS, Windows, Linux and iOS (`app/{macos,windows,linux,ios}`),
+  named Thusfar / 页读, bundle `com.yedu.thusfar`. The data directory is
+  resolved per platform in `dataRoot()`.
+- `.github/workflows/apps.yml` builds a macOS dmg (universal, ad-hoc signed),
+  a Windows Inno Setup installer plus portable zip, a Linux tarball and an
+  unsigned iOS ipa. It runs on `flutter-2.0` pushes and `v2*` tags, and
+  attaches the builds to tag releases. Android is still built on the Mini and
+  signed on the NAS.
+- Verified on the Mini (macOS 15.7): install from the dmg; open 故乡.txt from
+  Finder (`application(_:open:)`), which imports it and leaves the original;
+  cover shows 鲁迅; the reader paginates. Windows, Linux and iOS are only
+  confirmed to build.
+- Computers: arrow, space and page keys plus the mouse wheel turn pages
+  (widget test). Copy says 电脑 off phones.
+- Releases: v2.0.0-dev.14 (Android) and v2.0.0-dev.15 (all platforms) are
+  pre-releases; `main` and Latest stay on 1.7.5.
+
 ## Earlier integrated processing and validation
 
 Three parallel agents completed Runner, Worker and Flutter integration after the
