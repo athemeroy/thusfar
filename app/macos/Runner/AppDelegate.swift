@@ -16,15 +16,23 @@ class AppDelegate: FlutterAppDelegate {
     return true
   }
 
-  override func application(_ sender: NSApplication, openFiles filenames: [String]) {
-    for file in filenames {
+  // FlutterAppDelegate implements application(_:open:), so AppKit delivers
+  // Finder opens here rather than to application(_:openFiles:).
+  override func application(_ application: NSApplication, open urls: [URL]) {
+    let files = urls.filter { $0.isFileURL }
+    for url in files {
       pendingImports.append([
-        "name": (file as NSString).lastPathComponent,
-        "path": file,
+        "name": url.lastPathComponent,
+        "path": url.path,
         "temporary": false,
       ])
     }
-    paths?.invokeMethod("importsAvailable", arguments: nil)
-    sender.reply(toOpenOrPrint: .success)
+    if !files.isEmpty {
+      paths?.invokeMethod("importsAvailable", arguments: nil)
+    }
+    let others = urls.filter { !$0.isFileURL }
+    if !others.isEmpty {
+      super.application(application, open: others)
+    }
   }
 }
