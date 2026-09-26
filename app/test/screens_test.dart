@@ -294,6 +294,13 @@ void main() {
     await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
     await settle(tester);
     expect(find.text('全部书籍 '), findsOneWidget);
+
+    // Switch to Settings via Ctrl+,
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
+    await tester.sendKeyEvent(LogicalKeyboardKey.comma);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    await settle(tester);
+    expect(find.text('设置'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

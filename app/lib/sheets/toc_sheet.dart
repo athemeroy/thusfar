@@ -416,6 +416,7 @@ class _TocPageState extends State<TocPage> {
               const Spacer(),
               TextButton(
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   Clipboard.setData(
                     ClipboardData(text: notesMarkdown(link.c.book)),
                   );

@@ -372,6 +372,9 @@ class _AskPageState extends State<AskPage> {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: t.zhu,
+                              fontFeatures: const <FontFeature>[
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ),

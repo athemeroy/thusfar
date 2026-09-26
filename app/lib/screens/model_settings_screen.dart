@@ -349,7 +349,12 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                   Expanded(
                     child: Text(
                       'API 密钥：已保存 ···${saved.length >= 4 ? saved.substring(saved.length - 4) : saved}',
-                      style: TextStyle(color: t.ink),
+                      style: TextStyle(
+                        color: t.ink,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
                     ),
                   ),
                   TextButton(

@@ -652,6 +652,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             () => _selectTab(2),
         const SingleActivator(LogicalKeyboardKey.digit3, meta: true):
             () => _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.comma, control: true):
+            () => _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.comma, meta: true):
+            () => _selectTab(2),
         const SingleActivator(LogicalKeyboardKey.keyO, control: true):
             pickAndImport,
         const SingleActivator(LogicalKeyboardKey.keyO, meta: true):
