@@ -154,7 +154,13 @@ class _NoteEditorState extends State<NoteEditor> {
               HapticFeedback.mediumImpact();
               Navigator.pop(context, true);
             },
-            child: const Text('删除'),
+            child: Text(
+              '删除',
+              style: TextStyle(
+                color: Theme.of(context).extension<Tokens>()!.danger,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),

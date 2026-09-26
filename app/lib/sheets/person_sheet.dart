@@ -463,11 +463,19 @@ class _PersonPageState extends State<PersonPage> {
             Padding(
               padding: const EdgeInsets.only(top: 7, right: 12),
               child: Container(
-                width: 7,
-                height: 7,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
                   color: fresh ? t.zhu : t.rule,
                   shape: BoxShape.circle,
+                  boxShadow: fresh
+                      ? <BoxShadow>[
+                          BoxShadow(
+                            color: t.zhu.withValues(alpha: 0.35),
+                            blurRadius: 4,
+                          ),
+                        ]
+                      : null,
                 ),
               ),
             ),

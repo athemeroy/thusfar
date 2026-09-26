@@ -900,8 +900,29 @@ class _ShelfScreenState extends State<ShelfScreen> {
                       tooltip: '从接下来读移除《${lib.byId(id)?.title ?? '已不在书架'}》',
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        lib.setReadingList(items..remove(id));
+                        final int removedIndex = items.indexOf(id);
+                        final String removedId = id;
+                        final String title = lib.byId(id)?.title ?? '书目';
+                        items.remove(id);
+                        lib.setReadingList(items);
                         setSheet(() {});
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('已从接下来读移除《$title》'),
+                            action: SnackBarAction(
+                              label: '撤销',
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                items.insert(
+                                  removedIndex.clamp(0, items.length),
+                                  removedId,
+                                );
+                                lib.setReadingList(items);
+                                setSheet(() {});
+                              },
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),

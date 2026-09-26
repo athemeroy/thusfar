@@ -220,9 +220,52 @@ ThemeData buildTheme(Brightness brightness) {
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: t.ink,
-      contentTextStyle: TextStyle(color: t.sheet, fontSize: 15),
+      contentTextStyle: TextStyle(color: t.sheet, fontSize: 14.5),
       actionTextColor: t.zhuSoft,
       behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: t.rule.withValues(alpha: 0.3)),
+      ),
+      elevation: 4,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: t.sheet,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: t.rule.withValues(alpha: 0.7)),
+      ),
+      titleTextStyle: TextStyle(
+        fontFamily: display,
+        fontSize: 20,
+        color: t.ink,
+        fontWeight: FontWeight.w600,
+      ),
+      contentTextStyle: TextStyle(
+        fontSize: 14.5,
+        height: 1.5,
+        color: t.ink2,
+      ),
+    ),
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: t.ink,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      textStyle: TextStyle(
+        fontSize: 12,
+        color: t.sheet,
+        fontWeight: FontWeight.w500,
+      ),
+      waitDuration: const Duration(milliseconds: 400),
     ),
   );
   return base.copyWith(

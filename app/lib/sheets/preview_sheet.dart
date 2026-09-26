@@ -113,7 +113,10 @@ class _PreviewPageState extends State<PreviewPage> {
           Expanded(
             child: Pill(
               label: '关闭',
-              onTap: () => SheetScope.of(context).state.pop(),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                SheetScope.of(context).state.pop();
+              },
             ),
           ),
           const SizedBox(width: 12),

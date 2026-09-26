@@ -319,12 +319,26 @@ class _NotesScreenState extends State<NotesScreen> {
                     key: ValueKey<Object?>('${b.id}${item['id']}'),
                     direction: DismissDirection.endToStart,
                     background: Container(
-                      color: t.danger,
                       alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 24),
-                      child: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.white,
+                      padding: const EdgeInsets.only(right: 20),
+                      decoration: BoxDecoration(
+                        color: t.danger,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(Icons.delete_outline, color: Colors.white, size: 20),
+                          SizedBox(width: 4),
+                          Text(
+                            '删除',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     confirmDismiss: (_) async => _delete(b, item),

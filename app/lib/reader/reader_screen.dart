@@ -623,11 +623,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
     LogicalKeyboardKey.arrowDown,
     LogicalKeyboardKey.pageDown,
     LogicalKeyboardKey.space,
+    LogicalKeyboardKey.keyJ,
+    LogicalKeyboardKey.keyL,
   };
   static final Set<LogicalKeyboardKey> _previousKeys = <LogicalKeyboardKey>{
     LogicalKeyboardKey.arrowLeft,
     LogicalKeyboardKey.arrowUp,
     LogicalKeyboardKey.pageUp,
+    LogicalKeyboardKey.keyK,
+    LogicalKeyboardKey.keyH,
   };
   DateTime _lastWheelTurn = DateTime.fromMillisecondsSinceEpoch(0);
 
@@ -670,13 +674,49 @@ class _ReaderScreenState extends State<ReaderScreen> {
           Navigator.of(context).maybePop();
           return KeyEventResult.handled;
         }
-        // Computers: arrows, space and page keys turn pages.
+        // Computers: arrows, space, Vim keys (j/k/h/l) and page keys turn pages.
         if (_nextKeys.contains(e.logicalKey)) {
           _turn(1);
           return KeyEventResult.handled;
         }
         if (_previousKeys.contains(e.logicalKey)) {
           _turn(-1);
+          return KeyEventResult.handled;
+        }
+        // Desktop keyboard reading actions.
+        if (e.logicalKey == LogicalKeyboardKey.keyB) {
+          _toggleBookmark();
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.keyT) {
+          _sheet(TocPage(link: link), full: true);
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.slash) {
+          _sheet(SearchPage(link: link), full: true);
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.keyP) {
+          _sheet(PeoplePage(link: link, onStartProcessing: _startProcessing));
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.keyA) {
+          _openAsk();
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.equal ||
+            e.logicalKey == LogicalKeyboardKey.add) {
+          HapticFeedback.selectionClick();
+          widget.prefs.update(
+            (Prefs p) => p.fontSize = (p.fontSize + 1).clamp(16, 26),
+          );
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.minus) {
+          HapticFeedback.selectionClick();
+          widget.prefs.update(
+            (Prefs p) => p.fontSize = (p.fontSize - 1).clamp(16, 26),
+          );
           return KeyEventResult.handled;
         }
         if (!widget.prefs.volumeKeys) return KeyEventResult.ignored;
@@ -1154,8 +1194,44 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _ribbon(BuildContext context) =>
-      CustomPaint(size: const Size(14, 34), painter: _Ribbon(context.tk.qing));
+  void _toggleBookmark() => _changeNote(() {
+    HapticFeedback.lightImpact();
+    final Json? existing = book.notes.bookmarkIn(
+      c.start,
+      c.cutoff,
+    );
+    if (existing != null) {
+      book.notes.delete(existing);
+    } else {
+      book.notes.save(
+        kind: 'bookmark',
+        start: c.start,
+        end: c.start,
+        cutoff: c.cutoff,
+      );
+    }
+  });
+
+  Widget _ribbon(BuildContext context) => Tooltip(
+        message: '已加书签',
+        child: GestureDetector(
+          onTap: _toggleBookmark,
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: -34, end: 0),
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutBack,
+            builder: (BuildContext context, double value, Widget? child) =>
+                Transform.translate(
+              offset: Offset(0, value),
+              child: child,
+            ),
+            child: CustomPaint(
+              size: const Size(14, 34),
+              painter: _Ribbon(context.tk.qing),
+            ),
+          ),
+        ),
+      );
 
   Widget _returnPill(BuildContext context) {
     final Tokens t = context.tk;
@@ -1435,23 +1511,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               marked ? Icons.bookmark : Icons.bookmark_border,
                               color: marked ? t.qing : t.ink,
                             ),
-                            onPressed: () => _changeNote(() {
-                              HapticFeedback.lightImpact();
-                              final Json? existing = book.notes.bookmarkIn(
-                                c.start,
-                                c.cutoff,
-                              );
-                              if (existing != null) {
-                                book.notes.delete(existing);
-                              } else {
-                                book.notes.save(
-                                  kind: 'bookmark',
-                                  start: c.start,
-                                  end: c.start,
-                                  cutoff: c.cutoff,
-                                );
-                              }
-                            }),
+                            onPressed: _toggleBookmark,
                           ),
                           IconButton(
                             tooltip: '搜索',
