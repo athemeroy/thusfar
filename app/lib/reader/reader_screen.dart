@@ -1202,7 +1202,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final double y = (_pressAt?.dy ?? 100) + top;
     final bool above = y > top + 70;
     Widget action(String label, VoidCallback on) => InkWell(
-      onTap: on,
+      onTap: () {
+        HapticFeedback.lightImpact();
+        on();
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Text(label, style: TextStyle(color: t.sheet, fontSize: 14)),
@@ -1460,6 +1463,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             tooltip: '更多操作',
                             icon: const Icon(Icons.more_horiz),
                             onSelected: (int i) {
+                              HapticFeedback.lightImpact();
                               switch (i) {
                                 case 0:
                                   _openBookSheet();
@@ -1552,14 +1556,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
         children: <Widget>[
           if (_drag != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
                 color: t.ink,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.16),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Text(
                 bubble(),
-                style: TextStyle(color: t.sheet, fontSize: 13),
+                style: TextStyle(
+                  color: t.sheet,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  fontFeatures: const <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
               ),
             ),
           Row(

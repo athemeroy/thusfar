@@ -798,6 +798,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
               : i.done
               ? '${i.name} ✓'
               : '${i.name} ${(i.progress * 100).round()}%').join(' · ')}';
+    final double avg = items.isEmpty
+        ? 0.0
+        : items.map((ImportItem i) => i.progress).reduce((double a, double b) => a + b) /
+            items.length;
     return Material(
       color: t.ink,
       borderRadius: BorderRadius.circular(14),
@@ -814,6 +818,18 @@ class _ShelfScreenState extends State<ShelfScreen> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(color: t.sheet, fontSize: 14),
             ),
+            if (!allDone) ...<Widget>[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: avg > 0 ? avg : null,
+                  minHeight: 3,
+                  color: t.zhu,
+                  backgroundColor: t.sheet.withValues(alpha: 0.22),
+                ),
+              ),
+            ],
             for (final ImportItem i in items.where(
               (ImportItem i) => i.error != null || i.existed,
             ))
@@ -835,6 +851,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                     if (i.existed && i.bookId != null)
                       TextButton(
                         onPressed: () {
+                          HapticFeedback.lightImpact();
                           final BookEntry? b = widget.library.byId(i.bookId!);
                           if (b != null) widget.onOpen(b);
                         },

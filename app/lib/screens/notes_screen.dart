@@ -224,9 +224,68 @@ class _NotesScreenState extends State<NotesScreen> {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
-                child: Text(
-                  '读书时长按一句话，就能摘录或写笔记',
-                  style: TextStyle(color: t.ink3),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: (searching ? t.ink3 : t.qing).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          searching ? Icons.search_off_rounded : Icons.edit_note_rounded,
+                          size: 28,
+                          color: searching ? t.ink3 : t.qing,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      if (searching && query.isNotEmpty) ...<Widget>[
+                        Text(
+                          '未找到匹配的摘记',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: t.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '换个关键词试试，或清空搜索',
+                          style: TextStyle(fontSize: 13, color: t.ink3),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => query = '');
+                          },
+                          child: const Text('清空搜索'),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '读书时长按一句话，就能摘录或写笔记',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: t.ink3.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ] else ...<Widget>[
+                        Text(
+                          '读书时长按一句话，就能摘录或写笔记',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: t.ink3,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -143,11 +143,17 @@ class _NoteEditorState extends State<NoteEditor> {
         content: const Text('摘录和想法都会从摘记列表移除。'),
         actions: <Widget>[
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context, false);
+            },
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              Navigator.pop(context, true);
+            },
             child: const Text('删除'),
           ),
         ],
@@ -190,24 +196,39 @@ class _NoteEditorState extends State<NoteEditor> {
             if (quote.isNotEmpty)
               Container(
                 margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
                 decoration: BoxDecoration(
                   color: t.paper,
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
-                  ),
-                  border: Border(left: BorderSide(color: t.qing, width: 3.5)),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: t.rule.withValues(alpha: 0.7)),
                 ),
-                constraints: const BoxConstraints(maxHeight: 120),
-                child: SingleChildScrollView(
-                  child: Text(
-                    quote,
-                    style: TextStyle(
-                      fontFamily: serif,
-                      fontSize: 15,
-                      height: 1.7,
-                      color: t.ink2,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(9),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Container(
+                          width: 4,
+                          color: t.qing,
+                        ),
+                        Expanded(
+                          child: Container(
+                            constraints: const BoxConstraints(maxHeight: 120),
+                            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                            child: SingleChildScrollView(
+                              child: Text(
+                                quote,
+                                style: TextStyle(
+                                  fontFamily: serif,
+                                  fontSize: 15,
+                                  height: 1.7,
+                                  color: t.ink2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -243,6 +264,26 @@ class _NoteEditorState extends State<NoteEditor> {
                       child: Text('删除', style: TextStyle(color: t.danger)),
                     ),
                   const Spacer(),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: text,
+                    builder: (BuildContext context, TextEditingValue val, Widget? _) {
+                      final int count = val.text.trim().length;
+                      if (count == 0) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: Text(
+                          '$count 字',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: t.ink3,
+                            fontFeatures: const <FontFeature>[
+                              FontFeature.tabularFigures(),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   Pill(label: '保存', filled: true, color: t.qing, onTap: _save),
                 ],
               ),
