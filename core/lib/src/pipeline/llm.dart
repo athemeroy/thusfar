@@ -32,7 +32,16 @@ Map<String, String>? _envCache;
 /// `_env`: the process environment, then SECRETS_FILE and ~/.env.
 String? llmEnv(String name) {
   final String? direct = environ[name];
-  if (direct != null && direct.isNotEmpty) return direct;
+  // Native settings explicitly own these clears. Legacy environment-only
+  // clients retain their established empty-value fallback behavior.
+  final bool settingsClear =
+      environ['LLM_SETTINGS_AUTHORITY'] == '1' &&
+      const <String>{
+        'LLM_PROTOCOL_MAP',
+        'LLM_KEY_MAP',
+        'LLM_API_KEY',
+      }.contains(name);
+  if (direct != null && (direct.isNotEmpty || settingsClear)) return direct;
   _envCache ??= _readEnvFiles();
   return _envCache![name];
 }
@@ -75,6 +84,31 @@ const Map<int, String> _fatal = <int, String>{
 };
 
 final RegExp _httpError = RegExp(r'HTTP (\d{3}): ?([\s\S]*)');
+
+List<String> _secretVariants(Iterable<String> secrets) {
+  final Set<String> variants = <String>{};
+  for (final String secret in secrets) {
+    if (secret.isEmpty) continue;
+    final String encoded = jsonEncode(secret);
+    variants.addAll(<String>[
+      secret,
+      encoded.substring(1, encoded.length - 1),
+      Uri.encodeComponent(secret),
+    ]);
+  }
+  final List<String> ordered =
+      variants.toList()
+        ..sort((String a, String b) => b.length.compareTo(a.length));
+  return ordered;
+}
+
+/// Remove request credentials before provider diagnostics reach UI or job logs.
+String redactSecrets(String text, Iterable<String> secrets) {
+  for (final String secret in _secretVariants(secrets)) {
+    text = text.replaceAll(secret, '[REDACTED]');
+  }
+  return text;
+}
 
 /// A reader-facing reason when retrying cannot help, or null.
 String? explain(Object error) {
@@ -154,6 +188,18 @@ final class ChatRequest {
   final String body;
 }
 
+/// Explicit endpoint for a connection probe without changing active settings.
+class ChatEndpoint {
+  const ChatEndpoint({
+    required this.protocol,
+    required this.baseUrl,
+    required this.apiKey,
+  });
+  final String protocol;
+  final String baseUrl;
+  final String apiKey;
+}
+
 ChatRequest buildRequest(
   String protocol,
   String model,
@@ -161,9 +207,10 @@ ChatRequest buildRequest(
   String key,
   int maxTokens,
   double temperature,
-  String variant,
-) {
-  String base = baseFor(protocol);
+  String variant, {
+  String? baseUrl,
+}) {
+  String base = baseUrl ?? baseFor(protocol);
   while (base.endsWith('/')) {
     base = base.substring(0, base.length - 1);
   }
@@ -196,7 +243,9 @@ ChatRequest buildRequest(
       ..['anthropic-version'] = '2023-06-01'
       ..['anthropic-dangerous-direct-browser-access'] = 'true';
   } else if (protocol == 'gemini') {
-    url = '$base/models/$model:streamGenerateContent?alt=sse';
+    final String resource =
+        model.startsWith('models/') ? model : 'models/$model';
+    url = '$base/$resource:streamGenerateContent?alt=sse';
     body = <String, Object?>{
       'contents': <Object?>[
         for (final Map<String, String> m in rest)
@@ -269,6 +318,9 @@ String delta(
     final StringBuffer out = StringBuffer();
     for (final Object? c in list(ev['candidates'])) {
       for (final Object? part in list(obj(obj(c)['content'])['parts'])) {
+        // Gemini marks optional thought summaries separately from the answer.
+        // They must not contaminate the engine's JSON or reader-facing output.
+        if (obj(part)['thought'] == true) continue;
         final Object? text = obj(part)['text'];
         if (text is String && text.isNotEmpty) out.write(text);
       }
@@ -376,6 +428,7 @@ Future<ChatResult> chat(
   int? retries,
   String? keyName,
   void Function(String partial)? onText,
+  ChatEndpoint? endpoint,
 }) async {
   final bool adaptive = timeout == null;
   final double wait = timeout ?? stallTimeout(fullModel);
@@ -383,9 +436,11 @@ Future<ChatResult> chat(
   final int plus = fullModel.indexOf('+');
   final String model = plus < 0 ? fullModel : fullModel.substring(0, plus);
   final String variant = plus < 0 ? '' : fullModel.substring(plus + 1);
-  final String? key = keyName != null ? llmEnv(keyName) : keyFor(model);
+  final String? key =
+      endpoint?.apiKey ?? (keyName != null ? llmEnv(keyName) : keyFor(model));
   if (key == null || key.isEmpty) throw const LLMError('缺少模型访问密钥');
-  final String protocol = protocolFor(model);
+  final String protocol = endpoint?.protocol ?? protocolFor(model);
+  final String baseUrl = endpoint?.baseUrl ?? baseFor(protocol);
   Object? last;
   for (int attempt = 0; attempt <= tries; attempt++) {
     try {
@@ -397,6 +452,7 @@ Future<ChatResult> chat(
         maxTokens,
         temperature,
         variant,
+        baseUrl: baseUrl,
       );
       final Stopwatch clock = Stopwatch()..start();
       double? first;
@@ -406,14 +462,24 @@ Future<ChatResult> chat(
       );
       if (resp.status >= 400) {
         final List<int> raw = <int>[];
+        // Include enough of a credential crossing the diagnostic boundary to
+        // redact it before truncation, including JSON/URL-escaped variants.
+        final int readLimit =
+            400 +
+            _secretVariants(<String>[key]).fold<int>(
+              0,
+              (int longest, String variant) =>
+                  math.max(longest, utf8.encode(variant).length),
+            );
         await for (final List<int> chunk in resp.body) {
           raw.addAll(chunk);
-          if (raw.length >= 400) break;
+          if (raw.length >= readLimit) break;
         }
-        final String detail = utf8.decode(
-          raw.take(400).toList(),
-          allowMalformed: true,
+        final String safe = redactSecrets(
+          utf8.decode(raw.take(readLimit).toList(), allowMalformed: true),
+          <String>[key],
         );
+        final String detail = String.fromCharCodes(safe.runes.take(400));
         final LLMError e = LLMError('HTTP ${resp.status}: $detail');
         if (const <int>[400, 401, 402, 403, 404, 422].contains(resp.status))
           throw _Fatal(e);
@@ -474,8 +540,8 @@ Future<ChatResult> chat(
       return ChatResult(text, out);
     } on _Fatal catch (f) {
       throw f.error;
-    } on DeadlineExceeded {
-      rethrow;
+    } on DeadlineExceeded catch (e) {
+      throw DeadlineExceeded(redactSecrets(e.message, <String>[key]));
     } on LLMError catch (e) {
       last = e;
     } on TimeoutException catch (e) {
@@ -486,6 +552,11 @@ Future<ChatResult> chat(
       last = e;
     } on HandshakeException catch (e) {
       last = e;
+    } on Object catch (error) {
+      final String message = error is PyException ? error.message : '$error';
+      final String safe = redactSecrets(message, <String>[key]);
+      if (safe != message) throw LLMError(safe);
+      rethrow;
     }
     if (attempt < tries) {
       await sleep(
@@ -499,7 +570,12 @@ Future<ChatResult> chat(
       );
     }
   }
-  throw LLMError('模型调用失败：${last is PyException ? last.message : last}');
+  throw LLMError(
+    redactSecrets(
+      '模型调用失败：${last is PyException ? last.message : last}',
+      <String>[key],
+    ),
+  );
 }
 
 final class _Fatal implements Exception {

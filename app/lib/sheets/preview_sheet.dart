@@ -37,10 +37,12 @@ class _PreviewPageState extends State<PreviewPage> {
     final BookData book = widget.link.c.book;
     final int page = widget.link.pageNo(widget.start);
     final Chapter ch = book.chapters[book.chapterAt(widget.start)];
-    final bool ahead = widget.start >= widget.link.c.cutoff;
+    final int cutoff = widget.link.c.cutoff;
+    final bool ahead = widget.start >= cutoff || widget.end > cutoff;
+    final int visibleEnd = reveal ? book.length : cutoff;
     final int from = math.max(0, widget.start - 300);
     final int to = math.min(
-      book.length,
+      visibleEnd,
       math.max(widget.end, widget.start + 1) + 300,
     );
     final String before = book.textBetween(from, widget.start);
@@ -69,7 +71,7 @@ class _PreviewPageState extends State<PreviewPage> {
                       ),
                       const SizedBox(height: 16),
                       Pill(
-                        label: '仍然跳过去',
+                        label: '预览未读原文',
                         onTap: () => setState(() => reveal = true),
                       ),
                     ],
@@ -113,7 +115,7 @@ class _PreviewPageState extends State<PreviewPage> {
           Expanded(
             flex: 2,
             child: Pill(
-              label: '跳到这里',
+              label: ahead && !reveal ? '跳到未读位置' : '跳到这里',
               filled: true,
               onTap: () => widget.link.jump(
                 widget.start,

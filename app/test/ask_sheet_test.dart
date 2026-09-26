@@ -25,13 +25,14 @@ class PendingAsk extends AskService {
     int pos, {
     AskEvent? onEvent,
     AskCancellation? cancellation,
+    void Function()? onSettled,
   }) {
     requests.add((question, pos));
     tokens.add(cancellation);
     onEvent?.call('stage', <String, Object?>{'text': '检查有没有剧透'});
     final Completer<Json> reply = Completer<Json>();
     replies.add(reply);
-    return reply.future;
+    return reply.future.whenComplete(() => onSettled?.call());
   }
 }
 

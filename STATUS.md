@@ -17,10 +17,43 @@ A0-only gate and ¥1 recording cap are superseded.
 | Knowledge graph | 71 dedicated tests cover 1,815 historical method rows, 48 captured commits plus 4 synthetic states, and 28 complete-input Anchor cases. Historical Anchor captures missing block context are not counted as complete calls. |
 | Book/chapter policy | Python-recorded request/result fixtures, fallback and Unicode decimal/large-ordinal cases exercise classification and work boundaries. |
 | Grounded questions | Native ask/temporal logic covers retrieval, routing, verification/rewrite, citations, cutoff enforcement, cache invalidation, timeout and cancellation. The Flutter ask sheet has four passing interaction tests on Mini. |
-| Model settings | Four Mini widget tests cover missing credentials without a request, single in-flight testing, and late success/error after leaving the page. |
+| Model settings | OpenAI Compatible, Gemini and Claude Compatible, custom endpoints, protected private storage, and stateless current-form probes. Core and Flutter protocol/routing/regression tests pass. |
 | Reader | Existing shelf, import, pagination, character cards, graph, TOC, notes, search, recaps and typography UI remains. Ten screenshot receipts were generated; shelf, reader, character card and grounded-question UI were inspected. |
 
-## Integrated processing and validation
+## Native services and UI continuation
+
+The latest continuation implements the standalone Dart HTTP service, validated
+manual-entity overlays, source-grounded marginalia, notebook/reading-list parity,
+and three generic provider protocols. The full Mini core run passes **2,166 tests
+with 509 explicit skips and zero failures**. Twelve personal-service contracts
+were reconciled with the golden registry; remaining skips are still unexecuted.
+
+A dedicated UI agent authored [173 base end-to-end cases](docs/testing/UI-E2E-MATRIX.md),
+[an execution template](docs/testing/UI-E2E-RUN-TEMPLATE.md), a blank results CSV,
+and a generated source-control inventory. Option/theme/device variants require
+separate results. Cases begin NOT_RUN; successful widgets, APIs and screenshots
+cannot establish physical interaction acceptance.
+
+The continuation corrects unlabeled graph edges, missing note-edit entries,
+book-note navigation, reader back behavior, unsaved-settings probes, source/search
+preview cutoff, selection cutoff/UTF-16 boundaries, and current-page footnote
+access. Graph role direction, ended state, replay, zoom and large-text/dense layout
+have focused functional and screenshot checks. Physical dev.4 tests exposed
+default graph drawer clipping, an accessible replay-page mismatch, and keyboard
+animation rewinding the reader after note save. These are corrected in dev.5+24,
+whose full app suite passes 77 tests with clean analysis. The same probe package
+was updated to dev.5+24 on the Xiaomi at 12:14:52; the initial shelf and reader
+retained one Aq book, 37 people, 28% progress and page23 without reimport.
+Physical dev.5 retests passed: default graph entry shows a complete father/son
+relationship card, its detail opens correctly, the accessible replay label agrees
+with visible page23, and a multiline note save keeps page23. Exported data
+retains pos5799/cutoff6086/pct28.002, the prior note at revision2, and exactly one
+new note at revision1. The full 173-case matrix remains pending; these are
+scoped device variants. Whole-paragraph/offscreen reader accessibility spans
+remain a separate known acceptance gap. See
+[the active run record](docs/port/runs/20260926-services/RUN.md).
+
+## Earlier integrated processing and validation
 
 Three parallel agents completed Runner, Worker and Flutter integration after the
 daemon recovery. The Runner supports two-phase/classic processing, source and
@@ -80,9 +113,7 @@ local book libraries remain ignored. Include it in the reviewed source commit.
 
 - Broaden whole-book parity beyond Aq, including classic fresh-book processing;
   complete real model processing/background acceptance on devices.
-- Complete the manual-entity Reader overlay, remaining AI annotation/service
-  ports and standalone Dart HTTP server;
-  validate existing browser/API workflows against it.
+- Execute the complete UI regression matrix and required variants on actual devices/browser, including deterministic model-success/error scenarios. Native manual entities, marginalia and HTTP services are implemented; full user-workflow acceptance remains separate from core/widget evidence.
 - Verify full 1.7.x in-place upgrade and data retention, on-device processing and
   background behavior, performance requirements and the second-device checks.
 - Reconcile the manifest and skipped contracts, establish required coverage,

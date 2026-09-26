@@ -16,25 +16,56 @@ Future<T?> openSheet<T>(
     useSafeArea: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.28),
-    builder: (BuildContext _) => DraggableScrollableSheet(
-      initialChildSize: full ? 0.92 : initial,
-      minChildSize: 0.2,
-      maxChildSize: 0.92,
-      snap: true,
-      snapSizes: const <double>[0.45, 0.92],
-      expand: false,
-      builder: (BuildContext context, ScrollController scroll) =>
-          SheetFrame(scroll: scroll, root: root),
-    ),
+    builder: (BuildContext _) =>
+        _ReaderDrawer(initial: full ? 0.92 : initial, root: root),
+  );
+}
+
+class _ReaderDrawer extends StatefulWidget {
+  const _ReaderDrawer({required this.root, required this.initial});
+
+  final Widget root;
+  final double initial;
+
+  @override
+  State<_ReaderDrawer> createState() => _ReaderDrawerState();
+}
+
+class _ReaderDrawerState extends State<_ReaderDrawer> {
+  final DraggableScrollableController _extent = DraggableScrollableController();
+
+  @override
+  void dispose() {
+    _extent.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => DraggableScrollableSheet(
+    controller: _extent,
+    initialChildSize: widget.initial,
+    minChildSize: 0.2,
+    maxChildSize: 0.92,
+    snap: true,
+    snapSizes: const <double>[0.45, 0.92],
+    expand: false,
+    builder: (BuildContext context, ScrollController scroll) =>
+        SheetFrame(scroll: scroll, root: widget.root, extent: _extent),
   );
 }
 
 /// The drawer's own page stack: back pops a layer before closing the drawer.
 class SheetFrame extends StatefulWidget {
-  const SheetFrame({super.key, required this.scroll, required this.root});
+  const SheetFrame({
+    super.key,
+    required this.scroll,
+    required this.root,
+    this.extent,
+  });
 
   final ScrollController scroll;
   final Widget root;
+  final DraggableScrollableController? extent;
 
   @override
   State<SheetFrame> createState() => SheetFrameState();
@@ -43,6 +74,28 @@ class SheetFrame extends StatefulWidget {
 class SheetFrameState extends State<SheetFrame> {
   late final List<Widget> _stack = <Widget>[widget.root];
   bool _forward = true;
+  bool _expandPending = false;
+
+  /// A graph needs a readable viewport instead of inheriting a short list's
+  /// collapsed drawer. Wait until the page transition has detached its old
+  /// scroll position before animating the shared draggable controller.
+  void expand() {
+    if (widget.extent == null || _expandPending) return;
+    _expandPending = true;
+    void attempt(Duration _) {
+      if (!mounted) return;
+      final DraggableScrollableController extent = widget.extent!;
+      if (!extent.isAttached || widget.scroll.positions.length != 1) {
+        WidgetsBinding.instance.addPostFrameCallback(attempt);
+        return;
+      }
+      _expandPending = false;
+      widget.scroll.jumpTo(0);
+      extent.animateTo(.92, duration: Motion.push, curve: Curves.easeOutCubic);
+    }
+
+    attempt(Duration.zero);
+  }
 
   void push(Widget page) => setState(() {
     _forward = true;
@@ -193,6 +246,7 @@ class SheetPage extends StatelessWidget {
                               if (back)
                                 IconButton(
                                   icon: const Icon(Icons.arrow_back),
+                                  tooltip: '返回上一层',
                                   color: t.ink,
                                   onPressed: scope.state.pop,
                                 )
@@ -304,6 +358,33 @@ class Segmented extends StatelessWidget {
   final List<String> labels;
   final int index;
   final ValueChanged<int> onChanged;
+
+  /// Match the actual text wrap within each equally sized tab. A fixed header
+  /// height clips three-character labels on narrow screens with large text.
+  double heightForWidth(BuildContext context, double width) {
+    final double cell = ((width - 46) / labels.length).clamp(
+      1,
+      double.infinity,
+    );
+    double height = 44;
+    for (int i = 0; i < labels.length; i++) {
+      final TextPainter painter = TextPainter(
+        text: TextSpan(
+          text: labels[i],
+          style: DefaultTextStyle.of(context).style.copyWith(
+            fontSize: 13,
+            fontWeight: i == index ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout(maxWidth: cell);
+      final double measured = (painter.height + 20).ceilToDouble();
+      if (measured > height) height = measured;
+      painter.dispose();
+    }
+    return height;
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,48 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:thusfar_core/thusfar_core.dart';
 import 'package:thusfar_core/llm.dart' as llm;
 
 import '../data/model_settings.dart';
 import '../ui/theme.dart';
 
 /// Makes saved settings effective for the engine (`model_settings.apply_environment`).
-void applyModelEnvironment(ModelSettings s) {
-  final (String url, String model, _) = s.read();
-  environ['SECRETS_FILE'] = s.file.path;
-  for (final String name in const <String>[
-    'EXTRACT_MODEL',
-    'LOCAL_MODEL',
-    'RECAP_MODEL',
-    'JUDGE_MODEL',
-    'CLASSIFY_MODEL',
-    'QA_MODEL',
-    'MARGINALIA_MODEL',
-    'MARGINALIA_AUTO_MODEL',
-  ]) {
-    environ[name] = model;
-  }
-  environ['JEV_ROUTE'] = 'free-only';
-  environ['LLM_BASE_URL'] = url;
-  llm.resetEnvCache();
-}
-
-class _Preset {
-  const _Preset(this.name, this.url, this.model);
-
-  final String name;
-  final String url;
-  final String model;
-}
-
-const List<_Preset> _presets = <_Preset>[
-  _Preset(
-    'DeepSeek 官方',
-    'https://api.deepseek.com/v1',
-    'deepseek-flash+nothink',
-  ),
-  _Preset('小鲸', 'https://open.xiaojingai.com/v1', 'deepseek-flash+nothink'),
-  _Preset('自定义', '', ''),
-];
+void applyModelEnvironment(ModelSettings s) => s.applyEnvironment();
 
 /// S19 模型设置: fill in once and confirm it works right here.
 class ModelSettingsScreen extends StatefulWidget {
@@ -65,6 +28,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   late final TextEditingController url;
   late final TextEditingController model;
   final TextEditingController key = TextEditingController();
+  late String protocol;
   bool showKey = false;
   bool replacing = false;
   bool clearKey = false;
@@ -78,6 +42,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   void initState() {
     super.initState();
     final (String u, String m, _) = widget.settings.read();
+    protocol = widget.settings.protocol;
     url = TextEditingController(text: u);
     model = TextEditingController(text: m);
   }
@@ -90,50 +55,63 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     super.dispose();
   }
 
-  int get _preset {
-    for (int i = 0; i < 2; i++) {
-      if (_presets[i].url == url.text.trim()) return i;
-    }
-    return 2;
-  }
+  void _edited() => setState(() {
+    test = _Test.none;
+    error = null;
+    urlNote = null;
+    modelNote = null;
+  });
 
-  Future<void> _test() async {
+  Future<void> _test({bool saved = false}) async {
     if (test == _Test.running) return;
-    if (!widget.settings.hasKey) {
+    if (clearKey || (key.text.trim().isEmpty && !widget.settings.hasKey)) {
       setState(() {
         test = _Test.failed;
-        testMessage = '还没有填写模型 API 密钥，请先填写并保存';
+        testMessage = '还没有填写模型 API 密钥，请先填写';
       });
       return;
     }
+    final (String savedUrl, String savedModel, String savedKey) = widget
+        .settings
+        .read();
+    final (String probeUrl, String probeModel) = ModelSettings.normalize(
+      url.text,
+      model.text,
+      protocol: protocol,
+    );
+    final String probeKey = clearKey
+        ? ''
+        : key.text.trim().isEmpty
+        ? savedKey
+        : key.text.trim();
+    final bool unsaved =
+        protocol != widget.settings.protocol ||
+        probeUrl != savedUrl ||
+        probeModel != savedModel ||
+        probeKey != savedKey;
     setState(() {
       test = _Test.running;
       testMessage = '';
     });
-    applyModelEnvironment(widget.settings);
-    final String name = widget.settings.read().$2;
-    final Stopwatch w = Stopwatch()..start();
     try {
-      final llm.ChatResult r = await llm.chat(
-        name,
-        const <Map<String, String>>[
-          <String, String>{'role': 'user', 'content': '只回答两个字：可以'},
-        ],
-        maxTokens: 16,
-        temperature: 0,
-        timeout: 30,
-        retries: 0,
+      final Map<String, Object?> result = await widget.settings.test(
+        url: url.text,
+        model: model.text,
+        key: key.text,
+        clearKey: clearKey,
+        protocol: protocol,
       );
       if (!mounted) return;
-      final double s = w.elapsedMilliseconds / 1000;
-      final String reply = String.fromCharCodes(r.text.trim().runes.take(20));
       setState(() {
-        test = s > 8 ? _Test.slow : _Test.ok;
-        testMessage = s > 8
-            ? '这个模型回复很慢（${s.toStringAsFixed(1)} 秒），整理一本书会很久；想快一些可以换 deepseek-flash+nothink'
-            : '连接成功 · ${s.toStringAsFixed(1)} 秒 · 回复「$reply」';
+        test = result['ok'] != true
+            ? _Test.failed
+            : (result['seconds'] as num) > 8
+            ? _Test.slow
+            : _Test.ok;
+        testMessage = '${result['message']}';
+        if (unsaved && result['ok'] == true) testMessage += '。当前输入尚未保存';
       });
-      if (widget.returnOnSuccess && mounted && test == _Test.ok) {
+      if (saved && widget.returnOnSuccess && mounted && test == _Test.ok) {
         await Future<void>.delayed(const Duration(milliseconds: 900));
         if (mounted) Navigator.of(context).pop(true);
       }
@@ -150,16 +128,25 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
 
   void _save() {
     if (test == _Test.running) return;
-    final (String u, String m) = ModelSettings.normalize(url.text, model.text);
+    final (String u, String m) = ModelSettings.normalize(
+      url.text,
+      model.text,
+      protocol: protocol,
+    );
     final String? e = widget.settings.save(
       url: url.text,
       model: model.text,
       key: key.text.trim(),
       clearKey: clearKey,
+      protocol: protocol,
     );
     setState(() {
       error = e;
-      urlNote = u != url.text.trim() && u.endsWith('/v1') ? '已自动补上 /v1' : null;
+      urlNote = u != url.text.trim() && u.endsWith('/v1')
+          ? '已自动补上 /v1'
+          : u.endsWith('/v1beta') && u != url.text.trim()
+          ? '已自动补上 /v1beta'
+          : null;
       modelNote = m != model.text.trim() && m.endsWith('+nothink')
           ? '已自动加上 +nothink'
           : null;
@@ -171,7 +158,10 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         clearKey = false;
       }
     });
-    if (e == null) _test();
+    if (e == null) {
+      applyModelEnvironment(widget.settings);
+      _test(saved: true);
+    }
   }
 
   @override
@@ -202,57 +192,49 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              for (int i = 0; i < _presets.length; i++)
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(right: i < 2 ? 10 : 0),
-                    child: GestureDetector(
-                      onTap: () => setState(() {
-                        if (i < 2) {
-                          url.text = _presets[i].url;
-                          model.text = _presets[i].model;
-                        }
-                      }),
-                      child: Container(
-                        height: 64,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: t.raised,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: _preset == i ? t.ink : t.rule,
-                            width: _preset == i ? 1.6 : 1,
-                          ),
-                        ),
-                        child: Text(
-                          _presets[i].name,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: t.ink,
-                            fontWeight: _preset == i
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+          DropdownButtonFormField<String>(
+            initialValue: protocol,
+            decoration: deco('接口协议'),
+            items: <DropdownMenuItem<String>>[
+              for (final MapEntry<String, String> item
+                  in ModelSettings.protocolLabels.entries)
+                DropdownMenuItem<String>(
+                  value: item.key,
+                  child: Text(item.value),
                 ),
             ],
+            onChanged: test == _Test.running
+                ? null
+                : (String? value) {
+                    if (value == null || value == protocol) return;
+                    setState(() {
+                      protocol = value;
+                      url.text = ModelSettings.defaultUrls[value]!;
+                      model.clear();
+                      key.clear();
+                      replacing = true;
+                      clearKey = false;
+                      urlNote = null;
+                      modelNote = null;
+                      test = _Test.none;
+                      error = null;
+                    });
+                  },
           ),
           const SizedBox(height: 20),
           TextField(
             controller: url,
+            enabled: test != _Test.running,
             keyboardType: TextInputType.url,
             decoration: deco('接口地址', helper: urlNote),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => _edited(),
           ),
           const SizedBox(height: 14),
           TextField(
             controller: model,
-            decoration: deco('模型', helper: modelNote),
+            onChanged: (_) => _edited(),
+            enabled: test != _Test.running,
+            decoration: deco('模型', helper: modelNote ?? '填写接口提供的模型名称'),
           ),
           const SizedBox(height: 14),
           if (hasKey && !replacing)
@@ -272,11 +254,18 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => setState(() => replacing = true),
+                    onPressed: test == _Test.running
+                        ? null
+                        : () => setState(() => replacing = true),
                     child: const Text('更换'),
                   ),
                   TextButton(
-                    onPressed: () => setState(() => clearKey = true),
+                    onPressed: test == _Test.running
+                        ? null
+                        : () => setState(() {
+                            clearKey = true;
+                            test = _Test.none;
+                          }),
                     child: Text('清除', style: TextStyle(color: t.danger)),
                   ),
                 ],
@@ -285,6 +274,14 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
           else
             TextField(
               controller: key,
+              onChanged: (String value) {
+                if (value.isNotEmpty && clearKey) {
+                  clearKey = false;
+                  replacing = true;
+                }
+                _edited();
+              },
+              enabled: test != _Test.running,
               obscureText: !showKey,
               decoration: deco(
                 'API 密钥',

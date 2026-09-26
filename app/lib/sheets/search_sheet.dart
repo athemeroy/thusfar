@@ -45,14 +45,17 @@ class _SearchPageState extends State<SearchPage> {
         final int i = lower.indexOf(q, from);
         if (i < 0 || b.o + i + q.length > limit) break;
         final int s = (i - 24).clamp(0, b.text.length);
-        final int e = (i + q.length + 36).clamp(0, b.text.length);
+        final int e = (i + q.length + 36).clamp(
+          0,
+          (limit - b.o).clamp(0, b.text.length),
+        );
         out.add(
           _Hit(
             book.chapterAt(b.o + i),
             b.o + i,
-            b.text.substring(s, i),
+            book.textBetween(b.o + s, b.o + i),
             b.text.substring(i, i + q.length),
-            b.text.substring(i + q.length, e),
+            book.textBetween(b.o + i + q.length, b.o + e),
           ),
         );
         if (out.length >= 500) return out;

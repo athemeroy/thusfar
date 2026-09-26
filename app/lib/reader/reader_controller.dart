@@ -6,7 +6,15 @@ import 'paginator.dart';
 
 /// Where the reader is, what they know there, and how to get back.
 class ReaderController extends ChangeNotifier {
-  ReaderController({required this.library, required this.book});
+  ReaderController({required this.library, required this.book}) {
+    book.addListener(touch);
+  }
+
+  @override
+  void dispose() {
+    book.removeListener(touch);
+    super.dispose();
+  }
 
   final Library library;
   final BookData book;
@@ -104,8 +112,35 @@ class ReaderController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void select((int, int)? range) {
-    selection = range;
+  /// Source selections stay on this page and in the textual block where the
+  /// gesture began. Off-page word expansion and cross-block drags are clipped.
+  void select((int, int)? range, {int? anchor}) {
+    selection = null;
+    if (range != null && page != null && start < cutoff) {
+      final int point = (anchor ?? range.$1).clamp(start, cutoff - 1);
+      final Block block = book.blocks[book.blockAt(point)];
+      if (block.kind == 'p' || block.kind == 'h') {
+        final int low = start > block.o ? start : block.o;
+        final int blockEnd = block.o + block.text.length;
+        final int high = cutoff < blockEnd ? cutoff : blockEnd;
+        if (low < high) {
+          int a = range.$1.clamp(low, high);
+          int z = range.$2.clamp(low, high);
+          bool splitsPair(int at) =>
+              at > block.o &&
+              at < blockEnd &&
+              block.text.codeUnitAt(at - block.o - 1) >= 0xd800 &&
+              block.text.codeUnitAt(at - block.o - 1) <= 0xdbff &&
+              block.text.codeUnitAt(at - block.o) >= 0xdc00 &&
+              block.text.codeUnitAt(at - block.o) <= 0xdfff;
+          // Include the full visible character when a drag lands inside an
+          // emoji; clip inward if the page itself ends inside that character.
+          if (splitsPair(a)) a += a > low ? -1 : 1;
+          if (splitsPair(z)) z += z < high ? 1 : -1;
+          if (a < z) selection = (a, z);
+        }
+      }
+    }
     notifyListeners();
   }
 

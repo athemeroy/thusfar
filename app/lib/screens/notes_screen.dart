@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'dart:convert';
+
+import 'package:thusfar_core/notebook.dart' as notebook;
 
 import 'package:flutter/material.dart';
 
 import '../data/library.dart';
 import '../sheets/toc_sheet.dart';
+import '../sheets/note_editor.dart';
 import '../ui/cover.dart';
 import '../ui/theme.dart';
 
@@ -23,14 +27,24 @@ class _NotesScreenState extends State<NotesScreen> {
   String query = '';
   bool searching = false;
 
+  final Map<String, String> _errors = <String, String>{};
+
   List<Json> _items(BookEntry b) {
-    final List<Object?> raw =
-        (readJson(File('${b.dir.path}/notebook.json')) as List<Object?>?) ??
-        const <Object?>[];
-    final List<Json> out = <Json>[
-      for (final Object? x in raw)
-        if (x is Json && x['deleted'] != true) x,
-    ];
+    final File file = File('${b.dir.path}/notebook.json');
+    if (!file.existsSync()) return <Json>[];
+    late List<Json> out;
+    try {
+      final Json book =
+          jsonDecode(File('${b.dir.path}/book.json').readAsStringSync())
+              as Json;
+      out = notebook
+          .restore(jsonDecode(file.readAsStringSync()), book)
+          .where((Json item) => item['deleted'] != true)
+          .toList();
+    } on Object catch (e) {
+      _errors[b.id] = '${b.title}：摘记读取失败，原文件已保留。$e';
+      return <Json>[];
+    }
     return out
         .where(
           (Json x) => switch (filter) {
@@ -50,42 +64,78 @@ class _NotesScreenState extends State<NotesScreen> {
       );
   }
 
-  void _delete(BookEntry b, Json item) {
-    final File f = File('${b.dir.path}/notebook.json');
-    final List<Object?> raw = (readJson(f) as List<Object?>?) ?? <Object?>[];
-    final Json gone = <String, Object?>{
-      ...item,
-      'deleted': true,
-      'revision': ((item['revision'] as num?) ?? 0) + 1,
-      'updated': DateTime.now().millisecondsSinceEpoch / 1000,
-    };
-    writeJson(f, <Object?>[
-      ...raw.where((Object? x) => (x! as Json)['id'] != item['id']),
-      gone,
-    ]);
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('已删除'),
-        action: SnackBarAction(
-          label: '撤销',
-          onPressed: () {
-            final List<Object?> now =
-                (readJson(f) as List<Object?>?) ?? <Object?>[];
-            writeJson(f, <Object?>[
-              ...now.where((Object? x) => (x! as Json)['id'] != item['id']),
-              item,
-            ]);
-            setState(() {});
-          },
+  void _error(Object error) {
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  void _disposeBook(BookData book) {
+    book.notes.dispose();
+    book.dispose();
+  }
+
+  Future<void> _edit(BookEntry entry, Json item) async {
+    BookData? book;
+    try {
+      book = BookData.open(entry);
+      await NoteEditor.open(
+        context,
+        book: book,
+        start: item['start']! as int,
+        end: item['end']! as int,
+        cutoff: item['knowledge_cutoff']! as int,
+        existing: item,
+      );
+      if (mounted) setState(() {});
+    } on Object catch (e) {
+      _error(e);
+    } finally {
+      if (book != null) _disposeBook(book);
+    }
+  }
+
+  bool _delete(BookEntry entry, Json item) {
+    BookData? book;
+    try {
+      book = BookData.open(entry);
+      final Json receipt = book.notes.delete(item);
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('已删除'),
+          action: SnackBarAction(
+            label: '撤销',
+            onPressed: () {
+              BookData? current;
+              try {
+                current = BookData.open(entry);
+                current.notes.restore(receipt);
+                if (mounted) setState(() {});
+              } on Object catch (e) {
+                _error(e);
+              } finally {
+                if (current != null) _disposeBook(current);
+              }
+            },
+          ),
         ),
-      ),
-    );
+      );
+      return true;
+    } on Object catch (e) {
+      _error(e);
+      return false;
+    } finally {
+      if (book != null) _disposeBook(book);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
+    _errors.clear();
     final List<(BookEntry, List<Json>)> groups = <(BookEntry, List<Json>)>[
       for (final BookEntry b in widget.library.books) (b, _items(b)),
     ].where(((BookEntry, List<Json>) g) => g.$2.isNotEmpty).toList();
@@ -144,7 +194,14 @@ class _NotesScreenState extends State<NotesScreen> {
               ),
             ),
           ),
-          if (groups.isEmpty)
+          for (final String error in _errors.values)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(error, style: TextStyle(color: t.danger)),
+              ),
+            ),
+          if (groups.isEmpty && _errors.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: Center(
@@ -192,9 +249,12 @@ class _NotesScreenState extends State<NotesScreen> {
                         color: Colors.white,
                       ),
                     ),
-                    onDismissed: (_) => _delete(b, item),
+                    confirmDismiss: (_) async => _delete(b, item),
                     child: NoteTile(
                       item: item,
+                      onEdit: item['kind'] == 'note'
+                          ? () => _edit(b, item)
+                          : null,
                       pageLabel: item['kind'] == 'bookmark'
                           ? '书签'
                           : '原文位置 ${item['start']}',

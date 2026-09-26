@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 import 'package:thusfar_core/storage.dart' as storage;
 import 'package:thusfar_core/jobs.dart' show RunLease;
+import 'package:thusfar_core/manual_entities.dart' as manual;
+import 'package:thusfar_core/notebook.dart' as notebook;
 
 export 'package:thusfar_core/thusfar_core.dart' show Json;
 
@@ -338,7 +340,7 @@ class Library extends ChangeNotifier {
     }
 
     final String signature =
-        '${jsonEncode(state)}|${stamp('${b.dir.path}/kg.json')}|${stamp('${b.dir.path}/mentions')}';
+        '${jsonEncode(state)}|${stamp('${b.dir.path}/kg.json')}|${stamp('${b.dir.path}/mentions')}|${stamp('${b.dir.path}/manual-entities.json')}';
     if (signature == b._processingStamp) return false;
     b._processingStamp = signature;
     b.status = ProcessStatus(state);
@@ -396,7 +398,8 @@ class Mention {
 
 /// One opened book: text, chapters, the knowledge log and personal notes.
 class BookData extends ChangeNotifier {
-  BookData._(this.entry, this.book, this.blocks, this.chapters, this.records);
+  BookData._(this.entry, this.book, this.blocks, this.chapters, this.records)
+    : _generatedRecords = List<Json>.of(records);
 
   static BookData open(BookEntry entry) {
     final Json book = readJson(File('${entry.dir.path}/book.json'))! as Json;
@@ -419,6 +422,8 @@ class BookData extends ChangeNotifier {
     ];
     final BookData data = BookData._(entry, book, blocks, chapters, records);
     data._loadedRevision = entry.knowledgeRevision;
+    data._readManual();
+    data._mergeKnowledge();
     data.notes = NoteStore(File('${entry.dir.path}/notebook.json'), data);
     return data;
   }
@@ -428,11 +433,91 @@ class BookData extends ChangeNotifier {
   final List<Block> blocks;
   final List<Chapter> chapters;
   final List<Json> records;
+  final List<Json> _generatedRecords;
+  List<Json> manualItems = <Json>[];
+  late final manual.ManualEntityStore _manualStore = manual.ManualEntityStore(
+    File('${entry.dir.path}/manual-entities.json'),
+  );
   late final NoteStore notes;
   final Map<int, List<Mention>> _mentions = <int, List<Mention>>{};
   final Map<int, World> _worlds = <int, World>{};
   int _loadedRevision = -1;
   String? knowledgeError;
+  String? manualError;
+
+  void _readManual() {
+    try {
+      manualItems = _manualStore.read(book);
+      manualError = null;
+    } on Object {
+      manualError = '手动补充资料暂时无法更新，已保留现有内容。';
+    }
+  }
+
+  void _mergeKnowledge() {
+    // Equal-position records preserve Python's stable ordering: generated rows
+    // first, then each manual person's creation and profile revisions.
+    final List<(int, Json)> all = <(int, Json)>[];
+    for (final Json row in <Json>[
+      ..._generatedRecords,
+      ...manual.manualRows(manualItems),
+    ]) {
+      all.add((all.length, row));
+    }
+    all.sort(((int, Json) a, (int, Json) b) {
+      final int order = (a.$2['p']! as int).compareTo(b.$2['p']! as int);
+      return order == 0 ? a.$1.compareTo(b.$1) : order;
+    });
+    records
+      ..clear()
+      ..addAll(all.map(((int, Json) row) => row.$2));
+    _mentions.clear();
+    _worlds.clear();
+  }
+
+  /// Only versions visible at the current reading cutoff reach an editor.
+  Json? manualEntry(String id, int cutoff) {
+    final Json? item = manualItems
+        .where((Json row) => row['id'] == id && row['deleted'] != true)
+        .firstOrNull;
+    if (item == null) return null;
+    final List<Json> versions = (item['versions']! as List<Object?>)
+        .cast<Json>()
+        .where((Json row) => (row['p']! as int) <= cutoff)
+        .toList();
+    if (versions.isEmpty) return null;
+    return <String, Object?>{
+      ...item,
+      'versions': versions,
+      'locked': (item['knowledge_cutoff']! as int) > cutoff,
+    };
+  }
+
+  Json saveManual(Json payload) {
+    final File graphFile = File('${entry.dir.path}/kg.json');
+    final Json graph = storage.validateGraph(
+      graphFile.existsSync()
+          ? jsonDecode(graphFile.readAsStringSync())
+          : <String, Object?>{'log': <Object?>[]},
+      length,
+    );
+    final (List<Json> updated, Json? item, bool conflict) = _manualStore.apply(
+      payload,
+      book,
+      graph,
+    );
+    if (conflict) throw const ValueError('这条资料已在其他位置修改，请先复制你的文字，再重新打开后保存。');
+    _generatedRecords
+      ..clear()
+      ..addAll(((graph['log'] as List<Object?>?) ?? <Object?>[]).cast<Json>());
+    manualItems = updated;
+    manualError = null;
+    _mergeKnowledge();
+    entry.knowledgeRevision++;
+    _loadedRevision = entry.knowledgeRevision;
+    notifyListeners();
+    return item!;
+  }
 
   /// Re-read durable knowledge after processing writes while retaining the
   /// reader's text, position and personal notes. Corruption keeps the last valid
@@ -448,15 +533,15 @@ class BookData extends ChangeNotifier {
       final Json graph = storage.validateGraph(raw, length);
       final List<Json> next = ((graph['log'] as List<Object?>?) ?? <Object?>[])
           .cast<Json>();
-      records
+      _generatedRecords
         ..clear()
         ..addAll(next);
       knowledgeError = null;
     } on Object {
       knowledgeError = '人物资料暂时无法更新，仍显示上次整理好的内容。';
     }
-    _mentions.clear();
-    _worlds.clear();
+    _readManual();
+    _mergeKnowledge();
     notifyListeners();
     return true;
   }
@@ -480,10 +565,22 @@ class BookData extends ChangeNotifier {
             as List<Object?>?) ??
         const <Object?>[];
     final int frontier = status.frontier;
+    final List<List<Object?>> generated = <List<Object?>>[
+      for (final Object? item in raw)
+        if (((item! as List<Object?>)[1]! as num) <= frontier)
+          item as List<Object?>,
+    ];
+    final Chapter chapter = chapters[n];
+    final List<List<Object?>> combined = manual.manualMentions(
+      <Json>[
+        for (final Block block in blocks.sublist(chapter.b0, chapter.b1))
+          block.raw,
+      ],
+      manualItems,
+      generated,
+    );
     final List<Mention> out = <Mention>[];
-    for (final Object? item in raw) {
-      final List<Object?> m = item! as List<Object?>;
-      if ((m[1]! as num) > frontier) continue;
+    for (final List<Object?> m in combined) {
       out.add(
         Mention(
           (m[0]! as num).toInt(),
@@ -537,8 +634,22 @@ class BookData extends ChangeNotifier {
     for (int i = blockAt(start); i < blocks.length; i++) {
       final Block b = blocks[i];
       if (b.o >= end) break;
-      final int a = math.max(0, start - b.o);
-      final int z = math.min(b.text.length, end - b.o);
+      int a = math.max(0, start - b.o);
+      int z = math.min(b.text.length, end - b.o);
+      // Clip inward so context windows never expose half of an emoji or extend
+      // beyond the reader's visible cutoff.
+      if (a > 0 &&
+          a < b.text.length &&
+          b.text.codeUnitAt(a) >= 0xdc00 &&
+          b.text.codeUnitAt(a) <= 0xdfff) {
+        a++;
+      }
+      if (z > 0 &&
+          z < b.text.length &&
+          b.text.codeUnitAt(z - 1) >= 0xd800 &&
+          b.text.codeUnitAt(z - 1) <= 0xdbff) {
+        z--;
+      }
       if (z > a) {
         if (out.isNotEmpty) out.write('\n');
         out.write(b.text.substring(a, z));
@@ -551,14 +662,33 @@ class BookData extends ChangeNotifier {
 /// `notebook.json`: excerpts, notes and bookmarks in UTF-16 source offsets.
 class NoteStore extends ChangeNotifier {
   NoteStore(this.file, this.book) {
-    final List<Object?> raw =
-        (readJson(file) as List<Object?>?) ?? const <Object?>[];
-    items = <Json>[for (final Object? x in raw) x! as Json];
+    refresh(notify: false);
   }
 
   final File file;
   final BookData book;
-  late List<Json> items;
+  List<Json> items = <Json>[];
+  String? error;
+
+  List<Json> _read() {
+    if (!file.existsSync()) return <Json>[];
+    try {
+      return notebook.restore(jsonDecode(file.readAsStringSync()), book.book);
+    } on FormatException {
+      throw const ValueError('摘记文件损坏，原文件已保留，请从备份恢复');
+    }
+  }
+
+  /// A bad replacement never discards the last successfully loaded notes.
+  void refresh({bool notify = true}) {
+    try {
+      items = _read();
+      error = null;
+    } on Object catch (e) {
+      error = '$e';
+    }
+    if (notify) notifyListeners();
+  }
 
   List<Json> get live => items.where((Json x) => x['deleted'] != true).toList()
     ..sort(
@@ -584,9 +714,35 @@ class NoteStore extends ChangeNotifier {
     ).join();
   }
 
-  /// Creates or updates an item with the same validation as `notebook.apply`.
+  /// Read current durable records before applying an optimistic revision check.
+  /// Synchronous read/apply/write keeps independent stores in this isolate from
+  /// replacing each other's unrelated notes. Failed writes leave memory intact.
+  Json _apply(Json payload, {bool requireExisting = false}) {
+    final List<Json> latest = _read();
+    if (requireExisting &&
+        !latest.any((Json item) => item['id'] == payload['id'])) {
+      throw const ValueError('摘记已不存在，请关闭后重新打开');
+    }
+    final (List<Object?> next, Json? saved, bool conflict) = notebook.apply(
+      latest,
+      payload,
+      book.book,
+    );
+    if (conflict) {
+      items = latest;
+      notifyListeners();
+      throw const ValueError('摘记已在别处修改，请关闭后重新打开；当前输入尚未保存');
+    }
+    writeJson(file, next);
+    items = <Json>[for (final Object? item in next) item! as Json];
+    error = null;
+    notifyListeners();
+    return saved!;
+  }
+
   Json save({
     String? id,
+    int? expectedRevision,
     required String kind,
     required int start,
     required int end,
@@ -596,45 +752,37 @@ class NoteStore extends ChangeNotifier {
     final Json? old = id == null
         ? null
         : items.where((Json x) => x['id'] == id).firstOrNull;
-    final double now = DateTime.now().millisecondsSinceEpoch / 1000;
-    final Json item = <String, Object?>{
+    if (id != null && old == null) {
+      throw const ValueError('摘记已不存在，请关闭后重新打开');
+    }
+    return _apply(<String, Object?>{
       'id': id ?? _id(),
       'kind': kind,
       'start': start,
       'end': end,
-      'quote': start == end ? '' : book.textBetween(start, end),
+      'quote': notebook.sourceQuote(book.book, start, end),
       'text': text,
       'deleted': false,
       'knowledge_cutoff': math.max(end, cutoff),
-      'revision': ((old?['revision'] as num?)?.toInt() ?? 0) + 1,
+      'expected_revision': expectedRevision ?? old?['revision'] ?? 0,
       'operation': _id(),
-      'created': old?['created'] ?? now,
-      'updated': now,
-    };
-    items = <Json>[...items.where((Json x) => x['id'] != item['id']), item];
-    _write();
-    return item;
+    }, requireExisting: id != null);
   }
 
-  void delete(Json item) {
-    final Json gone = <String, Object?>{
-      ...item,
-      'deleted': true,
-      'revision': ((item['revision'] as num?)?.toInt() ?? 0) + 1,
-      'operation': _id(),
-      'updated': DateTime.now().millisecondsSinceEpoch / 1000,
-    };
-    items = <Json>[...items.where((Json x) => x['id'] != item['id']), gone];
-    _write();
-  }
+  /// Returns the deletion receipt so undo checks this exact revision.
+  Json delete(Json item) => _apply(<String, Object?>{
+    ...item,
+    'deleted': true,
+    'expected_revision': item['revision'],
+    'operation': _id(),
+  }, requireExisting: true);
 
-  void restore(Json item) {
-    items = <Json>[...items.where((Json x) => x['id'] != item['id']), item];
-    _write();
-  }
-
-  void _write() {
-    writeJson(file, items);
-    notifyListeners();
-  }
+  /// Undo is a new revision, never a rollback of the revision counter.
+  Json restore(Json item) => _apply(<String, Object?>{
+    ...item,
+    'deleted': false,
+    'expected_revision':
+        (item['revision']! as int) + (item['deleted'] == true ? 0 : 1),
+    'operation': _id(),
+  }, requireExisting: true);
 }

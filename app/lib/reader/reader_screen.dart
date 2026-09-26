@@ -13,6 +13,7 @@ import '../data/seen.dart';
 import '../sheets/ask_sheet.dart';
 import '../sheets/book_sheet.dart';
 import '../sheets/common.dart';
+import '../sheets/marginalia_sheet.dart';
 import '../sheets/note_editor.dart';
 import '../sheets/people_sheet.dart';
 import '../sheets/person_sheet.dart';
@@ -22,6 +23,7 @@ import '../sheets/sheet_host.dart';
 import '../sheets/toc_sheet.dart';
 import '../sheets/typography_sheet.dart';
 import '../ui/theme.dart';
+import '../sheets/footnotes_sheet.dart';
 import 'page_body.dart';
 import 'paginator.dart';
 import 'reader_controller.dart';
@@ -38,6 +40,7 @@ class ReaderScreen extends StatefulWidget {
     required this.onModelSettings,
     required this.onExport,
     this.openAt,
+    this.openNotes = false,
   });
 
   final Library library;
@@ -50,6 +53,7 @@ class ReaderScreen extends StatefulWidget {
 
   /// Opens at this offset and offers 「回到第 N 页」 to where the reader was.
   final int? openAt;
+  final bool openNotes;
 
   @override
   State<ReaderScreen> createState() => _ReaderScreenState();
@@ -142,6 +146,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
     pc?.dispose();
     pc = PageController(initialPage: ReaderController.base);
+    if (first && widget.openNotes) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _sheet(TocPage(link: link, tab: 2), full: true);
+      });
+    }
   }
 
   Color _paper(Tokens t) =>
@@ -211,6 +220,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
           if (mounted) Navigator.of(context).pop();
         },
         onRead: () => Navigator.of(context).pop(),
+        onNotes: () {
+          Navigator.of(context).pop();
+          _sheet(TocPage(link: link, tab: 2), full: true);
+        },
         onModelSettings: widget.onModelSettings,
         onExport: () => widget.onExport(widget.entry),
         focusProcessing: focus,
@@ -300,35 +313,78 @@ class _ReaderScreenState extends State<ReaderScreen> {
     HapticFeedback.mediumImpact();
     _pressAt = d.localPosition;
     final (int s, int e) = _wordAt(at);
-    _anchor = s;
     c.select((s, e));
+    _anchor = c.selection?.$1;
   }
 
   void _longPressMove(LongPressMoveUpdateDetails d) {
     final int? at = _hitOffset(d.localPosition);
     final int? a = _anchor;
-    if (at == null || a == null) return;
+    if (at == null || a == null || c.selection == null) return;
     c.select(
       at >= a ? (a, math.max(at + 1, c.selection!.$2)) : (at, c.selection!.$2),
+      anchor: a,
     );
+  }
+
+  bool _changeNote(void Function() action) {
+    try {
+      action();
+      return true;
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is PyException ? error.message : '摘记未能保存，请检查存储空间后重试',
+            ),
+          ),
+        );
+      }
+      return false;
+    }
   }
 
   Future<void> _excerpt() async {
     final (int s, int e) = c.selection!;
-    final Json item = book.notes.save(
-      kind: 'note',
-      start: s,
-      end: e,
-      cutoff: c.cutoff,
-    );
+    late Json item;
+    if (!_changeNote(() {
+      item = book.notes.save(kind: 'note', start: s, end: e, cutoff: c.cutoff);
+    })) {
+      return;
+    }
     c.select(null);
-    ScaffoldMessenger.of(context).showSnackBar(
+    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 4),
         content: const Text('已摘录'),
         action: SnackBarAction(
           label: '撤销',
-          onPressed: () => book.notes.delete(item),
+          onPressed: () {
+            BookData? reopened;
+            try {
+              final NoteStore store = mounted
+                  ? book.notes
+                  : (reopened = BookData.open(widget.entry)).notes;
+              store.delete(item);
+            } on Object catch (error) {
+              if (messenger.mounted) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      error is PyException
+                          ? error.message
+                          : '撤销未能完成，请重新打开摘记后重试',
+                    ),
+                  ),
+                );
+              }
+            } finally {
+              reopened?.notes.dispose();
+              reopened?.dispose();
+            }
+          },
         ),
       ),
     );
@@ -340,6 +396,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final MediaQueryData mq = MediaQuery.of(context);
+    // Modal editors handle their own keyboard insets. Keep the book's geometry
+    // fixed while the IME animates; repeatedly repaginating at a rounded page
+    // start would otherwise move the reader backwards without a page gesture.
+    final EdgeInsets pagePadding = mq.viewPadding;
     final Color paper = _paper(t);
     return PopScope(
       canPop: c.selection == null && !c.toolbar,
@@ -358,6 +418,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: Builder(
           builder: (BuildContext context) => Scaffold(
             backgroundColor: paper,
+            resizeToAvoidBottomInset: false,
             body: Focus(
               focusNode: _focus,
               autofocus: true,
@@ -377,8 +438,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
               },
               child: LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints box) {
-                  final double top = mq.padding.top + 48;
-                  final double bottom = mq.padding.bottom + 44;
+                  final double top = pagePadding.top + 48;
+                  final double bottom = pagePadding.bottom + 56;
                   final Size area = Size(
                     box.maxWidth - 48,
                     box.maxHeight - top - bottom,
@@ -396,15 +457,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       Positioned(
                         left: 24,
                         right: 24,
-                        top: mq.padding.top + 10,
+                        top: pagePadding.top + 10,
                         height: 28,
                         child: _header(context),
                       ),
                       Positioned(
                         left: 24,
                         right: 24,
-                        bottom: mq.padding.bottom + 6,
-                        height: 32,
+                        bottom: pagePadding.bottom + 6,
+                        height: 44,
                         child: _footer(context),
                       ),
                       if (book.notes.bookmarkIn(c.start, c.cutoff) != null)
@@ -413,7 +474,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         Positioned(
                           left: 0,
                           right: 0,
-                          bottom: mq.padding.bottom + 48,
+                          bottom: pagePadding.bottom + 48,
                           child: Center(child: _returnPill(context)),
                         ),
                       if (c.selection != null) _selectionBar(context, top),
@@ -546,6 +607,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final (int total, bool exactT) = p.totalPages();
     final List<String> cast = c.pagePeople();
     final World? w = c.world;
+    final List<(int, String)> notes = pageFootnotes(book, page.start, page.end);
     return Row(
       children: <Widget>[
         Text.rich(
@@ -567,6 +629,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
         ),
         const Spacer(),
+        if (notes.isNotEmpty)
+          TextButton(
+            onPressed: () => _sheet(FootnotesPage(book: book, notes: notes)),
+            child: Text('注释 ${notes.length}', style: TextStyle(color: t.ink2)),
+          ),
         if (w != null && cast.isNotEmpty)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -678,6 +745,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               action('摘录', _excerpt),
+              action('批注', () {
+                c.select(null);
+                _sheet(
+                  MarginaliaPage(link: link, start: s, end: e),
+                  full: true,
+                );
+              }),
               action('笔记', () {
                 c.select(null);
                 NoteEditor.open(
@@ -738,8 +812,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       children: <Widget>[
                         IconButton(
                           icon: const Icon(Icons.arrow_back),
-                          onPressed: () =>
-                              Navigator.of(context).maybePop().then((_) {}),
+                          onPressed: () {
+                            c.select(null);
+                            c.setToolbar(false);
+                            Navigator.of(context).pop();
+                          },
                           tooltip: '回书架',
                         ),
                         Expanded(
@@ -774,7 +851,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                             marked ? Icons.bookmark : Icons.bookmark_border,
                             color: marked ? t.qing : t.ink,
                           ),
-                          onPressed: () {
+                          onPressed: () => _changeNote(() {
                             HapticFeedback.lightImpact();
                             final Json? existing = book.notes.bookmarkIn(
                               c.start,
@@ -790,7 +867,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                                 cutoff: c.cutoff,
                               );
                             }
-                          },
+                          }),
                         ),
                         IconButton(
                           tooltip: '搜索',
@@ -816,12 +893,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
                               case 2:
                                 c.setToolbar(false);
                                 openTypography(context, widget.prefs);
+                              case 3:
+                                if (c.page != null) {
+                                  _sheet(
+                                    MarginaliaPage(
+                                      link: link,
+                                      start: c.page!.start,
+                                      end: c.page!.end,
+                                      pageMode: true,
+                                    ),
+                                    full: true,
+                                  );
+                                }
                             }
                           },
                           itemBuilder: (_) => const <PopupMenuEntry<int>>[
                             PopupMenuItem<int>(value: 0, child: Text('这本书')),
                             PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
                             PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
+                            PopupMenuItem<int>(value: 3, child: Text('本页批注')),
                           ],
                         ),
                       ],

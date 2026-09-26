@@ -1620,34 +1620,34 @@ functions:
     reason: "Stage A5 has not started"
   - id: server.manual_entities.anchor
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.manual_entities.anchor"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.manual_entities._base
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.manual_entities._base"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.manual_entities.apply
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.manual_entities.apply"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.manual_entities.rows
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.manual_entities.rows"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.manual_entities.mentions
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.manual_entities.mentions"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.manual_entities.restore
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.manual_entities.restore"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.marginalia._lock_for
     stage: A6
     status: pending_port
@@ -1765,34 +1765,34 @@ functions:
     reason: "Stage A6 has not started"
   - id: server.notebook.source_quote
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.notebook.source_quote"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.notebook.validate
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.notebook.validate"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.notebook.apply
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.notebook.apply"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.notebook.restore
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.notebook.restore"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.reading_list.empty
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.reading_list.empty"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.reading_list.apply
     stage: A6
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A6 has not started"
+    status: golden_passed
+    dart_symbol: "server.reading_list.apply"
+    reason: "Registered ordinary and special Python 3.11 cases in adapters_personal.dart; scoped golden harness passes"
   - id: server.storage.signature
     stage: A6
     status: pending_port

@@ -104,27 +104,38 @@ class _TypographyPanel extends StatelessWidget {
               Row(
                 children: <Widget>[
                   for (int i = 0; i < Tokens.paperColors.length; i++)
-                    GestureDetector(
+                    Semantics(
+                      label: '纸色：${Tokens.paperColors[i].$1}',
+                      button: true,
+                      selected: i == prefs.paper,
                       onTap: () => prefs.update((Prefs p) => p.paper = i),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 12),
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: Tokens.paperColors[i].$2,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: i == prefs.paper ? t.zhu : t.rule,
-                            width: i == prefs.paper ? 2 : 1,
+                      child: ExcludeSemantics(
+                        child: Tooltip(
+                          message: '纸色：${Tokens.paperColors[i].$1}',
+                          child: GestureDetector(
+                            onTap: () => prefs.update((Prefs p) => p.paper = i),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: Tokens.paperColors[i].$2,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: i == prefs.paper ? t.zhu : t.rule,
+                                  width: i == prefs.paper ? 2 : 1,
+                                ),
+                              ),
+                              child: i == 4
+                                  ? const Icon(
+                                      Icons.dark_mode_outlined,
+                                      size: 16,
+                                      color: Colors.white70,
+                                    )
+                                  : null,
+                            ),
                           ),
                         ),
-                        child: i == 4
-                            ? const Icon(
-                                Icons.dark_mode_outlined,
-                                size: 16,
-                                color: Colors.white70,
-                              )
-                            : null,
                       ),
                     ),
                 ],

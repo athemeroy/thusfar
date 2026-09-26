@@ -175,11 +175,14 @@ class _ShelfScreenState extends State<ShelfScreen> {
                               ),
                             ),
                             const Spacer(),
-                            TextButton(
-                              onPressed: () => _editQueue(context),
-                              child: Text(
-                                '编辑',
-                                style: TextStyle(color: t.ink2),
+                            Tooltip(
+                              message: '编辑接下来读',
+                              child: TextButton(
+                                onPressed: () => _editQueue(context),
+                                child: Text(
+                                  '编辑',
+                                  style: TextStyle(color: t.ink2),
+                                ),
                               ),
                             ),
                           ],
@@ -652,6 +655,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                     title: Text(lib.byId(id)?.title ?? '已不在书架'),
                     trailing: IconButton(
                       icon: const Icon(Icons.remove_circle_outline),
+                      tooltip: '从接下来读移除《${lib.byId(id)?.title ?? '已不在书架'}》',
                       onPressed: () {
                         lib.setReadingList(items..remove(id));
                         setSheet(() {});

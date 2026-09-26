@@ -185,21 +185,9 @@ Future<void> _processingIsolate(List<Object?> args) async {
   final ReceivePort commands = ReceivePort();
   final ModelSettings settings = ModelSettings(File('${data.path}/.model.env'));
   WorkerSettings snapshot() {
-    final (String url, String model, _) = settings.read();
-    environ['SECRETS_FILE'] = settings.file.path;
-    environ['LLM_BASE_URL'] = url;
-    environ['JEV_ROUTE'] = 'free-only';
+    settings.applyEnvironment();
+    final String model = settings.read().$2;
     environ['LOCAL_CONCURRENCY'] = '4';
-    for (final String key in <String>[
-      'EXTRACT_MODEL',
-      'LOCAL_MODEL',
-      'RECAP_MODEL',
-      'JUDGE_MODEL',
-      'CLASSIFY_MODEL',
-    ]) {
-      environ[key] = model;
-    }
-    llm.resetEnvCache();
     return WorkerSettings(model: model, localModel: model, concurrency: 4);
   }
 

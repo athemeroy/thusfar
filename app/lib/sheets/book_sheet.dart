@@ -21,6 +21,7 @@ class BookSheet extends StatefulWidget {
     required this.processing,
     this.onRemoved,
     required this.onRead,
+    required this.onNotes,
     required this.onModelSettings,
     required this.onExport,
     this.focusProcessing = false,
@@ -32,6 +33,7 @@ class BookSheet extends StatefulWidget {
   final BookProcessing processing;
   final VoidCallback? onRemoved;
   final VoidCallback onRead;
+  final VoidCallback onNotes;
   final Future<void> Function() onModelSettings;
   final Future<void> Function() onExport;
   final bool focusProcessing;
@@ -195,7 +197,7 @@ class _BookSheetState extends State<BookSheet> {
                   Icon(Icons.chevron_right, color: t.ink3),
                 ],
               ),
-              onTap: widget.onRead,
+              onTap: widget.onNotes,
             ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),

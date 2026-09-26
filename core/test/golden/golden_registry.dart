@@ -1,5 +1,6 @@
 import 'adapters_a1.dart';
 import 'adapters_engine.dart';
+import 'adapters_personal.dart';
 import 'adapters_policy.dart';
 
 /// A migrated Python function receives one typed adapter keyed by its
@@ -11,6 +12,7 @@ final Map<String, GoldenInvoker> goldenRegistry = <String, GoldenInvoker>{
   ...a1Adapters,
   ...engineAdapters,
   ...policyAdapters,
+  ...personalAdapters,
 };
 
 /// Special fixtures use deterministic test-only setup for closures, callbacks,
@@ -18,5 +20,5 @@ final Map<String, GoldenInvoker> goldenRegistry = <String, GoldenInvoker>{
 /// containing `after`, `return`, and any recorded alias observations.
 typedef SpecialGoldenInvoker = Object? Function(Map<String, Object?> input);
 
-const Map<String, SpecialGoldenInvoker> specialGoldenRegistry =
-    <String, SpecialGoldenInvoker>{};
+final Map<String, SpecialGoldenInvoker> specialGoldenRegistry =
+    <String, SpecialGoldenInvoker>{...personalAdapters};

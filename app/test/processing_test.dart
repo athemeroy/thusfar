@@ -155,6 +155,7 @@ void main() {
                   settings: settings,
                   processing: processing,
                   onRead: () {},
+                  onNotes: () {},
                   onModelSettings: () async {},
                   onExport: () async {},
                   onRemoved: onRemoved,

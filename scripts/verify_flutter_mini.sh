@@ -20,9 +20,9 @@ printf '核心分析与测试已通过\n'
 cd "$SOURCE_ROOT/app"
 flutter pub get > "$LOG_ROOT/app-pub.log" 2>&1
 flutter analyze --no-fatal-infos > "$LOG_ROOT/app-analyze.log" 2>&1
-flutter test --no-pub --concurrency=1 test/import_test.dart test/ask_sheet_test.dart test/processing_test.dart test/model_settings_test.dart test/backup_test.dart test/shared_import_test.dart --reporter=json > "$LOG_ROOT/app-tests.jsonl" 2> "$LOG_ROOT/app-tests.stderr"
+flutter test --no-pub --concurrency=1 test/import_test.dart test/ask_sheet_test.dart test/processing_test.dart test/model_settings_test.dart test/backup_test.dart test/shared_import_test.dart test/manual_entities_test.dart test/marginalia_sheet_test.dart test/reader_regression_test.dart test/graph_view_test.dart test/notes_test.dart test/people_search_test.dart test/selection_bounds_test.dart --reporter=json > "$LOG_ROOT/app-tests.jsonl" 2> "$LOG_ROOT/app-tests.stderr"
 printf '应用分析与交互测试已通过\n'
-flutter test --concurrency=1 test/screens_test.dart --update-goldens > "$LOG_ROOT/screens.log" 2>&1
+flutter test --concurrency=1 test/screens_test.dart test/graph_screens_test.dart --update-goldens > "$LOG_ROOT/screens.log" 2>&1
 printf '界面截图已生成，等待目视检查\n'
 
 bash "$BUILD_ROOT/build.sh" probe > "$LOG_ROOT/build.log" 2>&1

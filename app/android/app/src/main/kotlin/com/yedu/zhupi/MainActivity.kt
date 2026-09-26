@@ -35,6 +35,15 @@ class MainActivity : FlutterActivity() {
         paths!!.setMethodCallHandler { call, result ->
             when (call.method) {
                 "filesDir" -> result.success(filesDir.absolutePath)
+                "appVersion" -> {
+                    @Suppress("DEPRECATION")
+                    val info = packageManager.getPackageInfo(packageName, 0)
+                    val code = if (android.os.Build.VERSION.SDK_INT >= 28) info.longVersionCode else {
+                        @Suppress("DEPRECATION")
+                        info.versionCode.toLong()
+                    }
+                    result.success("${info.versionName} ($code)")
+                }
                 "takeImports" -> {
                     val ready = pendingImports.toList()
                     pendingImports.clear()

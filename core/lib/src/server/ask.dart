@@ -326,113 +326,127 @@ class AskService {
     int pos, {
     AskEvent? onEvent,
     AskCancellation? cancellation,
+    void Function()? onSettled,
   }) async {
-    if (_running >= 2) throw const llm.LLMError('正在回答其他问题，请稍后重试');
-    final String q = _head(question.trim(), 500);
-    if (q.isEmpty) throw const ValueError('问题是空的');
-    final List<List<int>> source = <List<int>>[];
-    Json read(String name, {bool required = false}) {
-      final File file = File('${directory.path}/$name');
-      if (!file.existsSync() && !required) {
-        source.add(<int>[]);
-        return <String, Object?>{};
+    bool handedOff = false;
+    try {
+      if (_running >= 2) throw const llm.LLMError('正在回答其他问题，请稍后重试');
+      final String q = _head(question.trim(), 500);
+      if (q.isEmpty) throw const ValueError('问题是空的');
+      final List<List<int>> source = <List<int>>[];
+      Json read(String name, {bool required = false}) {
+        final File file = File('${directory.path}/$name');
+        if (!file.existsSync() && !required) {
+          source.add(<int>[]);
+          return <String, Object?>{};
+        }
+        final List<int> bytes = file.readAsBytesSync();
+        source.add(bytes);
+        final Object? raw = jsonDecode(utf8.decode(bytes));
+        if (raw is! Json) throw ValueError('$name 格式无效');
+        return raw;
       }
-      final List<int> bytes = file.readAsBytesSync();
-      source.add(bytes);
-      final Object? raw = jsonDecode(utf8.decode(bytes));
-      if (raw is! Json) throw ValueError('$name 格式无效');
-      return raw;
-    }
 
-    final Json book = validateBook(read('book.json', required: true));
-    final Json kg = validateGraph(read('kg.json'), book['len']! as int);
-    final Json status = read('status.json');
-    integer(pos, '阅读位置', high: book['len']! as int);
-    final String model = environ['QA_MODEL'] ?? 'deepseek-flash+nothink';
-    final String config = _configFingerprint();
-    final String key =
-        sha256
-            .convert(
-              utf8.encode(
-                jsonEncode(<Object?>[
-                  directory.absolute.path,
-                  ...source.map((List<int> b) => sha256.convert(b).toString()),
-                  q,
-                  pos,
-                  config,
-                ]),
-              ),
-            )
-            .toString();
-    final AskCancellation token = cancellation ?? AskCancellation();
-    token.check();
-    final Json? cached = _answers.remove(key);
-    if (cached != null) {
-      _answers[key] = cached;
-      final Json result = <String, Object?>{..._clone(cached), 'cached': true};
-      onEvent?.call('answer', result);
+      final Json book = validateBook(read('book.json', required: true));
+      final Json kg = validateGraph(read('kg.json'), book['len']! as int);
+      final Json status = read('status.json');
+      integer(pos, '阅读位置', high: book['len']! as int);
+      final String model = environ['QA_MODEL'] ?? 'deepseek-flash+nothink';
+      final String config = _configFingerprint();
+      final String key =
+          sha256
+              .convert(
+                utf8.encode(
+                  jsonEncode(<Object?>[
+                    directory.absolute.path,
+                    ...source.map(
+                      (List<int> b) => sha256.convert(b).toString(),
+                    ),
+                    q,
+                    pos,
+                    config,
+                  ]),
+                ),
+              )
+              .toString();
+      final AskCancellation token = cancellation ?? AskCancellation();
+      token.check();
+      final Json? cached = _answers.remove(key);
+      if (cached != null) {
+        _answers[key] = cached;
+        final Json result = <String, Object?>{
+          ..._clone(cached),
+          'cached': true,
+        };
+        onEvent?.call('answer', result);
+        return result;
+      }
+      final String bookKey = sha256.convert(source.first).toString();
+      final (List<Json>, int)? saved = _indexes.remove(bookKey);
+      final List<Json> index = saved?.$1 ?? _bookIndex(book);
+      final int weight =
+          saved?.$2 ??
+          index.fold(
+            0,
+            (int n, Json p) => n + utf8.encode(p['t']! as String).length + 64,
+          );
+      if (weight <= 4 * 1024 * 1024) {
+        _indexes[bookKey] = (index, weight);
+        while (_indexes.length > 4 ||
+            _indexes.values.fold(0, (int n, (List<Json>, int) x) => n + x.$2) >
+                8 * 1024 * 1024) {
+          _indexes.remove(_indexes.keys.first);
+        }
+      }
+      _running++;
+      final Future<Json> work = answerSnapshot(
+        book,
+        kg,
+        status,
+        q,
+        pos,
+        backend: backend,
+        model: model,
+        index: index,
+        cancellation: token,
+        onEvent: onEvent,
+        auditDirectory: directory,
+      );
+      // A timeout stops publication, but the transport may still be unwinding.
+      // Keep its concurrency permit until that work actually settles.
+      handedOff = true;
+      unawaited(
+        work.then<void>(
+          (Json _) {
+            _running--;
+            onSettled?.call();
+          },
+          onError: (Object _, StackTrace __) {
+            _running--;
+            onSettled?.call();
+          },
+        ),
+      );
+      final Json result = await work.timeout(
+        timeout,
+        onTimeout: () {
+          token.cancel();
+          throw const llm.DeadlineExceeded('回答超时，请稍后重试');
+        },
+      );
+      token.check();
+      if (_obj(result['guard'])['verdict'] != 'withheld' &&
+          config == _configFingerprint()) {
+        _answers[key] = _clone(result);
+        while (_answers.length > 24 ||
+            utf8.encode(jsonEncode(_answers)).length > 512 * 1024) {
+          _answers.remove(_answers.keys.first);
+        }
+      }
       return result;
+    } finally {
+      if (!handedOff) onSettled?.call();
     }
-    final String bookKey = sha256.convert(source.first).toString();
-    final (List<Json>, int)? saved = _indexes.remove(bookKey);
-    final List<Json> index = saved?.$1 ?? _bookIndex(book);
-    final int weight =
-        saved?.$2 ??
-        index.fold(
-          0,
-          (int n, Json p) => n + utf8.encode(p['t']! as String).length + 64,
-        );
-    if (weight <= 4 * 1024 * 1024) {
-      _indexes[bookKey] = (index, weight);
-      while (_indexes.length > 4 ||
-          _indexes.values.fold(0, (int n, (List<Json>, int) x) => n + x.$2) >
-              8 * 1024 * 1024) {
-        _indexes.remove(_indexes.keys.first);
-      }
-    }
-    _running++;
-    final Future<Json> work = answerSnapshot(
-      book,
-      kg,
-      status,
-      q,
-      pos,
-      backend: backend,
-      model: model,
-      index: index,
-      cancellation: token,
-      onEvent: onEvent,
-      auditDirectory: directory,
-    );
-    // A timeout stops publication, but the transport may still be unwinding.
-    // Keep its concurrency permit until that work actually settles.
-    unawaited(
-      work.then<void>(
-        (Json _) {
-          _running--;
-        },
-        onError: (Object _, StackTrace __) {
-          _running--;
-        },
-      ),
-    );
-    final Json result = await work.timeout(
-      timeout,
-      onTimeout: () {
-        token.cancel();
-        throw const llm.DeadlineExceeded('回答超时，请稍后重试');
-      },
-    );
-    token.check();
-    if (_obj(result['guard'])['verdict'] != 'withheld' &&
-        config == _configFingerprint()) {
-      _answers[key] = _clone(result);
-      while (_answers.length > 24 ||
-          utf8.encode(jsonEncode(_answers)).length > 512 * 1024) {
-        _answers.remove(_answers.keys.first);
-      }
-    }
-    return result;
   }
 }
 

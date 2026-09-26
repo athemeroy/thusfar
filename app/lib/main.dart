@@ -255,7 +255,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     return task;
   }
 
-  Future<void> openBook(BookEntry b, {int? at}) async {
+  Future<void> openBook(BookEntry b, {int? at, bool notes = false}) async {
     await Navigator.of(context).push(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 280),
@@ -269,6 +269,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           onModelSettings: openModelSettings,
           onExport: exportBook,
           openAt: at,
+          openNotes: notes,
         ),
         transitionsBuilder:
             (BuildContext context, Animation<double> a, _, Widget child) =>
@@ -307,6 +308,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         onRead: () {
           Navigator.of(context).pop();
           openBook(b);
+        },
+        onNotes: () {
+          Navigator.of(context).pop();
+          openBook(b, notes: true);
         },
         onModelSettings: openModelSettings,
         onExport: () => exportBook(b),

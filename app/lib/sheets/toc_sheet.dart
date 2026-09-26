@@ -6,6 +6,7 @@ import '../data/seen.dart';
 import '../ui/theme.dart';
 import 'common.dart';
 import 'preview_sheet.dart';
+import 'note_editor.dart';
 import 'sheet_host.dart';
 
 final RegExp _chapterNumber = RegExp(
@@ -55,7 +56,7 @@ class _TocPageState extends State<TocPage> {
   Widget build(BuildContext context) {
     final ReaderLink link = widget.link;
     return ListenableBuilder(
-      listenable: link.c.book.notes,
+      listenable: Listenable.merge(<Listenable>[link.c, link.c.book.notes]),
       builder: (BuildContext context, _) => SheetPage(
         title: link.c.book.entry.title,
         headerExtraHeight: tab == 0 ? 96 : 44,
@@ -69,11 +70,23 @@ class _TocPageState extends State<TocPage> {
             if (tab == 0) _jumpBox(context),
           ],
         ),
-        slivers: switch (tab) {
-          0 => _toc(context),
-          1 => _bookmarks(context),
-          _ => _notes(context),
-        },
+        slivers: <Widget>[
+          if (tab != 0 && link.c.book.notes.error != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  link.c.book.notes.error!,
+                  style: TextStyle(color: context.tk.danger),
+                ),
+              ),
+            ),
+          ...switch (tab) {
+            0 => _toc(context),
+            1 => _bookmarks(context),
+            _ => _notes(context),
+          },
+        ],
       ),
     );
   }
@@ -241,17 +254,42 @@ class _TocPageState extends State<TocPage> {
                 padding: const EdgeInsets.only(right: 24),
                 child: const Icon(Icons.delete_outline, color: Colors.white),
               ),
-              onDismissed: (_) {
-                notes.delete(m);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('已删除'),
-                    action: SnackBarAction(
-                      label: '撤销',
-                      onPressed: () => notes.restore(m),
+              confirmDismiss: (_) async {
+                try {
+                  final Json receipt = notes.delete(m);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('已删除'),
+                      action: SnackBarAction(
+                        label: '撤销',
+                        onPressed: () {
+                          final NoteStore current = NoteStore(
+                            notes.file,
+                            notes.book,
+                          );
+                          try {
+                            current.restore(receipt);
+                            if (context.mounted) notes.refresh();
+                          } on Object catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text('$e')));
+                            }
+                          } finally {
+                            current.dispose();
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                );
+                  );
+                  return true;
+                } on Object catch (e) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('$e')));
+                  return false;
+                }
               },
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -291,7 +329,13 @@ class _TocPageState extends State<TocPage> {
     final List<Json> all = store.notes;
     final List<Json> shown = showLater
         ? all
-        : all.where((Json n) => (n['start']! as num) < link.c.cutoff).toList();
+        : all
+              .where(
+                (Json n) =>
+                    (n['end']! as int) <= link.c.cutoff &&
+                    (n['knowledge_cutoff']! as int) <= link.c.cutoff,
+              )
+              .toList();
     return <Widget>[
       SliverToBoxAdapter(
         child: Padding(
@@ -329,6 +373,16 @@ class _TocPageState extends State<TocPage> {
               NoteTile(
                 item: n,
                 pageLabel: '第 ${link.pageNo((n['start']! as num).toInt())} 页',
+                onEdit: () => NoteEditor.open(
+                  context,
+                  book: link.c.book,
+                  start: n['start']! as int,
+                  end: n['end']! as int,
+                  cutoff: (n['knowledge_cutoff']! as int) > link.c.cutoff
+                      ? n['knowledge_cutoff']! as int
+                      : link.c.cutoff,
+                  existing: n,
+                ),
                 onTap: () => SheetScope.of(context).state.push(
                   PreviewPage(
                     link: link,
@@ -351,11 +405,13 @@ class NoteTile extends StatelessWidget {
     required this.item,
     required this.pageLabel,
     this.onTap,
+    this.onEdit,
   });
 
   final Json item;
   final String pageLabel;
   final VoidCallback? onTap;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -413,6 +469,12 @@ class NoteTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (onEdit != null)
+              IconButton(
+                tooltip: '编辑笔记',
+                onPressed: onEdit,
+                icon: Icon(Icons.edit_outlined, size: 20, color: t.qing),
+              ),
           ],
         ),
       ),

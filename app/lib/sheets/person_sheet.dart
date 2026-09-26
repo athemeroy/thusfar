@@ -5,6 +5,7 @@ import '../data/seen.dart';
 import '../ui/theme.dart';
 import 'common.dart';
 import 'graph_view.dart';
+import 'manual_entity_editor.dart';
 import 'preview_sheet.dart';
 import 'sheet_host.dart';
 
@@ -32,10 +33,20 @@ class _PersonPageState extends State<PersonPage> {
   @override
   void initState() {
     super.initState();
-    final World w = widget.link.c.world!;
-    final String id = w.canon(widget.id);
+    widget.link.c.addListener(_changed);
+    final String id = widget.link.c.world?.canon(widget.id) ?? widget.id;
     lastSeen = SeenStore.instance.get(widget.link.c.book.id, id);
     SeenStore.instance.mark(widget.link.c.book.id, id, widget.link.c.cutoff);
+  }
+
+  @override
+  void dispose() {
+    widget.link.c.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
   }
 
   int _at(Json r) => ((r['s'] ?? r['p'])! as num).toInt();
@@ -44,8 +55,8 @@ class _PersonPageState extends State<PersonPage> {
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final ReaderLink link = widget.link;
-    final World w = link.c.world!;
-    final Person? p = w.person(widget.id);
+    final World? current = link.c.world;
+    final Person? p = current?.person(widget.id);
     final int cutoffPage = link.pageNo(
       link.c.cutoff > 0 ? link.c.cutoff - 1 : 0,
     );
@@ -55,6 +66,7 @@ class _PersonPageState extends State<PersonPage> {
         slivers: <Widget>[emptyState(context, '读到这一页，这个人还没有登场。')],
       );
     }
+    final World w = current!;
     final List<Json> events = p.events.toList();
     if (newestFirst) {
       events.sort((Json a, Json b) => _at(b).compareTo(_at(a)));
@@ -89,6 +101,28 @@ class _PersonPageState extends State<PersonPage> {
       ),
       tag: '截至第 $cutoffPage 页',
       slivers: <Widget>[
+        if (p.manual)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      p.entityKind == 'concept' ? '你手动补充的概念' : '你手动补充的人物',
+                      style: TextStyle(color: t.ink2),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => SheetScope.of(context).state.push(
+                      ManualEntityEditor(link: link, id: p.id.substring(1)),
+                    ),
+                    child: const Text('编辑或删除'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         if (beyond)
           SliverToBoxAdapter(
             child: Container(
@@ -159,7 +193,11 @@ class _PersonPageState extends State<PersonPage> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Text(
-              p.bio.isNotEmpty ? p.bio : '人物小传还没整理到这里，下面是截至这一页的线索。',
+              p.bio.isNotEmpty
+                  ? p.bio
+                  : p.manual
+                  ? '你还没有为这条补充写说明。'
+                  : '人物小传还没整理到这里，下面是截至这一页的线索。',
               style: TextStyle(
                 fontFamily: p.bio.isNotEmpty ? serif : null,
                 fontSize: p.bio.isNotEmpty ? 16 : 14,
@@ -191,7 +229,7 @@ class _PersonPageState extends State<PersonPage> {
           if (rels.length >= 2)
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 140,
+                height: 300,
                 child: RelationGraph(
                   world: w,
                   focus: p.id,

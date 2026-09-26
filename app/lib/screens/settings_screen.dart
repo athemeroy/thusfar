@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/library.dart';
 import '../data/model_settings.dart';
@@ -41,13 +42,8 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    final (String url, String model, String key) = settings.read();
-    final String host = Uri.tryParse(url)?.host ?? url;
-    final String provider = host.contains('xiaojingai')
-        ? '小鲸'
-        : host.contains('deepseek')
-        ? 'DeepSeek'
-        : host;
+    final (_, String model, String key) = settings.read();
+    final String provider = settings.protocolLabel;
     Widget group(String title, List<Widget> rows) => Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Column(
@@ -92,7 +88,11 @@ class SettingsScreen extends StatelessWidget {
                 group('模型', <Widget>[
                   ListTile(
                     title: const Text('模型接口'),
-                    subtitle: Text('$provider · ${model.split('+').first}'),
+                    subtitle: Text(
+                      model.isEmpty
+                          ? '$provider · 未配置模型'
+                          : '$provider · ${model.split('+').first}',
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
@@ -185,7 +185,7 @@ class SettingsScreen extends StatelessWidget {
                 group('关于', <Widget>[
                   const ListTile(
                     title: Text('版本'),
-                    trailing: Text('2.0.0-dev'),
+                    trailing: _InstalledVersion(),
                   ),
                   const ListTile(
                     title: Text('开源地址'),
@@ -194,7 +194,7 @@ class SettingsScreen extends StatelessWidget {
                   ListTile(
                     title: const Text('隐私'),
                     subtitle: Text(
-                      '书和笔记只存在这台手机。只有你点整理或问书时，才会连接你填写的接口。',
+                      '书和笔记保存在这台手机。整理、问书和 AI 批注会把所需原文发送到你配置的接口；测试连接会发送一条测试消息。导出和分享由你选择保存位置或接收方。',
                       style: TextStyle(color: t.ink2, height: 1.5),
                     ),
                   ),
@@ -207,4 +207,33 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Read the installed package metadata so overridden build numbers stay honest.
+class _InstalledVersion extends StatefulWidget {
+  const _InstalledVersion();
+  @override
+  State<_InstalledVersion> createState() => _InstalledVersionState();
+}
+
+class _InstalledVersionState extends State<_InstalledVersion> {
+  late final Future<String> version = _read();
+  Future<String> _read() async {
+    try {
+      return await const MethodChannel(
+            'thusfar/paths',
+          ).invokeMethod<String>('appVersion') ??
+          '版本未知';
+    } on MissingPluginException {
+      return '开发预览';
+    } on PlatformException {
+      return '版本未知';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<String>(
+    future: version,
+    builder: (context, snapshot) => Text(snapshot.data ?? '读取中…'),
+  );
 }
