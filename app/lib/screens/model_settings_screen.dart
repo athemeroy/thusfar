@@ -98,6 +98,14 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   }
 
   Future<void> _test() async {
+    if (test == _Test.running) return;
+    if (!widget.settings.hasKey) {
+      setState(() {
+        test = _Test.failed;
+        testMessage = '还没有填写模型 API 密钥，请先填写并保存';
+      });
+      return;
+    }
     setState(() {
       test = _Test.running;
       testMessage = '';
@@ -116,19 +124,21 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         timeout: 30,
         retries: 0,
       );
+      if (!mounted) return;
       final double s = w.elapsedMilliseconds / 1000;
-      final String reply = r.text.trim();
+      final String reply = String.fromCharCodes(r.text.trim().runes.take(20));
       setState(() {
         test = s > 8 ? _Test.slow : _Test.ok;
         testMessage = s > 8
             ? '这个模型回复很慢（${s.toStringAsFixed(1)} 秒），整理一本书会很久；想快一些可以换 deepseek-flash+nothink'
-            : '连接成功 · ${s.toStringAsFixed(1)} 秒 · 回复「${reply.length > 20 ? reply.substring(0, 20) : reply}」';
+            : '连接成功 · ${s.toStringAsFixed(1)} 秒 · 回复「$reply」';
       });
       if (widget.returnOnSuccess && mounted && test == _Test.ok) {
         await Future<void>.delayed(const Duration(milliseconds: 900));
         if (mounted) Navigator.of(context).pop(true);
       }
     } on Object catch (e) {
+      if (!mounted) return;
       setState(() {
         test = _Test.failed;
         testMessage =
@@ -139,6 +149,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   }
 
   void _save() {
+    if (test == _Test.running) return;
     final (String u, String m) = ModelSettings.normalize(url.text, model.text);
     final String? e = widget.settings.save(
       url: url.text,
@@ -310,7 +321,11 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Pill(label: '保存', filled: true, onTap: _save),
+                child: Pill(
+                  label: '保存',
+                  filled: true,
+                  onTap: test == _Test.running ? null : _save,
+                ),
               ),
             ],
           ),

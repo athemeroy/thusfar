@@ -97,8 +97,8 @@ Future<(Json, Json)> resolveMentions(
   final StringBuffer segText = StringBuffer();
   final Map<int, int> offsets = <int, int>{};
   final List<Object?> blocks = book['blocks']! as List<Object?>;
-  for (final Object? bi in seg['blocks']! as List<Object?>) {
-    offsets[bi! as int] = _cp(segText.toString());
+  for (final int bi in (seg['blocks']! as List<Object?>).cast<int>()) {
+    offsets[bi] = _cp(segText.toString());
     segText
       ..write((blocks[bi]! as Json)['t'])
       ..write('\n');

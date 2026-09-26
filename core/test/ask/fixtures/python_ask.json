@@ -1,0 +1,2569 @@
+{
+  "source_sha256": "fa0557609f4b7f669e4a59564f5785a016c9ba42dcde95b89ed90a32f510010b",
+  "recent": [
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "pos": 0,
+        "chars": 40
+      },
+      "output": []
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "pos": 5,
+        "chars": 40
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice"
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "pos": 83,
+        "chars": 40
+      },
+      "output": [
+        {
+          "o": 27,
+          "t": "Bob offered Alice a cup of tea."
+        },
+        {
+          "o": 59,
+          "t": "They sat in the garden."
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "pos": 137,
+        "chars": 40
+      },
+      "output": [
+        {
+          "o": 59,
+          "t": "They sat in the garden.😀A future revelation follows."
+        },
+        {
+          "o": 113,
+          "t": "UNREAD SECRET identity."
+        }
+      ]
+    }
+  ],
+  "retrieve": [
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "Alice",
+        "names": [],
+        "pos": 0,
+        "k": 3
+      },
+      "output": []
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "她为什么来了？",
+        "names": [],
+        "pos": 0,
+        "k": 3
+      },
+      "output": []
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "garden",
+        "names": [],
+        "pos": 0,
+        "k": 3
+      },
+      "output": []
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "Alice",
+        "names": [],
+        "pos": 5,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice"
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "她为什么来了？",
+        "names": [],
+        "pos": 5,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice"
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "garden",
+        "names": [],
+        "pos": 5,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice"
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "Alice",
+        "names": [],
+        "pos": 83,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice came to the village."
+        },
+        {
+          "o": 27,
+          "t": "Bob offered Alice a cup of tea."
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "她为什么来了？",
+        "names": [],
+        "pos": 83,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice came to the village."
+        },
+        {
+          "o": 27,
+          "t": "Bob offered Alice a cup of tea."
+        },
+        {
+          "o": 59,
+          "t": "They sat in the garden."
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "garden",
+        "names": [],
+        "pos": 83,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice came to the village."
+        },
+        {
+          "o": 59,
+          "t": "They sat in the garden."
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "Alice",
+        "names": [],
+        "pos": 137,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice came to the village."
+        },
+        {
+          "o": 27,
+          "t": "Bob offered Alice a cup of tea."
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "她为什么来了？",
+        "names": [],
+        "pos": 137,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice came to the village."
+        },
+        {
+          "o": 59,
+          "t": "They sat in the garden.😀A future revelation follows."
+        },
+        {
+          "o": 113,
+          "t": "UNREAD SECRET identity."
+        }
+      ]
+    },
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "q": "garden",
+        "names": [],
+        "pos": 137,
+        "k": 3
+      },
+      "output": [
+        {
+          "o": 0,
+          "t": "Alice came to the village."
+        },
+        {
+          "o": 59,
+          "t": "They sat in the garden.😀A future revelation follows."
+        },
+        {
+          "o": 113,
+          "t": "UNREAD SECRET identity."
+        }
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "name": "accepted",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "How are Alice and Bob related?",
+        "pos": 83
+      },
+      "script": {
+        "route": "relation",
+        "probs": {
+          "relation": 0.9
+        },
+        "replies": [
+          "\"Alice came\" [1]. They were married."
+        ],
+        "guards": [
+          {
+            "a": {
+              "verdict": "ok",
+              "p": 0.95
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "relation",
+            "p": 0.9
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "翻阅你读过的部分"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "组织回答"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "检查有没有剧透"
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "「Alice came」[1]. They were married.",
+            "cites": [
+              {
+                "n": 1,
+                "o": 0,
+                "text": "Alice came to the village."
+              }
+            ],
+            "route": "relation",
+            "guard": {
+              "p": 0.95,
+              "verdict": "ok"
+            },
+            "people": [
+              "a",
+              "b"
+            ],
+            "position": 83
+          }
+        }
+      ],
+      "chat": [
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【人物：Alice】又称：无\n。\n档案：job：writer\n关系：Bob（husband；过去的关系，已结束）：\n经历：无\n\n【人物：Bob】又称：无\n。\n档案：无\n关系：Alice（wife；过去的关系，已结束）：\n经历：无\n\n【原文1】Alice came to the village.\n\n【原文2】Bob offered Alice a cup of tea.\n\n【原文3】They sat in the garden.\n\n【读者的问题】How are Alice and Bob related?\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.3,
+          "timeout": 90,
+          "retries": 0
+        }
+      ]
+    },
+    {
+      "name": "rewritten",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "What happened?",
+        "pos": 83
+      },
+      "script": {
+        "route": "recap",
+        "probs": {},
+        "replies": [
+          "REJECTED FIRST",
+          "Alice came. [1]"
+        ],
+        "guards": [
+          {
+            "a": {
+              "verdict": "flag",
+              "p": 0.01
+            }
+          },
+          {
+            "a": {
+              "verdict": "ok",
+              "p": 0.8
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "recap",
+            "p": 0
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "翻阅你读过的部分"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "组织回答"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "检查有没有剧透"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "发现可能超出已读内容的说法，正在重写"
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "Alice came. [1]",
+            "cites": [
+              {
+                "n": 1,
+                "o": 0,
+                "text": "Alice came to the village."
+              }
+            ],
+            "route": "recap",
+            "guard": {
+              "p": 0.8,
+              "verdict": "rewritten",
+              "first": 0.01
+            },
+            "people": [
+              "a",
+              "b"
+            ],
+            "position": 83
+          }
+        }
+      ],
+      "chat": [
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【人物：Alice】又称：无\n。\n档案：job：writer\n关系：Bob（husband；过去的关系，已结束）：\n经历：无\n\n【人物：Bob】又称：无\n。\n档案：无\n关系：Alice（wife；过去的关系，已结束）：\n经历：无\n\n【原文1】Alice came to the village.\n\n【原文2】Bob offered Alice a cup of tea.\n\n【原文3】They sat in the garden.\n\n【读者的问题】What happened?\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.3,
+          "timeout": 90,
+          "retries": 0
+        },
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【人物：Alice】又称：无\n。\n档案：job：writer\n关系：Bob（husband；过去的关系，已结束）：\n经历：无\n\n【人物：Bob】又称：无\n。\n档案：无\n关系：Alice（wife；过去的关系，已结束）：\n经历：无\n\n【原文1】Alice came to the village.\n\n【原文2】Bob offered Alice a cup of tea.\n\n【原文3】They sat in the garden.\n\n【读者的问题】What happened?\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            },
+            {
+              "role": "assistant",
+              "content": "REJECTED FIRST"
+            },
+            {
+              "role": "user",
+              "content": "自动校验发现上面的回答里有材料没有提供的内容（可能是编造或后文剧透）。请严格只用材料重写回答，材料里没有的一律不说。"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.2,
+          "timeout": 90,
+          "retries": 0
+        }
+      ]
+    },
+    {
+      "name": "withheld",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "发生了什么？",
+        "pos": 83
+      },
+      "script": {
+        "route": "other",
+        "probs": {},
+        "replies": [
+          "REJECTED FIRST",
+          "REJECTED SECOND"
+        ],
+        "guards": [
+          {
+            "a": {
+              "verdict": "flag",
+              "p": 0.01
+            }
+          },
+          {
+            "a": {
+              "verdict": "flag",
+              "p": 0.01
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "other",
+            "p": 0
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "翻阅你读过的部分"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "组织回答"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "检查有没有剧透"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "发现可能超出已读内容的说法，正在重写"
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "这次回答未能通过已读原文核对，我暂时不展示它，以免透露后文或说错。你可以稍后重试，或回到相关原文查看。",
+            "cites": [],
+            "route": "other",
+            "guard": {
+              "p": 0.01,
+              "verdict": "withheld",
+              "first": 0.01
+            },
+            "people": [],
+            "position": 83
+          }
+        }
+      ],
+      "chat": [
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【原文1】Alice came to the village.\n\n【原文2】Alice came to the village.\n\n【原文3】Alice came to the village.\n\n【原文4】Bob offered Alice a cup of tea.\n\n【原文5】They sat in the garden.\n\n【读者的问题】发生了什么？\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.3,
+          "timeout": 90,
+          "retries": 0
+        },
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【原文1】Alice came to the village.\n\n【原文2】Alice came to the village.\n\n【原文3】Alice came to the village.\n\n【原文4】Bob offered Alice a cup of tea.\n\n【原文5】They sat in the garden.\n\n【读者的问题】发生了什么？\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            },
+            {
+              "role": "assistant",
+              "content": "REJECTED FIRST"
+            },
+            {
+              "role": "user",
+              "content": "自动校验发现上面的回答里有材料没有提供的内容（可能是编造或后文剧透）。请严格只用材料重写回答，材料里没有的一律不说。"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.2,
+          "timeout": 90,
+          "retries": 0
+        }
+      ]
+    },
+    {
+      "name": "guard_outage",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "What happened?",
+        "pos": 83
+      },
+      "script": {
+        "route": "other",
+        "probs": {},
+        "replies": [
+          "REJECTED PRIVATE"
+        ],
+        "guards": [
+          "error"
+        ]
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "other",
+            "p": 0
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "翻阅你读过的部分"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "组织回答"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "检查有没有剧透"
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "I could not verify this answer against the pages you have read, so I have withheld it. Please retry later or check the relevant passage.",
+            "cites": [],
+            "route": "other",
+            "guard": {
+              "verdict": "withheld",
+              "reason": "verification_unavailable"
+            },
+            "people": [],
+            "position": 83
+          }
+        }
+      ],
+      "chat": [
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【原文1】Alice came to the village.\n\n【原文2】Alice came to the village.\n\n【原文3】Alice came to the village.\n\n【原文4】Bob offered Alice a cup of tea.\n\n【原文5】They sat in the garden.\n\n【读者的问题】What happened?\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.3,
+          "timeout": 90,
+          "retries": 0
+        }
+      ]
+    },
+    {
+      "name": "future",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "What happens next?",
+        "pos": 83
+      },
+      "script": {
+        "route": "future",
+        "probs": {
+          "future": 0.9
+        },
+        "replies": [],
+        "guards": []
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "future",
+            "p": 0.9
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "That concerns later pages. I will not reveal or predict events beyond your current position.",
+            "cites": [],
+            "route": "future",
+            "guard": {
+              "verdict": "safe",
+              "reason": "future"
+            },
+            "people": [],
+            "position": 83
+          }
+        }
+      ],
+      "chat": []
+    },
+    {
+      "name": "quotes",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "What did Alice say?",
+        "pos": 83
+      },
+      "script": {
+        "route": "who",
+        "probs": {},
+        "replies": [
+          "“Not a quote” [1], \"Alice came\" [1] [source]"
+        ],
+        "guards": [
+          {
+            "a": {
+              "verdict": "ok",
+              "p": 0.95
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "who",
+            "p": 0
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "翻阅你读过的部分"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "组织回答"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "检查有没有剧透"
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "Not a quote[1], 「Alice came」[1]",
+            "cites": [
+              {
+                "n": 1,
+                "o": 0,
+                "text": "Alice came to the village."
+              }
+            ],
+            "route": "who",
+            "guard": {
+              "p": 0.95,
+              "verdict": "ok"
+            },
+            "people": [
+              "a"
+            ],
+            "position": 83
+          }
+        }
+      ],
+      "chat": [
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【人物：Alice】又称：无\n。\n档案：job：writer\n关系：Bob（husband；过去的关系，已结束）：\n经历：无\n\n【原文1】Alice came to the village.\n\n【原文2】Bob offered Alice a cup of tea.\n\n【原文3】They sat in the garden.\n\n【读者的问题】What did Alice say?\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.3,
+          "timeout": 90,
+          "retries": 0
+        }
+      ]
+    },
+    {
+      "name": "unicode_１",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "Who is Alice?",
+        "pos": 83
+      },
+      "script": {
+        "route": "who",
+        "probs": {},
+        "replies": [
+          "「Alice came」[１]"
+        ],
+        "guards": [
+          {
+            "a": {
+              "verdict": "ok",
+              "p": 0.95
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "who",
+            "p": 0
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "翻阅你读过的部分"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "组织回答"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "检查有没有剧透"
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "「Alice came」[１]",
+            "cites": [
+              {
+                "n": 1,
+                "o": 0,
+                "text": "Alice came to the village."
+              }
+            ],
+            "route": "who",
+            "guard": {
+              "p": 0.95,
+              "verdict": "ok"
+            },
+            "people": [
+              "a"
+            ],
+            "position": 83
+          }
+        }
+      ],
+      "chat": [
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【人物：Alice】又称：无\n。\n档案：job：writer\n关系：Bob（husband；过去的关系，已结束）：\n经历：无\n\n【原文1】Alice came to the village.\n\n【原文2】Bob offered Alice a cup of tea.\n\n【原文3】They sat in the garden.\n\n【读者的问题】Who is Alice?\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.3,
+          "timeout": 90,
+          "retries": 0
+        }
+      ]
+    },
+    {
+      "name": "unicode_١",
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 137,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Alice came to the village.",
+              "o": 0
+            },
+            {
+              "k": "p",
+              "t": "Bob offered Alice a cup of tea.",
+              "o": 27
+            },
+            {
+              "k": "p",
+              "t": "They sat in the garden.😀A future revelation follows.",
+              "o": 59
+            },
+            {
+              "k": "p",
+              "t": "UNREAD SECRET identity.",
+              "o": 113
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 4,
+              "o0": 0,
+              "o1": 137,
+              "kind": "body"
+            }
+          ]
+        },
+        "kg": {
+          "log": [
+            {
+              "t": "person",
+              "p": 0,
+              "id": "a",
+              "name": "Alice"
+            },
+            {
+              "t": "person",
+              "p": 1,
+              "id": "b",
+              "name": "Bob"
+            },
+            {
+              "t": "rel",
+              "p": 3,
+              "a": "a",
+              "b": "b",
+              "a_is": "wife",
+              "b_is": "husband",
+              "status": "ended"
+            },
+            {
+              "t": "saga",
+              "p": 4,
+              "text": "Alice arrived."
+            },
+            {
+              "t": "attr",
+              "p": 5,
+              "id": "a",
+              "key": "job",
+              "value": "teacher"
+            },
+            {
+              "t": "attr",
+              "p": 6,
+              "id": "a",
+              "key": "job",
+              "value": "writer"
+            },
+            {
+              "t": "event",
+              "p": 84,
+              "who": [
+                "a"
+              ],
+              "text": "UNREAD GRAPH SECRET"
+            }
+          ]
+        },
+        "status": {
+          "frontier": 82
+        },
+        "question": "Who is Alice?",
+        "pos": 83
+      },
+      "script": {
+        "route": "who",
+        "probs": {},
+        "replies": [
+          "「Alice came」[١]"
+        ],
+        "guards": [
+          {
+            "a": {
+              "verdict": "ok",
+              "p": 0.95
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "kind": "stage",
+          "value": {
+            "text": "理解你的问题"
+          }
+        },
+        {
+          "kind": "route",
+          "value": {
+            "route": "who",
+            "p": 0
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "翻阅你读过的部分"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "组织回答"
+          }
+        },
+        {
+          "kind": "stage",
+          "value": {
+            "text": "检查有没有剧透"
+          }
+        },
+        {
+          "kind": "answer",
+          "value": {
+            "text": "「Alice came」[١]",
+            "cites": [
+              {
+                "n": 1,
+                "o": 0,
+                "text": "Alice came to the village."
+              }
+            ],
+            "route": "who",
+            "guard": {
+              "p": 0.95,
+              "verdict": "ok"
+            },
+            "people": [
+              "a"
+            ],
+            "position": 83
+          }
+        }
+      ],
+      "chat": [
+        {
+          "model": "fixture-model",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是一位读书伙伴，陪读者读《Fixture》。读者现在读到了第 1 章的当前位置。\n规则（必须遵守）：\n1. 只能根据下面【材料】回答。材料只包含读者已经读过的内容。即使你知道这部作品，也绝不能透露材料以外的任何情节、身份、结局或后来的变化。\n2. 不要对后面的发展做任何预测、暗示或铺垫（不要说“恐怕”“注定”“后来会”“还会发生”之类的话）。\n3. 如果材料不足以回答，就直说“读到这里还看不出来”，再说说目前已知的相关情况。\n4. 【前情提要】【人物】【最近发生的事】是整理出的摘要，可以转述，但不要加引号当作原文。只有【原文n】里的句子才能用「」直接引用，并在句末标注 [n]。关键判断尽量给出 [n] 出处。\n5. 回答具体、有温度、简洁（一般 80～250 字），用读者提问的语言回答（中文提问就用中文，人名可保留原文拼写），不要使用 Markdown 标题或列表符号。"
+            },
+            {
+              "role": "user",
+              "content": "【材料】\n【前情提要】\nAlice arrived.\n\n【人物：Alice】又称：无\n。\n档案：job：writer\n关系：Bob（husband；过去的关系，已结束）：\n经历：无\n\n【原文1】Alice came to the village.\n\n【原文2】Bob offered Alice a cup of tea.\n\n【原文3】They sat in the garden.\n\n【读者的问题】Who is Alice?\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）"
+            }
+          ],
+          "max_tokens": 1200,
+          "temperature": 0.3,
+          "timeout": 90,
+          "retries": 0
+        }
+      ]
+    }
+  ],
+  "who": [
+    {
+      "input": {
+        "book": {
+          "title": "Fixture",
+          "lang": "en",
+          "len": 31,
+          "blocks": [
+            {
+              "k": "p",
+              "t": "Person19 arrived. He sat down.",
+              "o": 0
+            }
+          ],
+          "chapters": [
+            {
+              "title": "Future identity revealed",
+              "b0": 0,
+              "b1": 1,
+              "o0": 0,
+              "o1": 31,
+              "kind": "body"
+            }
+          ]
+        },
+        "log": [
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p0",
+            "name": "Person0"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p1",
+            "name": "Person1"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p2",
+            "name": "Person2"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p3",
+            "name": "Person3"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p4",
+            "name": "Person4"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p5",
+            "name": "Person5"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p6",
+            "name": "Person6"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p7",
+            "name": "Person7"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p8",
+            "name": "Person8"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p9",
+            "name": "Person9"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p10",
+            "name": "Person10"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p11",
+            "name": "Person11"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p12",
+            "name": "Person12"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p13",
+            "name": "Person13"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p14",
+            "name": "Person14"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p15",
+            "name": "Person15"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p16",
+            "name": "Person16"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p17",
+            "name": "Person17"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p18",
+            "name": "Person18"
+          },
+          {
+            "t": "person",
+            "p": 0,
+            "id": "p19",
+            "name": "Person19"
+          },
+          {
+            "t": "cnt",
+            "p": 0,
+            "c": {
+              "p0": 100,
+              "p1": 100,
+              "p2": 100,
+              "p3": 100,
+              "p4": 100,
+              "p5": 100,
+              "p6": 100,
+              "p7": 100,
+              "p8": 100,
+              "p9": 100,
+              "p10": 100,
+              "p11": 100,
+              "p12": 100,
+              "p13": 100,
+              "p14": 100,
+              "p15": 100,
+              "p16": 100,
+              "p17": 100,
+              "p18": 100,
+              "p19": 1
+            }
+          }
+        ],
+        "pos": 29,
+        "start": 18,
+        "end": 20
+      },
+      "output": {
+        "ok": true,
+        "id": "p19",
+        "name": "Person19",
+        "p": 0.9,
+        "word": "He"
+      },
+      "calls": [
+        {
+          "state": {
+            "this_passage": "Person19 arrived. <selected>He</selected> sat down"
+          },
+          "questions": {
+            "w": {
+              "type": "choice",
+              "instructions": "In this_passage, who does 「He」 refer to at the exact occurrence marked <selected>...</selected>?",
+              "criteria": {
+                "p1": "Person1（）",
+                "p19": "Person19（）",
+                "p0": "Person0（）",
+                "p2": "Person2（）",
+                "p3": "Person3（）",
+                "p4": "Person4（）",
+                "p5": "Person5（）",
+                "p6": "Person6（）",
+                "p7": "Person7（）",
+                "p8": "Person8（）",
+                "p9": "Person9（）",
+                "p10": "Person10（）",
+                "unknown": "Someone the reader has not been introduced to yet, or not a person at all."
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -2,9 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:thusfar_core/models.dart' as models;
+import 'package:thusfar_core/llm.dart' as llm;
 
 import '../data/library.dart';
 import '../data/model_settings.dart';
+import '../data/processing.dart';
 import '../ui/cover.dart';
 import '../ui/theme.dart';
 import 'sheet_host.dart';
@@ -16,6 +18,8 @@ class BookSheet extends StatefulWidget {
     required this.library,
     required this.entry,
     required this.settings,
+    required this.processing,
+    this.onRemoved,
     required this.onRead,
     required this.onModelSettings,
     required this.onExport,
@@ -25,6 +29,8 @@ class BookSheet extends StatefulWidget {
   final Library library;
   final BookEntry entry;
   final ModelSettings settings;
+  final BookProcessing processing;
+  final VoidCallback? onRemoved;
   final VoidCallback onRead;
   final Future<void> Function() onModelSettings;
   final Future<void> Function() onExport;
@@ -46,6 +52,78 @@ class _BookSheetState extends State<BookSheet> {
   bool confirmRemove = false;
   bool missingKey = false;
   String? engineNote;
+  bool acting = false;
+  String? actionLabel;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.library.addListener(_changed);
+    widget.processing.addListener(_changed);
+  }
+
+  @override
+  void dispose() {
+    widget.library.removeListener(_changed);
+    widget.processing.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _action(String label, Future<void> Function() run) async {
+    if (acting) return;
+    setState(() {
+      acting = true;
+      actionLabel = label;
+      engineNote = null;
+      confirmStart = false;
+    });
+    try {
+      await run();
+    } on Object catch (error) {
+      if (mounted) {
+        setState(
+          () => engineNote =
+              llm.explain(error) ??
+              (error is StateError ? error.message : '整理操作没有完成，请稍后重试。'),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          acting = false;
+          actionLabel = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _start() async {
+    if (!widget.settings.hasKey) {
+      setState(() => missingKey = true);
+      return;
+    }
+    await _action('正在开始整理…', () => widget.processing.startBook(widget.entry));
+  }
+
+  Future<void> _pause() => _action(
+    '正在暂停，等待当前步骤结束…',
+    () => widget.processing.pauseBook(widget.entry),
+  );
+
+  Future<void> _remove() => _action('正在停止整理，完成后移除…', () async {
+    await widget.processing.prepareRemoval(widget.entry);
+    widget.library.refreshStatus(widget.entry);
+    if (widget.entry.status.isActive) throw StateError('这本书仍在停止整理，完成后才能移除。');
+    await widget.library.remove(widget.entry);
+    if (mounted) Navigator.of(context).pop();
+    // The user can dismiss this drawer while cancellation settles. Its reader
+    // must still close after removal, even when the drawer is already gone.
+    widget.onRemoved?.call();
+  });
 
   int _noteCount() {
     final List<Object?> raw =
@@ -99,7 +177,7 @@ class _BookSheetState extends State<BookSheet> {
               child: Pill(
                 label: p == null ? '开始阅读' : '继续阅读',
                 filled: true,
-                onTap: widget.onRead,
+                onTap: acting ? null : widget.onRead,
               ),
             ),
           ),
@@ -144,7 +222,9 @@ class _BookSheetState extends State<BookSheet> {
             const SizedBox(height: 12),
             if (!confirmRemove)
               TextButton(
-                onPressed: () => setState(() => confirmRemove = true),
+                onPressed: acting
+                    ? null
+                    : () => setState(() => confirmRemove = true),
                 child: Text('从这台手机移除', style: TextStyle(color: t.danger)),
               )
             else
@@ -172,13 +252,10 @@ class _BookSheetState extends State<BookSheet> {
                         Pill(label: '导出备份', onTap: widget.onExport),
                         const SizedBox(width: 10),
                         Pill(
-                          label: '移除',
+                          label: acting ? '正在移除…' : '移除',
                           filled: true,
                           color: t.danger,
-                          onTap: () {
-                            widget.library.remove(b);
-                            Navigator.of(context).pop();
-                          },
+                          onTap: acting ? null : _remove,
                         ),
                       ],
                     ),
@@ -208,6 +285,30 @@ class _BookSheetState extends State<BookSheet> {
           },
         ),
       ]);
+    } else if (s.isCancelling) {
+      body.addAll(<Widget>[
+        Text(
+          '正在暂停，等待当前步骤结束。已经整理好的内容会保留。',
+          style: TextStyle(fontSize: 14, height: 1.6, color: t.ink),
+        ),
+        const SizedBox(height: 10),
+        LinearProgressIndicator(color: t.zhu, backgroundColor: t.zhuSoft),
+      ]);
+    } else if (s.isRunning) {
+      body.addAll(<Widget>[
+        LinearProgressIndicator(
+          value: s.total == 0 ? null : (s.done / s.total).clamp(0.0, 1.0),
+          color: t.zhu,
+          backgroundColor: t.zhuSoft,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          s.state == 'queued' ? '已加入整理队列' : '已整理 ${s.done} / ${s.total} 段',
+          style: TextStyle(fontSize: 14, color: t.ink),
+        ),
+        const SizedBox(height: 10),
+        Pill(label: '暂停整理', onTap: acting ? null : _pause),
+      ]);
     } else if (s.isDone) {
       body.add(
         Text(
@@ -227,37 +328,29 @@ class _BookSheetState extends State<BookSheet> {
         );
       }
       final Json? quality = s.raw['quality'] as Json?;
-      if (quality != null && quality['state'] == 'pending') {
-        body.add(
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              '部分资料待核对',
-              style: TextStyle(fontSize: 13, color: t.ink2),
-            ),
-          ),
-        );
+      if (quality != null &&
+          (quality['state'] == 'pending' || quality['pending'] == true)) {
+        body.addAll(<Widget>[
+          const SizedBox(height: 8),
+          Text('部分资料待核对', style: TextStyle(fontSize: 13, color: t.ink2)),
+          const SizedBox(height: 8),
+          Pill(label: '重试待核对部分', onTap: acting ? null : _start),
+        ]);
       }
-    } else if (s.isRunning) {
-      body.addAll(<Widget>[
-        LinearProgressIndicator(
-          value: s.total == 0 ? null : s.done / s.total,
-          color: t.zhu,
-          backgroundColor: t.zhuSoft,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '已整理 ${s.done} / ${s.total} 段',
-          style: TextStyle(fontSize: 14, color: t.ink),
-        ),
-      ]);
     } else if (s.isPaused) {
-      body.add(
+      body.addAll(<Widget>[
         Text(
           '已暂停。已经整理好的部分可以直接看。',
           style: TextStyle(fontSize: 14, color: t.ink),
         ),
-      );
+        const SizedBox(height: 10),
+        Pill(
+          label: '继续整理',
+          filled: true,
+          color: t.zhu,
+          onTap: acting ? null : _start,
+        ),
+      ]);
     } else if (s.isError) {
       body.addAll(<Widget>[
         Text(
@@ -270,46 +363,59 @@ class _BookSheetState extends State<BookSheet> {
         ),
         const SizedBox(height: 6),
         Text(
-          s.error ?? '',
+          s.error ?? '请稍后重试。',
           style: TextStyle(fontSize: 14, height: 1.5, color: t.ink),
         ),
         const SizedBox(height: 10),
-        Pill(label: '去模型设置', onTap: widget.onModelSettings),
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: <Widget>[
+            Pill(
+              label: '重试整理',
+              filled: true,
+              color: t.zhu,
+              onTap: acting ? null : _start,
+            ),
+            Pill(label: '去模型设置', onTap: acting ? null : widget.onModelSettings),
+          ],
+        ),
       ]);
     } else {
-      final Map<String, Object?> est = models.estimate(
+      final Map<String, Object?> estimate = models.estimate(
         b.length,
         lang: b.lang,
         model: widget.settings.read().$2,
       );
-      final String cost = est['minutes'] == null
-          ? ''
-          : '预计约 ${est['minutes']} 分钟、约 ¥${est['high']}（${est['model']}）';
+      final String cost = estimate['minutes'] == null
+          ? '费用按你的模型接口计费。'
+          : '预计约 ${estimate['minutes']} 分钟、约 ¥${estimate['high']}（${estimate['model']}）';
       body.add(
         Text(
           '让 AI 读完这本书，整理人物、关系和前情。只显示到你读到的那一页。',
           style: TextStyle(fontSize: 14, height: 1.6, color: t.ink),
         ),
       );
+      body.add(const SizedBox(height: 10));
       if (!confirmStart) {
-        body.addAll(<Widget>[
-          const SizedBox(height: 10),
+        body.add(
           Pill(
             label: '开始整理',
             filled: true,
             color: t.zhu,
-            onTap: () => setState(() {
-              if (!widget.settings.hasKey) {
-                missingKey = true;
-              } else {
-                confirmStart = true;
-              }
-            }),
+            onTap: acting
+                ? null
+                : () => setState(() {
+                    if (!widget.settings.hasKey) {
+                      missingKey = true;
+                    } else {
+                      confirmStart = true;
+                    }
+                  }),
           ),
-        ]);
+        );
       } else {
         body.addAll(<Widget>[
-          const SizedBox(height: 10),
           Text(
             '会调用你的模型接口，$cost',
             style: TextStyle(fontSize: 13, color: t.ink2),
@@ -319,34 +425,43 @@ class _BookSheetState extends State<BookSheet> {
             children: <Widget>[
               Pill(
                 label: '取消',
-                onTap: () => setState(() => confirmStart = false),
+                onTap: acting
+                    ? null
+                    : () => setState(() => confirmStart = false),
               ),
               const SizedBox(width: 10),
               Pill(
                 label: '开始',
                 filled: true,
                 color: t.zhu,
-                onTap: () => setState(() {
-                  confirmStart = false;
-                  engineNote =
-                      '整理引擎正在移植到新版，这一版还不能开始整理。已经整理好的书（包括从 1.7 升级来的）可以直接读。';
-                }),
+                onTap: acting ? null : _start,
               ),
             ],
           ),
         ]);
       }
-      if (engineNote != null) {
-        body.add(
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Text(
-              engineNote!,
-              style: TextStyle(fontSize: 13, height: 1.5, color: t.amber),
-            ),
+    }
+    if (actionLabel != null) {
+      body.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(
+            actionLabel!,
+            style: TextStyle(fontSize: 13, color: t.ink3),
           ),
-        );
-      }
+        ),
+      );
+    }
+    if (engineNote != null) {
+      body.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(
+            engineNote!,
+            style: TextStyle(fontSize: 13, height: 1.5, color: t.amber),
+          ),
+        ),
+      );
     }
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),

@@ -229,3 +229,29 @@
 - **MIUI 手机平放会把 App 转成横屏**，首次使用页被截断；DocumentsUI 在横屏下不响应自动点击。→ App 固定竖屏。
 - **免费裁判 400 `dimension_context_too_large`**：儒林外史长段落触发，1.7.5 会整本停下。待在整理引擎移植时处理（按段拆问题或给出人话原因）。
 - 录制上限由 ¥1 改为 `MAX_CNY = 20`（用户明确不在乎预算，模型仍只用 deepseek-flash+nothink）。
+
+
+## 2026-09-26 Codex continuation findings
+
+- The release manifest lacked `android.permission.INTERNET`; only debug/profile
+  declared it. `aapt dump permissions` on the installed dev.1 APK confirmed the
+  omission. Add the permission to main and inspect the packaged manifest, because
+  passing desktop model-client tests does not establish Android network access.
+- The root `data/` ignore rule also hid `app/lib/data/`. A precise negation keeps
+  application source versioned without admitting local book libraries.
+- On the pinned Flutter SDK, `debugDisableShadows` must be restored in a
+  `finally` inside the test body. `addTearDown` runs after the framework checks
+  painting invariants; the earlier note's teardown advice was insufficient.
+- Test pending futures must be created inside the widget-test zone. A Completer
+  from outer setup can route errors outside the widget zone or escape fake-async
+  pumping. This affected the new settings test harness, not the transport.
+- Model-setting requests must check `mounted` before publishing results and
+  allow only one in-flight connection test. Missing saved keys must produce a
+  local explanation without calling the transport.
+- Cancellation means stop issuing subsequent work and keep the book lease until
+  current requests settle. Successful late drafts and their usage must survive.
+  A pause timeout must not allow a resume to change `auto` before cancellation
+  has actually finished.
+- Backup validation must happen before publishing a directory. Existing books
+  with different personal or graph content require a visible conflict; corrupt
+  JSON must not silently become an apparently complete empty backup.

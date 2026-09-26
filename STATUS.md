@@ -1,54 +1,99 @@
-# 状态
+# Thusfar 2.0 development status
 
-## 2026-09-26 接手后的进展（Claude 执行，Codex 已停）
+Updated 2026-09-26 on `flutter-2.0`. The current objective is a native Flutter
+reader with a pure Dart engine and compatible 1.7.x data. The user changed the
+execution order: prioritize working Flutter features, allow implementation while
+reference recording remains incomplete, and build on the home Mini. The former
+A0-only gate and ¥1 recording cap are superseded.
 
-用户决定：录制预算不设 ¥1 上限；先做 Flutter 页面主功能，不再在 A0 上反复求证；重编译放 Mac mini。
+## Verified implementation
 
-| 部分 | 状态 | 证据 |
-|---|---|---|
-| A1 基础层 | provenance / lang / models / storage 纯函数已移植 | 12 个函数 367 个 golden 通过 |
-| 正则 | 运行时 Python→Dart 翻译器 `pyRe` | 103 个模式 × 4401 个用例与 Python 一致 |
-| JSON | `pyJsonLoads` 与 Python 3.11 值和报错文本一致 | 429 个用例 |
-| A2 解析 | TXT（含青空文库、古登堡、多语言章节）+ EPUB（Python html.parser 兼容分词器） | 16 个 parsed golden 全过；本地 40 本真实 EPUB 与 Python 逐字节一致 |
-| 折叠 | `web/js/kg.js fold()` 移植 | 6 本书 × 20 截点共 120 个 golden 一致 |
-| A3/A4 | 模型聊天客户端、JEV（免费/付费/本地/聊天裁判、熔断、缓存）、extract、local、judge | 共 1275 项 golden 通过；judge 常量由生成器从 Python 导出 |
-| 整理编排 | link / kg / run / jobs 尚未移植 | App 里「开始整理」「问书」明确提示引擎移植中 |
-| Flutter App | 书架、首次使用、导入（TXT/EPUB/备份）、阅读页（分页、平移翻页、朱线、页眉页脚、工具栏、选区、书签、回到原位）、人物卡、人物抽屉、关系图、目录/书签/摘记、前情、搜索、排版、摘记页、设置、模型设置（含测试连接） | golden 截图测试渲染全部主界面；导入测试通过；APK 25.4 MB，已装到小米（包名 `com.yedu.zhupi.v2probe`，与 1.7.5 并存） |
+| Area | Current evidence |
+| --- | --- |
+| Foundation and parsing | Claude's prior handoff records provenance/language/models/storage ports, Python-compatible regex and JSON, TXT/EPUB parsing, 16 parsed goldens, and 40 local EPUB comparisons. These earlier claims are preserved in the historical status. |
+| Graph folding | The existing Dart fold has 6 books × 20 cutoffs compared with the JavaScript oracle. |
+| Model clients and extraction | Existing streaming chat/JEV/extract/local/judge modules are retained. This continuation fixes a judge block-index compile error and adds exact single-repair `chatJson` behavior. |
+| Character linking | 36 dedicated tests cover 1,932 captured helper rows and 21 independent Python request/state scenarios, including two-segment link → plan → commit integration. |
+| Knowledge graph | 71 dedicated tests cover 1,815 historical method rows, 48 captured commits plus 4 synthetic states, and 28 complete-input Anchor cases. Historical Anchor captures missing block context are not counted as complete calls. |
+| Book/chapter policy | Python-recorded request/result fixtures, fallback and Unicode decimal/large-ordinal cases exercise classification and work boundaries. |
+| Grounded questions | Native ask/temporal logic covers retrieval, routing, verification/rewrite, citations, cutoff enforcement, cache invalidation, timeout and cancellation. The Flutter ask sheet has four passing interaction tests on Mini. |
+| Model settings | Four Mini widget tests cover missing credentials without a request, single in-flight testing, and late success/error after leaving the page. |
+| Reader | Existing shelf, import, pagination, character cards, graph, TOC, notes, search, recaps and typography UI remains. Ten screenshot receipts were generated; shelf, reader, character card and grounded-question UI were inspected. |
 
-录制：法文、Jekyll 两本已录完；日文 57/110、儒林部分段落因免费裁判 402 限额和 400「上下文超限」停止（后者是 1.7.5 真实缺陷）。按 token 估算约 ¥2.8。
+## Integrated processing and validation
 
-# 页读 / Thusfar 2.0 进度
+Three parallel agents completed Runner, Worker and Flutter integration after the
+daemon recovery. The Runner supports two-phase/classic processing, source and
+cache validation, bounded concurrency, cooperative cancellation, usage accounting,
+quality retry and finalization. The Worker supplies explicit start/pause/resume/
+retry and startup reconciliation without automatically issuing paid requests.
+Flutter uses a dedicated isolate and refreshes progress and open-book graph data.
 
-更新：2026-09-26，分支 `flutter-2.0`。本文件只记录可复核的阶段证据；门槛未达到时保持该阶段进行中。
+Fresh Aq at concurrency 1 and 12 each matched all **154 normalized Python
+artifacts**, with 21 model and 82 judge cassette calls per run. Paused Aq 4/9
+resumed to 9/9 and matched all 154 artifacts in its own Python resume receipt,
+with prior prefix caches unchanged. All three were offline with zero cassette
+misses. Complete-book parity is established for Aq; classic full fresh-book
+parity and other complete books are not claimed.
 
-## A0 标准答案与测试骨架：进行中
+Final saved receipts establish **1,791 unique passing core tests, 521 explicit
+skips and zero failures** (1,779 in the full suite plus 12 additional lifecycle/
+helper tests). The app has **26 unique passing functional/widget tests** and one
+screen suite rendering ten images. Core and app analysis are clean. The remaining
+skipped port contracts are not successful tests; the registry still needs
+reconciliation with implemented source.
 
-| 门槛 | 当前证据 | 判定 |
-|---|---|---|
-| A0.1 生产函数清单 | AST 生成 `docs/port/INVENTORY.md`、`inventory.json` 和 `MANIFEST.yaml`，共 378 个函数：125 纯函数、14 文件读写、38 模型调用、171 并发/编排、30 路由。形参别名审计将 3 个会原地修改的函数移出纯函数类，专用状态 golden 记录调用前后。`generate_inventory.py --check` 通过；378 项仍是 `pending_port`。 | 清单已建立；业务移植为零 |
-| A0.2 Python/Dart 语义差异 | `SEMANTICS.md` 的 10 个主题均有同输入的 Python/Dart 测试：10,000 个 JSON 值、Unicode/数字/排序探针、舍入极值、哈希、注入时间/随机、静态与动态正则位点及 UTF-16 偏移。源码位点审计见 `UTF16-AUDIT.md`、`REGEX.md`。同位点函数移植时仍需逐个核对正文偏移、正则和并发输入。 | 双边测试骨架已建立；位点验收仍随 A1–A6 进行 |
-| A0.3 语料与升级快照 | 5 部权利明确的公开领域书、11 组合成 TXT/EPUB，以及历史完成阿Q、真实 1.7.5 API 生成的完成带摘记和暂停 4/9 带摘记快照。`build.py --verify` 核对 181 文件、2,918,003 字节；暂停夹具经两个独立 Python 3.11 进程重建，67 文件逐字节一致。原李健吾译本暂停目录及派生 golden 共 106 文件已从当前树移出；历史人工多摘记快照仍缺。 | 当前树的语料可离线复核；历史人工暂停/多摘记覆盖未满 |
-| A0.4 函数级标准答案 | 125 个选定纯函数中，120 个普通函数录得 7,482 条样本，另 5 个由专用 golden 覆盖。冻结输入提交 `e3c5121`：1,604 个路径，输入树 SHA `34f9ee9233ff53597e92238b5d54bf4666f0c175c007d29e59288d5025c5e738`。两种散列种子各通过 309 个 Python 测试，回放阿Q 9/9、法文 1/25、Jekyll 19/20；121 个输出文件逐字节相同，树 SHA `931cedb261785231f581a3dc3f0b4c85372eed8637f4bf9ace1f5699eb608ed1`。143 次未编码调用有原因，0 同输入冲突；单独手写录制的 127 条输入/输出全部保留，每函数仍至多 200 条。 | 本次输入树双录通过；后续新录制工具须重新冻结；全五书仍不完整 |
-| A0.4 录音带、整书、接口、折叠 | 340 个请求摘要、348 次尝试（71 真模型、277 免费 JEV），密钥扫描与账本审计通过。历史阿Q来源副本 9/9 完整；Jekyll 19/20、法文 1/25 明确为部分；日文首个模型请求在预检前停止，中文长篇未录。4 份整书/部分书 golden 共 509 文件哈希，6 份折叠各 20 截点；接口已有 82 基础/合成例，另加真实连接、人物识别、问书成功各 1 例，真实批注拒绝 1 例，以及真实线程 Worker 的 3 个离线 HTTP 响应，共 89 例。新增真实样本均与原始 HTTP 观察双进程回放一致；批注拒绝不计为成功，失败后的旧录制器缓存探针 500 单独保留且不计入这 89 例。 | 五书真实整书带及真实批注成功带未达到 |
-| A0.5 Python 确定性 | 已修复后台发布排序、章界上下文、小传/摘要同章快照、集合散列顺序和浮点累加；本轮另修英文短名索引顺序、去重候选短路判断顺序，五种散列种子回归通过。阿Q及两个部分前缀在并发度 1 下双录一致；阿Q另以并发度 1、12 × 两种散列种子跑了 4 个独立进程，154 个产物全部一致。真实线程 Worker 的 HTTP 入队到完成也双录一致，保留 21 模型 / 82 JEV 的原始请求计数。暂停阿Q从 4/9 续到 9/9：152/154 产物与 fresh 相同，摘记原字节保留，8 个已缓存模型请求未重复；另外两个产物只在免费 JEV 用量上不同，差异原样记录，A5 的完全相等要求未因此放宽。 | 阿Q默认并发已复验；其余书籍默认并发、全语料及 A5 用量相等证据不足 |
-| A0.6 Dart 测试骨架 | `core/` 为纯 Dart `thusfar_core`；171 个原 Python 测试均有 Dart 断言合同与 owner 登记，但全部按所属阶段跳过。378 个生产函数仍 `pending_port`。本机 `dart analyze --fatal-infos --fatal-warnings` 零提示；`dart test` 共 622 项，73 通过、549 跳过、0 失败。通过者是语义与骨架校验，业务 Dart 断言尚未执行。 | 骨架和翻译登记完成；业务实现待 A1–A6 |
+Backup imports validate before publication and reject conflicting books; damaged
+personal data cannot be silently exported as empty data. Native Android VIEW/SEND
+and the in-app picker share a serialized queue. The main Activity uses singleTask,
+and resume refreshes the durable library without restarting paid processing.
 
-**阶段判定：A0 未通过，不进入 A1。** 当前不能把已跳过的 Dart 合同、部分整书录音带或合成模型响应计为对应业务 golden 通过。远端 CI 尚未运行，因为本分支未推送。
+## Build and device evidence
 
-上次完整冻结时的验证（新增工具仍待统一重跑）：Python 3.11 独立 `unittest discover` 为 309/309 通过（79.373 秒），两次带追踪录制也各为 309/309；新增续跑收据 8 条回归通过。Jekyll 在排序修复后两遍回放仍匹配 289 个原产物哈希；4 份书籍产物 509 个哈希、6×20 折叠复核通过；全 oracle 凭据扫描为 1,197 个 JSON/JSONL 文件，未发现密钥。Dart 分析零提示，测试 73 通过、549 跳过、0 失败。解析语料、special、JavaScript 和翻译目录的先前验证仍有效。
+The existing pinned SDK is Flutter 3.47.5 / Dart 3.13.4, revision
+`6a19cca56475dbfba1478ee68d7bd0c2ef891da1`, on both NAS and the home Mini.
+Python reference generation uses `/home/dev/.local/bin/python3.11` (Unicode 14).
 
-## 费用、来源与可发布边界
+Mini verification/build `c024f48e-e58b-43a9-adf6-0d6b2cdbc408` completed the full
+suite and processing APK. A device-observed stale shelf after external import
+led to the Activity/resume fix. Follow-up
+`c5dca0bd-84d4-4f99-b442-c7517159dbac` passed all four shared-import tests and
+built **2.0.0-dev.3 / versionCode 22**. Its signed probe APK is 26,642,601 bytes:
 
-`oracle/record/cost-estimate.json` 按 Python 3.11 的 237 个实际分段估算：五书仅首轮抽取约 ¥2.197，尚未计分类、小传、回顾和重试，高于原定 ¥1。共享账本现按配置费率估算 ¥0.456816096、双倍费率守护记账 ¥0.913632192；剩余 ¥0.086367808 不足以预留日文首个或法文第二个模型请求，均在发送前被拒。网关实际账单无收据，不能将这些数值称为实付。真模型调用仅使用 `deepseek-flash+nothink` 与 `~/.env` 的 `NAS_DEFAULT_KEY`；仓库扫描未发现密钥。旧 1.7.x 缓存采用其他模型且无原始 SSE，请勿与指定录音带混同。
+- SHA-256: `74f23087500ab2decab5d355ac6925daa7412743b4009eea997ce368e6cf577c`
+- Package: `com.yedu.zhupi.v2probe`; verified v2/v3 signing with the existing key.
+- INTERNET is present in the actual release APK, correcting the earlier probe.
+- Saved validation receipts: `book/reports/20260926-continuation/`.
 
-被移出的李健吾译本 106 文件已先备份到 `/home/dev/.local/share/thusfar-private-fixtures/bovary-partial-2026-09-26.tar.gz`，逐文件 SHA-256 比对通过，归档 SHA-256 为 `a408f8d364bab04f62dc89274105e6532ff1a235774f5123a56e34e5231bc38a`。此分支的早期 Git 提交仍含该译本字节；不能直接推送或公开整条历史。原译本再分发权利尚未核实。
+The dev.2 device check verified a native public-domain Aq backup import, 37
+people, reading progress, reader/character card and cutoff-labelled ask UI.
+The dev.3 probe was installed and verified as versionCode 22. Without reimport,
+the existing Aq book, 37 people and 11% progress survived the update and a
+reader → file manager → app round trip. The stale-shelf regression passed. The production `com.yedu.zhupi` and its data were not
+replaced. This is a development probe, not full production upgrade acceptance.
 
-## 工具链与边界
+`app/lib/data/` was unintentionally excluded by the root `data/` ignore pattern.
+A narrow exception now exposes this essential source to version control while
+local book libraries remain ignored. Include it in the reviewed source commit.
 
-- 2026-09-26 再次对照 Flutter 官方 Git `stable` 分支，本机使用最新版 stable **Flutter 3.47.5 / Dart 3.13.4**，Git 修订 `6a19cca56475dbfba1478ee68d7bd0c2ef891da1`，安装于 `/home/dev/.local/share/flutter`。
-- Python 标准答案固定 Android 1.7.5 对应的 **Python 3.11**；本机为 3.11.13。系统 Python 3.13 不用于标准答案录制。
-- 当前仅执行 A0；未创建 Flutter App、未更换 HTTP 服务、未删除 Python 运行时、未打存档标签，也未推送或发布。
+## Remaining release gates
 
-## 下一步
+- Broaden whole-book parity beyond Aq, including classic fresh-book processing;
+  complete real model processing/background acceptance on devices.
+- Complete the manual-entity Reader overlay, remaining AI annotation/service
+  ports and standalone Dart HTTP server;
+  validate existing browser/API workflows against it.
+- Verify full 1.7.x in-place upgrade and data retention, on-device processing and
+  background behavior, performance requirements and the second-device checks.
+- Reconcile the manifest and skipped contracts, establish required coverage,
+  and complete outstanding oracle evidence without presenting partial recordings
+  as whole-book acceptance.
+- Only after all acceptance gates: archive the Python oracle, remove the legacy
+  runtime/shell, update self-hosting delivery, and publish 2.0.
 
-预算内的连接、人物识别、问书真实成功已录制；手写批注得到真实核对拒绝，保留原请求及费用，不重试。正在补 API 生成的多摘记兼容夹具（内容为测试作者所写，不声称历史人工数据）。随后重新冻结全部录制输入、双录函数标准答案并跑完整验证。五书完整录制仍有预算缺口；Jekyll 末段、法文其余段、日文和中文长篇、其余书籍默认并发度仍未完成。公开语料 `books/aq.txt` 与历史 `aq_complete` 是不同版本，当前完整模型带绑定后者，不能把两者混称为同一输入。A0 门槛未过之前不开始业务 Dart 移植。
+No push or release has been performed. Existing live cassette changes and receipts
+predate this continuation and are preserved. No live model request was made by the
+offline checks described here. The early branch history still contains a withdrawn
+literary fixture; publication requires resolving that recorded history restriction.
+See [the preserved historical status](docs/port/runs/20260926-continuation/STATUS-before.md)
+for provenance, archival hashes, partial-corpus limitations and previous evidence.

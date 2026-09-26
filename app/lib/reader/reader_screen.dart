@@ -8,6 +8,7 @@ import 'package:thusfar_core/thusfar_core.dart';
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/prefs.dart';
+import '../data/processing.dart';
 import '../data/seen.dart';
 import '../sheets/ask_sheet.dart';
 import '../sheets/book_sheet.dart';
@@ -33,6 +34,7 @@ class ReaderScreen extends StatefulWidget {
     required this.entry,
     required this.prefs,
     required this.settings,
+    required this.processing,
     required this.onModelSettings,
     required this.onExport,
     this.openAt,
@@ -42,6 +44,7 @@ class ReaderScreen extends StatefulWidget {
   final BookEntry entry;
   final Prefs prefs;
   final ModelSettings settings;
+  final BookProcessing processing;
   final Future<void> Function() onModelSettings;
   final Future<void> Function(BookEntry) onExport;
 
@@ -74,6 +77,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     widget.prefs.addListener(_relayout);
     book.notes.addListener(_repaint);
     c.addListener(_repaint);
+    widget.library.addListener(_refreshKnowledge);
   }
 
   @override
@@ -82,10 +86,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
     widget.prefs.removeListener(_relayout);
     book.notes.removeListener(_repaint);
     c.removeListener(_repaint);
+    widget.library.removeListener(_refreshKnowledge);
+    c.dispose();
+    book.notes.dispose();
+    book.dispose();
     _flashTimer?.cancel();
     pc?.dispose();
     _focus.dispose();
     super.dispose();
+  }
+
+  void _refreshKnowledge() {
+    if (book.refreshKnowledge()) c.touch();
   }
 
   void _repaint() {
@@ -194,6 +206,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         library: widget.library,
         entry: widget.entry,
         settings: widget.settings,
+        processing: widget.processing,
+        onRemoved: () {
+          if (mounted) Navigator.of(context).pop();
+        },
         onRead: () => Navigator.of(context).pop(),
         onModelSettings: widget.onModelSettings,
         onExport: () => widget.onExport(widget.entry),
@@ -507,6 +523,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
             style: TextStyle(fontSize: 11, color: t.ink3),
           ),
         ),
+        if (book.knowledgeError != null)
+          Tooltip(
+            message: book.knowledgeError!,
+            child: Icon(Icons.info_outline, color: t.amber, size: 16),
+          ),
         if (c.beyondFrontier)
           Text(
             '人物整理到第 ${link.pageNo(book.status.frontier)} 页',

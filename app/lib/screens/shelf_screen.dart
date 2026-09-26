@@ -388,9 +388,15 @@ class _ShelfScreenState extends State<ShelfScreen> {
       ],
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Text(
-          '${sorts[widget.prefs.sort]} ▾',
-          style: TextStyle(fontSize: 13, color: t.ink2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              sorts[widget.prefs.sort],
+              style: TextStyle(fontSize: 13, color: t.ink2),
+            ),
+            Icon(Icons.arrow_drop_down, size: 18, color: t.ink2),
+          ],
         ),
       ),
     );

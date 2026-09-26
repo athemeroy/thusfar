@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:thusfar_core/thusfar_core.dart' show PyException;
 
 import 'data/backup.dart';
 import 'data/library.dart';
 import 'data/model_settings.dart';
 import 'data/prefs.dart';
+import 'data/processing.dart';
 import 'data/seen.dart';
 import 'reader/reader_screen.dart';
 import 'screens/model_settings_screen.dart';
@@ -20,7 +23,9 @@ import 'ui/theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // A book is read upright; a phone lying flat must not flip the page layout.
-  await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
+  await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
+    DeviceOrientation.portraitUp,
+  ]);
   const String override = String.fromEnvironment('THUSFAR_DATA');
   // Same private directory the 1.7.x app used: files/yedu.
   final Directory root = override.isNotEmpty
@@ -30,24 +35,47 @@ Future<void> main() async {
         );
   root.createSync(recursive: true);
   final AppModel model = AppModel(root);
-  await model.library.scan();
+  await model.initialize();
   runApp(ThusfarApp(model: model));
 }
 
 /// Everything shared by the screens.
 class AppModel {
-  AppModel(this.root)
-    : library = Library(root),
-      prefs = Prefs(File('${root.path}/app-prefs.json')),
-      settings = ModelSettings(File('${root.path}/.model.env')) {
+  AppModel(
+    this.root, {
+    BookProcessing Function(Library library)? createProcessing,
+  }) : library = Library(root),
+       prefs = Prefs(File('${root.path}/app-prefs.json')),
+       settings = ModelSettings(File('${root.path}/.model.env')) {
     SeenStore.instance.attach(File('${root.path}/seen.json'));
     applyModelEnvironment(settings);
+    processing =
+        createProcessing?.call(library) ?? ProcessingController(library);
   }
 
   final Directory root;
   final Library library;
   final Prefs prefs;
   final ModelSettings settings;
+  late final BookProcessing processing;
+  String? startupError;
+
+  /// Worker startup stays deferred for widget fixtures. Production startup
+  /// reconciles abandoned state; it does not restart paid work.
+  Future<void> initialize() async {
+    await library.scan();
+    try {
+      await processing.initialize();
+    } on Object {
+      startupError = '整理任务暂时无法启动，请检查书籍数据后重试。';
+    }
+  }
+
+  void dispose() {
+    processing.dispose();
+    prefs.dispose();
+    library.dispose();
+  }
 }
 
 class ThusfarApp extends StatelessWidget {
@@ -84,10 +112,32 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _ImportSource {
+  const _ImportSource({
+    required this.name,
+    this.path,
+    this.bytes,
+    this.error,
+    this.temporary = false,
+  });
+
+  final String name;
+  final String? path;
+  final Uint8List? bytes;
+  final String? error;
+  final bool temporary;
+}
+
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
+  static const MethodChannel _paths = MethodChannel('thusfar/paths');
   int tab = 0;
   final List<ImportItem> imports = <ImportItem>[];
   String? flashId;
+  Future<void> _importTail = Future<void>.value();
+  Future<void>? _resumeRefresh;
+  Timer? _importFeedback;
+  bool _readingShares = false;
+  bool _sharesAgain = false;
 
   AppModel get m => widget.model;
 
@@ -95,16 +145,114 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     m.library.addListener(_changed);
+    WidgetsBinding.instance.addObserver(this);
+    _paths.setMethodCallHandler((MethodCall call) async {
+      if (call.method == 'importsAvailable') await _takeSharedImports();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_takeSharedImports());
+    });
+    if (m.startupError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(m.startupError!)));
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
     m.library.removeListener(_changed);
+    WidgetsBinding.instance.removeObserver(this);
+    _paths.setMethodCallHandler(null);
+    _importFeedback?.cancel();
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_refreshLibraryOnResume());
+    }
+    if (state == AppLifecycleState.detached) {
+      unawaited(m.processing.close().catchError((Object _) {}));
+    }
+  }
+
+  Future<void> _refreshLibraryOnResume() => _resumeRefresh ??= (() async {
+    try {
+      // Another activity or an external restore may have changed durable data
+      // while this widget retained its old shelf. Finish this activity's import
+      // first, then refresh existing entry objects so open readers stay attached.
+      await _importTail;
+      if (mounted) await m.library.scan();
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('书架暂时无法刷新，请检查书籍文件后重新打开应用。')),
+        );
+      }
+    }
+  })().whenComplete(() => _resumeRefresh = null);
+
   void _changed() {
     if (mounted) setState(() {});
+  }
+
+  Future<void> _takeSharedImports() async {
+    _sharesAgain = true;
+    if (_readingShares || !mounted) return;
+    _readingShares = true;
+    try {
+      while (_sharesAgain && mounted) {
+        _sharesAgain = false;
+        final List<Object?> raw =
+            await _paths.invokeListMethod<Object?>('takeImports') ??
+            <Object?>[];
+        final List<_ImportSource> sources = <_ImportSource>[];
+        for (final Object? value in raw) {
+          if (value is! Map<Object?, Object?> ||
+              value['name'] is! String ||
+              (value['path'] is! String && value['error'] is! String)) {
+            throw const FormatException('分享文件信息不完整');
+          }
+          sources.add(
+            _ImportSource(
+              name: value['name']! as String,
+              path: value['path'] as String?,
+              error: value['error'] as String?,
+              temporary: true,
+            ),
+          );
+        }
+        if (sources.isNotEmpty) await _enqueueImport(sources);
+      }
+    } on MissingPluginException {
+      // Desktop widget fixtures do not register Android's incoming-file bridge.
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('无法接收分享的文件，请重新分享或从书架导入。')));
+      }
+    } finally {
+      _readingShares = false;
+    }
+  }
+
+  Future<void> _enqueueImport(
+    List<_ImportSource> sources, {
+    bool backupsOnly = false,
+  }) {
+    final Future<void> task = _importTail.then(
+      (_) => _importBatch(sources, backupsOnly: backupsOnly),
+    );
+    // A failed batch must not block the next explicit import.
+    _importTail = task.catchError((Object _) {});
+    return task;
   }
 
   Future<void> openBook(BookEntry b, {int? at}) async {
@@ -117,6 +265,7 @@ class _HomeShellState extends State<HomeShell> {
           entry: b,
           prefs: m.prefs,
           settings: m.settings,
+          processing: m.processing,
           onModelSettings: openModelSettings,
           onExport: exportBook,
           openAt: at,
@@ -154,6 +303,7 @@ class _HomeShellState extends State<HomeShell> {
         library: m.library,
         entry: b,
         settings: m.settings,
+        processing: m.processing,
         onRead: () {
           Navigator.of(context).pop();
           openBook(b);
@@ -166,16 +316,24 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Future<void> exportBook(BookEntry b) async {
-    final Uint8List bytes = exportBook0(b);
-    final String? path = await FilePicker.platform.saveFile(
-      dialogTitle: '导出完整备份',
-      fileName: '${b.title}.yedu.json',
-      bytes: bytes,
-    );
+    String message;
+    try {
+      final Uint8List bytes = exportBook0(b);
+      final String? path = await FilePicker.platform.saveFile(
+        dialogTitle: '导出完整备份',
+        fileName: '${b.title}.yedu.json',
+        bytes: bytes,
+      );
+      message = path == null ? '没有导出' : '已导出《${b.title}》';
+    } on PyException catch (error) {
+      message = error.message;
+    } on Object {
+      message = '导出没有完成，请检查书籍文件和可用存储空间后重试。';
+    }
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(path == null ? '没有导出' : '已导出《${b.title}》')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Uint8List exportBook0(BookEntry b) => exportBookBytes(m.library, b);
@@ -193,48 +351,80 @@ class _HomeShellState extends State<HomeShell> {
       type: FileType.any,
     );
     if (result == null || result.files.isEmpty) return;
+    await _enqueueImport(<_ImportSource>[
+      for (final PlatformFile file in result.files)
+        _ImportSource(name: file.name, path: file.path, bytes: file.bytes),
+    ], backupsOnly: backupsOnly);
+  }
+
+  Future<void> _importBatch(
+    List<_ImportSource> sources, {
+    bool backupsOnly = false,
+  }) async {
+    if (!mounted) return;
+    _importFeedback?.cancel();
     final List<ImportItem> batch = <ImportItem>[
-      for (final PlatformFile f in result.files) ImportItem(f.name),
+      for (final _ImportSource f in sources) ImportItem(f.name),
     ];
     setState(() {
       imports
         ..clear()
         ..addAll(batch);
     });
-    for (int i = 0; i < result.files.length; i++) {
-      final PlatformFile f = result.files[i];
+    for (int i = 0; i < sources.length; i++) {
+      final _ImportSource f = sources[i];
       final ImportItem item = batch[i];
       final String lower = f.name.toLowerCase();
-      final Uint8List? bytes =
-          f.bytes ?? (f.path == null ? null : File(f.path!).readAsBytesSync());
-      if (bytes == null || bytes.isEmpty) {
-        item.error = '文件是空的';
-      } else if (lower.endsWith('.json')) {
-        final ImportResult r = restoreBackup(m.library, f.name, bytes);
-        item
-          ..error = r.error
-          ..bookId = r.id
-          ..existed = r.existed
-          ..progress = 1;
-      } else if (lower.endsWith('.mobi') ||
-          lower.endsWith('.azw3') ||
-          lower.endsWith('.azw')) {
-        item.error = 'MOBI 请先转成 EPUB';
-      } else if (backupsOnly) {
-        item.error = '这不是页读的备份文件（.yedu.json）';
-      } else if (lower.endsWith('.txt') || lower.endsWith('.epub')) {
-        item.progress = 0.3;
-        setState(() {});
-        final ImportResult r = await importBookFile(m.library, f.name, bytes);
-        item
-          ..error = r.error
-          ..bookId = r.id
-          ..existed = r.existed
-          ..progress = 1;
-      } else {
-        item.error = '支持 TXT、EPUB';
+      try {
+        if (f.error != null) {
+          item.error = f.error;
+          continue;
+        }
+        final Uint8List? bytes =
+            f.bytes ??
+            (f.path == null ? null : File(f.path!).readAsBytesSync());
+        if (bytes == null || bytes.isEmpty) {
+          item.error = '文件是空的';
+        } else if (lower.endsWith('.json')) {
+          final ImportResult r = restoreBackup(m.library, f.name, bytes);
+          item
+            ..error = r.error
+            ..bookId = r.id
+            ..existed = r.existed
+            ..progress = 1;
+        } else if (lower.endsWith('.mobi') ||
+            lower.endsWith('.azw3') ||
+            lower.endsWith('.azw')) {
+          item.error = 'MOBI 请先转成 EPUB';
+        } else if (backupsOnly) {
+          item.error = '这不是页读的备份文件（.yedu.json）';
+        } else if (lower.endsWith('.txt') || lower.endsWith('.epub')) {
+          item.progress = 0.3;
+          if (mounted) setState(() {});
+          final ImportResult r = await importBookFile(m.library, f.name, bytes);
+          item
+            ..error = r.error
+            ..bookId = r.id
+            ..existed = r.existed
+            ..progress = 1;
+        } else {
+          item.error = '支持 TXT、EPUB';
+        }
+      } on PyException catch (error) {
+        item.error = error.message;
+      } on Object {
+        item.error = '无法导入这个文件，请检查文件内容和存储空间后重试。';
+      } finally {
+        if (f.temporary && f.path != null) {
+          try {
+            final File cached = File(f.path!);
+            if (cached.existsSync()) cached.deleteSync();
+          } on FileSystemException {
+            // Import outcome is independent of temporary cache cleanup.
+          }
+        }
+        if (mounted) setState(() {});
       }
-      setState(() {});
     }
     await m.library.scan();
     final ImportItem? firstNew = batch
@@ -242,12 +432,14 @@ class _HomeShellState extends State<HomeShell> {
           (ImportItem i) => i.error == null && !i.existed && i.bookId != null,
         )
         .firstOrNull;
+    if (!mounted) return;
     setState(() => flashId = firstNew?.bookId);
-    await Future<void>.delayed(const Duration(seconds: 3));
-    if (mounted &&
-        batch.every((ImportItem i) => i.error == null && !i.existed)) {
-      setState(imports.clear);
-    }
+    _importFeedback = Timer(const Duration(seconds: 3), () {
+      if (mounted &&
+          batch.every((ImportItem i) => i.error == null && !i.existed)) {
+        setState(imports.clear);
+      }
+    });
   }
 
   @override

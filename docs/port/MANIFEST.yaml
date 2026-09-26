@@ -290,19 +290,19 @@ functions:
     reason: "Stage A2 has not started"
   - id: pipeline.kind._cn
     stage: A2
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A2 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.kind._cn"
+    reason: "core/lib/src/pipeline/book_policy.dart; Python function goldens and policy request fixtures"
   - id: pipeline.kind.ordinal
     stage: A2
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A2 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.kind.ordinal"
+    reason: "core/lib/src/pipeline/book_policy.dart; Python function goldens and policy request fixtures"
   - id: pipeline.kind.works
     stage: A2
-    status: pending_port
-    dart_symbol: null
-    reason: "Stage A2 has not started"
+    status: golden_passed
+    dart_symbol: "pipeline.kind.works"
+    reason: "core/lib/src/pipeline/book_policy.dart; Python function goldens and policy request fixtures"
   - id: pipeline.lang.book_lang
     stage: A1
     status: golden_passed

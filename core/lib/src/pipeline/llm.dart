@@ -571,3 +571,41 @@ Object? parseJson(String reply) {
     return pyJsonLoads(repairJson(body));
   }
 }
+
+/// Parse a chat reply, asking for one repair if needed (`chat_json`).
+/// The Python oracle returns first-request usage even after a repair.
+Future<(Object?, Map<String, Object?>)> chatJson(
+  String model,
+  List<Map<String, String>> messages, {
+  int maxTokens = 8000,
+  double temperature = 0.2,
+  double? timeout,
+  int? retries,
+  String? keyName,
+  void Function(String partial)? onText,
+}) async {
+  Future<ChatResult> request(List<Map<String, String>> input) => chat(
+    model,
+    input,
+    maxTokens: maxTokens,
+    temperature: temperature,
+    timeout: timeout,
+    retries: retries,
+    keyName: keyName,
+    onText: onText,
+  );
+  final ChatResult first = await request(messages);
+  try {
+    return (parseJson(first.text), first.usage);
+  } on ValueError {
+    final ChatResult repaired = await request(<Map<String, String>>[
+      ...messages,
+      <String, String>{'role': 'assistant', 'content': first.text},
+      <String, String>{
+        'role': 'user',
+        'content': '上面的输出不是合法 JSON。请只输出修正后的完整 JSON，不要任何解释。',
+      },
+    ]);
+    return (parseJson(repaired.text), first.usage);
+  }
+}

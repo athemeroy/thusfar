@@ -1,5 +1,8 @@
 # books, their knowledge graphs and everything the pipeline produces stay on your machine
 data/
+# Flutter's data access source is code, not a local book library.
+!app/lib/data/
+!app/lib/data/**
 testsets/*/*.txt
 
 # filled-in secrets — .env.example is the one that is committed
