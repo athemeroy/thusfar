@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'dart:ui' show DisplayFeature;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart'
+    show PointerScrollEvent, PointerSignalEvent;
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
@@ -552,14 +554,56 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
+  static final Set<LogicalKeyboardKey> _nextKeys = <LogicalKeyboardKey>{
+    LogicalKeyboardKey.arrowRight,
+    LogicalKeyboardKey.arrowDown,
+    LogicalKeyboardKey.pageDown,
+    LogicalKeyboardKey.space,
+  };
+  static final Set<LogicalKeyboardKey> _previousKeys = <LogicalKeyboardKey>{
+    LogicalKeyboardKey.arrowLeft,
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.pageUp,
+  };
+  DateTime _lastWheelTurn = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// A mouse wheel or trackpad scroll turns one page per gesture; the
+  /// short pause stops one flick from skipping a whole chapter.
+  void _wheel(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent || _sheetOpen) return;
+    final double dy = event.scrollDelta.dy;
+    if (dy.abs() < 4) return;
+    final DateTime now = DateTime.now();
+    if (now.difference(_lastWheelTurn) < const Duration(milliseconds: 350)) {
+      return;
+    }
+    _lastWheelTurn = now;
+    _turn(dy > 0 ? 1 : -1);
+  }
+
   Widget _readerPane(BuildContext context, Color paper) {
+    return Listener(
+      onPointerSignal: _wheel,
+      child: _readerFocus(context, paper),
+    );
+  }
+
+  Widget _readerFocus(BuildContext context, Color paper) {
     return Focus(
       focusNode: _focus,
       autofocus: true,
       onKeyEvent: (FocusNode _, KeyEvent e) {
-        if (!widget.prefs.volumeKeys || _sheetOpen || e is KeyUpEvent) {
-          return KeyEventResult.ignored;
+        if (_sheetOpen || e is KeyUpEvent) return KeyEventResult.ignored;
+        // Computers: arrows, space and page keys turn pages.
+        if (_nextKeys.contains(e.logicalKey)) {
+          _turn(1);
+          return KeyEventResult.handled;
         }
+        if (_previousKeys.contains(e.logicalKey)) {
+          _turn(-1);
+          return KeyEventResult.handled;
+        }
+        if (!widget.prefs.volumeKeys) return KeyEventResult.ignored;
         if (e.logicalKey == LogicalKeyboardKey.audioVolumeDown) {
           _turn(1);
           return KeyEventResult.handled;

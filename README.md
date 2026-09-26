@@ -62,6 +62,20 @@ Thusfar reads the book once, ahead of time, and pins every fact to the position 
 
 The whole app — the Python server, the reading pipeline and the web interface — runs inside the phone. There is no account and no server of ours.
 
+### 2.0 preview: Android, macOS, Windows, Linux, iOS
+
+The native Flutter rewrite is on the [`flutter-2.0`](https://github.com/athemeroy/thusfar/tree/flutter-2.0) branch, with builds under [pre-releases](https://github.com/athemeroy/thusfar/releases). It installs next to 1.7.x and keeps its own library.
+
+| Platform | File | First launch |
+|---|---|---|
+| Android 8+ | `Thusfar-2.0.0-*-preview.apk` | Installs as **页读 2.0 试用** next to 1.7.x. |
+| macOS 12+ (Apple silicon and Intel) | `Thusfar-*-macos.dmg` | Drag it to Applications. The build is not notarized, so the first open is blocked: go to System Settings → Privacy & Security and choose **Open Anyway**. |
+| Windows 10/11 x64 | `Thusfar-*-windows-setup.exe`, or the portable `.zip` | The installer is per-user and needs no administrator. SmartScreen warns about an unsigned app: choose **More info → Run anyway**. |
+| Linux x64 | `Thusfar-*-linux-x64.tar.gz` | Unpack it and run `./thusfar`. It needs GTK 3. |
+| iOS / iPadOS 15+ | `Thusfar-*-ios-unsigned.ipa` | Sideload it with [AltStore](https://altstore.io) or [SideStore](https://sidestore.io), which sign it with your own Apple ID. A free Apple ID has to re-sign every 7 days. Keep the app open while it processes a book, because iOS pauses background work. |
+
+On a computer you can also open a book with Thusfar from Finder or Explorer (**Open With**).
+
 ### Run it on your computer (Docker)
 
 ```bash

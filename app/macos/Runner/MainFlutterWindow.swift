@@ -5,11 +5,18 @@ class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.contentViewController = flutterViewController
-    // A reading window: taller than wide, centred on first launch.
-    self.setContentSize(NSSize(width: 1000, height: 780))
     self.minSize = NSSize(width: 420, height: 560)
-    self.center()
+    // The view controller sizes the window to its own 800x600 later in
+    // launch, so a default applied here is lost. Restore the reader's last
+    // frame, or on first launch use a reading-sized window, after launch.
+    let restored = self.setFrameUsingName("ThusfarMain")
     self.setFrameAutosaveName("ThusfarMain")
+    if !restored {
+      DispatchQueue.main.async {
+        self.setContentSize(NSSize(width: 1000, height: 780))
+        self.center()
+      }
+    }
 
     // The same bridge Android offers (thusfar/paths): incoming books and the
     // installed version. The data directory is resolved in Dart.

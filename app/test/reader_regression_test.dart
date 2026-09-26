@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/main.dart';
@@ -176,6 +178,33 @@ void main() {
     ]);
     book.notes.dispose();
     book.dispose();
+  });
+
+  testWidgets('arrow keys and the mouse wheel turn pages on a computer', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Regression book').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(ReaderScreen), findsOneWidget);
+    Finder page(int n) => find.textContaining(RegExp('^$n / '));
+    expect(page(1), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(page(2), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.pumpAndSettle();
+    expect(page(1), findsOneWidget);
+    final TestPointer mouse = TestPointer(1, PointerDeviceKind.mouse);
+    mouse.hover(const Offset(215, 500));
+    await tester.sendEventToBinding(mouse.scroll(const Offset(0, 60)));
+    await tester.pumpAndSettle();
+    expect(page(2), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets(

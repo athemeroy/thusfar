@@ -62,6 +62,20 @@
 
 整个 App——Python 服务、读书流水线、网页界面——都跑在手机里。没有账号，也没有我们的服务器。
 
+### 2.0 预览版：安卓、macOS、Windows、Linux、iOS
+
+用 Flutter 重写的原生版本在 [`flutter-2.0`](https://github.com/athemeroy/thusfar/tree/flutter-2.0) 分支，安装包在 [预发布版](https://github.com/athemeroy/thusfar/releases) 里。它和 1.7.x 同时安装，书库各自独立。
+
+| 平台 | 文件 | 第一次打开 |
+|---|---|---|
+| 安卓 8 及以上 | `Thusfar-2.0.0-*-preview.apk` | 装好后叫 **页读 2.0 试用**，和 1.7.x 并存。 |
+| macOS 12 及以上（Apple 芯片和 Intel） | `Thusfar-*-macos.dmg` | 拖进“应用程序”。这个包没有做公证，第一次打开会被拦下：到 系统设置 → 隐私与安全性，点 **仍要打开**。 |
+| Windows 10/11 x64 | `Thusfar-*-windows-setup.exe`，或免安装的 `.zip` | 安装包只装给当前用户，不需要管理员权限。SmartScreen 会提示未签名：点 **更多信息 → 仍要运行**。 |
+| Linux x64 | `Thusfar-*-linux-x64.tar.gz` | 解压后运行 `./thusfar`，需要 GTK 3。 |
+| iOS / iPadOS 15 及以上 | `Thusfar-*-ios-unsigned.ipa` | 用 [AltStore](https://altstore.io) 或 [SideStore](https://sidestore.io) 侧载，它们会用你自己的 Apple ID 签名。免费 Apple ID 每 7 天要重新签一次。整理书的时候请让页读保持在前台，iOS 会暂停后台任务。 |
+
+在电脑上，也可以在访达或资源管理器里对书右键，**打开方式 → 页读**。
+
 ### 在电脑上（Docker）
 
 ```bash
