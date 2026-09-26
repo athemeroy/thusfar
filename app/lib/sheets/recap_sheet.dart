@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
 import '../data/library.dart';
@@ -75,6 +76,7 @@ class RecapPage extends StatelessWidget {
               for (final Json e in here)
                 InkWell(
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     final int at = ((e['s'] ?? e['p'])! as num).toInt();
                     SheetScope.of(context).state.push(
                       PreviewPage(
@@ -129,6 +131,8 @@ class RecapPage extends StatelessWidget {
                   tilePadding: const EdgeInsets.symmetric(horizontal: 20),
                   childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                   shape: const Border(),
+                  onExpansionChanged: (bool _) =>
+                      HapticFeedback.selectionClick(),
                   title: Text(
                     _chapterTitle(book, r),
                     style: TextStyle(fontSize: 15, color: t.ink),

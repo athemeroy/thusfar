@@ -33,22 +33,53 @@ class FootnotesPage extends StatelessWidget {
         children: <Widget>[
           for (int i = 0; i < notes.length; i++)
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text('注 ${i + 1}', style: TextStyle(color: context.tk.ink3)),
-                  const SizedBox(height: 8),
-                  SelectableText(
-                    book.footnoteText[notes[i].$2] ?? '这条注释的内容缺失',
-                    style: TextStyle(
-                      fontFamily: serif,
-                      fontSize: 16,
-                      height: 1.7,
-                      color: context.tk.ink,
-                    ),
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 14),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: context.tk.paper,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: context.tk.ink.withValues(alpha: 0.06),
                   ),
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1.5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: context.tk.zhu.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '注 ${i + 1}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: context.tk.zhu,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    SelectableText(
+                      book.footnoteText[notes[i].$2] ?? '这条注释的内容缺失',
+                      style: TextStyle(
+                        fontFamily: serif,
+                        fontSize: 15,
+                        height: 1.7,
+                        color: context.tk.ink,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],

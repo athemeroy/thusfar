@@ -203,7 +203,10 @@ class _NotesScreenState extends State<NotesScreen> {
                         label: labels[i],
                         dense: true,
                         filled: filter == i,
-                        onTap: () => setState(() => filter = i),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => filter = i);
+                        },
                       ),
                     ),
                 ],
@@ -274,8 +277,10 @@ class _NotesScreenState extends State<NotesScreen> {
                       pageLabel: item['kind'] == 'bookmark'
                           ? '书签'
                           : '原文位置 ${item['start']}',
-                      onTap: () =>
-                          widget.onOpenAt(b, (item['start']! as num).toInt()),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        widget.onOpenAt(b, (item['start']! as num).toInt());
+                      },
                     ),
                   ),
               ],

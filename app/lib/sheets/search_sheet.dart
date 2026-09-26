@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/library.dart';
 import '../ui/theme.dart';
@@ -86,32 +87,47 @@ class _SearchPageState extends State<SearchPage> {
         );
       }
       rows.add(
-        InkWell(
-          onTap: () => SheetScope.of(context).state.push(
-            PreviewPage(
-              link: widget.link,
-              start: h.at,
-              end: h.at + h.match.length,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-            child: Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  TextSpan(text: h.before.isEmpty ? '' : '…${h.before}'),
-                  TextSpan(
-                    text: h.match,
-                    style: TextStyle(fontWeight: FontWeight.w700, color: t.ink),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+          child: Material(
+            color: t.paper,
+            borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                SheetScope.of(context).state.push(
+                  PreviewPage(
+                    link: widget.link,
+                    start: h.at,
+                    end: h.at + h.match.length,
                   ),
-                  TextSpan(text: '${h.after}…'),
-                ],
-              ),
-              style: TextStyle(
-                fontFamily: serif,
-                fontSize: 15,
-                height: 1.6,
-                color: t.ink2,
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Text.rich(
+                  TextSpan(
+                    children: <InlineSpan>[
+                      TextSpan(text: h.before.isEmpty ? '' : '…${h.before}'),
+                      TextSpan(
+                        text: h.match,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: t.zhu,
+                          backgroundColor: t.zhu.withValues(alpha: 0.12),
+                        ),
+                      ),
+                      TextSpan(text: '${h.after}…'),
+                    ],
+                  ),
+                  style: TextStyle(
+                    fontFamily: serif,
+                    fontSize: 14.5,
+                    height: 1.6,
+                    color: t.ink2,
+                  ),
+                ),
               ),
             ),
           ),
@@ -141,7 +157,10 @@ class _SearchPageState extends State<SearchPage> {
                       : IconButton(
                           tooltip: '清空搜索',
                           icon: const Icon(Icons.close, size: 18),
-                          onPressed: () => setState(() => query = ''),
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            setState(() => query = '');
+                          },
                         ),
                   filled: true,
                   fillColor: t.paper,
@@ -157,7 +176,10 @@ class _SearchPageState extends State<SearchPage> {
           Segmented(
             labels: const <String>['读到这里', '全书'],
             index: whole ? 1 : 0,
-            onChanged: (int i) => setState(() => whole = i == 1),
+            onChanged: (int i) {
+              HapticFeedback.selectionClick();
+              setState(() => whole = i == 1);
+            },
           ),
           if (whole)
             Padding(
@@ -183,7 +205,13 @@ class _SearchPageState extends State<SearchPage> {
             whole ? '全书没有找到' : '读到这里的部分没有找到。要搜全书吗？',
             action: whole
                 ? null
-                : Pill(label: '搜全书', onTap: () => setState(() => whole = true)),
+                : Pill(
+                    label: '搜全书',
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() => whole = true);
+                    },
+                  ),
           )
         else
           SliverList.list(children: rows),

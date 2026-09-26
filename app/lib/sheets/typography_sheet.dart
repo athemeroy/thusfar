@@ -95,7 +95,31 @@ class _TypographyPanel extends StatelessWidget {
                 '字号',
                 Row(
                   children: <Widget>[
-                    Text('A−', style: TextStyle(color: t.ink2)),
+                    InkResponse(
+                      radius: 20,
+                      onTap: prefs.fontSize > 16
+                          ? () {
+                              HapticFeedback.selectionClick();
+                              prefs.update(
+                                (Prefs p) => p.fontSize =
+                                    (p.fontSize - 1).clamp(16, 26),
+                              );
+                            }
+                          : null,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          'A−',
+                          style: TextStyle(
+                            color: prefs.fontSize > 16 ? t.ink : t.ink3,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                     Expanded(
                       child: Slider(
                         min: 16,
@@ -110,7 +134,32 @@ class _TypographyPanel extends StatelessWidget {
                         },
                       ),
                     ),
-                    Text('A+', style: TextStyle(color: t.ink2, fontSize: 18)),
+                    InkResponse(
+                      radius: 20,
+                      onTap: prefs.fontSize < 26
+                          ? () {
+                              HapticFeedback.selectionClick();
+                              prefs.update(
+                                (Prefs p) => p.fontSize =
+                                    (p.fontSize + 1).clamp(16, 26),
+                              );
+                            }
+                          : null,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          'A+',
+                          style: TextStyle(
+                            color: prefs.fontSize < 26 ? t.ink : t.ink3,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -194,6 +243,17 @@ class _TypographyPanel extends StatelessWidget {
                                         Icons.dark_mode_outlined,
                                         size: 16,
                                         color: Colors.white70,
+                                      )
+                                    : i == prefs.paper
+                                    ? Center(
+                                        child: Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: t.zhu,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
                                       )
                                     : null,
                               ),

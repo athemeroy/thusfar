@@ -51,9 +51,12 @@ class _PeoplePageState extends State<PeoplePage> {
   Widget _add(BuildContext context) => Pill(
     label: '补充人物或概念',
     icon: Icons.person_add_alt_1_outlined,
-    onTap: () => SheetScope.of(
-      context,
-    ).state.push(ManualEntityEditor(link: widget.link)),
+    onTap: () {
+      HapticFeedback.lightImpact();
+      SheetScope.of(
+        context,
+      ).state.push(ManualEntityEditor(link: widget.link));
+    },
   );
 
   @override
@@ -76,7 +79,10 @@ class _PeoplePageState extends State<PeoplePage> {
                     label: '开始整理',
                     filled: true,
                     color: t.zhu,
-                    onTap: widget.onStartProcessing,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      widget.onStartProcessing!();
+                    },
                   ),
           ),
         ],
@@ -173,9 +179,12 @@ class _PeoplePageState extends State<PeoplePage> {
                   final Person p = Person(people[i]);
                   final bool isNew = link.c.isNewOnPage(p.id);
                   return InkWell(
-                    onTap: () => SheetScope.of(
-                      context,
-                    ).state.push(PersonPage(link: link, id: p.id)),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      SheetScope.of(
+                        context,
+                      ).state.push(PersonPage(link: link, id: p.id));
+                    },
                     child: Container(
                       constraints: const BoxConstraints(minHeight: 60),
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),

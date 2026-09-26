@@ -115,9 +115,12 @@ class _PersonPageState extends State<PersonPage> {
                     ),
                   ),
                   TextButton(
-                    onPressed: () => SheetScope.of(context).state.push(
-                      ManualEntityEditor(link: link, id: p.id.substring(1)),
-                    ),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      SheetScope.of(context).state.push(
+                        ManualEntityEditor(link: link, id: p.id.substring(1)),
+                      );
+                    },
                     child: const Text('编辑或删除'),
                   ),
                 ],
@@ -292,7 +295,10 @@ class _PersonPageState extends State<PersonPage> {
             child: Pill(
               label: '问问这个人',
               icon: Icons.chat_bubble_outline,
-              onTap: () => link.openAsk(prefill: '${p.name} '),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                link.openAsk(prefill: '${p.name} ');
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -300,9 +306,12 @@ class _PersonPageState extends State<PersonPage> {
             child: Pill(
               label: '在关系图里看',
               icon: Icons.hub_outlined,
-              onTap: () => SheetScope.of(
-                context,
-              ).state.push(GraphPage(link: link, focus: p.id)),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                SheetScope.of(
+                  context,
+                ).state.push(GraphPage(link: link, focus: p.id));
+              },
             ),
           ),
         ],
@@ -311,6 +320,7 @@ class _PersonPageState extends State<PersonPage> {
   }
 
   void _push(String id) {
+    HapticFeedback.lightImpact();
     final World w = widget.link.c.world!;
     final String me = w.person(widget.id)?.name ?? '';
     SheetScope.of(context).state.push(
@@ -318,9 +328,12 @@ class _PersonPageState extends State<PersonPage> {
     );
   }
 
-  void _preview(int start, int end) => SheetScope.of(
-    context,
-  ).state.push(PreviewPage(link: widget.link, start: start, end: end));
+  void _preview(int start, int end) {
+    HapticFeedback.lightImpact();
+    SheetScope.of(
+      context,
+    ).state.push(PreviewPage(link: widget.link, start: start, end: end));
+  }
 
   Widget _attrRow(BuildContext context, String key, List<Json> values) {
     final Tokens t = context.tk;

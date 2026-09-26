@@ -872,7 +872,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: OutlinedButton.icon(
-              onPressed: onPressed,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                onPressed();
+              },
               icon: Icon(icon, size: 18),
               label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
               style: OutlinedButton.styleFrom(
@@ -1097,15 +1100,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
         const Spacer(),
         if (notes.isNotEmpty)
           TextButton(
-            onPressed: () => _sheet(FootnotesPage(book: book, notes: notes)),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _sheet(FootnotesPage(book: book, notes: notes));
+            },
             child: Text('注释 ${notes.length}', style: TextStyle(color: t.ink2)),
           ),
         if (w != null && cast.isNotEmpty)
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => _sheet(
-              PeoplePage(link: link, onStartProcessing: _startProcessing),
-            ),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _sheet(
+                PeoplePage(link: link, onStartProcessing: _startProcessing),
+              );
+            },
             child: AnimatedOpacity(
               opacity: 1,
               duration: Motion.arrive,
