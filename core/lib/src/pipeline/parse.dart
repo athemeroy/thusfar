@@ -442,6 +442,7 @@ bool isCjk(String? lang) => lang == 'zh' || lang == 'ja' || lang == null;
 
 final RegExp _txtAuthorRe = pyRe(r'(?:作者|著者|作\s*者)\s*[:：]\s*(\S.{0,19})');
 final RegExp _txtNameRe = pyRe(r'[\u4e00-\u9fff·]{2,6}');
+final RegExp _txtSentenceRe = pyRe(r'[。，！？；：、,.!?;:]');
 
 /// `txt_author`: an explicit 作者：X near the top, or a short name right under
 /// a first line that is the title (故乡 / 鲁迅). Otherwise unknown.
@@ -452,8 +453,16 @@ String txtAuthor(List<String> lines, String stem) {
     final RegExpMatch? m = pyFullmatch(_txtAuthorRe, t);
     if (m != null) return PyCompat.strip(m.group(1)!);
   }
+  // Imports are stored as source.txt, so the first line cannot be matched to
+  // the file name: accept a title-like first line instead.
+  final bool titleLike =
+      head.isNotEmpty &&
+      (head[0] == stem ||
+          (cpLen(head[0]) <= 20 &&
+              pyMatch(chapterRe, head[0]) == null &&
+              pySearch(_txtSentenceRe, head[0]) == null));
   if (head.length > 2 &&
-      head[0] == stem &&
+      titleLike &&
       pyFullmatch(_txtNameRe, head[1]) != null &&
       pyMatch(chapterRe, head[1]) == null) {
     return head[1];

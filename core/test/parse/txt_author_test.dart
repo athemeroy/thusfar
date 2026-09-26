@@ -5,6 +5,10 @@ void main() {
   // Same inputs and answers as pipeline.parse.txt_author in Python.
   final List<(List<String>, String, String)> cases = [
     (<String>['故乡', '', '鲁迅', '我冒了严寒'], '故乡', '鲁迅'),
+    // Imports are stored as source.txt: the stem says nothing about the title.
+    (<String>['故乡', '', '鲁迅', '我冒了严寒'], 'source', '鲁迅'),
+    (<String>['“你好。”', '林舟', 'x'], 'source', ''),
+    (<String>['第一章 雾港清晨', '林舟来到码头。', '沈砚'], 'source', ''),
     (<String>['第一章 雾港清晨', '林舟来到码头。', '沈砚'], 'x', ''),
     (<String>['书名', '作者：金庸', '正文'], 'y', '金庸'),
     (<String>['射雕', '作者: 金庸 ', '正文'], '射雕', '金庸'),
