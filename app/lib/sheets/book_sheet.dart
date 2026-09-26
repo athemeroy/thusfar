@@ -166,7 +166,13 @@ class _BookSheetState extends State<BookSheet> {
                 Expanded(
                   child: Text(
                     '${b.author.isEmpty ? '佚名' : b.author} · $chars · 读到 $pct%',
-                    style: TextStyle(fontSize: 13, color: t.ink2),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: t.ink2,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -219,7 +225,14 @@ class _BookSheetState extends State<BookSheet> {
             ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-              title: Text(queue >= 0 ? '在书单第 ${queue + 1} 位' : '加入接下来读'),
+              title: Text(
+                queue >= 0 ? '在书单第 ${queue + 1} 位' : '加入接下来读',
+                style: const TextStyle(
+                  fontFeatures: <FontFeature>[
+                    FontFeature.tabularFigures(),
+                  ],
+                ),
+              ),
               trailing: Icon(
                 queue >= 0 ? Icons.playlist_remove : Icons.playlist_add,
                 color: t.ink3,

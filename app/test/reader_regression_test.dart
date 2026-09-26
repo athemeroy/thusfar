@@ -16,6 +16,7 @@ import 'package:thusfar_app/sheets/common.dart';
 import 'package:thusfar_app/sheets/footnotes_sheet.dart';
 import 'package:thusfar_app/sheets/note_editor.dart';
 import 'package:thusfar_app/sheets/preview_sheet.dart';
+import 'package:thusfar_app/sheets/recap_sheet.dart';
 import 'package:thusfar_app/sheets/sheet_host.dart';
 import 'package:thusfar_app/sheets/search_sheet.dart';
 import 'package:thusfar_app/sheets/toc_sheet.dart';
@@ -203,6 +204,21 @@ void main() {
     await tester.sendEventToBinding(mouse.scroll(const Offset(0, 60)));
     await tester.pumpAndSettle();
     expect(page(2), findsOneWidget);
+
+    // Test N key opens TocPage notes tab
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
+    await tester.pumpAndSettle();
+    expect(find.byType(TocPage), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    // Test R key opens RecapPage
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyR);
+    await tester.pumpAndSettle();
+    expect(find.byType(RecapPage), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });

@@ -146,7 +146,17 @@ class SettingsScreen extends StatelessWidget {
                       underline: const SizedBox.shrink(),
                       items: <DropdownMenuItem<int>>[
                         for (int s = 16; s <= 26; s++)
-                          DropdownMenuItem<int>(value: s, child: Text('$s')),
+                          DropdownMenuItem<int>(
+                            value: s,
+                            child: Text(
+                              '$s pt',
+                              style: const TextStyle(
+                                fontFeatures: <FontFeature>[
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                       onChanged: (int? v) {
                         HapticFeedback.selectionClick();

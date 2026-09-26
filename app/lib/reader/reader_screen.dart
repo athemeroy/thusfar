@@ -692,6 +692,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
           _sheet(TocPage(link: link), full: true);
           return KeyEventResult.handled;
         }
+        if (e.logicalKey == LogicalKeyboardKey.keyN) {
+          _sheet(TocPage(link: link, tab: 2), full: true);
+          return KeyEventResult.handled;
+        }
+        if (e.logicalKey == LogicalKeyboardKey.keyR) {
+          _sheet(RecapPage(link: link));
+          return KeyEventResult.handled;
+        }
         if (e.logicalKey == LogicalKeyboardKey.slash) {
           _sheet(SearchPage(link: link), full: true);
           return KeyEventResult.handled;
