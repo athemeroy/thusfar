@@ -151,84 +151,28 @@ List<({String id, String name, String role})> _relationRoles(
   return roles;
 }
 
-({
-  double width,
-  double height,
-  TextStyle roleStyle,
-  TextStyle nameStyle,
-  TextStyle endedStyle,
-})
-_measureRelationLabel(
-  BuildContext context, {
-  required double availableWidth,
-  required List<({String id, String name, String role})> roles,
-  required bool ended,
-  bool compact = false,
-  bool highlighted = true,
-}) {
-  final Tokens t = context.tk;
-  final double textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
-  final double width = math.min(
-    availableWidth - 8,
-    (compact ? 148 : 170) * textScale.clamp(1, 1.8),
-  );
-  final String? font = Theme.of(context).textTheme.bodyMedium?.fontFamily;
-  final TextStyle roleStyle = TextStyle(
-    inherit: false,
-    fontFamily: font,
-    fontSize: compact ? 11 : 12.5,
-    fontWeight: FontWeight.w600,
-    height: 1.25,
-    color: highlighted ? t.ink : t.ink2,
-  );
-  final TextStyle nameStyle = TextStyle(
-    inherit: false,
-    fontFamily: font,
-    fontSize: compact ? 10 : 10.5,
-    height: 1.2,
-    color: t.ink2,
-  );
-  final TextStyle endedStyle = TextStyle(
-    inherit: false,
-    fontFamily: font,
-    fontSize: compact ? 10 : 11,
-    height: 1.2,
-    color: t.amber,
-  );
-  double textHeight(String text, TextStyle style, {bool name = false}) {
-    final TextPainter measure = TextPainter(
-      text: TextSpan(text: text, style: style),
-      textDirection: TextDirection.ltr,
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: name ? 1 : null,
-      ellipsis: name ? '…' : null,
-    )..layout(maxWidth: math.max(1, width - 18));
-    final double height = measure.height;
-    measure.dispose();
-    return height;
+/// The short text on an edge: who the other person is to [selected]
+/// ("加害者"), not both roles and both names. Without a selection, both roles.
+String edgeRole(World world, Json relation, {String? selected}) {
+  final String a = '${relation['a']}', b = '${relation['b']}';
+  final String ar = '${relation['a_is'] ?? ''}'.trim();
+  final String br = '${relation['b_is'] ?? ''}'.trim();
+  String role;
+  if (selected == a) {
+    role = br;
+  } else if (selected == b) {
+    role = ar;
+  } else {
+    role = ar == br || br.isEmpty ? ar : (ar.isEmpty ? br : '$ar · $br');
   }
-
-  // Decoration adds a one-pixel border on top of the content padding.
-  // Measure every role independently; only the smaller name may ellipsize.
-  final double height =
-      14 +
-      roles.fold<double>(
-        0,
-        (sum, role) =>
-            sum +
-            textHeight(role.role, roleStyle) +
-            1 +
-            textHeight(role.name, nameStyle, name: true),
-      ) +
-      math.max(0, roles.length - 1) * 5 +
-      (ended ? 5 + textHeight('已结束', endedStyle) : 0);
-  return (
-    width: width,
-    height: height,
-    roleStyle: roleStyle,
-    nameStyle: nameStyle,
-    endedStyle: endedStyle,
-  );
+  if (role.isEmpty) {
+    final String description = '${relation['desc'] ?? ''}'.trim();
+    role = description.isEmpty
+        ? '有关系'
+        : description.characters.take(8).toString() +
+              (description.characters.length > 8 ? '…' : '');
+  }
+  return role;
 }
 
 class RelationDetailPage extends StatelessWidget {
@@ -323,10 +267,12 @@ class RelationGraph extends StatefulWidget {
     this.selected,
     this.onRelationTap,
     this.onLayoutReady,
+    this.showLabels = true,
   });
   final World world;
   final String? focus;
   final bool compact;
+  final bool showLabels;
   final ValueChanged<String> onTap;
   final String? selected;
   final ValueChanged<Json>? onRelationTap;
@@ -431,15 +377,27 @@ class _RelationGraphState extends State<RelationGraph> {
         final bool sparseLargeText = pos.length <= 2 && textScale > 1.2;
         final double marginX = math.min(64, size.width * .18);
         final double marginY = math.min(62, size.height * .24);
+        // The unlabelled card graph is short and wide: spread the ring as an
+        // ellipse over the whole box, leaving just room for circles and names.
+        final bool card = widget.compact && !widget.showLabels;
+        final double rx = math.max(0, size.width / 2 - 56);
+        final double ry = math.max(0, size.height / 2 - 34 * textScale);
         final Map<String, Offset> centers = <String, Offset>{
           for (final MapEntry<String, Offset> entry in pos.entries)
-            entry.key: Offset(
-              marginX + entry.value.dx * math.max(0, size.width - marginX * 2),
-              sparseLargeText
-                  ? size.height - math.max(72, 60 * textScale)
-                  : marginY +
-                        entry.value.dy * math.max(0, size.height - marginY * 2),
-            ),
+            entry.key: card
+                ? Offset(
+                    size.width / 2 + (entry.value.dx - .5) / .35 * rx,
+                    size.height / 2 - 6 + (entry.value.dy - .5) / .35 * ry,
+                  )
+                : Offset(
+                    marginX +
+                        entry.value.dx * math.max(0, size.width - marginX * 2),
+                    sparseLargeText
+                        ? size.height - math.max(72, 60 * textScale)
+                        : marginY +
+                              entry.value.dy *
+                                  math.max(0, size.height - marginY * 2),
+                  ),
         };
         final List<Json> relations = <Json>[
           for (final Json relation in widget.world.rels)
@@ -469,47 +427,66 @@ class _RelationGraphState extends State<RelationGraph> {
         final List<(Offset, Offset)> leaders = <(Offset, Offset)>[];
         ({Rect label, Rect a, Rect b})? preferred;
         double preferredPriority = -1;
+        final String? font = Theme.of(context).textTheme.bodyMedium?.fontFamily;
         for (int index = 0; index < relations.length; index++) {
           final Json relation = relations[index];
-          final String label = relationLabel(
-            widget.world,
-            relation,
-            selected: selected,
-          );
           final Offset a = centers[relation['a']]!, b = centers[relation['b']]!;
           final bool highlighted =
               selected == null ||
               relation['a'] == selected ||
               relation['b'] == selected;
-          final roles = _relationRoles(
+          // Only the selected person's own relations carry a label; the rest
+          // are context lines. The small card graph shows no labels at all.
+          if (!widget.showLabels || !highlighted) {
+            leaders.add((a, a));
+            continue;
+          }
+          final String label = relationLabel(
             widget.world,
             relation,
             selected: selected,
           );
           final bool ended = relation['status'] == 'ended';
-          final metrics = _measureRelationLabel(
-            context,
-            availableWidth: size.width,
-            roles: roles,
-            ended: ended,
-            compact: widget.compact,
-            highlighted: highlighted,
+          final String role = edgeRole(
+            widget.world,
+            relation,
+            selected: selected,
           );
-          final double width = metrics.width, height = metrics.height;
-          final TextStyle roleStyle = metrics.roleStyle,
-              nameStyle = metrics.nameStyle,
-              endedStyle = metrics.endedStyle;
-          final Rect rect = _placeLabel(
-            a,
-            b,
-            Size(width, height),
-            size,
-            occupied,
+          final TextStyle roleStyle = TextStyle(
+            inherit: false,
+            fontFamily: font,
+            fontSize: 11.5,
+            height: 1.2,
+            fontWeight: FontWeight.w600,
+            color: ended ? t.amber : t.ink,
           );
-          // Start on a meaningful relationship, even when collision-free
-          // labels have been placed away from a dense cluster of circles.
+          final TextPainter measure = TextPainter(
+            text: TextSpan(text: role, style: roleStyle),
+            textDirection: TextDirection.ltr,
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+            ellipsis: '…',
+          )..layout(maxWidth: 112 * textScale.clamp(1, 1.8));
+          final Size pill = Size(measure.width + 18, measure.height + 8);
+          measure.dispose();
+          // Sit on the spoke nearer the other person, so labels fan out
+          // around the selected node instead of piling up at its centre.
+          final String? near = relation['a'] == selected
+              ? '${relation['b']}'
+              : relation['b'] == selected
+              ? '${relation['a']}'
+              : null;
+          final Rect rect = near == null
+              ? _placeLabel(a, b, pill, size, occupied)
+              : _placeLabel(
+                  centers[selected]!,
+                  centers[near]!,
+                  pill,
+                  size,
+                  occupied,
+                  fractions: const <double>[.62, .52, .72, .45, .8],
+                );
           final double priority =
-              (selected != null && highlighted ? 100 : 0) +
               ((widget.world.people[relation['a']]?['imp'] as num?) ?? 1)
                   .toDouble() +
               ((widget.world.people[relation['b']]?['imp'] as num?) ?? 1)
@@ -522,77 +499,31 @@ class _RelationGraphState extends State<RelationGraph> {
               b: nodeBounds[relation['b']]!,
             );
           }
-          occupied.add(rect.inflate(5));
-          leaders.add((Offset.lerp(a, b, .5)!, rect.center));
+          occupied.add(rect.inflate(3));
+          leaders.add((_nearestOnSegment(a, b, rect.center), rect.center));
           labels.add(
             Positioned.fromRect(
               rect: rect,
               child: Semantics(
                 button: true,
                 label: '$label，查看关系详情',
-                child: Tooltip(
-                  message: label,
-                  child: Material(
-                    color: t.sheet,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      key: ValueKey<String>('relation-label-$index'),
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => _details(context, relation),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: relation['status'] == 'ended'
-                                ? t.amber
-                                : highlighted
-                                ? t.ink3
-                                : t.rule,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: ExcludeSemantics(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (int i = 0; i < roles.length; i++) ...[
-                                if (i > 0) const SizedBox(height: 5),
-                                Text(
-                                  roles[i].role,
-                                  key: ValueKey<String>(
-                                    'relation-role-$index-${roles[i].id}',
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  style: roleStyle,
-                                ),
-                                const SizedBox(height: 1),
-                                Text(
-                                  roles[i].name,
-                                  key: ValueKey<String>(
-                                    'relation-name-$index-${roles[i].id}',
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: nameStyle,
-                                ),
-                              ],
-                              if (ended) ...[
-                                const SizedBox(height: 5),
-                                Text(
-                                  '已结束',
-                                  key: ValueKey<String>(
-                                    'relation-ended-$index',
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  style: endedStyle,
-                                ),
-                              ],
-                            ],
-                          ),
+                child: Material(
+                  color: t.sheet,
+                  shape: StadiumBorder(
+                    side: BorderSide(color: ended ? t.amber : t.ink3),
+                  ),
+                  child: InkWell(
+                    key: ValueKey<String>('relation-label-$index'),
+                    customBorder: const StadiumBorder(),
+                    onTap: () => _details(context, relation),
+                    child: Center(
+                      child: ExcludeSemantics(
+                        child: Text(
+                          role,
+                          key: ValueKey<String>('relation-role-$index'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: roleStyle,
                         ),
                       ),
                     ),
@@ -669,13 +600,15 @@ class _RelationGraphState extends State<RelationGraph> {
                           ExcludeSemantics(
                             child: Text(
                               '${person['name']}',
-                              maxLines: 2,
+                              maxLines: widget.compact ? 1 : 2,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: widget.compact ? 10 : 12,
                                 height: 1.2,
                                 color: t.ink,
+                                // Lines pass under the name, not through it.
+                                background: Paint()..color = t.sheet,
                               ),
                             ),
                           ),
@@ -705,29 +638,41 @@ class _RelationGraphState extends State<RelationGraph> {
   }
 }
 
+Offset _nearestOnSegment(Offset a, Offset b, Offset p) {
+  final Offset ab = b - a;
+  final double length = ab.distanceSquared;
+  if (length == 0) return a;
+  final double t = (((p - a).dx * ab.dx + (p - a).dy * ab.dy) / length).clamp(
+    0,
+    1,
+  );
+  return a + ab * t;
+}
+
 Rect _placeLabel(
   Offset a,
   Offset b,
   Size label,
   Size bounds,
-  List<Rect> occupied,
-) {
+  List<Rect> occupied, {
+  List<double> fractions = const <double>[.5, .35, .65, .2, .8],
+}) {
   final Offset direction = b - a;
   final double distance = math.max(1, direction.distance);
   final Offset normal = Offset(-direction.dy, direction.dx) / distance;
   Rect? best;
   double bestScore = double.infinity;
-  for (final double fraction in <double>[.5, .35, .65, .2, .8]) {
+  for (final double fraction in fractions) {
     for (final double shift in <double>[
       0,
-      -36,
-      36,
-      -72,
-      72,
-      -108,
-      108,
-      -144,
-      144,
+      -16,
+      16,
+      -32,
+      32,
+      -56,
+      56,
+      -88,
+      88,
     ]) {
       final Offset center = Offset.lerp(a, b, fraction)! + normal * shift;
       final Rect rect = Rect.fromLTWH(
@@ -844,9 +789,14 @@ class _Edges extends CustomPainter {
 }
 
 class GraphPage extends StatefulWidget {
-  const GraphPage({super.key, required this.link, this.focus});
+  GraphPage({super.key, required this.link, this.focus});
   final ReaderLink link;
   final String? focus;
+
+  /// The sheet rebuilds only its top page, so this page's State is recreated
+  /// after Back from a person card. The widget itself stays in the sheet's
+  /// stack; keep the reader's focus and view on it.
+  final _GraphMemory _memory = _GraphMemory();
   @override
   State<GraphPage> createState() => _GraphPageState();
 }
@@ -958,6 +908,12 @@ class _SparseRelationshipCard extends StatelessWidget {
   }
 }
 
+class _GraphMemory {
+  bool used = false;
+  String? selected;
+  Matrix4? view;
+}
+
 class _GraphPageState extends State<GraphPage> {
   String? selected;
   double? replay;
@@ -969,11 +925,18 @@ class _GraphPageState extends State<GraphPage> {
   Offset? _preferredCenter;
   bool _needsInitialView = true;
   bool _requestedExpansion = false;
+  bool _restoredView = false;
 
   @override
   void initState() {
     super.initState();
-    selected = widget.focus;
+    final _GraphMemory memory = widget._memory;
+    selected = memory.used ? memory.selected : widget.focus;
+    if (memory.view != null) {
+      _view.value = memory.view!;
+      _restoredView = true;
+    }
+    memory.used = true;
     _lastCutoff = widget.link.c.cutoff;
     widget.link.c.addListener(_readerChanged);
   }
@@ -991,6 +954,9 @@ class _GraphPageState extends State<GraphPage> {
   @override
   void dispose() {
     widget.link.c.removeListener(_readerChanged);
+    widget._memory
+      ..selected = selected
+      ..view = _view.value.clone();
     _playback?.cancel();
     _view.dispose();
     super.dispose();
@@ -1068,23 +1034,17 @@ class _GraphPageState extends State<GraphPage> {
     );
   }
 
+  /// The focused person sits at the canvas centre, with their relations on a
+  /// ring around them; start (and reset) with that person in the middle.
   void _layoutReady(Rect label, Rect a, Rect b) {
-    bool fits(Rect region) =>
-        region.width <= _viewport.width - 8 &&
-        region.height <= _viewport.height - 8;
-    final Rect both = label.expandToInclude(a).expandToInclude(b);
-    final List<Rect> single =
-        <Rect>[label.expandToInclude(a), label.expandToInclude(b)]..sort(
-          (left, right) =>
-              (left.width * left.height).compareTo(right.width * right.height),
-        );
-    final Rect region = fits(both)
-        ? both
-        : single.firstWhere(fits, orElse: () => label);
-    _preferredCenter = region.center;
+    _preferredCenter = null;
     if (_needsInitialView) {
       _needsInitialView = false;
-      _resetView();
+      if (_restoredView) {
+        _restoredView = false;
+      } else {
+        _resetView();
+      }
     }
   }
 
@@ -1197,29 +1157,7 @@ class _GraphPageState extends State<GraphPage> {
           SliverToBoxAdapter(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints box) {
-                double panelHeight = height;
-                final double scale =
-                    MediaQuery.textScalerOf(context).scale(12) / 12;
-                if (world.people.length <= 2 && scale > 1.2) {
-                  for (final Json relation in world.rels) {
-                    final metrics = _measureRelationLabel(
-                      context,
-                      availableWidth: box.maxWidth,
-                      roles: _relationRoles(
-                        world,
-                        relation,
-                        selected: selected,
-                      ),
-                      ended: relation['status'] == 'ended',
-                    );
-                    // Label top inset + measured card + the node's occupied
-                    // upper bound + lower name band; all are in logical pixels.
-                    panelHeight = math.max(
-                      panelHeight,
-                      4 + metrics.height + 4 + 27 + math.max(72, 60 * scale),
-                    );
-                  }
-                }
+                final double panelHeight = height;
                 final Size viewport = Size(box.maxWidth, panelHeight);
                 final List<Json> focusedRelations = graphFocus == null
                     ? world.rels

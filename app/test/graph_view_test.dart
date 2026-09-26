@@ -49,13 +49,12 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  void expectVisibleRole(WidgetTester tester, String id, String role) {
-    final Finder finder = find.byKey(ValueKey<String>('relation-role-0-$id'));
+  /// The edge label shows one role: who the other person is to the selected
+  /// one. It must be complete (no ellipsis) and sit inside its pill.
+  void expectVisibleRole(WidgetTester tester, String role) {
+    final Finder finder = find.byKey(const ValueKey<String>('relation-role-0'));
     expect(finder, findsOneWidget);
-    final Text text = tester.widget<Text>(finder);
-    expect(text.data, role);
-    expect(text.maxLines, isNull);
-    expect(text.overflow, isNot(TextOverflow.ellipsis));
+    expect(tester.widget<Text>(finder).data, role);
     final RenderParagraph paragraph = tester.renderObject<RenderParagraph>(
       finder,
     );
@@ -68,18 +67,10 @@ void main() {
     expect(label.contains(roleBox.bottomRight - const Offset(.1, .1)), isTrue);
   }
 
-  void expectEndedVisible(WidgetTester tester) {
-    final Finder finder = find.byKey(
-      const ValueKey<String>('relation-ended-0'),
-    );
-    expect(tester.widget<Text>(finder).data, '已结束');
-    final Rect label = tester.getRect(
-      find.byKey(const ValueKey<String>('relation-label-0')),
-    );
-    final Rect status = tester.getRect(finder);
-    expect(label.contains(status.topLeft), isTrue);
-    expect(label.contains(status.bottomRight - const Offset(.1, .1)), isTrue);
-  }
+  bool endedAnnounced() => find
+      .bySemanticsLabel(RegExp('已结束，查看关系详情'))
+      .evaluate()
+      .isNotEmpty;
 
   Slider slider(WidgetTester tester) =>
       tester.widget<Slider>(find.byKey(const ValueKey<String>('graph-replay')));
@@ -265,9 +256,9 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey<String>('graph-person-P1')));
       await tester.pumpAndSettle();
-      expectVisibleRole(tester, 'P1', '前导师');
-      expectVisibleRole(tester, 'P2', '前学生');
-      expectEndedVisible(tester);
+      // P1 is selected: the label says who P2 is to P1.
+      expectVisibleRole(tester, '前学生');
+      expect(endedAnnounced(), isTrue);
       final Rect relation = tester.getRect(
         find.byKey(const ValueKey<String>('relation-label-0')),
       );
@@ -282,20 +273,6 @@ void main() {
               'A readable role card must not cover the $id node or name: label=$relation, node=$node, graph=${tester.getSize(find.byType(RelationGraph))}',
         );
       }
-      expect(
-        tester
-            .getTopLeft(
-              find.byKey(const ValueKey<String>('relation-role-0-P2')),
-            )
-            .dy,
-        lessThan(
-          tester
-              .getTopLeft(
-                find.byKey(const ValueKey<String>('relation-role-0-P1')),
-              )
-              .dy,
-        ),
-      );
       final Rect circle = tester.getRect(
         find.byKey(const ValueKey<String>('graph-circle-P1')),
       );
@@ -464,12 +441,8 @@ void main() {
           '第 ${fixture.link.pageNo(position > 0 ? position - 1 : 0)} 页',
         );
       }
-      expectVisibleRole(tester, 'P1', '导师');
-      expectVisibleRole(tester, 'P2', '学生');
-      expect(
-        find.byKey(const ValueKey<String>('relation-ended-0')),
-        findsNothing,
-      );
+      expectVisibleRole(tester, '学生');
+      expect(endedAnnounced(), isFalse);
       expect(find.textContaining('前导师'), findsNothing);
       await tester.tap(find.byKey(const ValueKey<String>('graph-person-P1')));
       await tester.pumpAndSettle();
@@ -517,12 +490,8 @@ void main() {
       await open(tester);
       fixture.setCutoff(400);
       await tester.pumpAndSettle();
-      expectVisibleRole(tester, 'P1', '导师');
-      expectVisibleRole(tester, 'P2', '学生');
-      expect(
-        find.byKey(const ValueKey<String>('relation-ended-0')),
-        findsNothing,
-      );
+      expectVisibleRole(tester, '学生');
+      expect(endedAnnounced(), isFalse);
       fixture.records.insert(3, <String, Object?>{
         't': 'rel',
         'a': 'P1',
@@ -537,8 +506,7 @@ void main() {
       );
       fixture.refresh();
       await tester.pumpAndSettle();
-      expectVisibleRole(tester, 'P1', '朋友');
-      expectVisibleRole(tester, 'P2', '朋友');
+      expectVisibleRole(tester, '朋友');
       expect(find.text('截至第 ${fixture.link.pageNo(399)} 页'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     },

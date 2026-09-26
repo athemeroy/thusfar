@@ -229,11 +229,12 @@ class _PersonPageState extends State<PersonPage> {
           if (rels.length >= 2)
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 300,
+                height: 200,
                 child: RelationGraph(
                   world: w,
                   focus: p.id,
                   compact: true,
+                  showLabels: false,
                   onTap: (String id) => _push(id),
                 ),
               ),
