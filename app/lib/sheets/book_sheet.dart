@@ -8,6 +8,7 @@ import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/processing.dart';
 import '../ui/cover.dart';
+import '../ui/device.dart';
 import '../ui/theme.dart';
 import 'sheet_host.dart';
 
@@ -227,7 +228,10 @@ class _BookSheetState extends State<BookSheet> {
                 onPressed: acting
                     ? null
                     : () => setState(() => confirmRemove = true),
-                child: Text('从这台手机移除', style: TextStyle(color: t.danger)),
+                child: Text(
+                  '从这台$deviceWord移除',
+                  style: TextStyle(color: t.danger),
+                ),
               )
             else
               Container(

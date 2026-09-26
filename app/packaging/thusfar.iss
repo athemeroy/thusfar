@@ -37,5 +37,14 @@ Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 Name: "{group}\页读"; Filename: "{app}\Thusfar.exe"
 Name: "{autodesktop}\页读"; Filename: "{app}\Thusfar.exe"; Tasks: desktopicon
 
+[Registry]
+; Offer 页读 under "打开方式" for books, without taking over the default app.
+Root: HKCU; Subkey: "Software\Classes\Applications\Thusfar.exe"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "页读"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\Applications\Thusfar.exe\shell\open\command"; ValueType: string; ValueData: """{app}\Thusfar.exe"" ""%1"""; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\Applications\Thusfar.exe\SupportedTypes"; ValueType: string; ValueName: ".txt"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\Applications\Thusfar.exe\SupportedTypes"; ValueType: string; ValueName: ".epub"; ValueData: ""
+Root: HKCU; Subkey: "Software\Classes\.epub\OpenWithList\Thusfar.exe"; ValueType: string; ValueData: ""; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\.txt\OpenWithList\Thusfar.exe"; ValueType: string; ValueData: ""; Flags: uninsdeletekey
+
 [Run]
 Filename: "{app}\Thusfar.exe"; Description: "{cm:LaunchProgram,页读}"; Flags: nowait postinstall skipifsilent

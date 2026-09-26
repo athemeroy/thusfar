@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/prefs.dart';
+import '../ui/device.dart';
 import '../ui/theme.dart';
 
 /// S18 设置.
@@ -218,7 +219,7 @@ class SettingsScreen extends StatelessWidget {
                   ListTile(
                     title: const Text('隐私'),
                     subtitle: Text(
-                      '书和笔记保存在这台手机。整理、问书和 AI 批注会把所需原文发送到你配置的接口；测试连接会发送一条测试消息。导出和分享由你选择保存位置或接收方。',
+                      '书和笔记保存在这台$deviceWord。整理、问书和 AI 批注会把所需原文发送到你配置的接口；测试连接会发送一条测试消息。导出和分享由你选择保存位置或接收方。',
                       style: TextStyle(color: t.ink2, height: 1.5),
                     ),
                   ),
@@ -243,15 +244,16 @@ class _InstalledVersion extends StatefulWidget {
 class _InstalledVersionState extends State<_InstalledVersion> {
   late final Future<String> version = _read();
   Future<String> _read() async {
+    // Desktop and iOS builds get the exact version from the build command.
+    const String built = String.fromEnvironment('THUSFAR_VERSION');
+    if (built.isNotEmpty) return built;
     try {
       return await const MethodChannel(
             'thusfar/paths',
           ).invokeMethod<String>('appVersion') ??
           '版本未知';
     } on MissingPluginException {
-      // Desktop and iOS builds get their version from the build command.
-      const String version = String.fromEnvironment('THUSFAR_VERSION');
-      return version.isEmpty ? '开发预览' : version;
+      return '开发预览';
     } on PlatformException {
       return '版本未知';
     }

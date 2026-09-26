@@ -76,7 +76,8 @@ jobs:
             curl -fsSL -o "$iscc_dir/Languages/ChineseSimplified.isl" \
               https://raw.githubusercontent.com/jrsoftware/issrc/main/Files/Languages/ChineseSimplified.isl
           fi
-          "$iscc_dir/ISCC.exe" "/DAppVersion=$VERSION" "/DSourceDir=$(cygpath -w "$PWD/$release")" \
+          # Git Bash would rewrite the /D and /O switches as paths.
+          MSYS_NO_PATHCONV=1 "$iscc_dir/ISCC.exe" "/DAppVersion=$VERSION" "/DSourceDir=$(cygpath -w "$PWD/$release")" \
             "/O$(cygpath -w "$GITHUB_WORKSPACE/dist")" packaging/thusfar.iss
 
       - name: Linux bundle

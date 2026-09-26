@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:thusfar_app/ui/device.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/data/model_settings.dart';
 import 'package:thusfar_app/data/processing.dart';
@@ -295,8 +296,8 @@ void main() {
     int removed = 0;
     processing.removalGate = Completer<void>();
     await open(tester, onRemoved: () => removed++);
-    await tester.ensureVisible(find.text('从这台手机移除'));
-    await tester.tap(find.text('从这台手机移除'));
+    await tester.ensureVisible(find.text('从这台$deviceWord移除'));
+    await tester.tap(find.text('从这台$deviceWord移除'));
     await tester.pump();
     await tester.ensureVisible(find.text('移除'));
     await tester.tap(find.text('移除'));

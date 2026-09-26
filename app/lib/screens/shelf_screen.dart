@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import '../data/library.dart';
 import '../data/prefs.dart';
 import '../ui/cover.dart';
+import '../ui/device.dart';
 import '../ui/theme.dart';
 
 /// One item in the import progress bar (S03.2).
@@ -849,7 +850,9 @@ class _ShelfScreenState extends State<ShelfScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '支持 TXT、EPUB。也可以在文件管理器或微信里选「用页读打开」',
+                      isPhone
+                          ? '支持 TXT、EPUB。也可以在文件管理器或微信里选「用页读打开」'
+                          : '支持 TXT、EPUB。',
                       style: TextStyle(
                         fontSize: 14,
                         height: 1.6,
@@ -860,7 +863,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: Pill(
-                        label: '从手机选择书',
+                        label: '从$deviceWord选择书',
                         filled: true,
                         onTap: widget.onImport,
                       ),
@@ -888,7 +891,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
               ),
               line('往回翻，资料也会回退', const TextSpan(text: '')),
               line(
-                '：你的摘录和笔记用石青色，永远只存在这台手机',
+                '：你的摘录和笔记用石青色，永远只存在这台$deviceWord',
                 TextSpan(
                   text: '一句摘录',
                   style: TextStyle(

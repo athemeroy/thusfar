@@ -21,8 +21,13 @@ import 'screens/shelf_screen.dart';
 import 'sheets/book_sheet.dart';
 import 'ui/theme.dart';
 
-Future<void> main() async {
+/// Books named on the command line ("打开方式" on Windows and Linux). They
+/// are the reader's own files and are never deleted after import.
+final List<String> launchFiles = <String>[];
+
+Future<void> main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+  launchFiles.addAll(args.where((String a) => !a.startsWith('-')));
   // Let Android resize and rotate the window for folded, unfolded, and
   // tabletop postures. Reader pagination follows the available pane size.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -337,10 +342,23 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     try {
       while (_sharesAgain && mounted) {
         _sharesAgain = false;
-        final List<Object?> raw =
-            await _paths.invokeListMethod<Object?>('takeImports') ??
-            <Object?>[];
-        final List<_ImportSource> sources = <_ImportSource>[];
+        List<Object?> raw = <Object?>[];
+        try {
+          raw =
+              await _paths.invokeListMethod<Object?>('takeImports') ??
+              <Object?>[];
+        } on MissingPluginException {
+          // Windows, Linux and widget fixtures have no native bridge.
+        }
+        final List<_ImportSource> sources = <_ImportSource>[
+          for (final String path in launchFiles)
+            _ImportSource(
+              name: path.split(RegExp(r'[\\/]')).last,
+              path: path,
+              temporary: false,
+            ),
+        ];
+        launchFiles.clear();
         for (final Object? value in raw) {
           if (value is! Map<Object?, Object?> ||
               value['name'] is! String ||
@@ -352,14 +370,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               name: value['name']! as String,
               path: value['path'] as String?,
               error: value['error'] as String?,
-              temporary: true,
+              // Android copies shares into its cache; a Finder-opened book
+              // is the reader's own file.
+              temporary: value['temporary'] as bool? ?? true,
             ),
           );
         }
         if (sources.isNotEmpty) await _enqueueImport(sources);
       }
-    } on MissingPluginException {
-      // Desktop widget fixtures do not register Android's incoming-file bridge.
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(
