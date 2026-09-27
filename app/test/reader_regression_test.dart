@@ -575,4 +575,57 @@ void main() {
       },
     );
   }
+
+  testWidgets('typography sheet switches font and propagates to reader spec', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Regression book').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(ReaderScreen), findsOneWidget);
+
+    // Initial font is 0 (Songti)
+    expect(model.prefs.font, 0);
+    expect(model.prefs.fontFamily, 'NotoSerifSC');
+    expect(model.prefs.fontFallback.contains('NotoSerifSC'), isTrue);
+
+    // Tap center to open reader toolbar
+    await tester.tapAt(const Offset(215, 500));
+    await tester.pumpAndSettle();
+    expect(find.text('排版'), findsOneWidget);
+
+    // Open typography sheet
+    await tester.tap(find.text('排版'));
+    await tester.pumpAndSettle();
+
+    // Select 楷
+    await tester.tap(find.text('楷'));
+    await tester.pumpAndSettle();
+    expect(model.prefs.font, 1);
+    expect(model.prefs.fontFamily, 'KaiTi');
+    expect(model.prefs.fontFallback.contains('ZCOOLXiaoWei'), isTrue);
+
+    // Select 黑
+    await tester.tap(find.text('黑'));
+    await tester.pumpAndSettle();
+    expect(model.prefs.font, 2);
+    expect(model.prefs.fontFamily, 'sans-serif');
+    expect(model.prefs.fontFallback.contains('MiSans'), isTrue);
+    expect(model.prefs.fontFallback.contains('NotoSerifSC'), isFalse);
+
+    // Reset back to 0 (宋)
+    await tester.tap(find.text('宋'));
+    await tester.pumpAndSettle();
+    expect(model.prefs.font, 0);
+    expect(model.prefs.fontFamily, 'NotoSerifSC');
+
+    // Dismiss sheet
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox());
+  });
 }
+

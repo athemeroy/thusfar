@@ -139,6 +139,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       fontSize: prefs.fontSize,
       lineHeight: prefs.lineHeight,
       fontFamily: prefs.fontFamily,
+      fontFamilyFallback: prefs.fontFallback,
       color: _ink(t),
       textScaler: MediaQuery.textScalerOf(context),
     );

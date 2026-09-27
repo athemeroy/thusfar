@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../data/library.dart';
@@ -12,6 +13,7 @@ class PageSpec {
     required this.fontSize,
     required this.lineHeight,
     required this.fontFamily,
+    this.fontFamilyFallback,
     required this.color,
     required this.textScaler,
   });
@@ -21,6 +23,7 @@ class PageSpec {
   final double fontSize;
   final double lineHeight;
   final String? fontFamily;
+  final List<String>? fontFamilyFallback;
   final Color color;
   final TextScaler textScaler;
 
@@ -31,7 +34,8 @@ class PageSpec {
     fontSize: fontSize,
     height: lineHeight,
     fontFamily: fontFamily,
-    fontFamilyFallback: const <String>['NotoSerifSC', 'serif'],
+    fontFamilyFallback:
+        fontFamilyFallback ?? const <String>['NotoSerifSC', 'serif'],
     color: color,
     leadingDistribution: TextLeadingDistribution.even,
   );
@@ -54,11 +58,19 @@ class PageSpec {
       other.fontSize == fontSize &&
       other.lineHeight == lineHeight &&
       other.fontFamily == fontFamily &&
+      listEquals(other.fontFamilyFallback, fontFamilyFallback) &&
       other.textScaler == textScaler;
 
   @override
-  int get hashCode =>
-      Object.hash(width, height, fontSize, lineHeight, fontFamily, textScaler);
+  int get hashCode => Object.hash(
+    width,
+    height,
+    fontSize,
+    lineHeight,
+    fontFamily,
+    fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback!),
+    textScaler,
+  );
 }
 
 /// Paragraph indent: a two-character placeholder before the block text. A

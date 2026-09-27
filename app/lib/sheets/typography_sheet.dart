@@ -42,6 +42,7 @@ class _TypographyPanel extends StatelessWidget {
       int index,
       ValueChanged<int> on, {
       List<String?>? fontFamilies,
+      List<List<String>?>? fontFallbacks,
     }) => Row(
       children: <Widget>[
         for (int i = 0; i < labels.length; i++)
@@ -53,7 +54,13 @@ class _TypographyPanel extends StatelessWidget {
                 style: fontFamilies != null &&
                         i < fontFamilies.length &&
                         fontFamilies[i] != null
-                    ? TextStyle(fontFamily: fontFamilies[i])
+                    ? TextStyle(
+                        fontFamily: fontFamilies[i],
+                        fontFamilyFallback: fontFallbacks != null &&
+                                i < fontFallbacks.length
+                            ? fontFallbacks[i]
+                            : null,
+                      )
                     : null,
               ),
               selected: i == index,
@@ -67,6 +74,10 @@ class _TypographyPanel extends StatelessWidget {
                 fontSize: 14,
                 fontFamily: fontFamilies != null && i < fontFamilies.length
                     ? fontFamilies[i]
+                    : null,
+                fontFamilyFallback: fontFallbacks != null &&
+                        i < fontFallbacks.length
+                    ? fontFallbacks[i]
                     : null,
               ),
               showCheckmark: false,
@@ -88,11 +99,13 @@ class _TypographyPanel extends StatelessWidget {
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 8, bottom: 8),
-          child: Column(
+      child: Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               Center(
@@ -212,8 +225,29 @@ class _TypographyPanel extends StatelessWidget {
                   (int i) => prefs.update((Prefs p) => p.font = i),
                   fontFamilies: const <String?>[
                     'NotoSerifSC',
-                    'serif',
+                    'KaiTi',
                     'sans-serif',
+                  ],
+                  fontFallbacks: const <List<String>?>[
+                    <String>['NotoSerifSC', 'Songti SC', 'STSong', 'SimSun', 'serif'],
+                    <String>[
+                      'KaiTi',
+                      'STKaiti',
+                      'Kaiti SC',
+                      '楷体-简',
+                      '楷体',
+                      'ZCOOLXiaoWei',
+                      'NotoSerifSC',
+                    ],
+                    <String>[
+                      'MiSans',
+                      'MiSans Normal',
+                      'Noto Sans CJK SC',
+                      'Source Han Sans SC',
+                      'PingFang SC',
+                      'Heiti SC',
+                      'sans-serif',
+                    ],
                   ],
                 ),
               ),
@@ -310,6 +344,7 @@ class _TypographyPanel extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

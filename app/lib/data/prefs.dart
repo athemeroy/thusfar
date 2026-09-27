@@ -42,8 +42,55 @@ class Prefs extends ChangeNotifier {
 
   double get lineHeight => const <double>[1.6, 1.85, 2.1][spacing];
 
-  String? get fontFamily =>
-      const <String?>['NotoSerifSC', 'serif', 'sans-serif'][font];
+  String? get fontFamily {
+    switch (font) {
+      case 0:
+        return 'NotoSerifSC';
+      case 1:
+        return 'KaiTi';
+      case 2:
+        return 'sans-serif';
+      default:
+        return 'NotoSerifSC';
+    }
+  }
+
+  List<String> get fontFallback {
+    switch (font) {
+      case 0: // 宋
+        return const <String>[
+          'NotoSerifSC',
+          'Songti SC',
+          'STSong',
+          'SimSun',
+          'serif',
+        ];
+      case 1: // 楷 (优先系统楷体，在安卓/小米等无系统楷体设备上回退到内置的站酷小薇楷体风格)
+        return const <String>[
+          'KaiTi',
+          'STKaiti',
+          'Kaiti SC',
+          '楷体-简',
+          '楷体',
+          'ZCOOLXiaoWei',
+          'NotoSerifSC',
+        ];
+      case 2: // 黑 (优先系统无衬线黑体，在小米设备上匹配 MiSans，在安卓上匹配 Noto Sans CJK SC)
+        return const <String>[
+          'MiSans',
+          'MiSans Normal',
+          'Noto Sans CJK SC',
+          'Source Han Sans SC',
+          'PingFang SC',
+          'Heiti SC',
+          'Microsoft YaHei',
+          'SimHei',
+          'sans-serif',
+        ];
+      default:
+        return const <String>['NotoSerifSC', 'serif'];
+    }
+  }
 
   void update(void Function(Prefs p) change) {
     change(this);
