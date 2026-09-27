@@ -1,17 +1,39 @@
-name: tests
+name: client checks
 on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
-  test:
+  flutter:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - uses: actions/setup-node@v4
-        with: { node-version: '22' }
-      - name: Python tests (standard library only, no network)
-        run: python -m unittest discover -s tests -p 'test*.py' -v
-      - name: JavaScript tests
-        run: for f in tests/*.test.mjs; do node "$f"; done
-      - name: Interface translations
-        run: python scripts/check_i18n.py
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Resolve client dependencies
+        working-directory: app
+        run: flutter pub get
+      - name: Resolve Dart engine dependencies
+        working-directory: core
+        run: dart pub get --enforce-lockfile
+      - name: Analyze Dart engine
+        working-directory: core
+        run: dart analyze --fatal-infos --fatal-warnings
+      - name: Analyze Flutter app
+        working-directory: app
+        run: flutter analyze --no-fatal-infos
+      - name: Client functional tests
+        working-directory: app
+        run: |
+          flutter test --no-pub \
+            test/ask_sheet_test.dart test/backup_test.dart \
+            test/graph_view_test.dart test/import_test.dart \
+            test/manual_entities_test.dart test/marginalia_sheet_test.dart \
+            test/model_settings_test.dart test/notes_test.dart \
+            test/people_search_test.dart test/processing_test.dart \
+            test/reader_regression_test.dart test/selection_bounds_test.dart \
+            test/shared_import_test.dart

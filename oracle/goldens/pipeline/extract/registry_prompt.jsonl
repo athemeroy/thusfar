@@ -1,0 +1,3 @@
+{"input":{"state":{"people":{},"rels":{},"seg":0,"recent_events":[]},"text":"[P1] 【标题】第一章\n[P2] 𠮷😀说：你好。"},"output":"（暂无，本段是第一段或此前没有出现人物）"}
+{"input":{"state":{"people":{},"seg":0},"text":"𠮷😀"},"output":"（暂无，本段是第一段或此前没有出现人物）"}
+{"input":{"state":{"people":{"P1":{"id":"P1","name":"贾宝玉","aliases":["宝玉"],"importance":3,"mentions":5,"last_seg":1,"tagline":"荣府公子","bio":"住在荣府"},"P2":{"id":"P2","name":"郝麦","aliases":[],"importance":1,"mentions":1,"last_seg":0,"tagline":"旧识","bio":""}},"seg":8},"text":"宝玉来到园中"},"output":"P1｜贾宝玉｜别称：宝玉｜荣府公子\n    简介：住在荣府\n\n（以下人物本段可能未出场，仅列出以便沿用 id）\nP2｜郝麦｜｜旧识"}

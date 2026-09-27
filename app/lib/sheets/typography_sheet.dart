@@ -1,0 +1,350 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+import '../data/prefs.dart';
+import '../ui/theme.dart';
+
+/// S15 排版: the lower ~40% only, so the page above re-flows live.
+Future<void> openTypography(BuildContext context, Prefs prefs) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    barrierColor: Colors.transparent,
+    builder: (BuildContext _) => ListenableBuilder(
+      listenable: prefs,
+      builder: (BuildContext context, _) => _TypographyPanel(prefs: prefs),
+    ),
+  );
+}
+
+class _TypographyPanel extends StatelessWidget {
+  const _TypographyPanel({required this.prefs});
+
+  final Prefs prefs;
+
+  @override
+  Widget build(BuildContext context) {
+    final Tokens t = context.tk;
+    Widget row(String label, Widget child) => Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: 52,
+            child: Text(label, style: TextStyle(fontSize: 13, color: t.ink3)),
+          ),
+          Expanded(child: child),
+        ],
+      ),
+    );
+    Widget choice(
+      List<String> labels,
+      int index,
+      ValueChanged<int> on, {
+      List<String?>? fontFamilies,
+      List<List<String>?>? fontFallbacks,
+    }) => Row(
+      children: <Widget>[
+        for (int i = 0; i < labels.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(
+                labels[i],
+                style: fontFamilies != null &&
+                        i < fontFamilies.length &&
+                        fontFamilies[i] != null
+                    ? TextStyle(
+                        fontFamily: fontFamilies[i],
+                        fontFamilyFallback: fontFallbacks != null &&
+                                i < fontFallbacks.length
+                            ? fontFallbacks[i]
+                            : null,
+                      )
+                    : null,
+              ),
+              selected: i == index,
+              onSelected: (_) {
+                HapticFeedback.selectionClick();
+                on(i);
+              },
+              selectedColor: t.ink,
+              labelStyle: TextStyle(
+                color: i == index ? t.sheet : t.ink,
+                fontSize: 14,
+                fontFamily: fontFamilies != null && i < fontFamilies.length
+                    ? fontFamilies[i]
+                    : null,
+                fontFamilyFallback: fontFallbacks != null &&
+                        i < fontFallbacks.length
+                    ? fontFallbacks[i]
+                    : null,
+              ),
+              showCheckmark: false,
+              side: BorderSide(color: i == index ? t.ink : t.rule),
+              backgroundColor: t.sheet,
+            ),
+          ),
+      ],
+    );
+    return Container(
+      decoration: BoxDecoration(
+        color: t.sheet,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: t.rule,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              row(
+                '字号',
+                Row(
+                  children: <Widget>[
+                    InkResponse(
+                      radius: 20,
+                      onTap: prefs.fontSize > 16
+                          ? () {
+                              HapticFeedback.selectionClick();
+                              prefs.update(
+                                (Prefs p) => p.fontSize =
+                                    (p.fontSize - 1).clamp(16, 26),
+                              );
+                            }
+                          : null,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          'A−',
+                          style: TextStyle(
+                            color: prefs.fontSize > 16 ? t.ink : t.ink3,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Slider(
+                        min: 16,
+                        max: 26,
+                        divisions: 10,
+                        value: prefs.fontSize,
+                        activeColor: t.ink,
+                        inactiveColor: t.rule,
+                        onChanged: (double v) {
+                          HapticFeedback.selectionClick();
+                          prefs.update((Prefs p) => p.fontSize = v);
+                        },
+                      ),
+                    ),
+                    InkResponse(
+                      radius: 20,
+                      onTap: prefs.fontSize < 26
+                          ? () {
+                              HapticFeedback.selectionClick();
+                              prefs.update(
+                                (Prefs p) => p.fontSize =
+                                    (p.fontSize + 1).clamp(16, 26),
+                              );
+                            }
+                          : null,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          'A+',
+                          style: TextStyle(
+                            color: prefs.fontSize < 26 ? t.ink : t.ink3,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: t.rule.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${prefs.fontSize.round()} pt',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: t.ink2,
+                          fontFeatures: const <FontFeature>[
+                            FontFeature.tabularFigures(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              row(
+                '行距',
+                choice(
+                  const <String>['紧', '中', '松'],
+                  prefs.spacing,
+                  (int i) => prefs.update((Prefs p) => p.spacing = i),
+                ),
+              ),
+              row(
+                '字体',
+                choice(
+                  const <String>['宋', '楷', '黑'],
+                  prefs.font,
+                  (int i) => prefs.update((Prefs p) => p.font = i),
+                  fontFamilies: const <String?>[
+                    'NotoSerifSC',
+                    'KaiTi',
+                    'sans-serif',
+                  ],
+                  fontFallbacks: const <List<String>?>[
+                    <String>['NotoSerifSC', 'Songti SC', 'STSong', 'SimSun', 'serif'],
+                    <String>[
+                      'KaiTi',
+                      'STKaiti',
+                      'Kaiti SC',
+                      '楷体-简',
+                      '楷体',
+                      'ZCOOLXiaoWei',
+                      'NotoSerifSC',
+                    ],
+                    <String>[
+                      'MiSans',
+                      'MiSans Normal',
+                      'Noto Sans CJK SC',
+                      'Source Han Sans SC',
+                      'PingFang SC',
+                      'Heiti SC',
+                      'sans-serif',
+                    ],
+                  ],
+                ),
+              ),
+              row(
+                '纸色',
+                Row(
+                  children: <Widget>[
+                    for (int i = 0; i < Tokens.paperColors.length; i++)
+                      Semantics(
+                        label: '纸色：${Tokens.paperColors[i].$1}',
+                        button: true,
+                        selected: i == prefs.paper,
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          prefs.update((Prefs p) => p.paper = i);
+                        },
+                        child: ExcludeSemantics(
+                          child: Tooltip(
+                            message: '纸色：${Tokens.paperColors[i].$1}',
+                            child: GestureDetector(
+                              onTap: () {
+                                HapticFeedback.selectionClick();
+                                prefs.update((Prefs p) => p.paper = i);
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: Tokens.paperColors[i].$2,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: i == prefs.paper ? t.zhu : t.rule,
+                                    width: i == prefs.paper ? 2.2 : 1,
+                                  ),
+                                  boxShadow: i == prefs.paper
+                                      ? <BoxShadow>[
+                                          BoxShadow(
+                                            color: t.zhu.withValues(alpha: 0.25),
+                                            blurRadius: 6,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                child: i == 4
+                                    ? const Icon(
+                                        Icons.dark_mode_outlined,
+                                        size: 16,
+                                        color: Colors.white70,
+                                      )
+                                    : i == prefs.paper
+                                    ? Center(
+                                        child: Container(
+                                          width: 6,
+                                          height: 6,
+                                          decoration: BoxDecoration(
+                                            color: t.zhu,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              row(
+                '翻页',
+                choice(
+                  const <String>['平移', '覆盖', '无'],
+                  prefs.anim.index,
+                  (int i) =>
+                      prefs.update((Prefs p) => p.anim = PageAnim.values[i]),
+                ),
+              ),
+              SwitchListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                title: Text(
+                  '音量键翻页',
+                  style: TextStyle(fontSize: 14, color: t.ink),
+                ),
+                value: prefs.volumeKeys,
+                activeThumbColor: t.ink,
+                onChanged: (bool v) {
+                  HapticFeedback.selectionClick();
+                  prefs.update((Prefs p) => p.volumeKeys = v);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+}

@@ -1,0 +1,27 @@
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    invalid_annotation_target: error
+    missing_required_param: error
+    missing_return: error
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - avoid_print
+    - avoid_types_as_parameter_names
+    - cancel_subscriptions
+    - close_sinks
+    - directives_ordering
+    - eol_at_end_of_file
+    - no_duplicate_case_values
+    - prefer_const_constructors
+    - prefer_final_fields
+    - prefer_final_locals
+    - require_trailing_commas
+    - sort_constructors_first
+    - type_annotate_public_apis
+    - unawaited_futures

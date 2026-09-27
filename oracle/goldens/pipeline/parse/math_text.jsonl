@@ -1,0 +1,3 @@
+{"input":{"source":"<math><mfrac><msup><mi>x</mi><mn>2</mn></msup><mi>y</mi></mfrac></math>"},"output":"((x)^(2))/(y)"}
+{"input":{"source":"<svg><path d=\"M0,0\"/></svg>"},"output":"［图形缺少可读取文本］"}
+{"input":{"source":"<svg><title>Flow</title><text>A to B</text></svg>"},"output":"［图形：Flow；A to B］"}

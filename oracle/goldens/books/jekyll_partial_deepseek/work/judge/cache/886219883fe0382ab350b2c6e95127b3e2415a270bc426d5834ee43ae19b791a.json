@@ -1,0 +1,1 @@
+{"request_sha256":"886219883fe0382ab350b2c6e95127b3e2415a270bc426d5834ee43ae19b791a","answers":{"k":{"type":"choice","choice":"novel","probabilities":{"novel":1,"biography":0,"collection":0,"nonfiction":0,"reference":0},"confidence":1}},"route":"free","model":"typesafe-ai/jev"}

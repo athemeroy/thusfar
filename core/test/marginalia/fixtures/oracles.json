@@ -1,0 +1,1240 @@
+{
+  "source_sha256": "9dfe773a523cd1b1ad0719dde1a76c98eb0e0a8e99bd35a8f7ed26b0e894ac37",
+  "book": {
+    "title": "离线批注测试",
+    "lang": "zh",
+    "genre": "novel",
+    "len": 88,
+    "blocks": [
+      {
+        "k": "p",
+        "t": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "o": 0
+      },
+      {
+        "k": "p",
+        "t": "树影落在桌面上，他终于慢慢坐下，手指停在杯子旁边。",
+        "o": 29
+      },
+      {
+        "k": "p",
+        "t": "UNREAD SECRET 后文才揭露的秘密绝不能出现在材料中。",
+        "o": 55
+      }
+    ],
+    "chapters": [
+      {
+        "title": "第一章",
+        "b0": 0,
+        "b1": 3,
+        "o0": 0,
+        "o1": 88,
+        "kind": "body"
+      }
+    ]
+  },
+  "log": [
+    {
+      "t": "person",
+      "p": 0,
+      "id": "p1",
+      "name": "小林"
+    },
+    {
+      "t": "profile",
+      "p": 1,
+      "id": "p1",
+      "tagline": "刚刚回家的读者",
+      "bio": "他刚回到院子。"
+    },
+    {
+      "t": "event",
+      "p": 55,
+      "who": [
+        "p1"
+      ],
+      "text": "UNREAD GRAPH SECRET"
+    }
+  ],
+  "frontier": 49,
+  "revision": [
+    123456789,
+    101,
+    7
+  ],
+  "cases": [
+    {
+      "name": "manual_accepted",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [
+          "这一声关门，比开口说话还让人在意。"
+        ],
+        "guards": [
+          {
+            "comment": {
+              "verdict": "ok",
+              "p": 0.9
+            }
+          }
+        ],
+        "answers": null
+      },
+      "calls": [
+        {
+          "kind": "chat",
+          "model": "fixture-reader",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "comment": "这一声关门，比开口说话还让人在意。"
+          }
+        }
+      ],
+      "output": {
+        "key": "42af19b3db67542e21ab70bd91b17382",
+        "comment": "这一声关门，比开口说话还让人在意。",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "empathy",
+        "kind": "manual",
+        "score": 1.0,
+        "guard": {
+          "verdict": "ok",
+          "p": 0.9
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "created": 1234.5,
+        "cached": false
+      },
+      "cached": {
+        "key": "42af19b3db67542e21ab70bd91b17382",
+        "comment": "这一声关门，比开口说话还让人在意。",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "empathy",
+        "kind": "manual",
+        "score": 1.0,
+        "guard": {
+          "verdict": "ok",
+          "p": 0.9
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "created": 1234.5,
+        "cached": true
+      },
+      "writes": [
+        [
+          {
+            "key": "42af19b3db67542e21ab70bd91b17382",
+            "comment": "这一声关门，比开口说话还让人在意。",
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "empathy",
+            "kind": "manual",
+            "score": 1.0,
+            "guard": {
+              "verdict": "ok",
+              "p": 0.9
+            },
+            "position": 54,
+            "knowledge_cutoff": 28,
+            "created": 1234.5
+          }
+        ]
+      ]
+    },
+    {
+      "name": "manual_rewritten",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [
+          "这里竟然藏着一个秘密房间。",
+          "这个轻轻关门的动作，让人也跟着安静下来。"
+        ],
+        "guards": [
+          {
+            "comment": {
+              "verdict": "flag",
+              "p": 0.1
+            }
+          },
+          {
+            "comment": {
+              "verdict": "ok",
+              "p": 0.9
+            }
+          }
+        ],
+        "answers": null
+      },
+      "calls": [
+        {
+          "kind": "chat",
+          "model": "fixture-reader",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "comment": "这里竟然藏着一个秘密房间。"
+          }
+        },
+        {
+          "kind": "chat",
+          "model": "fixture-reader",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n上一版未通过材料核对：这里竟然藏着一个秘密房间。\n请删掉材料没有支持的判断，重新写一句。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "comment": "这个轻轻关门的动作，让人也跟着安静下来。"
+          }
+        }
+      ],
+      "output": {
+        "key": "42af19b3db67542e21ab70bd91b17382",
+        "comment": "这个轻轻关门的动作，让人也跟着安静下来。",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "empathy",
+        "kind": "manual",
+        "score": 1.0,
+        "guard": {
+          "verdict": "rewritten",
+          "p": 0.9
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "created": 1234.5,
+        "cached": false
+      },
+      "cached": {
+        "key": "42af19b3db67542e21ab70bd91b17382",
+        "comment": "这个轻轻关门的动作，让人也跟着安静下来。",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "empathy",
+        "kind": "manual",
+        "score": 1.0,
+        "guard": {
+          "verdict": "rewritten",
+          "p": 0.9
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "created": 1234.5,
+        "cached": true
+      },
+      "writes": [
+        [
+          {
+            "key": "42af19b3db67542e21ab70bd91b17382",
+            "comment": "这个轻轻关门的动作，让人也跟着安静下来。",
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "empathy",
+            "kind": "manual",
+            "score": 1.0,
+            "guard": {
+              "verdict": "rewritten",
+              "p": 0.9
+            },
+            "position": 54,
+            "knowledge_cutoff": 28,
+            "created": 1234.5
+          }
+        ]
+      ]
+    },
+    {
+      "name": "manual_withheld",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [
+          "这里竟然藏着一个秘密房间。",
+          "后来他们还会在这里见面。"
+        ],
+        "guards": [
+          {
+            "comment": {
+              "verdict": "flag",
+              "p": 0.1
+            }
+          },
+          {
+            "comment": {
+              "verdict": "flag",
+              "p": 0.1
+            }
+          }
+        ],
+        "answers": null
+      },
+      "calls": [
+        {
+          "kind": "chat",
+          "model": "fixture-reader",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "comment": "这里竟然藏着一个秘密房间。"
+          }
+        },
+        {
+          "kind": "chat",
+          "model": "fixture-reader",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n上一版未通过材料核对：这里竟然藏着一个秘密房间。\n请删掉材料没有支持的判断，重新写一句。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "comment": "后来他们还会在这里见面。"
+          }
+        }
+      ],
+      "output": {
+        "error": {
+          "type": "ValueError",
+          "message": "这条批注没有通过已读内容核对，已替你隐藏"
+        }
+      },
+      "cached": null,
+      "writes": []
+    },
+    {
+      "name": "guard_outage",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [
+          "这一声关门，比开口说话还让人在意。"
+        ],
+        "guards": [
+          "error"
+        ],
+        "answers": null
+      },
+      "calls": [
+        {
+          "kind": "chat",
+          "model": "fixture-reader",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "comment": "这一声关门，比开口说话还让人在意。"
+          }
+        }
+      ],
+      "output": {
+        "error": {
+          "type": "RuntimeError",
+          "message": "fixture judge outage"
+        }
+      },
+      "cached": null,
+      "writes": []
+    },
+    {
+      "name": "unusable_draft",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [
+          "批注：JSON 系统提示"
+        ],
+        "guards": [],
+        "answers": null
+      },
+      "calls": [
+        {
+          "kind": "chat",
+          "model": "fixture-reader",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        }
+      ],
+      "output": {
+        "error": {
+          "type": "ValueError",
+          "message": "AI 这次没有写出可用的批注，请稍后再试"
+        }
+      },
+      "cached": null,
+      "writes": []
+    },
+    {
+      "name": "auto_dedup",
+      "input": {
+        "mode": "auto",
+        "pos": 54,
+        "page_start": 0,
+        "page_end": 28,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [
+          "这一声关门，比开口说话还让人在意。",
+          "这一声关门，比开口说话还让人在意！",
+          "门关得这么轻，人却站得这么久。"
+        ],
+        "guards": [
+          {
+            "empathy": {
+              "verdict": "ok",
+              "p": 0.9
+            },
+            "wit": {
+              "verdict": "ok",
+              "p": 0.8
+            }
+          }
+        ],
+        "answers": null
+      },
+      "calls": [
+        {
+          "kind": "chat",
+          "model": "fixture-auto",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "chat",
+          "model": "fixture-auto",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「侦探」角度写：指出已经出现的细节、照应或信息差；只说眼前证据，绝不预测。 这一次的口吻提示：从原句里挑一个小动作，接一句自然的疑问或感叹。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "chat",
+          "model": "fixture-auto",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「吐槽」角度写：轻巧、机敏地说出这句话的反差；不玩过时网络梗，不嘲弄苦难。 这一次的口吻提示：留意这句话没说破的地方，但只谈材料支持的那一层。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.75,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "empathy": "这一声关门，比开口说话还让人在意。",
+            "wit": "门关得这么轻，人却站得这么久。"
+          }
+        }
+      ],
+      "output": {
+        "key": "6a7c10dcad929cb0ad864fd22eda2feb",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "empathy",
+        "kind": "reader",
+        "score": 1.0,
+        "comment": "这一声关门，比开口说话还让人在意。",
+        "guard": {
+          "verdict": "ok",
+          "p": 0.9
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "items": [
+          {
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "empathy",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "这一声关门，比开口说话还让人在意。",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.9
+            },
+            "position": 54,
+            "knowledge_cutoff": 28
+          },
+          {
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "wit",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "门关得这么轻，人却站得这么久。",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.8
+            },
+            "position": 54,
+            "knowledge_cutoff": 28
+          }
+        ],
+        "created": 1234.5,
+        "cached": false
+      },
+      "cached": {
+        "key": "6a7c10dcad929cb0ad864fd22eda2feb",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "empathy",
+        "kind": "reader",
+        "score": 1.0,
+        "comment": "这一声关门，比开口说话还让人在意。",
+        "guard": {
+          "verdict": "ok",
+          "p": 0.9
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "items": [
+          {
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "empathy",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "这一声关门，比开口说话还让人在意。",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.9
+            },
+            "position": 54,
+            "knowledge_cutoff": 28
+          },
+          {
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "wit",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "门关得这么轻，人却站得这么久。",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.8
+            },
+            "position": 54,
+            "knowledge_cutoff": 28
+          }
+        ],
+        "created": 1234.5,
+        "cached": true
+      },
+      "writes": [
+        [
+          {
+            "key": "6a7c10dcad929cb0ad864fd22eda2feb",
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "empathy",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "这一声关门，比开口说话还让人在意。",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.9
+            },
+            "position": 54,
+            "knowledge_cutoff": 28,
+            "items": [
+              {
+                "start": 0,
+                "end": 28,
+                "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+                "persona": "empathy",
+                "kind": "reader",
+                "score": 1.0,
+                "comment": "这一声关门，比开口说话还让人在意。",
+                "guard": {
+                  "verdict": "ok",
+                  "p": 0.9
+                },
+                "position": 54,
+                "knowledge_cutoff": 28
+              },
+              {
+                "start": 0,
+                "end": 28,
+                "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+                "persona": "wit",
+                "kind": "reader",
+                "score": 1.0,
+                "comment": "门关得这么轻，人却站得这么久。",
+                "guard": {
+                  "verdict": "ok",
+                  "p": 0.8
+                },
+                "position": 54,
+                "knowledge_cutoff": 28
+              }
+            ],
+            "created": 1234.5
+          }
+        ]
+      ]
+    },
+    {
+      "name": "auto_partial_failure",
+      "input": {
+        "mode": "auto",
+        "pos": 54,
+        "page_start": 0,
+        "page_end": 28,
+        "persona": "cold"
+      },
+      "script": {
+        "replies": [
+          "error",
+          "这个小动作是否比他的沉默更有分量？",
+          "他一句话不说，我也有点不敢打扰。"
+        ],
+        "guards": [
+          {
+            "detective": {
+              "verdict": "ok",
+              "p": 0.8
+            },
+            "empathy": {
+              "verdict": "flag",
+              "p": 0.2
+            }
+          }
+        ],
+        "answers": null
+      },
+      "calls": [
+        {
+          "kind": "chat",
+          "model": "fixture-auto",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「冷眼」角度写：看清自欺、权力、体面和人情中的微妙张力；犀利但不刻薄。 这一次的口吻提示：像读书群里刚看到这一句，先说最直接的一个反应，别复述情节。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "chat",
+          "model": "fixture-auto",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「侦探」角度写：指出已经出现的细节、照应或信息差；只说眼前证据，绝不预测。 这一次的口吻提示：从原句里挑一个小动作，接一句自然的疑问或感叹。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "chat",
+          "model": "fixture-auto",
+          "messages": [
+            {
+              "role": "system",
+              "content": "你是刚读到被划线句的读者，在这句话的评论区顺手留一句。不是旁白、剧情复述或文学赏析。只根据已给的前情和原句；绝不透露、预测、暗示后文，也不能补出材料没写的地点、物品位置、次数、人物特征、动机或事件。不要把猜测写成已经确定的事实。只盯住原句里的一个具体动作、措辞或人物关系，说一句自己真正在意的话。可以有口语、疑问、偏爱或轻微吐槽，不必每次都解释理由；语气像跟同在读的朋友说话。不要故作诗意，不要强行写“像……”，不要“这说明”“体现了”“细思极恐”“狠狠共情”等套话。一句中文，通常 8～45 个汉字。不强求句号；问号、感叹号或不加句末标点都自然。默认不用表情；确实贴切时可以有一个 emoji 或颜文字，也可以不用。只输出评论正文，不要标题、引号、Markdown或JSON。这条从「共情」角度写：读出人物没有明说的情绪，但不替人物下诊断；温柔、克制。 这一次的口吻提示：留意这句话没说破的地方，但只谈材料支持的那一层。"
+            },
+            {
+              "role": "user",
+              "content": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。"
+            }
+          ],
+          "max_tokens": 160,
+          "temperature": 0.65,
+          "timeout": 45,
+          "retries": 0
+        },
+        {
+          "kind": "guard",
+          "passage": "【截至这句话的故事状态】\n人物状态：小林｜刚刚回家的读者｜他刚回到院子。\n\n【此前原文】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。\n\n【被划线的原句】\n小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+          "earlier": {},
+          "items": {
+            "detective": "这个小动作是否比他的沉默更有分量？",
+            "empathy": "他一句话不说，我也有点不敢打扰。"
+          }
+        }
+      ],
+      "output": {
+        "key": "e3b4df8a1f4b8a627d918acf42753e3b",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "detective",
+        "kind": "reader",
+        "score": 1.0,
+        "comment": "这个小动作是否比他的沉默更有分量？",
+        "guard": {
+          "verdict": "ok",
+          "p": 0.8
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "items": [
+          {
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "detective",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "这个小动作是否比他的沉默更有分量？",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.8
+            },
+            "position": 54,
+            "knowledge_cutoff": 28
+          }
+        ],
+        "created": 1234.5,
+        "cached": false
+      },
+      "cached": {
+        "key": "e3b4df8a1f4b8a627d918acf42753e3b",
+        "start": 0,
+        "end": 28,
+        "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+        "persona": "detective",
+        "kind": "reader",
+        "score": 1.0,
+        "comment": "这个小动作是否比他的沉默更有分量？",
+        "guard": {
+          "verdict": "ok",
+          "p": 0.8
+        },
+        "position": 54,
+        "knowledge_cutoff": 28,
+        "items": [
+          {
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "detective",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "这个小动作是否比他的沉默更有分量？",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.8
+            },
+            "position": 54,
+            "knowledge_cutoff": 28
+          }
+        ],
+        "created": 1234.5,
+        "cached": true
+      },
+      "writes": [
+        [
+          {
+            "key": "e3b4df8a1f4b8a627d918acf42753e3b",
+            "start": 0,
+            "end": 28,
+            "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+            "persona": "detective",
+            "kind": "reader",
+            "score": 1.0,
+            "comment": "这个小动作是否比他的沉默更有分量？",
+            "guard": {
+              "verdict": "ok",
+              "p": 0.8
+            },
+            "position": 54,
+            "knowledge_cutoff": 28,
+            "items": [
+              {
+                "start": 0,
+                "end": 28,
+                "quote": "小林走进院子，轻轻地把门关上。他站在那里，一直没有说话。",
+                "persona": "detective",
+                "kind": "reader",
+                "score": 1.0,
+                "comment": "这个小动作是否比他的沉默更有分量？",
+                "guard": {
+                  "verdict": "ok",
+                  "p": 0.8
+                },
+                "position": 54,
+                "knowledge_cutoff": 28
+              }
+            ],
+            "created": 1234.5
+          }
+        ]
+      ]
+    },
+    {
+      "name": "cues",
+      "input": {
+        "mode": "cues",
+        "purpose": "prefetch",
+        "pos": 54,
+        "page_start": 0,
+        "page_end": 54
+      },
+      "script": {
+        "replies": [],
+        "guards": [],
+        "answers": {
+          "s1": {
+            "choice": "feeling",
+            "probabilities": {
+              "feeling": 0.8,
+              "ordinary": 0.2
+            }
+          },
+          "s2": {
+            "choice": "ordinary",
+            "probabilities": {
+              "ordinary": 1
+            }
+          },
+          "s3": {
+            "choice": "clue",
+            "probabilities": {
+              "clue": 0.7,
+              "ordinary": 0.3
+            }
+          }
+        }
+      },
+      "calls": [
+        {
+          "kind": "judge",
+          "state": {
+            "story_before_this_page": "人物状态：小林",
+            "source_before_this_page": "",
+            "visible_page_sentences": {
+              "s1": "小林走进院子，轻轻地把门关上。",
+              "s2": "他站在那里，一直没有说话。",
+              "s3": "树影落在桌面上，他终于慢慢坐下，手指停在杯子旁边。"
+            }
+          },
+          "questions": {
+            "s1": {
+              "type": "choice",
+              "instructions": "Which kind of short reader reaction, if any, would fit this exact sentence? Use only story_before_this_page, source_before_this_page and visible_page_sentences; never infer later plot. Choose ordinary if there is no concrete reason to comment. Sentence: 小林走进院子，轻轻地把门关上。",
+              "criteria": {
+                "ordinary": "A routine transition or isolated line that gains little from a reader reaction.",
+                "feeling": "A specific emotional undercurrent made richer by the story so far.",
+                "clue": "A concrete detail, information gap, or callback already supported by the read text.",
+                "theme": "A revealing moment of motive, self-deception, power, or manners.",
+                "craft": "Distinctive wording, viewpoint, rhythm, image, or structural turn.",
+                "wit": "A real irony, reversal, or comic contrast that supports a brief witty reaction."
+              }
+            },
+            "s2": {
+              "type": "choice",
+              "instructions": "Which kind of short reader reaction, if any, would fit this exact sentence? Use only story_before_this_page, source_before_this_page and visible_page_sentences; never infer later plot. Choose ordinary if there is no concrete reason to comment. Sentence: 他站在那里，一直没有说话。",
+              "criteria": {
+                "ordinary": "A routine transition or isolated line that gains little from a reader reaction.",
+                "feeling": "A specific emotional undercurrent made richer by the story so far.",
+                "clue": "A concrete detail, information gap, or callback already supported by the read text.",
+                "theme": "A revealing moment of motive, self-deception, power, or manners.",
+                "craft": "Distinctive wording, viewpoint, rhythm, image, or structural turn.",
+                "wit": "A real irony, reversal, or comic contrast that supports a brief witty reaction."
+              }
+            },
+            "s3": {
+              "type": "choice",
+              "instructions": "Which kind of short reader reaction, if any, would fit this exact sentence? Use only story_before_this_page, source_before_this_page and visible_page_sentences; never infer later plot. Choose ordinary if there is no concrete reason to comment. Sentence: 树影落在桌面上，他终于慢慢坐下，手指停在杯子旁边。",
+              "criteria": {
+                "ordinary": "A routine transition or isolated line that gains little from a reader reaction.",
+                "feeling": "A specific emotional undercurrent made richer by the story so far.",
+                "clue": "A concrete detail, information gap, or callback already supported by the read text.",
+                "theme": "A revealing moment of motive, self-deception, power, or manners.",
+                "craft": "Distinctive wording, viewpoint, rhythm, image, or structural turn.",
+                "wit": "A real irony, reversal, or comic contrast that supports a brief witty reaction."
+              }
+            }
+          }
+        }
+      ],
+      "output": {
+        "key": "338240eec1d853501fc6243366efecfe",
+        "items": [
+          {
+            "start": 0,
+            "end": 15,
+            "quote": "小林走进院子，轻轻地把门关上。",
+            "persona": "empathy",
+            "kind": "feeling",
+            "score": 0.8
+          }
+        ],
+        "reason": "cues",
+        "created": 1234.5,
+        "cached": false
+      },
+      "cached": {
+        "key": "338240eec1d853501fc6243366efecfe",
+        "items": [
+          {
+            "start": 0,
+            "end": 15,
+            "quote": "小林走进院子，轻轻地把门关上。",
+            "persona": "empathy",
+            "kind": "feeling",
+            "score": 0.8
+          }
+        ],
+        "reason": "cues",
+        "created": 1234.5,
+        "cached": true
+      },
+      "writes": [
+        [
+          {
+            "key": "338240eec1d853501fc6243366efecfe",
+            "items": [
+              {
+                "start": 0,
+                "end": 15,
+                "quote": "小林走进院子，轻轻地把门关上。",
+                "persona": "empathy",
+                "kind": "feeling",
+                "score": 0.8
+              }
+            ],
+            "reason": "cues",
+            "created": 1234.5
+          }
+        ]
+      ]
+    },
+    {
+      "name": "invalid_mode",
+      "input": {
+        "mode": "wrong",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [],
+        "guards": [],
+        "answers": null
+      },
+      "calls": [],
+      "output": {
+        "error": {
+          "type": "ValueError",
+          "message": "评论模式无效"
+        }
+      },
+      "cached": null,
+      "writes": []
+    },
+    {
+      "name": "invalid_purpose",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "empathy",
+        "purpose": "prefetch"
+      },
+      "script": {
+        "replies": [],
+        "guards": [],
+        "answers": null
+      },
+      "calls": [],
+      "output": {
+        "error": {
+          "type": "ValueError",
+          "message": "评论请求用途无效"
+        }
+      },
+      "cached": null,
+      "writes": []
+    },
+    {
+      "name": "future_selection",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 55,
+        "persona": "empathy"
+      },
+      "script": {
+        "replies": [],
+        "guards": [],
+        "answers": null
+      },
+      "calls": [],
+      "output": {
+        "error": {
+          "type": "ValueError",
+          "message": "划线终点无效"
+        }
+      },
+      "cached": null,
+      "writes": []
+    },
+    {
+      "name": "invalid_persona",
+      "input": {
+        "mode": "manual",
+        "pos": 54,
+        "start": 0,
+        "end": 28,
+        "persona": "wrong"
+      },
+      "script": {
+        "replies": [],
+        "guards": [],
+        "answers": null
+      },
+      "calls": [],
+      "output": {
+        "error": {
+          "type": "ValueError",
+          "message": "不认识这种批注口吻"
+        }
+      },
+      "cached": null,
+      "writes": []
+    }
+  ],
+  "similarity": [
+    {
+      "a": "",
+      "b": "",
+      "ratio": 1.0
+    },
+    {
+      "a": "abc",
+      "b": "",
+      "ratio": 0.0
+    },
+    {
+      "a": "关上门，轻轻的。",
+      "b": "关上门轻轻的",
+      "ratio": 0.8571428571428571
+    },
+    {
+      "a": "tide",
+      "b": "diet",
+      "ratio": 0.25
+    },
+    {
+      "a": "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab",
+      "b": "babababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababa",
+      "ratio": 0.0
+    },
+    {
+      "a": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab",
+      "b": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac",
+      "ratio": 0.995475113122172
+    },
+    {
+      "a": "😀abc😀",
+      "b": "abc😀def",
+      "ratio": 0.6666666666666666
+    },
+    {
+      "a": "这里没有那样的人物",
+      "b": "这里没有那样的人物呀",
+      "ratio": 0.9473684210526315
+    }
+  ]
+}

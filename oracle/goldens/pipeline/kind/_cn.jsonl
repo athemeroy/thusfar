@@ -1,0 +1,7 @@
+{"input":{"s":"二百零三"},"output":203}
+{"input":{"s":"一"},"output":1}
+{"input":{"s":"十二"},"output":12}
+{"input":{"s":"二"},"output":2}
+{"input":{"s":"004"},"output":4}
+{"input":{"s":"零"},"output":0}
+{"input":{"s":"千零一"},"output":1001}

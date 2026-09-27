@@ -1,0 +1,8 @@
+{"input":{"title":"瑜伽师地论 作者：","author":""},"output":{"$tuple":["瑜伽师地论",""]}}
+{"input":{"title":"Updated","author":"Tester"},"output":{"$tuple":["Updated","Tester"]}}
+{"input":{"title":"哈佛幸福课 作者：ePUBw.COM","author":""},"output":{"$tuple":["哈佛幸福课",""]}}
+{"input":{"title":"老千 作者：马小虎","author":"别人"},"output":{"$tuple":["老千","别人"]}}
+{"input":{"title":"Fixture","author":"Tester"},"output":{"$tuple":["Fixture","Tester"]}}
+{"input":{"title":"术师手册 作者：听日","author":""},"output":{"$tuple":["术师手册","听日"]}}
+{"input":{"title":"fixture","author":""},"output":{"$tuple":["fixture",""]}}
+{"input":{"title":"红楼梦","author":"曹雪芹"},"output":{"$tuple":["红楼梦","曹雪芹"]}}

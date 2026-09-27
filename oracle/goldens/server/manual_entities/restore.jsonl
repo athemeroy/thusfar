@@ -1,0 +1,2 @@
+{"input":{"items":[],"book":{"title":"Fixture","author":"Tester","len":12,"lang":"en","notes":{},"blocks":[{"k":"p","t":"Alice came.","o":0,"fn":[]}],"cover":null,"chapters":[{"title":"One","b0":0,"b1":1,"o0":0,"o1":12,"kind":"body"}]}},"output":[]}
+{"input":{"items":[],"book":{"title":"Fixture","author":"Tester","len":12,"lang":"en","notes":{},"blocks":[{"k":"p","t":"Alice came.","o":0,"fn":[]},{"k":"img","t":"","o":11,"src":"cover.png"}],"cover":"cover.png","chapters":[{"title":"One","b0":0,"b1":2,"o0":0,"o1":12,"kind":"body"}]}},"output":[]}

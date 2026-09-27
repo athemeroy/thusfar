@@ -1,0 +1,7 @@
+{"input":{"url":"https://open.example.com/","model":"deepseek-flash"},"output":{"$tuple":["https://open.example.com/v1","deepseek-flash+nothink"]}}
+{"input":{"url":"https://open.xiaojingai.com/v1","model":"deepseek-flash+nothink"},"output":{"$tuple":["https://open.xiaojingai.com/v1","deepseek-flash+nothink"]}}
+{"input":{"url":"https://models.example/v1","model":"reader-model"},"output":{"$tuple":["https://models.example/v1","reader-model"]}}
+{"input":{"url":"https://api.deepseek.com/v1","model":"deepseek-flash+think"},"output":{"$tuple":["https://api.deepseek.com/v1","deepseek-flash+think"]}}
+{"input":{"url":"https://open.xiaojingai.com/","model":"deepseek-flash"},"output":{"$tuple":["https://open.xiaojingai.com/v1","deepseek-flash+nothink"]}}
+{"input":{"url":"https://api.deepseek.com/v1","model":"deepseek-flash+nothink"},"output":{"$tuple":["https://api.deepseek.com/v1","deepseek-flash+nothink"]}}
+{"input":{"url":"https://api.example.com/v1beta/openai","model":"gpt-6-luna"},"output":{"$tuple":["https://api.example.com/v1beta/openai","gpt-6-luna"]}}

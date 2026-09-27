@@ -59,11 +59,13 @@ export function graphView(ctx, arg, pane, title, panes) {
   wrap.append(s);
   const start = ctx.bodyStart();
   const end = ctx.info.cutoff;
-  const range = h('input', { type: 'range', min: start, max: end, value: end, step: Math.max(1, Math.round((end - start) / 400)), 'aria-label': tr('时间') });
+  const range = h('input', { type: 'range', min: start, max: end, value: end, step: 1, 'aria-label': tr('时间') });
   const label = h('span', { class: 'n' }, tr("第 {0} 页", [ctx.info.global]));
   const play = h('button', { class: 'play', 'aria-label': tr('回放关系的形成') }, icon('play'));
   const hint = h('p', { class: 'muted', style: { margin: '8px 0 0' } }, tr('点一个人物，看他和谁有关、是什么关系；再点一次打开人物卡。朱色线是亲属。按 ▶ 回放关系网是怎样一步步长成这样的（最多到你读到的这一页）。'));
-  pane.append(wrap, h('div', { class: 'time-ctl' }, play, range, label), hint);
+  const summary = h('summary', {}, tr('查看关系列表'));
+  const description = h('details', { class: 'graph-list' }, summary);
+  pane.append(wrap, h('div', { class: 'time-ctl' }, play, range, label), hint, description);
 
   let selected = arg?.id ? ctx.world.canon(arg.id) : null;
   let timer = null;
@@ -71,6 +73,16 @@ export function graphView(ctx, arg, pane, title, panes) {
 
   const draw = (cut, warm) => {
     const w = ctx.kg.world(cut);
+    description.replaceChildren(summary);
+    for (const r of w.rels) {
+      const a = w.people.get(r.a), b = w.people.get(r.b);
+      if (!a || !b) continue;
+      description.append(h('p', {}, h('button', { onclick: () => ctx.openPerson(a.id) }, a.name),
+        `（${r.a_is || tr('相关')}） ↔ `, h('button', { onclick: () => ctx.openPerson(b.id) }, b.name),
+        `（${r.b_is || tr('相关')}）${r.status === 'ended' ? tr('（已结束）') : ''}`,
+        r.desc ? h('span', { style: { display: 'block' } }, r.desc) : null));
+    }
+    if (!description.querySelector('p')) description.append(h('div', { class: 'muted' }, tr('这里还没有关系。')));
     let people = w.ranked().slice(0, limit);
     if (selected && w.people.has(selected) && !people.some((p) => p.id === selected)) people.push(w.people.get(selected));
     const ids = new Set(people.map((p) => p.id));
@@ -82,7 +94,8 @@ export function graphView(ctx, arg, pane, title, panes) {
     layout(people, edges, warm, box.width && box.height ? box.width / box.height : 1);
     s.textContent = '';
     if (!people.length) {
-      s.append(svg('text', { x: '50%', y: '50%', 'text-anchor': 'middle', fill: 'var(--ink-3)', style: 'font-family:var(--kai)' }, tr('人物还没有登场')));
+      s.setAttribute('viewBox', '0 0 320 360');
+      s.append(svg('text', { x: 160, y: 180, 'text-anchor': 'middle', fill: 'var(--ink-3)', style: 'font-family:var(--kai)' }, tr('人物还没有登场')));
       return;
     }
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -92,32 +105,63 @@ export function graphView(ctx, arg, pane, title, panes) {
     const neigh = new Set();
     if (selected) for (const e of edges) { if (e.a === selected) neigh.add(e.b); if (e.b === selected) neigh.add(e.a); }
     const gE = svg('g'), gL = svg('g'), gN = svg('g');
+    s.append(gE, gL, gN);
+    const labels = [];
+    const clip = (text, n = 11) => [...String(text)].length > n ? [...String(text)].slice(0, n).join('') + '…' : String(text);
+    const nodeBoxes = people.map((p) => {
+      const q = positions.get(p.id), r = Math.min(22, 6 + Math.sqrt(p.n + p.events.length * 2) * 1.2);
+      const width = Math.max(56, Math.min(7, [...p.name].length) * 12.5 + 8);
+      return { x: q.x - width / 2, y: q.y - r - 3, w: width, h: r * 2 + 24 };
+    });
+    const overlaps = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+    const place = (a, b, text) => {
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      // Measure the rendered font: a Latin-width estimate clips Chinese roles.
+      const measured = text.getBBox(), width = measured.width + 8, height = measured.height + 6;
+      const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      let best = null;
+      for (const offset of [-10, 12, -28, 30, -47, 49, -67, 69, -87, 89]) {
+        for (const along of [0, -.18, .18, -.33, .33]) {
+          const x = Math.max(minX - pad + width / 2, Math.min(maxX + pad - width / 2, mx + (b.x - a.x) * along - (b.y - a.y) / length * offset));
+          const y = Math.max(minY - pad + height / 2, Math.min(maxY + pad - height / 2, my + (b.y - a.y) * along + (b.x - a.x) / length * offset));
+          const box = { x: x - width / 2, y: y - height / 2, w: width, h: height };
+          const score = [...nodeBoxes, ...labels].reduce((n, other) => n + overlaps(box, other), 0) * 100 + Math.abs(offset) + Math.abs(along) * 10;
+          if (!best || score < best.score) best = { x, y, box, score };
+        }
+      }
+      labels.push(best.box); return { ...best, mx, my, textY: best.y - measured.y - measured.height / 2 };
+    };
     for (const e of edges) {
       const a = positions.get(e.a), b = positions.get(e.b);
       const on = !selected || e.a === selected || e.b === selected;
       const kin = KIN.test((e.a_is || '') + (e.b_is || ''));
       gE.append(svg('line', { class: 'edge' + (kin ? ' kin' : ''), x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'stroke-width': on && selected ? 1.8 : 1, opacity: on ? 1 : 0.15 }));
-      if (selected && on) {
-        const lab = selected ? (e.a === selected ? e.b_is : e.a_is) : (e.b_is || e.a_is);
-        const other = selected ? positions.get(e.a === selected ? e.b : e.a) : null;
-        const lx = selected ? (a.x + b.x) / 2 * 0.4 + other.x * 0.6 : (a.x + b.x) / 2;
-        const ly = selected ? (a.y + b.y) / 2 * 0.4 + other.y * 0.6 : (a.y + b.y) / 2;
-        gL.append(svg('text', { class: 'elabel', x: lx, y: ly - 14, 'text-anchor': 'middle' }, lab || ''));
+      if (on) {
+        const aRole = e.a_is || tr('相关'), bRole = e.b_is || tr('相关');
+        const lines = selected ? [clip(e.a === selected ? bRole : aRole, 15)]
+          : aRole === bRole ? [clip(aRole, 11)] : [clip(aRole, 8) + ' ↔', clip(bRole, 8)];
+        const full = `${w.people.get(e.a).name}（${aRole}） ↔ ${w.people.get(e.b).name}（${bRole}）`;
+        const text = svg('text', { class: 'elabel', 'text-anchor': 'middle', 'aria-label': full,
+          style: 'fill:var(--ink-2);paint-order:stroke;stroke:var(--sheet);stroke-width:4px;stroke-linejoin:round' },
+          svg('title', {}, `${full}${e.desc ? '：' + e.desc : ''}`), ...lines.map((line, i) => svg('tspan', { x: 0, y: i * 12 }, line)));
+        gL.append(text);
+        const at = place(a, b, text);
+        text.setAttribute('transform', `translate(${at.x},${at.textY})`);
+        gL.insertBefore(svg('line', { x1: at.mx, y1: at.my, x2: at.x, y2: at.y, stroke: 'var(--ink-3)', 'stroke-opacity': .35, 'stroke-width': .6, 'pointer-events': 'none' }), text);
       }
     }
     for (const p of people) {
       const q = positions.get(p.id);
       const r = Math.min(22, 6 + Math.sqrt(p.n + p.events.length * 2) * 1.2);
       const dim = selected && p.id !== selected && !neigh.has(p.id);
-      const g = svg('g', { class: 'node' + (dim ? ' dim' : ''), transform: `translate(${q.x},${q.y})`, style: 'cursor:pointer', role: 'button', tabindex: 0, 'aria-label': tr("查看{0}的批注", [p.name]),
+      const g = svg('g', { 'data-person': p.id, class: 'node' + (dim ? ' dim' : ''), transform: `translate(${q.x},${q.y})`, style: 'cursor:pointer', role: 'button', tabindex: 0, 'aria-label': tr("查看{0}的批注", [p.name]),
         onkeydown: (ev) => { if (['Enter', ' '].includes(ev.key)) { ev.preventDefault(); ctx.openPerson(p.id); } },
-        onclick: (ev) => { ev.stopPropagation(); if (selected === p.id) ctx.openPerson(p.id); else { selected = p.id; draw(+range.value, true); } } });
+        onclick: (ev) => { ev.stopPropagation(); if (selected === p.id) ctx.openPerson(p.id); else { selected = p.id; draw(+range.value, true); s.querySelector(`[data-person="${CSS.escape(p.id)}"]`)?.focus({ preventScroll: true }); } } });
       g.append(svg('circle', { r, fill: personColor(p.id) }));
       if (p.id === selected) g.append(svg('circle', { r: r + 5, fill: 'none', stroke: 'var(--zhu)', 'stroke-width': 1.5 }));
       g.append(svg('text', { y: r + 15, 'text-anchor': 'middle' }, p.name.length > 6 ? p.name.slice(0, 6) + '…' : p.name));
       gN.append(g);
     }
-    s.append(gE, gL, gN);
   };
   s.addEventListener('click', () => { if (selected) { selected = null; draw(+range.value, true); } });
   const setLabel = (cut) => { label.textContent = tr("第 {0} 页", [ctx.pageNo(cut)]); };
@@ -138,10 +182,4 @@ export function graphView(ctx, arg, pane, title, panes) {
   });
   ctx.onLeave(() => stop());
   draw(end, positions.size > 0);
-  const description = h('details', { class: 'graph-list' }, h('summary', {}, tr('查看关系列表')));
-  for (const r of ctx.world.rels) {
-    const a = ctx.world.people.get(r.a), b = ctx.world.people.get(r.b);
-    if (a && b) description.append(h('p', {}, h('button', { onclick: () => ctx.openPerson(a.id) }, a.name), ' → ', h('button', { onclick: () => ctx.openPerson(b.id) }, b.name), `：${r.b_is || tr('相关')}${r.status === 'ended' ? tr('（已结束）') : ''}`));
-  }
-  pane.append(description);
 }

@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "bmp-control",
+      "text": "甲乙丙丁",
+      "position_utf16": 1,
+      "width_codepoints": 2,
+      "frozen_175": "甲乙",
+      "codepoint_centered": "甲乙"
+    },
+    {
+      "id": "emoji-at-start",
+      "text": "😀ABC",
+      "position_utf16": 2,
+      "width_codepoints": 2,
+      "frozen_175": "AB",
+      "codepoint_centered": "😀A"
+    },
+    {
+      "id": "astral-han-at-start",
+      "text": "𠮷甲乙丙",
+      "position_utf16": 2,
+      "width_codepoints": 2,
+      "frozen_175": "甲乙",
+      "codepoint_centered": "𠮷甲"
+    },
+    {
+      "id": "emoji-after-ascii",
+      "text": "A😀BC",
+      "position_utf16": 3,
+      "width_codepoints": 2,
+      "frozen_175": "BC",
+      "codepoint_centered": "😀B"
+    }
+  ]
+}

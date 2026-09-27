@@ -1,0 +1,664 @@
+{
+  "schema": 1,
+  "python": "3.11",
+  "source_sha256": "0f51c97fd0b3303c801937a5ada77c7c5de4481e3c570b361867e2cae24b4671",
+  "cases": [
+    {
+      "case": "disabled_auto_does_not_run",
+      "input": {
+        "case": "disabled_auto_does_not_run",
+        "meta": {
+          "auto": false
+        },
+        "status": {
+          "state": "idle"
+        }
+      },
+      "output": {
+        "meta": {
+          "auto": false
+        },
+        "status": {
+          "state": "idle"
+        },
+        "calls": [],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "finished_quality_pending_does_not_imply_retry",
+      "input": {
+        "case": "finished_quality_pending_does_not_imply_retry",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending",
+            "pending": [
+              "summary"
+            ]
+          }
+        }
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending",
+            "pending": [
+              "summary"
+            ]
+          }
+        },
+        "calls": [],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "explicit_start",
+      "input": {
+        "case": "explicit_start",
+        "meta": {
+          "auto": false
+        },
+        "status": {
+          "state": "idle"
+        },
+        "actions": [
+          "enable",
+          "one"
+        ]
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "recent_error_cooldown",
+      "input": {
+        "case": "recent_error_cooldown",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "error",
+          "updated": 4990,
+          "error": "previous"
+        }
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "error",
+          "updated": 4990,
+          "error": "previous"
+        },
+        "calls": [],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "expired_error_can_run",
+      "input": {
+        "case": "expired_error_can_run",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "error",
+          "updated": 3000,
+          "error": "previous"
+        }
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "updated": 3000,
+          "error": "previous"
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "explicit_resume_clears_cooldown",
+      "input": {
+        "case": "explicit_resume_clears_cooldown",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "error",
+          "updated": 4990,
+          "error": "previous"
+        },
+        "actions": [
+          "enable",
+          "one"
+        ]
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "run_cancel",
+      "input": {
+        "case": "run_cancel",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "queued"
+        },
+        "run": "cancel"
+      },
+      "output": {
+        "meta": {
+          "auto": false
+        },
+        "status": {
+          "state": "paused",
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "run_stop",
+      "input": {
+        "case": "run_stop",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "queued"
+        },
+        "run": "stop"
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "queued",
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "run_busy",
+      "input": {
+        "case": "run_busy",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "queued"
+        },
+        "run": "busy"
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "queued"
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "run_error",
+      "input": {
+        "case": "run_error",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "queued"
+        },
+        "run": "error"
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "error",
+          "updated": 5000.0,
+          "error": "处理进程未完成（退出码 1）"
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": {
+          "book": "fixture",
+          "message": "处理进程未完成（退出码 1）",
+          "at": 5000.0
+        },
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "run_incomplete",
+      "input": {
+        "case": "run_incomplete",
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "queued"
+        },
+        "run": "incomplete"
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "error",
+          "updated": 5000.0,
+          "error": "处理进程未完成（退出码 0）"
+        },
+        "calls": [
+          {
+            "retry_quality": false,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": {
+          "book": "fixture",
+          "message": "处理进程未完成（退出码 0）",
+          "at": 5000.0
+        },
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "retry_survives_error",
+      "input": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          }
+        },
+        "actions": [
+          "enable",
+          "one"
+        ],
+        "case": "retry_survives_error",
+        "run": "error"
+      },
+      "output": {
+        "meta": {
+          "auto": true,
+          "retry_quality": true
+        },
+        "status": {
+          "state": "error",
+          "quality": {
+            "state": "pending"
+          },
+          "updated": 5000.0,
+          "error": "处理进程未完成（退出码 1）"
+        },
+        "calls": [
+          {
+            "retry_quality": true,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": {
+          "book": "fixture",
+          "message": "处理进程未完成（退出码 1）",
+          "at": 5000.0
+        },
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "retry_survives_busy",
+      "input": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          }
+        },
+        "actions": [
+          "enable",
+          "one"
+        ],
+        "case": "retry_survives_busy",
+        "run": "busy"
+      },
+      "output": {
+        "meta": {
+          "auto": true,
+          "retry_quality": true
+        },
+        "status": {
+          "state": "queued",
+          "quality": {
+            "state": "pending"
+          },
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": true,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    },
+    {
+      "case": "retry_acknowledged_by_changed_journal",
+      "input": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          }
+        },
+        "actions": [
+          "enable",
+          "one"
+        ],
+        "case": "retry_acknowledged_by_changed_journal",
+        "write_journal": {
+          "state": "complete",
+          "archive": "work/retry-archive/fixture"
+        }
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          },
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": true,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": {
+          "state": "complete",
+          "archive": "work/retry-archive/fixture"
+        }
+      }
+    },
+    {
+      "case": "old_complete_journal_does_not_acknowledge",
+      "input": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          }
+        },
+        "actions": [
+          "enable",
+          "one"
+        ],
+        "case": "old_complete_journal_does_not_acknowledge",
+        "journal": {
+          "state": "complete",
+          "archive": "work/retry-archive/old"
+        }
+      },
+      "output": {
+        "meta": {
+          "auto": true,
+          "retry_quality": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          },
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": true,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": {
+          "state": "complete",
+          "archive": "work/retry-archive/old"
+        }
+      }
+    },
+    {
+      "case": "interrupted_rebuild_journal_acknowledges",
+      "input": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          }
+        },
+        "actions": [
+          "enable",
+          "one"
+        ],
+        "case": "interrupted_rebuild_journal_acknowledges",
+        "journal": {
+          "state": "rebuilding",
+          "archive": "work/retry-archive/old"
+        }
+      },
+      "output": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          },
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [
+          {
+            "retry_quality": true,
+            "model": "extract-fixture",
+            "local_model": "local-fixture",
+            "concurrency": 3
+          }
+        ],
+        "last_error": null,
+        "current": null,
+        "journal": {
+          "state": "rebuilding",
+          "archive": "work/retry-archive/old"
+        }
+      }
+    },
+    {
+      "case": "disable_removes_retry_request",
+      "input": {
+        "meta": {
+          "auto": true
+        },
+        "status": {
+          "state": "done",
+          "quality": {
+            "state": "pending"
+          }
+        },
+        "actions": [
+          "enable",
+          "disable",
+          "one"
+        ],
+        "case": "disable_removes_retry_request"
+      },
+      "output": {
+        "meta": {
+          "auto": false
+        },
+        "status": {
+          "state": "queued",
+          "quality": {
+            "state": "pending"
+          },
+          "updated": 5000.0,
+          "error": null
+        },
+        "calls": [],
+        "last_error": null,
+        "current": null,
+        "journal": null
+      }
+    }
+  ]
+}

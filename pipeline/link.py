@@ -99,11 +99,15 @@ def related(new: str, known: str) -> bool:
     return False
 
 
+FIRST_PERSON = {'我', 'i'}
+
+
 def proper_name(p: dict) -> str:
     """The name to use when asking about a person: a real name if they have one (not 老和尚)."""
     if not is_generic(p['name']):
         return p['name']
-    named = sorted((n for n in p['aliases'] if not is_generic(n) and n not in PRONOUNS), key=len, reverse=True)
+    named = sorted((n for n in p['aliases'] if not is_generic(n) and n not in PRONOUNS),
+                   key=lambda n: (-len(n), n))
     return named[0] if named else p['name']
 
 
@@ -140,10 +144,10 @@ def link_segment(kg, seg: dict, local: dict, context_text: str, scope_start: int
     weak_idx: dict[str, set] = {}
     all_names: list[tuple[str, str]] = []
     for pid, p in cast.items():
-        for n in p['aliases'] | {p['name']}:
+        for n in sorted(p['aliases'] | {p['name']}):
             by_name.setdefault(n, set()).add(pid)
             all_names.append((n, pid))
-            for s in short_forms(n):
+            for s in sorted(short_forms(n)):
                 by_name.setdefault('~' + s, set()).add(pid)
         for n in p.get('weak', ()):
             weak_idx.setdefault(n, set()).add(pid)
@@ -185,13 +189,20 @@ def link_segment(kg, seg: dict, local: dict, context_text: str, scope_start: int
         cores = {core(n) for n in mine} - {''}
         same_core = {pid for pid, p in cast.items() if cores & ({core(n) for n in names_of(p)} - {''})
                      and not _gender_clash(lp, p)} if cores else set()
-        if len(distinct) == 1:
+        me = (lp.get('name') or '').lstrip('*').strip().lower()
+        narrator = [pid for pid, p in cast.items()
+                    if me in FIRST_PERSON and (p.get('name') or '').lstrip('*').strip().lower() == me]
+        if len(narrator) == 1 and not distinct:
+            # a work has one first-person narrator: a later "我" (now also called 迅哥儿) is the same one
+            decisions[lid] = {'to': narrator[0], 'how': 'narrator'}
+        elif len(distinct) == 1:
             # the safest evidence there is: a name only one person has ever been called
             decisions[lid] = {'to': next(iter(distinct)), 'how': 'name' if not hint or hint in distinct else 'name-over-hint'}
         elif len(distinct) > 1 or hint or exact or fuzzy or weak_c or near or same_core or local_c:
             # shared names, titles, hints without a distinctive name: never merge blindly — JEV decides, "new" allowed
             pool = distinct | exact | fuzzy | weak_c | near | same_core
-            cands = list(dict.fromkeys(([hint] if hint else []) + sorted(pool, key=lambda x: -cast[x].get('mentions', 0))))[:6]
+            cands = list(dict.fromkeys(([hint] if hint else []) +
+                                           sorted(pool, key=lambda x: (-cast[x].get('mentions', 0), x))))[:6]
             questions.append((lid, lp, cands + local_c[:4]))
         else:
             decisions[lid] = {'to': None, 'how': 'new'}
@@ -255,7 +266,7 @@ def verify_names(cast: dict, people: list, decisions: dict, passage: str) -> tup
             base = {n for n in t['aliases'] | {t['name']} if not is_generic(n)} or {t['name']}
             who = f"{proper_name(t)}（{t.get('tagline') or t.get('intro') or ''}）"
             if (d.get('how', '').startswith('jev') or d.get('how') == 'fallback-name') and strong \
-                    and not any(related(a, b) for a in strong for b in base):
+                    and not any(related(a, b) for a in sorted(strong) for b in sorted(base)):
                 claims[lid] = (lp.get('name', '').lstrip('*') or sorted(strong)[0], proper_name(t),
                                lp.get('role') or '', t.get('tagline') or t.get('intro') or '')
         else:
@@ -264,7 +275,7 @@ def verify_names(cast: dict, people: list, decisions: dict, passage: str) -> tup
             who = f"{main}（{lp.get('role', '')}）"
         for f in sorted(strong - base):
             taken = any(pid != tgt and f in (p['aliases'] | {p['name']}) for pid, p in cast.items())
-            if taken or not any(related(f, b) for b in base):
+            if taken or not any(related(f, b) for b in sorted(base)):
                 forms[(lid, f)] = who
     if not claims and not forms:
         return {}, {}
@@ -356,7 +367,10 @@ def to_classic(local: dict, decisions: dict, drop: dict | None = None, k: int = 
             ref[lid] = ref[d['local']]
         else:
             ref[lid] = f'N{lid}'
-            new_people.append({'ref': ref[lid], 'name': (lp.get('name') or next(iter(strong_names(lp)), '无名氏')).lstrip('*'),
+            strong = strong_names(lp)
+            fallback = next((n.lstrip('*').strip() for n in lp.get('names') or []
+                             if isinstance(n, str) and n.lstrip('*').strip() in strong), '无名氏')
+            new_people.append({'ref': ref[lid], 'name': (lp.get('name') or fallback).lstrip('*'),
                                'gender': lp.get('gender'), 'importance': 2, 'para': lp.get('para'),
                                'quote': lp.get('quote'), 'intro': lp.get('role') or ''})
             if lp.get('role'):

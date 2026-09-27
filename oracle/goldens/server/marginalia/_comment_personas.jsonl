@@ -1,0 +1,2 @@
+{"input":{"first":"detective"},"output":{"$tuple":["detective","empathy","wit"]}}
+{"input":{"first":"empathy"},"output":{"$tuple":["empathy","detective","wit"]}}

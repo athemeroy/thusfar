@@ -1,0 +1,4 @@
+{"input":{"lang":"ja"},"output":true}
+{"input":{"lang":"zh"},"output":true}
+{"input":{"lang":"fr"},"output":false}
+{"input":{"lang":"en"},"output":false}

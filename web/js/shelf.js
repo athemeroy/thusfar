@@ -4,7 +4,7 @@ import { h, icon, toast, qualityPending, store } from './util.js';
 import { downloadBook } from './offline.js';
 import { LIBRARY_FILTERS, normalizeLibrary, continueBook, libraryBooks, libraryCounts, resumeReceipts } from './library.js';
 import { addToReadingList } from './reading-list.js';
-import { standalone, canReachLibrary } from './runtime.js';
+import { standalone, localSettings, canReachLibrary } from './runtime.js';
 import { currentLanguage, t as tr } from './i18n.js';
 
 const COVERS = ['#2f4858', '#2d4a3e', '#7a3e25', '#8e3a1f', '#3b3f5c', '#5a3e2b', '#44506b', '#3e5a4a', '#6b3b4a'];
@@ -84,7 +84,7 @@ export async function openShelf(root, options = {}) {
   const header = h('header', { class: 'shelf-head library-header' },
     h('div', { class: 'library-brand-lockup' }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, '页'),
       h('div', {}, h('h1', { class: 'brand' }, tr('页读')), h('p', { class: 'library-tagline' }, tr('只读到你这一页')))),
-    h('div', { class: 'library-header-actions' }, h('a', { class: 'library-settings-button', href: '#/settings', 'aria-label': tr('设置'), title: tr('设置') }, icon('settings')),
+    h('div', { class: 'library-header-actions' }, h('a', { class: 'library-settings-button', href: '#/settings', 'aria-label': localSettings ? tr('模型设置') : tr('设置'), title: localSettings ? tr('模型设置') : tr('设置') }, icon('settings')),
       h('button', { class: 'btn zhu library-import-button', type: 'button', onclick: pickFiles }, icon('plus'), tr('导入书籍'))));
   const shelf = h('main', { class: 'shelf paper-grain reading-home' }, header, notice, hero,
     h('section', { class: 'library-collection', 'aria-labelledby': 'library-title' },
@@ -194,7 +194,7 @@ export async function openShelf(root, options = {}) {
       b.status?.state === 'error' && b.status.error ? h('p', { class: 'library-ai-error', role: 'status' }, tr("AI 整理停下了：{0}", [b.status.error])) : null,
       b.status?.refused?.length ? h('p', { class: 'library-ai-error', role: 'status' }, tr("模型拒绝处理其中 {0} 段（通常是内容审核），已跳过；这些段落里的人物信息可能缺失。换一个模型可以避免。", [b.status.refused.length])) : null,
       activeJob && b.status?.notice ? h('p', { class: 'library-ai-error', role: 'status' }, b.status.notice) : null,
-      standalone && /模型设置|API 密钥|HTTP 40[0-4]/.test(b.status?.error || '') ? h('a', { class: 'library-action', href: '#/settings' }, h('span', {}, tr('模型设置')), h('small', {}, tr('填写或检查 API 密钥、接口地址和模型名'))) : null,
+      localSettings && /模型设置|API 密钥|HTTP 40[0-4]/.test(b.status?.error || '') ? h('a', { class: 'library-action', href: '#/settings' }, h('span', {}, tr('模型设置')), h('small', {}, tr('填写或检查 API 密钥、接口地址和模型名'))) : null,
       h('p', { class: 'library-ai-explanation' }, retry ? tr('部分资料仍待核对；正文可以照常阅读。重试可能产生费用。') : tr('资料只显示到当前页。往回翻，它也会回退；每条线索都能回到原文核对。')),
       idle || retry ? h('button', { class: 'library-action', type: 'button', 'aria-label': retry ? tr('重试待核对资料') : tr('开始整理人物'), onclick: async (e) => {
         const button = e.currentTarget;
@@ -215,7 +215,7 @@ export async function openShelf(root, options = {}) {
         }
         catch (e) {
           if (signal.aborted) return;
-          message.replaceChildren(e.message, standalone && /模型设置/.test(e.message) ? h('a', { class: 'linkish', href: '#/settings' }, ` ${tr('去填写')}`) : '');
+          message.replaceChildren(e.message, localSettings && /模型设置/.test(e.message) ? h('a', { class: 'linkish', href: '#/settings' }, ` ${tr('去填写')}`) : '');
           button.disabled = false;
         }
       } }, h('span', {}, retry ? tr('重试待核对资料') : tr('开始整理人物')), h('small', {}, retry ? tr('会重新调用模型；需确认后开始') : estimate(b))) : null,

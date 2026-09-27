@@ -1,0 +1,2897 @@
+{
+  "schema": 1,
+  "source": [
+    "pipeline/classify.py",
+    "pipeline/kind.py"
+  ],
+  "cases": [
+    {
+      "operation": "detect",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [
+        {
+          "k": {
+            "choice": "collection",
+            "probabilities": {
+              "collection": 0.8125
+            }
+          }
+        }
+      ],
+      "chat": null,
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "collection",
+        0.812
+      ],
+      "requests": [
+        {
+          "type": "judge",
+          "state": {
+            "title": "𠮷の物語",
+            "author": "Test Author",
+            "table_of_contents": "序言、Chapter I、Chapter II、附录",
+            "opening_lines": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文 Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose  Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose  Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter pro",
+            "length_in_characters": 2004,
+            "number_of_chapters": 4
+          },
+          "questions": {
+            "k": {
+              "type": "choice",
+              "instructions": "What kind of book is this? Judge from its title, table of contents and opening lines.",
+              "criteria": {
+                "novel": "A work of narrative fiction with characters and a plot: a novel, a web novel, a story.",
+                "biography": "Narrative non-fiction about real people and events: a biography, memoir, history or reportage.",
+                "collection": "Several separate works in one file: a collected works, an anthology, a book of short stories or essays, where characters of one piece do not carry over to the next.",
+                "nonfiction": "A book of ideas rather than a story: textbook, science, technology, philosophy, self-help, business — read in order, but what accumulates is concepts and terms, not characters.",
+                "reference": "A dictionary, manual, cookbook, catalogue or standard: looked things up in, not read from start to end."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "operation": "detect",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [
+        "__error__"
+      ],
+      "chat": null,
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "novel",
+        0.0
+      ],
+      "requests": [
+        {
+          "type": "judge",
+          "state": {
+            "title": "𠮷の物語",
+            "author": "Test Author",
+            "table_of_contents": "序言、Chapter I、Chapter II、附录",
+            "opening_lines": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文 Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose  Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose  Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter pro",
+            "length_in_characters": 2004,
+            "number_of_chapters": 4
+          },
+          "questions": {
+            "k": {
+              "type": "choice",
+              "instructions": "What kind of book is this? Judge from its title, table of contents and opening lines.",
+              "criteria": {
+                "novel": "A work of narrative fiction with characters and a plot: a novel, a web novel, a story.",
+                "biography": "Narrative non-fiction about real people and events: a biography, memoir, history or reportage.",
+                "collection": "Several separate works in one file: a collected works, an anthology, a book of short stories or essays, where characters of one piece do not carry over to the next.",
+                "nonfiction": "A book of ideas rather than a story: textbook, science, technology, philosophy, self-help, business — read in order, but what accumulates is concepts and terms, not characters.",
+                "reference": "A dictionary, manual, cookbook, catalogue or standard: looked things up in, not read from start to end."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "operation": "detect",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [
+        {
+          "k": {
+            "choice": "unknown",
+            "probabilities": {
+              "unknown": 1.0
+            }
+          }
+        }
+      ],
+      "chat": null,
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "novel",
+        0.0
+      ],
+      "requests": [
+        {
+          "type": "judge",
+          "state": {
+            "title": "𠮷の物語",
+            "author": "Test Author",
+            "table_of_contents": "序言、Chapter I、Chapter II、附录",
+            "opening_lines": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文 Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose  Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose  Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter pro",
+            "length_in_characters": 2004,
+            "number_of_chapters": 4
+          },
+          "questions": {
+            "k": {
+              "type": "choice",
+              "instructions": "What kind of book is this? Judge from its title, table of contents and opening lines.",
+              "criteria": {
+                "novel": "A work of narrative fiction with characters and a plot: a novel, a web novel, a story.",
+                "biography": "Narrative non-fiction about real people and events: a biography, memoir, history or reportage.",
+                "collection": "Several separate works in one file: a collected works, an anthology, a book of short stories or essays, where characters of one piece do not carry over to the next.",
+                "nonfiction": "A book of ideas rather than a story: textbook, science, technology, philosophy, self-help, business — read in order, but what accumulates is concepts and terms, not characters.",
+                "reference": "A dictionary, manual, cookbook, catalogue or standard: looked things up in, not read from start to end."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "operation": "detect",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [],
+      "chat": null,
+      "env": {
+        "DETECT_KIND": "0",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "novel",
+        0.0
+      ],
+      "requests": []
+    },
+    {
+      "operation": "judge",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [
+        {
+          "q0": {
+            "choice": "front"
+          },
+          "q1": {
+            "choice": "body"
+          },
+          "q2": {
+            "choice": "body"
+          },
+          "q3": {
+            "choice": "back"
+          }
+        }
+      ],
+      "chat": null,
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "front",
+        "body",
+        "body",
+        "back"
+      ],
+      "requests": [
+        {
+          "type": "judge",
+          "state": {
+            "book_title": "𠮷の物語",
+            "chapters": {
+              "c0": {
+                "title": "序言",
+                "length": 320,
+                "begins": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文"
+              },
+              "c1": {
+                "title": "第一部 · Chapter I",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c2": {
+                "title": "Chapter II",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c3": {
+                "title": "附录",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              }
+            }
+          },
+          "questions": {
+            "q0": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c0 (\"序言\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q1": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c1 (\"第一部 · Chapter I\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q2": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c2 (\"Chapter II\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q3": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c3 (\"附录\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "operation": "classify",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [
+        {
+          "q0": {
+            "choice": "front"
+          }
+        }
+      ],
+      "chat": {
+        "kinds": {
+          "1": "body",
+          "2": "invalid",
+          "3": "back"
+        }
+      },
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "front",
+        "body",
+        "body",
+        "back"
+      ],
+      "requests": [
+        {
+          "type": "judge",
+          "state": {
+            "book_title": "𠮷の物語",
+            "chapters": {
+              "c0": {
+                "title": "序言",
+                "length": 320,
+                "begins": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文"
+              },
+              "c1": {
+                "title": "第一部 · Chapter I",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c2": {
+                "title": "Chapter II",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c3": {
+                "title": "附录",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              }
+            }
+          },
+          "questions": {
+            "q0": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c0 (\"序言\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q1": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c1 (\"第一部 · Chapter I\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q2": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c2 (\"Chapter II\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q3": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c3 (\"附录\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            }
+          }
+        },
+        {
+          "type": "chat",
+          "model": "deepseek-flash+nothink",
+          "messages": [
+            {
+              "role": "user",
+              "content": "下面是一本书的目录，每行是：编号｜章节标题｜字数｜开头几句。\n请判断每一章属于哪一类：\n- front：正文之前的辅文（书名页、版权页、出版说明、作者介绍、前言、序、译序、导读、目录、献词等）\n- body：小说正文（包括“第一部”这类分部标题页、楔子、引子、尾声、番外）\n- back：正文之后的辅文（后记、译后记、附录、年表、丛书书目、广告等）\n\n注意：前言、序、导读通常会概述全书情节，一定要标为 front。\n只输出 JSON：{\"kinds\": {\"编号\": \"front|body|back\", ...}}\n\n书名：《𠮷の物語》\n\n0｜序言｜320｜𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文\n1｜第一部 · Chapter I｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap\n2｜Chapter II｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap\n3｜附录｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap"
+            }
+          ],
+          "kwargs": {
+            "max_tokens": 4000,
+            "temperature": 0
+          }
+        }
+      ]
+    },
+    {
+      "operation": "classify",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [
+        "__error__"
+      ],
+      "chat": "__error__",
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "front",
+        "body",
+        "body",
+        "body"
+      ],
+      "requests": [
+        {
+          "type": "judge",
+          "state": {
+            "book_title": "𠮷の物語",
+            "chapters": {
+              "c0": {
+                "title": "序言",
+                "length": 320,
+                "begins": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文"
+              },
+              "c1": {
+                "title": "第一部 · Chapter I",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c2": {
+                "title": "Chapter II",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c3": {
+                "title": "附录",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              }
+            }
+          },
+          "questions": {
+            "q0": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c0 (\"序言\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q1": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c1 (\"第一部 · Chapter I\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q2": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c2 (\"Chapter II\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q3": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c3 (\"附录\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            }
+          }
+        },
+        {
+          "type": "chat",
+          "model": "deepseek-flash+nothink",
+          "messages": [
+            {
+              "role": "user",
+              "content": "下面是一本书的目录，每行是：编号｜章节标题｜字数｜开头几句。\n请判断每一章属于哪一类：\n- front：正文之前的辅文（书名页、版权页、出版说明、作者介绍、前言、序、译序、导读、目录、献词等）\n- body：小说正文（包括“第一部”这类分部标题页、楔子、引子、尾声、番外）\n- back：正文之后的辅文（后记、译后记、附录、年表、丛书书目、广告等）\n\n注意：前言、序、导读通常会概述全书情节，一定要标为 front。\n只输出 JSON：{\"kinds\": {\"编号\": \"front|body|back\", ...}}\n\n书名：《𠮷の物語》\n\n0｜序言｜320｜𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文\n1｜第一部 · Chapter I｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap\n2｜Chapter II｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap\n3｜附录｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap"
+            }
+          ],
+          "kwargs": {
+            "max_tokens": 4000,
+            "temperature": 0
+          }
+        }
+      ]
+    },
+    {
+      "operation": "classify",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "replies": [],
+      "chat": {
+        "kinds": {
+          "0": "front",
+          "1": "body",
+          "2": "front",
+          "3": "body"
+        }
+      },
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "0",
+        "CLASSIFY_MODEL": "test-model"
+      },
+      "expected": [
+        "front",
+        "body",
+        "front",
+        "body"
+      ],
+      "requests": [
+        {
+          "type": "chat",
+          "model": "test-model",
+          "messages": [
+            {
+              "role": "user",
+              "content": "下面是一本书的目录，每行是：编号｜章节标题｜字数｜开头几句。\n请判断每一章属于哪一类：\n- front：正文之前的辅文（书名页、版权页、出版说明、作者介绍、前言、序、译序、导读、目录、献词等）\n- body：小说正文（包括“第一部”这类分部标题页、楔子、引子、尾声、番外）\n- back：正文之后的辅文（后记、译后记、附录、年表、丛书书目、广告等）\n\n注意：前言、序、导读通常会概述全书情节，一定要标为 front。\n只输出 JSON：{\"kinds\": {\"编号\": \"front|body|back\", ...}}\n\n书名：《𠮷の物語》\n\n0｜序言｜320｜𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文\n1｜第一部 · Chapter I｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap\n2｜Chapter II｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap\n3｜附录｜560｜Chapter prose Chapter prose Chapter prose Chapter prose Chap"
+            }
+          ],
+          "kwargs": {
+            "max_tokens": 4000,
+            "temperature": 0
+          }
+        }
+      ]
+    },
+    {
+      "operation": "judge",
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 27810,
+        "chapters": [
+          {
+            "title": "Chapter 0",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter 1",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter 2",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "Chapter 3",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          },
+          {
+            "title": "Chapter 4",
+            "kind": "body",
+            "b0": 4,
+            "b1": 5,
+            "o0": 2004,
+            "o1": 2564
+          },
+          {
+            "title": "Chapter 5",
+            "kind": "body",
+            "b0": 5,
+            "b1": 6,
+            "o0": 2565,
+            "o1": 3125
+          },
+          {
+            "title": "Chapter 6",
+            "kind": "body",
+            "b0": 6,
+            "b1": 7,
+            "o0": 3126,
+            "o1": 3686
+          },
+          {
+            "title": "Chapter 7",
+            "kind": "body",
+            "b0": 7,
+            "b1": 8,
+            "o0": 3687,
+            "o1": 4247
+          },
+          {
+            "title": "Chapter 8",
+            "kind": "body",
+            "b0": 8,
+            "b1": 9,
+            "o0": 4248,
+            "o1": 4808
+          },
+          {
+            "title": "Chapter 9",
+            "kind": "body",
+            "b0": 9,
+            "b1": 10,
+            "o0": 4809,
+            "o1": 5369
+          },
+          {
+            "title": "Chapter 10",
+            "kind": "body",
+            "b0": 10,
+            "b1": 11,
+            "o0": 5370,
+            "o1": 5930
+          },
+          {
+            "title": "Chapter 11",
+            "kind": "body",
+            "b0": 11,
+            "b1": 12,
+            "o0": 5931,
+            "o1": 6491
+          },
+          {
+            "title": "Chapter 12",
+            "kind": "body",
+            "b0": 12,
+            "b1": 13,
+            "o0": 6492,
+            "o1": 7052
+          },
+          {
+            "title": "Chapter 13",
+            "kind": "body",
+            "b0": 13,
+            "b1": 14,
+            "o0": 7053,
+            "o1": 7613
+          },
+          {
+            "title": "Chapter 14",
+            "kind": "body",
+            "b0": 14,
+            "b1": 15,
+            "o0": 7614,
+            "o1": 8174
+          },
+          {
+            "title": "Chapter 15",
+            "kind": "body",
+            "b0": 15,
+            "b1": 16,
+            "o0": 8175,
+            "o1": 8735
+          },
+          {
+            "title": "Chapter 16",
+            "kind": "body",
+            "b0": 16,
+            "b1": 17,
+            "o0": 8736,
+            "o1": 9296
+          },
+          {
+            "title": "Chapter 17",
+            "kind": "body",
+            "b0": 17,
+            "b1": 18,
+            "o0": 9297,
+            "o1": 9857
+          },
+          {
+            "title": "Chapter 18",
+            "kind": "body",
+            "b0": 18,
+            "b1": 19,
+            "o0": 9858,
+            "o1": 10418
+          },
+          {
+            "title": "Chapter 19",
+            "kind": "body",
+            "b0": 19,
+            "b1": 20,
+            "o0": 10419,
+            "o1": 10979
+          },
+          {
+            "title": "Chapter 20",
+            "kind": "body",
+            "b0": 20,
+            "b1": 21,
+            "o0": 10980,
+            "o1": 11540
+          },
+          {
+            "title": "Chapter 21",
+            "kind": "body",
+            "b0": 21,
+            "b1": 22,
+            "o0": 11541,
+            "o1": 12101
+          },
+          {
+            "title": "Chapter 22",
+            "kind": "body",
+            "b0": 22,
+            "b1": 23,
+            "o0": 12102,
+            "o1": 12662
+          },
+          {
+            "title": "Chapter 23",
+            "kind": "body",
+            "b0": 23,
+            "b1": 24,
+            "o0": 12663,
+            "o1": 13223
+          },
+          {
+            "title": "Chapter 24",
+            "kind": "body",
+            "b0": 24,
+            "b1": 25,
+            "o0": 13224,
+            "o1": 13784
+          },
+          {
+            "title": "Chapter 25",
+            "kind": "body",
+            "b0": 25,
+            "b1": 26,
+            "o0": 13785,
+            "o1": 14345
+          },
+          {
+            "title": "Chapter 26",
+            "kind": "body",
+            "b0": 26,
+            "b1": 27,
+            "o0": 14346,
+            "o1": 14906
+          },
+          {
+            "title": "Chapter 27",
+            "kind": "body",
+            "b0": 27,
+            "b1": 28,
+            "o0": 14907,
+            "o1": 15467
+          },
+          {
+            "title": "Chapter 28",
+            "kind": "body",
+            "b0": 28,
+            "b1": 29,
+            "o0": 15468,
+            "o1": 16028
+          },
+          {
+            "title": "Chapter 29",
+            "kind": "body",
+            "b0": 29,
+            "b1": 30,
+            "o0": 16029,
+            "o1": 16589
+          },
+          {
+            "title": "Chapter 30",
+            "kind": "body",
+            "b0": 30,
+            "b1": 31,
+            "o0": 16590,
+            "o1": 17150
+          },
+          {
+            "title": "Chapter 31",
+            "kind": "body",
+            "b0": 31,
+            "b1": 32,
+            "o0": 17151,
+            "o1": 17711
+          },
+          {
+            "title": "Chapter 32",
+            "kind": "body",
+            "b0": 32,
+            "b1": 33,
+            "o0": 17712,
+            "o1": 18272
+          },
+          {
+            "title": "Chapter 33",
+            "kind": "body",
+            "b0": 33,
+            "b1": 34,
+            "o0": 18273,
+            "o1": 18833
+          },
+          {
+            "title": "Chapter 34",
+            "kind": "body",
+            "b0": 34,
+            "b1": 35,
+            "o0": 18834,
+            "o1": 19394
+          },
+          {
+            "title": "Chapter 35",
+            "kind": "body",
+            "b0": 35,
+            "b1": 36,
+            "o0": 19395,
+            "o1": 19955
+          },
+          {
+            "title": "Chapter 36",
+            "kind": "body",
+            "b0": 36,
+            "b1": 37,
+            "o0": 19956,
+            "o1": 20516
+          },
+          {
+            "title": "Chapter 37",
+            "kind": "body",
+            "b0": 37,
+            "b1": 38,
+            "o0": 20517,
+            "o1": 21077
+          },
+          {
+            "title": "Chapter 38",
+            "kind": "body",
+            "b0": 38,
+            "b1": 39,
+            "o0": 21078,
+            "o1": 21638
+          },
+          {
+            "title": "Chapter 39",
+            "kind": "body",
+            "b0": 39,
+            "b1": 40,
+            "o0": 21639,
+            "o1": 22199
+          },
+          {
+            "title": "Chapter 40",
+            "kind": "body",
+            "b0": 40,
+            "b1": 41,
+            "o0": 22200,
+            "o1": 22760
+          },
+          {
+            "title": "Chapter 41",
+            "kind": "body",
+            "b0": 41,
+            "b1": 42,
+            "o0": 22761,
+            "o1": 23321
+          },
+          {
+            "title": "Chapter 42",
+            "kind": "body",
+            "b0": 42,
+            "b1": 43,
+            "o0": 23322,
+            "o1": 23882
+          },
+          {
+            "title": "Chapter 43",
+            "kind": "body",
+            "b0": 43,
+            "b1": 44,
+            "o0": 23883,
+            "o1": 24443
+          },
+          {
+            "title": "Chapter 44",
+            "kind": "body",
+            "b0": 44,
+            "b1": 45,
+            "o0": 24444,
+            "o1": 25004
+          },
+          {
+            "title": "Chapter 45",
+            "kind": "body",
+            "b0": 45,
+            "b1": 46,
+            "o0": 25005,
+            "o1": 25565
+          },
+          {
+            "title": "Chapter 46",
+            "kind": "body",
+            "b0": 46,
+            "b1": 47,
+            "o0": 25566,
+            "o1": 26126
+          },
+          {
+            "title": "Chapter 47",
+            "kind": "body",
+            "b0": 47,
+            "b1": 48,
+            "o0": 26127,
+            "o1": 26687
+          },
+          {
+            "title": "Chapter 48",
+            "kind": "body",
+            "b0": 48,
+            "b1": 49,
+            "o0": 26688,
+            "o1": 27248
+          },
+          {
+            "title": "Chapter 49",
+            "kind": "body",
+            "b0": 49,
+            "b1": 50,
+            "o0": 27249,
+            "o1": 27809
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 2004
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 2565
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 3126
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 3687
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 4248
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 4809
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 5370
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 5931
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 6492
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 7053
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 7614
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 8175
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 8736
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 9297
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 9858
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 10419
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 10980
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 11541
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 12102
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 12663
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 13224
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 13785
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 14346
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 14907
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 15468
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 16029
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 16590
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 17151
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 17712
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 18273
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 18834
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 19395
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 19956
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 20517
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 21078
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 21639
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 22200
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 22761
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 23322
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 23883
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 24444
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 25005
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 25566
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 26127
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 26688
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 27249
+          }
+        ]
+      },
+      "replies": [
+        {
+          "q0": {
+            "choice": "body"
+          },
+          "q1": {
+            "choice": "body"
+          },
+          "q2": {
+            "choice": "body"
+          },
+          "q3": {
+            "choice": "body"
+          },
+          "q4": {
+            "choice": "body"
+          },
+          "q5": {
+            "choice": "body"
+          },
+          "q6": {
+            "choice": "body"
+          },
+          "q7": {
+            "choice": "body"
+          },
+          "q8": {
+            "choice": "body"
+          },
+          "q9": {
+            "choice": "body"
+          },
+          "q10": {
+            "choice": "body"
+          },
+          "q11": {
+            "choice": "body"
+          },
+          "q12": {
+            "choice": "body"
+          },
+          "q13": {
+            "choice": "body"
+          },
+          "q14": {
+            "choice": "body"
+          },
+          "q15": {
+            "choice": "body"
+          },
+          "q16": {
+            "choice": "body"
+          },
+          "q17": {
+            "choice": "body"
+          },
+          "q18": {
+            "choice": "body"
+          },
+          "q19": {
+            "choice": "body"
+          },
+          "q20": {
+            "choice": "body"
+          },
+          "q21": {
+            "choice": "body"
+          },
+          "q22": {
+            "choice": "body"
+          },
+          "q23": {
+            "choice": "body"
+          },
+          "q24": {
+            "choice": "body"
+          },
+          "q25": {
+            "choice": "body"
+          },
+          "q26": {
+            "choice": "body"
+          },
+          "q27": {
+            "choice": "body"
+          },
+          "q28": {
+            "choice": "body"
+          },
+          "q29": {
+            "choice": "body"
+          },
+          "q30": {
+            "choice": "body"
+          },
+          "q31": {
+            "choice": "body"
+          },
+          "q32": {
+            "choice": "body"
+          },
+          "q33": {
+            "choice": "body"
+          },
+          "q34": {
+            "choice": "body"
+          },
+          "q35": {
+            "choice": "body"
+          },
+          "q36": {
+            "choice": "body"
+          },
+          "q37": {
+            "choice": "body"
+          },
+          "q38": {
+            "choice": "body"
+          },
+          "q39": {
+            "choice": "body"
+          },
+          "q40": {
+            "choice": "body"
+          },
+          "q41": {
+            "choice": "body"
+          },
+          "q42": {
+            "choice": "body"
+          },
+          "q43": {
+            "choice": "body"
+          },
+          "q44": {
+            "choice": "body"
+          },
+          "q45": {
+            "choice": "body"
+          },
+          "q46": {
+            "choice": "body"
+          },
+          "q47": {
+            "choice": "body"
+          }
+        },
+        {
+          "q48": {
+            "choice": "body"
+          },
+          "q49": {
+            "choice": "body"
+          }
+        }
+      ],
+      "chat": null,
+      "env": {
+        "DETECT_KIND": "1",
+        "CLASSIFY_BY_JUDGE": "1"
+      },
+      "expected": [
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body",
+        "body"
+      ],
+      "requests": [
+        {
+          "type": "judge",
+          "state": {
+            "book_title": "𠮷の物語",
+            "chapters": {
+              "c0": {
+                "title": "Chapter 0",
+                "length": 320,
+                "begins": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文"
+              },
+              "c1": {
+                "title": "第一部 · Chapter 1",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c2": {
+                "title": "Chapter 2",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c3": {
+                "title": "Chapter 3",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c4": {
+                "title": "Chapter 4",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c5": {
+                "title": "Chapter 5",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c6": {
+                "title": "Chapter 6",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c7": {
+                "title": "Chapter 7",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c8": {
+                "title": "Chapter 8",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c9": {
+                "title": "Chapter 9",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c10": {
+                "title": "Chapter 10",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c11": {
+                "title": "Chapter 11",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c12": {
+                "title": "Chapter 12",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c13": {
+                "title": "Chapter 13",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c14": {
+                "title": "Chapter 14",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c15": {
+                "title": "Chapter 15",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c16": {
+                "title": "Chapter 16",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c17": {
+                "title": "Chapter 17",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c18": {
+                "title": "Chapter 18",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c19": {
+                "title": "Chapter 19",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c20": {
+                "title": "Chapter 20",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c21": {
+                "title": "Chapter 21",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c22": {
+                "title": "Chapter 22",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c23": {
+                "title": "Chapter 23",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c24": {
+                "title": "Chapter 24",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c25": {
+                "title": "Chapter 25",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c26": {
+                "title": "Chapter 26",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c27": {
+                "title": "Chapter 27",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c28": {
+                "title": "Chapter 28",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c29": {
+                "title": "Chapter 29",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c30": {
+                "title": "Chapter 30",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c31": {
+                "title": "Chapter 31",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c32": {
+                "title": "Chapter 32",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c33": {
+                "title": "Chapter 33",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c34": {
+                "title": "Chapter 34",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c35": {
+                "title": "Chapter 35",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c36": {
+                "title": "Chapter 36",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c37": {
+                "title": "Chapter 37",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c38": {
+                "title": "Chapter 38",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c39": {
+                "title": "Chapter 39",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c40": {
+                "title": "Chapter 40",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c41": {
+                "title": "Chapter 41",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c42": {
+                "title": "Chapter 42",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c43": {
+                "title": "Chapter 43",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c44": {
+                "title": "Chapter 44",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c45": {
+                "title": "Chapter 45",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c46": {
+                "title": "Chapter 46",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c47": {
+                "title": "Chapter 47",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              }
+            }
+          },
+          "questions": {
+            "q0": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c0 (\"Chapter 0\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q1": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c1 (\"第一部 · Chapter 1\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q2": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c2 (\"Chapter 2\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q3": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c3 (\"Chapter 3\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q4": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c4 (\"Chapter 4\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q5": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c5 (\"Chapter 5\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q6": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c6 (\"Chapter 6\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q7": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c7 (\"Chapter 7\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q8": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c8 (\"Chapter 8\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q9": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c9 (\"Chapter 9\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q10": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c10 (\"Chapter 10\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q11": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c11 (\"Chapter 11\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q12": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c12 (\"Chapter 12\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q13": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c13 (\"Chapter 13\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q14": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c14 (\"Chapter 14\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q15": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c15 (\"Chapter 15\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q16": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c16 (\"Chapter 16\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q17": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c17 (\"Chapter 17\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q18": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c18 (\"Chapter 18\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q19": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c19 (\"Chapter 19\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q20": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c20 (\"Chapter 20\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q21": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c21 (\"Chapter 21\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q22": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c22 (\"Chapter 22\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q23": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c23 (\"Chapter 23\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q24": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c24 (\"Chapter 24\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q25": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c25 (\"Chapter 25\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q26": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c26 (\"Chapter 26\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q27": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c27 (\"Chapter 27\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q28": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c28 (\"Chapter 28\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q29": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c29 (\"Chapter 29\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q30": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c30 (\"Chapter 30\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q31": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c31 (\"Chapter 31\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q32": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c32 (\"Chapter 32\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q33": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c33 (\"Chapter 33\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q34": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c34 (\"Chapter 34\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q35": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c35 (\"Chapter 35\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q36": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c36 (\"Chapter 36\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q37": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c37 (\"Chapter 37\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q38": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c38 (\"Chapter 38\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q39": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c39 (\"Chapter 39\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q40": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c40 (\"Chapter 40\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q41": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c41 (\"Chapter 41\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q42": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c42 (\"Chapter 42\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q43": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c43 (\"Chapter 43\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q44": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c44 (\"Chapter 44\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q45": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c45 (\"Chapter 45\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q46": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c46 (\"Chapter 46\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q47": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c47 (\"Chapter 47\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            }
+          }
+        },
+        {
+          "type": "judge",
+          "state": {
+            "book_title": "𠮷の物語",
+            "chapters": {
+              "c48": {
+                "title": "Chapter 48",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              },
+              "c49": {
+                "title": "Chapter 49",
+                "length": 560,
+                "begins": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter "
+              }
+            }
+          },
+          "questions": {
+            "q48": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c48 (\"Chapter 48\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            },
+            "q49": {
+              "type": "choice",
+              "instructions": "Which part of the book is chapters.c49 (\"Chapter 49\")?",
+              "criteria": {
+                "front": "Front matter that comes before the story: title page, copyright, publisher's note, about the author, preface, foreword, introduction, translator's note, table of contents, dedication. Prefaces and introductions usually summarise the whole plot.",
+                "body": "The story itself, including part titles (\"Part One\"), prologue, epilogue and extra chapters written as story.",
+                "back": "Matter after the story: afterword, appendix, chronology, notes, catalogue of other books, advertisements."
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "ordinals": [
+    [
+      null,
+      null
+    ],
+    [
+      "",
+      null
+    ],
+    [
+      "Chapter IX",
+      9
+    ],
+    [
+      "第十二章",
+      12
+    ],
+    [
+      "第二百三十部",
+      230
+    ],
+    [
+      "第零章",
+      null
+    ],
+    [
+      "  Volume xiv",
+      14
+    ],
+    [
+      "123、foo",
+      123
+    ],
+    [
+      "序言",
+      null
+    ],
+    [
+      "𠮷第一章",
+      null
+    ],
+    [
+      "Part IV",
+      4
+    ],
+    [
+      "12. Foo",
+      12
+    ]
+  ],
+  "works": [
+    {
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2004,
+        "chapters": [
+          {
+            "title": "序言",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "附录",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          }
+        ]
+      },
+      "min_chars": 0,
+      "expected": [
+        [
+          882,
+          1442
+        ],
+        [
+          1443,
+          2003
+        ]
+      ]
+    },
+    {
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2565,
+        "chapters": [
+          {
+            "title": "Chapter I",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "序章",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 4,
+            "b1": 5,
+            "o0": 2004,
+            "o1": 2564
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 2004
+          }
+        ]
+      },
+      "min_chars": 0,
+      "expected": [
+        [
+          882,
+          1442
+        ],
+        [
+          1443,
+          2003
+        ],
+        [
+          2004,
+          2564
+        ]
+      ]
+    },
+    {
+      "book": {
+        "title": "𠮷の物語",
+        "author": "Test Author",
+        "len": 2565,
+        "chapters": [
+          {
+            "title": "Chapter I",
+            "kind": "front",
+            "b0": 0,
+            "b1": 1,
+            "o0": 0,
+            "o1": 320
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 1,
+            "b1": 2,
+            "o0": 321,
+            "o1": 881,
+            "parent": "第一部"
+          },
+          {
+            "title": "序章",
+            "kind": "body",
+            "b0": 2,
+            "b1": 3,
+            "o0": 882,
+            "o1": 1442
+          },
+          {
+            "title": "Chapter I",
+            "kind": "body",
+            "b0": 3,
+            "b1": 4,
+            "o0": 1443,
+            "o1": 2003
+          },
+          {
+            "title": "Chapter II",
+            "kind": "body",
+            "b0": 4,
+            "b1": 5,
+            "o0": 2004,
+            "o1": 2564
+          }
+        ],
+        "blocks": [
+          {
+            "k": "p",
+            "t": "𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文𠮷🙂前言正文",
+            "o": 0
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 321
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 882
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 1443
+          },
+          {
+            "k": "p",
+            "t": "Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose Chapter prose ",
+            "o": 2004
+          }
+        ]
+      },
+      "min_chars": 20000,
+      "expected": []
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{"id":"numeric-hint","header":"2","attempt":0,"cap":10.0,"jitter":0.25,"now":1750000000,"expected":2.25}
+{"id":"blind-backoff","header":null,"attempt":2,"cap":10.0,"jitter":0.25,"now":1750000000,"expected":2.25}
+{"id":"http-date","header":"Sun, 15 Jun 2025 15:06:45 GMT","attempt":0,"cap":10.0,"jitter":0.25,"now":1750000000,"expected":5.25}
+{"id":"over-cap","header":"3600","attempt":0,"cap":10.0,"jitter":0.25,"now":1750000000,"expected":null}

@@ -1,0 +1,164 @@
+{
+  "schema": 1,
+  "source": "Python 1.7.5 parse_file, parser-only; no model",
+  "python": "3.11.13",
+  "parser_sha256": "77ec8df18ad0ad6c545f671e3f6e27f577faff4eacd68e4dacdf2bc3d085539d",
+  "cases": [
+    {
+      "input": "books/aq.txt",
+      "sha256": "b2371501db1638036e966117483995fcd1c14d2a748cca624e69c20dc8e598f8",
+      "output": "books__aq.txt",
+      "outcome": "parsed",
+      "blocks": 336,
+      "chapters": 10,
+      "notes": 0,
+      "utf16_length": 26040
+    },
+    {
+      "input": "books/jekyll.txt",
+      "sha256": "bf24ed59a990a29a1356661265ddf69311ef528245a070ac879ef3c439faef21",
+      "output": "books__jekyll.txt",
+      "outcome": "parsed",
+      "blocks": 362,
+      "chapters": 11,
+      "notes": 0,
+      "utf16_length": 138396
+    },
+    {
+      "input": "books/kokoro_aozora.txt",
+      "sha256": "c94f3a49e050b25293a54402435486cbc199812a85e2a57c045241979073bb3c",
+      "output": "books__kokoro_aozora.txt",
+      "outcome": "parsed",
+      "blocks": 1331,
+      "chapters": 110,
+      "notes": 0,
+      "utf16_length": 161572
+    },
+    {
+      "input": "books/rulin_first_200k.txt",
+      "sha256": "992447f81e4d6559c322c7e638a706deb0772d7691294a893debdd94059b8fd7",
+      "output": "books__rulin_first_200k.txt",
+      "outcome": "parsed",
+      "blocks": 1647,
+      "chapters": 25,
+      "notes": 0,
+      "utf16_length": 197392
+    },
+    {
+      "input": "books/un_coeur_simple.txt",
+      "sha256": "09ab9dad830e4449fcb9690c1ecdba571a55b604873eb6c3f592ced9737ec1d9",
+      "output": "books__un_coeur_simple.txt",
+      "outcome": "parsed",
+      "blocks": 301,
+      "chapters": 6,
+      "notes": 0,
+      "utf16_length": 68317
+    },
+    {
+      "input": "synthetic/empty.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output": "synthetic__empty.txt",
+      "outcome": "expected_rejection"
+    },
+    {
+      "input": "synthetic/empty_chapters.txt",
+      "sha256": "22b801c4cde7c06749e35ad962042b9d9883ea9ba9d80b3154b7a529715f3532",
+      "output": "synthetic__empty_chapters.txt",
+      "outcome": "parsed",
+      "blocks": 4,
+      "chapters": 4,
+      "notes": 0,
+      "utf16_length": 15
+    },
+    {
+      "input": "synthetic/encoding_gbk.txt",
+      "sha256": "4f2ec53befb5226838565c08764636c1095edc0016b943505f912e9514f5a4c2",
+      "output": "synthetic__encoding_gbk.txt",
+      "outcome": "parsed",
+      "blocks": 2,
+      "chapters": 1,
+      "notes": 0,
+      "utf16_length": 23
+    },
+    {
+      "input": "synthetic/encoding_utf16_be.txt",
+      "sha256": "80b08734da8231fb0edbe50b87a82c7d59c272ca0386926d1a38ee30978de6d0",
+      "output": "synthetic__encoding_utf16_be.txt",
+      "outcome": "parsed",
+      "blocks": 2,
+      "chapters": 1,
+      "notes": 0,
+      "utf16_length": 23
+    },
+    {
+      "input": "synthetic/encoding_utf16_le.txt",
+      "sha256": "b686861f73fbd32efaa1943b6f6541f88a8905cd5140d3afb30264a9a64349d9",
+      "output": "synthetic__encoding_utf16_le.txt",
+      "outcome": "parsed",
+      "blocks": 2,
+      "chapters": 1,
+      "notes": 0,
+      "utf16_length": 23
+    },
+    {
+      "input": "synthetic/encoding_utf8_bom.txt",
+      "sha256": "16f4e2d987593e05ba80b01d2810f7cc40fc24d9f0277a38d27144fbce17452f",
+      "output": "synthetic__encoding_utf8_bom.txt",
+      "outcome": "parsed",
+      "blocks": 2,
+      "chapters": 1,
+      "notes": 0,
+      "utf16_length": 23
+    },
+    {
+      "input": "synthetic/footnote_illustration.epub",
+      "sha256": "273d54425d51a3d28f2e9b254c039632d868e895defbfa0c799c82990776b6c2",
+      "output": "synthetic__footnote_illustration.epub",
+      "outcome": "parsed",
+      "blocks": 6,
+      "chapters": 2,
+      "notes": 1,
+      "utf16_length": 40
+    },
+    {
+      "input": "synthetic/long_paragraph.txt",
+      "sha256": "4696a35354b07d2ae054c500350dca4e18251ec22c2667259e8ccc9193c2579c",
+      "output": "synthetic__long_paragraph.txt",
+      "outcome": "parsed",
+      "blocks": 2,
+      "chapters": 1,
+      "notes": 0,
+      "utf16_length": 150008
+    },
+    {
+      "input": "synthetic/preface_only.txt",
+      "sha256": "bd8b34fce9f6f90c37e46f4dae49563d4c735c340f606ffea0edbef1d24cdfef",
+      "output": "synthetic__preface_only.txt",
+      "outcome": "parsed",
+      "blocks": 3,
+      "chapters": 1,
+      "notes": 0,
+      "utf16_length": 23
+    },
+    {
+      "input": "synthetic/scrambled_toc.epub",
+      "sha256": "e8f3e5e45c6f589e6d4a219bbd054a85a7cf5d38096b174112f75c50a2a4a166",
+      "output": "synthetic__scrambled_toc.epub",
+      "outcome": "parsed",
+      "blocks": 6,
+      "chapters": 3,
+      "notes": 0,
+      "utf16_length": 38
+    },
+    {
+      "input": "synthetic/unicode_mixed_newlines.txt",
+      "sha256": "a99bd8e544550e1b052e25bc70e9e4cfdd384ac8c442ec30d71467da3b330eb0",
+      "output": "synthetic__unicode_mixed_newlines.txt",
+      "outcome": "parsed",
+      "blocks": 8,
+      "chapters": 2,
+      "notes": 0,
+      "utf16_length": 98
+    }
+  ]
+}

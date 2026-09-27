@@ -1,0 +1,3 @@
+{"input":{"book":{"len":30,"blocks":[{"k":"p","o":0,"t":"😀尼尔遇见黑月。","fn":[]}]},"name":"尼尔","cutoff":10},"output":2}
+{"input":{"book":{"len":30,"blocks":[{"k":"p","o":0,"t":"😀尼尔遇见黑月。","fn":[]}]},"name":"黑月","cutoff":4},"output":{"$error":{"type":"builtins.ValueError","message":"当前已读原文里没有找到这个完整名称，请检查文字或继续阅读"}}}
+{"input":{"book":{"title":"Fixture","author":"Tester","len":12,"lang":"en","notes":{},"blocks":[{"k":"p","t":"Alice came.","o":0,"fn":[]}],"cover":null,"chapters":[{"title":"One","b0":0,"b1":1,"o0":0,"o1":12,"kind":"body"}]},"name":"came","cutoff":10},"output":6}

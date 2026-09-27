@@ -1,0 +1,3 @@
+{"input":{"kg":{"log":[{"t":"person","p":1,"id":"p1","name":"Alice"}]},"length":12},"output":{"log":[{"t":"person","p":1,"id":"p1","name":"Alice"}]}}
+{"input":{"kg":{"log":[{"t":"person","p":1,"id":"p1","name":"Alice"},{"t":"person","p":0,"id":"p2","name":"Bob"}]},"length":12},"output":{"$error":{"type":"builtins.ValueError","message":"人物记录没有按位置排序"}}}
+{"input":{"kg":{"log":[{"t":"person","p":1,"id":"p1","name":"Alice"},{"t":"person","p":2,"id":"p2","name":"Bob"}]},"length":12},"output":{"log":[{"t":"person","p":1,"id":"p1","name":"Alice"},{"t":"person","p":2,"id":"p2","name":"Bob"}]}}

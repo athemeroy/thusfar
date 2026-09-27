@@ -1,0 +1,4421 @@
+{
+  "schema": 1,
+  "baseline": "Python 1.7.5: the 15 original tests/test_*.py files, excluding new A0 semantics tests",
+  "test_catalog_sha256": "df9e5bb918de5ce09c0aa3599c2bdaf421eb6eccae2207926ae6e0ff76c1d646",
+  "python_source_sha256": {
+    "tests/test_export_exact_context.py": "b10f6587d7e96e10d493e01987b146c0847ca8b7c9324b4866eeee9511229327",
+    "tests/test_judge_client.py": "476fa68e13dbf6f2b424a478ee75d1d8fb1b4eb2748379dae83fbefe6e43bf56",
+    "tests/test_judge_data.py": "7074b470131413cf53b738ab5cc66e3518399ed3ea4ae5dbe799757cecce2836",
+    "tests/test_kg.py": "f7d4a148e94c347cf32ffc40aa61edcd116ecee26b8c38bc0949db73211fd79d",
+    "tests/test_llm.py": "438baf2c6f59bf3bd51056151ce20c9658670a358e6f5b73b9655a1a022d67bf",
+    "tests/test_manual_entities.py": "dc5eaf3fb83c4d44126a79319926ce9ed815061fe42d16b063f69ff024aac961",
+    "tests/test_marginalia.py": "7b3c4fc7213da5417751ffab5cb8089b8bf85ed2c106ebe5ef6c314a8b5e22ef",
+    "tests/test_notebook.py": "a788c3c64c07e92829bb719d8cff214c2babdf3dbca91eb6367c2ade7b8b8371",
+    "tests/test_parse_japanese.py": "2530944a9757437eda2592a3ec81e4f430f5ca224234162586767bc36fe8f093",
+    "tests/test_pipeline_repair.py": "77e89903bea821dcdd61686c9a2758f96d152a0474e8e73ae0c3df1d95b6e15d",
+    "tests/test_reading_list.py": "ff274ba5352b90a2d40fbbcae9aa6f08c01ff6e3c44196599ef684d9aca2dd10",
+    "tests/test_release.py": "96abce14a932a406835792da8dde06cabd16dbd208ee613d122fbc88ef2c726c",
+    "tests/test_server_repair.py": "fa43cceb8afb828fa26df10b1252833d84886e448d9b595e2987e6a44338cbc5",
+    "tests/test_standalone.py": "61e3d21f41c997260798219d95d48c0ea4b12aec3eb24a5f0baef62e568572f0",
+    "tests/test_support_cache.py": "1928930322b0ca460b25432728f448369f2ba7a9fa360e0eb73fb7893bbe63ce"
+  },
+  "counts": {
+    "total": 171,
+    "translated": 0,
+    "translated_skipped": 171,
+    "pending_port": 0,
+    "scope_exception": 0
+  },
+  "tests": [
+    {
+      "id": "tests.test_export_exact_context.ExactTeacherContextTests.test_zero_window_keeps_tail_beyond_old_cap",
+      "python_source": "tests/test_export_exact_context.py",
+      "python_line": 30,
+      "dart_file": "core/test/ported/test_export_exact_context_ported_test.dart",
+      "dart_name": "tests.test_export_exact_context.ExactTeacherContextTests.test_zero_window_keeps_tail_beyond_old_cap",
+      "owner_modules": [
+        "scripts.export_judge_data"
+      ],
+      "owner_stages": [
+        "A0（数据工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
+      "contract_owners": [
+        "scripts.export_judge_data.from_logs"
+      ]
+    },
+    {
+      "id": "tests.test_export_exact_context.ExactTeacherContextTests.test_cropped_context_is_explicitly_unverified",
+      "python_source": "tests/test_export_exact_context.py",
+      "python_line": 39,
+      "dart_file": "core/test/ported/test_export_exact_context_ported_test.dart",
+      "dart_name": "tests.test_export_exact_context.ExactTeacherContextTests.test_cropped_context_is_explicitly_unverified",
+      "owner_modules": [
+        "scripts.export_judge_data"
+      ],
+      "owner_stages": [
+        "A0（数据工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
+      "contract_owners": [
+        "scripts.export_judge_data.from_logs"
+      ]
+    },
+    {
+      "id": "tests.test_export_exact_context.ExactTeacherContextTests.test_structured_state_preserves_all_sections_and_order",
+      "python_source": "tests/test_export_exact_context.py",
+      "python_line": 47,
+      "dart_file": "core/test/ported/test_export_exact_context_ported_test.dart",
+      "dart_name": "tests.test_export_exact_context.ExactTeacherContextTests.test_structured_state_preserves_all_sections_and_order",
+      "owner_modules": [
+        "scripts.export_judge_data"
+      ],
+      "owner_stages": [
+        "A0（数据工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A4 judge-request exact-context serialization and C Dart teacher-data exporter adapter is pending.",
+      "contract_owners": [
+        "scripts.export_judge_data.from_logs"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_explicit_zero_retries_overrides_default_without_final_sleep",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 64,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_explicit_zero_retries_overrides_default_without_final_sleep",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_lower_environment_retry_count_is_honored",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 71,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_lower_environment_retry_count_is_honored",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_success_after_retry_is_validated_and_logged_once",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 84,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_success_after_retry_is_validated_and_logged_once",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_timeout_exhaustion_has_no_final_sleep",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 91,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_timeout_exhaustion_has_no_final_sleep",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_free_long_retry_advice_falls_back_immediately",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 98,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_free_long_retry_advice_falls_back_immediately",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_free_exhaustion_has_no_final_sleep",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 106,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_free_exhaustion_has_no_final_sleep",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev_free"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_free_valid_response_keeps_wire_contract",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 113,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_free_valid_response_keeps_wire_contract",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev_free"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_free_batches_honor_serialized_unicode_dimension_limit",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 119,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_free_batches_honor_serialized_unicode_dimension_limit",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev_free"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_free_batches_preserve_twenty_dimension_limit",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 143,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_free_batches_preserve_twenty_dimension_limit",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._classifier_batches"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free batches preserve twenty dimension limit'.",
+      "contract_owners": [
+        "pipeline.llm._classifier_batches"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_free_serialized_dimension_boundary_is_inclusive",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 148,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_free_serialized_dimension_boundary_is_inclusive",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._classifier_batches"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free serialized dimension boundary is inclusive'.",
+      "contract_owners": [
+        "pipeline.llm._classifier_batches"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_free_instruction_limit_is_checked_before_submission",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 159,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_free_instruction_limit_is_checked_before_submission",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._classifier_batches"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._classifier_batches is pending (A3, A4); required to check 'free instruction limit is checked before submission'.",
+      "contract_owners": [
+        "pipeline.llm._classifier_batches"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_long_guard_note_is_kept_in_state_with_short_instructions",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 164,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_long_guard_note_is_kept_in_state_with_short_instructions",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.judge.guard_texts"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.judge.guard_texts and its recorded jev callback/state capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.judge.guard_texts"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_oversized_single_dimension_goes_paid_without_partial_free_calls",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 176,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_oversized_single_dimension_goes_paid_without_partial_free_calls",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_missing_paid_answers_are_not_logged_as_training_labels",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 185,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_missing_paid_answers_are_not_logged_as_training_labels",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_invalid_paid_scores_are_rejected",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 195,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_invalid_paid_scores_are_rejected",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_malformed_or_missing_free_dimensions_are_rejected",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 205,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_malformed_or_missing_free_dimensions_are_rejected",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev_free"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.jev_free and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.jev_free"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_chat_exhaustion_has_no_final_sleep",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 213,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_chat_exhaustion_has_no_final_sleep",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm.chat"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm.chat and its scripted transport, clock, sleep and teacher-log capture test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm.chat"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.JudgeClient.test_retry_after_dates_and_invalid_values",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 219,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.JudgeClient.test_retry_after_dates_and_invalid_values",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._retry_after"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._retry_after and its fixed-clock Retry-After evaluation test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._retry_after"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.Breaker.test_cooldown_allows_only_one_recovery_probe",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 228,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.Breaker.test_cooldown_allows_only_one_recovery_probe",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._Breaker.__init__"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._Breaker.__init__ and its fixed-clock concurrent breaker probe test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._Breaker.__init__"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.TeacherLog.test_parallel_writes_are_complete_and_have_one_state",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 247,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.TeacherLog.test_parallel_writes_are_complete_and_have_one_state",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._teacher_log"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._teacher_log"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.TeacherLog.test_state_deduplication_is_scoped_to_log_directory",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 261,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.TeacherLog.test_state_deduplication_is_scoped_to_log_directory",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._teacher_log"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._teacher_log"
+      ]
+    },
+    {
+      "id": "tests.test_judge_client.TeacherLog.test_failed_state_write_is_visible_and_remains_retryable",
+      "python_source": "tests/test_judge_client.py",
+      "python_line": 269,
+      "dart_file": "core/test/ported/test_judge_client_ported_test.dart",
+      "dart_name": "tests.test_judge_client.TeacherLog.test_failed_state_write_is_visible_and_remains_retryable",
+      "owner_modules": [
+        "pipeline.judge",
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4"
+      ],
+      "direct_targets": [
+        "pipeline.llm._teacher_log"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner pipeline.llm._teacher_log and its isolated directory, parallel writes and injected write failure test adapter are pending (A3/A4); translated assertions remain skipped.",
+      "contract_owners": [
+        "pipeline.llm._teacher_log"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.StateFormat.test_export_matches_what_the_pipeline_sends",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 26,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.StateFormat.test_export_matches_what_the_pipeline_sends",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [
+        "pipeline.llm._state_text"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.state_text, pipeline.llm._state_text is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.state_text",
+        "pipeline.llm._state_text"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Windowing.test_finds_what_the_claim_borrowed_from_the_passage",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 36,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Windowing.test_finds_what_the_claim_borrowed_from_the_passage",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.shared, scripts.export_judge_data.focus is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.shared",
+        "scripts.export_judge_data.focus"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Windowing.test_keeps_the_people_the_question_names",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 45,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Windowing.test_keeps_the_people_the_question_names",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.anchors, scripts.export_judge_data.focus is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.anchors",
+        "scripts.export_judge_data.focus"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Windowing.test_no_anchor_keeps_the_passage_rather_than_its_opening",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 53,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Windowing.test_no_anchor_keeps_the_passage_rather_than_its_opening",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.focus is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.focus"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Splits.test_full_evidence_and_options_distinguish_questions",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 61,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Splits.test_full_evidence_and_options_distinguish_questions",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.decision_id is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.decision_id"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Splits.test_reruns_of_one_book_are_one_work",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 67,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Splits.test_reruns_of_one_book_are_one_work",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.work_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.work_of"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Labels.test_options_become_english_sentences",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 75,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Labels.test_options_become_english_sentences",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.gliclass_data.phrase_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.gliclass_data.phrase_of"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Labels.test_two_options_never_collapse_into_one_label",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 82,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Labels.test_two_options_never_collapse_into_one_label",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.gliclass_data.labels_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.gliclass_data.labels_of"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.Labels.test_round_trip_through_the_wire_format",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 87,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.Labels.test_round_trip_through_the_wire_format",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.judge_server.criteria_of, scripts.gliclass_data.labels_of is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.judge_server.criteria_of",
+        "scripts.gliclass_data.labels_of"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.LogIntegrity.test_missing_state_is_not_exported_as_empty_passage",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 104,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.LogIntegrity.test_missing_state_is_not_exported_as_empty_passage",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.from_logs is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.from_logs"
+      ]
+    },
+    {
+      "id": "tests.test_judge_data.LogIntegrity.test_corrupt_interior_line_is_not_silently_skipped",
+      "python_source": "tests/test_judge_data.py",
+      "python_line": 116,
+      "dart_file": "core/test/ported/test_judge_data_ported_test.dart",
+      "dart_name": "tests.test_judge_data.LogIntegrity.test_corrupt_interior_line_is_not_silently_skipped",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart data-tool contract owner scripts.export_judge_data.read_log is pending (A3 compatibility adapter); translated assertions remain skipped.",
+      "contract_owners": [
+        "scripts.export_judge_data.read_log"
+      ]
+    },
+    {
+      "id": "tests.test_kg.KGTest.test_nothing_about_a_person_before_they_enter",
+      "python_source": "tests/test_kg.py",
+      "python_line": 60,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.KGTest.test_nothing_about_a_person_before_they_enter",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'nothing about a person before they enter'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
+    },
+    {
+      "id": "tests.test_kg.KGTest.test_early_events_belong_to_the_identity_the_reader_knows",
+      "python_source": "tests/test_kg.py",
+      "python_line": 65,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.KGTest.test_early_events_belong_to_the_identity_the_reader_knows",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'early events belong to the identity the reader knows'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
+    },
+    {
+      "id": "tests.test_kg.KGTest.test_revealed_name_not_used_before_the_reveal",
+      "python_source": "tests/test_kg.py",
+      "python_line": 72,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.KGTest.test_revealed_name_not_used_before_the_reveal",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'revealed name not used before the reveal'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
+    },
+    {
+      "id": "tests.test_kg.KGTest.test_merge_links_the_two_records",
+      "python_source": "tests/test_kg.py",
+      "python_line": 78,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.KGTest.test_merge_links_the_two_records",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'merge links the two records'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
+    },
+    {
+      "id": "tests.test_kg.KGTest.test_generic_title_needs_a_decision",
+      "python_source": "tests/test_kg.py",
+      "python_line": 83,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.KGTest.test_generic_title_needs_a_decision",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.kg.KG.__init__"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__ is pending (A2, A4, A6); required to check 'generic title needs a decision'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
+    },
+    {
+      "id": "tests.test_kg.KGTest.test_mentions_are_positioned_on_the_text",
+      "python_source": "tests/test_kg.py",
+      "python_line": 89,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.KGTest.test_mentions_are_positioned_on_the_text",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract, pipeline.kg, pipeline.parse, server.temporal is pending (A2, A4, A6); required to check 'mentions are positioned on the text'.",
+      "contract_owners": [
+        "tests.test_kg.reveal_setup"
+      ]
+    },
+    {
+      "id": "tests.test_kg.TextTest.test_generic_reveal_keeps_old_label_only_before_the_reveal",
+      "python_source": "tests/test_kg.py",
+      "python_line": 96,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.TextTest.test_generic_reveal_keeps_old_label_only_before_the_reveal",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.kg.KG.__init__",
+        "pipeline.kg.generic_word",
+        "server.temporal.fold"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__, pipeline.kg.generic_word, server.temporal.fold is pending (A2, A4, A6); required to check 'generic reveal keeps old label only before the reveal'.",
+      "contract_owners": [
+        "tests.test_kg.generic_reveal_merge_setup"
+      ]
+    },
+    {
+      "id": "tests.test_kg.TextTest.test_zh_punctuation",
+      "python_source": "tests/test_kg.py",
+      "python_line": 111,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.TextTest.test_zh_punctuation",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.kg.zh"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.zh is pending (A2, A4, A6); required to check 'zh punctuation'.",
+      "contract_owners": [
+        "pipeline.kg.zh"
+      ]
+    },
+    {
+      "id": "tests.test_kg.TextTest.test_alias_filter",
+      "python_source": "tests/test_kg.py",
+      "python_line": 115,
+      "dart_file": "core/test/ported/test_kg_ported_test.dart",
+      "dart_name": "tests.test_kg.TextTest.test_alias_filter",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.kg",
+        "pipeline.parse",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A2",
+        "A4",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.kg.good_alias"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.good_alias is pending (A2, A4, A6); required to check 'alias filter'.",
+      "contract_owners": [
+        "pipeline.kg.good_alias"
+      ]
+    },
+    {
+      "id": "tests.test_llm.RepairTest.test_inner_quote_followed_by_text",
+      "python_source": "tests/test_llm.py",
+      "python_line": 8,
+      "dart_file": "core/test/ported/test_llm_ported_test.dart",
+      "dart_name": "tests.test_llm.RepairTest.test_inner_quote_followed_by_text",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [
+        "pipeline.llm.parse_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by text'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
+    },
+    {
+      "id": "tests.test_llm.RepairTest.test_inner_quote_followed_by_ascii_comma",
+      "python_source": "tests/test_llm.py",
+      "python_line": 11,
+      "dart_file": "core/test/ported/test_llm_ported_test.dart",
+      "dart_name": "tests.test_llm.RepairTest.test_inner_quote_followed_by_ascii_comma",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [
+        "pipeline.llm.parse_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by ascii comma'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
+    },
+    {
+      "id": "tests.test_llm.RepairTest.test_inner_quote_followed_by_colon",
+      "python_source": "tests/test_llm.py",
+      "python_line": 14,
+      "dart_file": "core/test/ported/test_llm_ported_test.dart",
+      "dart_name": "tests.test_llm.RepairTest.test_inner_quote_followed_by_colon",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [
+        "pipeline.llm.parse_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'inner quote followed by colon'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
+    },
+    {
+      "id": "tests.test_llm.RepairTest.test_fences_and_trailing_commas",
+      "python_source": "tests/test_llm.py",
+      "python_line": 17,
+      "dart_file": "core/test/ported/test_llm_ported_test.dart",
+      "dart_name": "tests.test_llm.RepairTest.test_fences_and_trailing_commas",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [
+        "pipeline.llm.parse_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'fences and trailing commas'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
+    },
+    {
+      "id": "tests.test_llm.RepairTest.test_valid_json_untouched",
+      "python_source": "tests/test_llm.py",
+      "python_line": 20,
+      "dart_file": "core/test/ported/test_llm_ported_test.dart",
+      "dart_name": "tests.test_llm.RepairTest.test_valid_json_untouched",
+      "owner_modules": [
+        "pipeline.llm"
+      ],
+      "owner_stages": [
+        "A3"
+      ],
+      "direct_targets": [
+        "pipeline.llm.parse_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.parse_json is pending (A3); required to check 'valid json untouched'.",
+      "contract_owners": [
+        "pipeline.llm.parse_json"
+      ]
+    },
+    {
+      "id": "tests.test_manual_entities.ManualRules.test_utf16_anchor_and_versions_do_not_spoil_earlier_pages",
+      "python_source": "tests/test_manual_entities.py",
+      "python_line": 17,
+      "dart_file": "core/test/ported/test_manual_entities_ported_test.dart",
+      "dart_name": "tests.test_manual_entities.ManualRules.test_utf16_anchor_and_versions_do_not_spoil_earlier_pages",
+      "owner_modules": [
+        "server.manual_entities"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [
+        "server.manual_entities.apply",
+        "server.manual_entities.restore",
+        "server.manual_entities.rows"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.manual_entities.apply"
+      ]
+    },
+    {
+      "id": "tests.test_manual_entities.ManualRules.test_existing_visible_name_is_not_duplicated",
+      "python_source": "tests/test_manual_entities.py",
+      "python_line": 34,
+      "dart_file": "core/test/ported/test_manual_entities_ported_test.dart",
+      "dart_name": "tests.test_manual_entities.ManualRules.test_existing_visible_name_is_not_duplicated",
+      "owner_modules": [
+        "server.manual_entities"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [
+        "server.manual_entities.apply"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.manual_entities.apply"
+      ]
+    },
+    {
+      "id": "tests.test_manual_entities.ManualRules.test_name_must_be_in_already_read_source",
+      "python_source": "tests/test_manual_entities.py",
+      "python_line": 39,
+      "dart_file": "core/test/ported/test_manual_entities_ported_test.dart",
+      "dart_name": "tests.test_manual_entities.ManualRules.test_name_must_be_in_already_read_source",
+      "owner_modules": [
+        "server.manual_entities"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [
+        "server.manual_entities.apply"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.manual_entities.apply"
+      ]
+    },
+    {
+      "id": "tests.test_manual_entities.ManualRules.test_inline_mentions_preserve_generated_names_and_utf16_positions",
+      "python_source": "tests/test_manual_entities.py",
+      "python_line": 43,
+      "dart_file": "core/test/ported/test_manual_entities_ported_test.dart",
+      "dart_name": "tests.test_manual_entities.ManualRules.test_inline_mentions_preserve_generated_names_and_utf16_positions",
+      "owner_modules": [
+        "server.manual_entities"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [
+        "server.manual_entities.mentions"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of server.manual_entities.mentions is pending (A6); required to check 'inline mentions preserve generated names and utf16 positions'.",
+      "contract_owners": [
+        "server.manual_entities.mentions"
+      ]
+    },
+    {
+      "id": "tests.test_manual_entities.ManualHTTP.test_manual_endpoint_cutoff_retry_export_and_delete",
+      "python_source": "tests/test_manual_entities.py",
+      "python_line": 55,
+      "dart_file": "core/test/ported/test_manual_entities_ported_test.dart",
+      "dart_name": "tests.test_manual_entities.ManualHTTP.test_manual_endpoint_cutoff_retry_export_and_delete",
+      "owner_modules": [
+        "server.manual_entities"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 manual-entity pure and HTTP adapters are pending.",
+      "contract_owners": [
+        "server.app.Handler.route",
+        "server.manual_entities.apply"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_distinct_prefetch_pages_run_concurrently_and_keep_both_cache_rows",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 39,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_distinct_prefetch_pages_run_concurrently_and_keep_both_cache_rows",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_manual_comment_uses_only_text_through_anchor_and_reuses_cache",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 60,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_manual_comment_uses_only_text_through_anchor_and_reuses_cache",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.cached_json",
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_auto_reaction_uses_only_visible_page_and_reuses_cache",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 91,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_auto_reaction_uses_only_visible_page_and_reuses_cache",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_page_cues_call_jev_once_but_never_generate_prose_until_tapped",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 120,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_page_cues_call_jev_once_but_never_generate_prose_until_tapped",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_page_cues_include_prior_source_but_no_future_story",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 135,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_page_cues_include_prior_source_but_no_future_story",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_story_prioritizes_page_character_and_related_history",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 149,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_story_prioritizes_page_character_and_related_history",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.marginalia._story"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of server.marginalia._story is pending (A2, A6); required to check 'story prioritizes page character and related history'.",
+      "contract_owners": [
+        "server.marginalia._story"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_prior_source_window_is_hard_bounded_at_utf16_cutoff",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 164,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_prior_source_window_is_hard_bounded_at_utf16_cutoff",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.parse.u16",
+        "server.marginalia._source_before"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._source_before is pending (A2, A6); required to check 'prior source window is hard bounded at utf16 cutoff'.",
+      "contract_owners": [
+        "server.marginalia._source_before"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_clicked_cue_writes_three_distinct_plain_comments_in_parallel",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 173,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_clicked_cue_writes_three_distinct_plain_comments_in_parallel",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_partial_generation_or_guard_rejection_keeps_only_safe_comments",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 203,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_partial_generation_or_guard_rejection_keeps_only_safe_comments",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_invalid_anchor_never_generates",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 219,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_invalid_anchor_never_generates",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart server.marginalia and server.app.Handler HTTP owners plus the fixed-clock, revisioned-cache, scripted jev/chat/guard adapter are pending (A2/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.marginalia#scripted_http",
+        "server.app.Handler",
+        "pipeline.parse.u16"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_utf16_candidate_offsets_round_trip",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 226,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_utf16_candidate_offsets_round_trip",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.parse.u16",
+        "server.marginalia._page_candidates"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.u16, server.marginalia._page_candidates is pending (A2, A6); required to check 'utf16 candidate offsets round trip'.",
+      "contract_owners": [
+        "server.marginalia._page_candidates"
+      ]
+    },
+    {
+      "id": "tests.test_marginalia.MarginaliaHTTP.test_prompt_fragments_and_truncated_comments_are_not_published",
+      "python_source": "tests/test_marginalia.py",
+      "python_line": 234,
+      "dart_file": "core/test/ported/test_marginalia_ported_test.dart",
+      "dart_name": "tests.test_marginalia.MarginaliaHTTP.test_prompt_fragments_and_truncated_comments_are_not_published",
+      "owner_modules": [
+        "pipeline.parse",
+        "server.app",
+        "server.marginalia"
+      ],
+      "owner_stages": [
+        "A2",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.marginalia._clean"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of server.marginalia._clean is pending (A2, A6); required to check 'prompt fragments and truncated comments are not published'.",
+      "contract_owners": [
+        "server.marginalia._clean"
+      ]
+    },
+    {
+      "id": "tests.test_notebook.NotebookHTTP.test_idempotency_conflict_and_independent_notes",
+      "python_source": "tests/test_notebook.py",
+      "python_line": 22,
+      "dart_file": "core/test/ported/test_notebook_ported_test.dart",
+      "dart_name": "tests.test_notebook.NotebookHTTP.test_idempotency_conflict_and_independent_notes",
+      "owner_modules": [
+        "server.app",
+        "server.notebook"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_notebook.NotebookHTTP.test_anchors_reject_fabricated_quote_surrogate_split_and_future_bounds",
+      "python_source": "tests/test_notebook.py",
+      "python_line": 36,
+      "dart_file": "core/test/ported/test_notebook_ported_test.dart",
+      "dart_name": "tests.test_notebook.NotebookHTTP.test_anchors_reject_fabricated_quote_surrogate_split_and_future_bounds",
+      "owner_modules": [
+        "server.app",
+        "server.notebook"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.cached_json",
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_notebook.NotebookHTTP.test_export_import_preserves_notes_and_refuses_different_personal_records",
+      "python_source": "tests/test_notebook.py",
+      "python_line": 48,
+      "dart_file": "core/test/ported/test_notebook_ported_test.dart",
+      "dart_name": "tests.test_notebook.NotebookHTTP.test_export_import_preserves_notes_and_refuses_different_personal_records",
+      "owner_modules": [
+        "server.app",
+        "server.notebook"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_notebook.NotebookHTTP.test_delete_tombstone_markdown_and_book_removal_preserve_personal_data",
+      "python_source": "tests/test_notebook.py",
+      "python_line": 66,
+      "dart_file": "core/test/ported/test_notebook_ported_test.dart",
+      "dart_name": "tests.test_notebook.NotebookHTTP.test_delete_tombstone_markdown_and_book_removal_preserve_personal_data",
+      "owner_modules": [
+        "server.app",
+        "server.notebook"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 notebook HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_parse_japanese.JapanesePlainText.test_preface_does_not_swallow_numbered_parts",
+      "python_source": "tests/test_parse_japanese.py",
+      "python_line": 16,
+      "dart_file": "core/test/ported/test_parse_japanese_ported_test.dart",
+      "dart_name": "tests.test_parse_japanese.JapanesePlainText.test_preface_does_not_swallow_numbered_parts",
+      "owner_modules": [
+        "pipeline.parse"
+      ],
+      "owner_stages": [
+        "A2"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
+    },
+    {
+      "id": "tests.test_parse_japanese.JapanesePlainText.test_notebooks_and_narrative_frames_are_chapters",
+      "python_source": "tests/test_parse_japanese.py",
+      "python_line": 34,
+      "dart_file": "core/test/ported/test_parse_japanese_ported_test.dart",
+      "dart_name": "tests.test_parse_japanese.JapanesePlainText.test_notebooks_and_narrative_frames_are_chapters",
+      "owner_modules": [
+        "pipeline.parse"
+      ],
+      "owner_stages": [
+        "A2"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
+    },
+    {
+      "id": "tests.test_parse_japanese.JapanesePlainText.test_named_upper_middle_lower_parts_preserve_offsets",
+      "python_source": "tests/test_parse_japanese.py",
+      "python_line": 41,
+      "dart_file": "core/test/ported/test_parse_japanese_ported_test.dart",
+      "dart_name": "tests.test_parse_japanese.JapanesePlainText.test_named_upper_middle_lower_parts_preserve_offsets",
+      "owner_modules": [
+        "pipeline.parse"
+      ],
+      "owner_stages": [
+        "A2"
+      ],
+      "direct_targets": [
+        "pipeline.parse.u16"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
+    },
+    {
+      "id": "tests.test_parse_japanese.JapanesePlainText.test_chinese_headings_keep_their_existing_structure",
+      "python_source": "tests/test_parse_japanese.py",
+      "python_line": 55,
+      "dart_file": "core/test/ported/test_parse_japanese_ported_test.dart",
+      "dart_name": "tests.test_parse_japanese.JapanesePlainText.test_chinese_headings_keep_their_existing_structure",
+      "owner_modules": [
+        "pipeline.parse"
+      ],
+      "owner_stages": [
+        "A2"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A2 pipeline.parse.parse_txt and its UTF-8 text fixture adapter are pending.",
+      "contract_owners": [
+        "pipeline.parse.parse_txt"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_relation_status_survives_conversion_and_kg",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 58,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_relation_status_survives_conversion_and_kg",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.extract.segments",
+        "pipeline.kg.KG.__init__",
+        "pipeline.link.to_classic"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract.segments, pipeline.kg.KG.__init__, pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation status survives conversion and kg'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_short_identity_reveal_and_unicode_entry",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 70,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_short_identity_reveal_and_unicode_entry",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.extract.segments",
+        "pipeline.kg.KG.__init__"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.extract.segments, pipeline.kg.KG.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'short identity reveal and unicode entry'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_merge_between_existing_people_does_not_rewrite_past",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 84,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_merge_between_existing_people_does_not_rewrite_past",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.kg.KG.__init__"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.KG.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'merge between existing people does not rewrite past'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_judge_relation_uses_evidence_frontier",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 100,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_judge_relation_uses_evidence_frontier",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.link.to_classic"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'judge relation uses evidence frontier'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.kg_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_missing_facets_propagate_for_retry",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 108,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_missing_facets_propagate_for_retry",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.judge.relations_by_judge"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.judge.relations_by_judge is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'missing facets propagate for retry'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.judge_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_relation_judge_receives_character_memory_but_requires_current_evidence",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 115,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_relation_judge_receives_character_memory_but_requires_current_evidence",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.judge.family_questions",
+        "pipeline.judge.relations_by_judge"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.judge.family_questions, pipeline.judge.relations_by_judge is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation judge receives character memory but requires current evidence'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.judge_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_relation_memory_keeps_biography_events_and_existing_ties",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 132,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_relation_memory_keeps_biography_events_and_existing_ties",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'relation memory keeps biography events and existing ties'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_critical_outage_keeps_extraction_and_does_not_publish",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 154,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_critical_outage_keeps_extraction_and_does_not_publish",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.link.to_classic"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'critical outage keeps extraction and does not publish'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_biography_order_and_unchecked_publication",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 165,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_biography_order_and_unchecked_publication",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'biography order and unchecked publication'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_complete_replay_is_model_free_and_preserves_final_decisions",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 176,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_complete_replay_is_model_free_and_preserves_final_decisions",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.link.to_classic"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'complete replay is model free and preserves final decisions'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_generation_draft_is_reused_after_failed_guard",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 195,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_generation_draft_is_reused_after_failed_guard",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'generation draft is reused after failed guard'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_collection_keeps_interstitial_front_matter",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 205,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_collection_keeps_interstitial_front_matter",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.classify.classify_chapters"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify.classify_chapters is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'collection keeps interstitial front matter'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.classify_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_free_alias_never_reads_paid_credentials_on_outage",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 209,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_free_alias_never_reads_paid_credentials_on_outage",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.llm._Breaker.__init__",
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._Breaker.__init__, pipeline.llm.jev is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'free alias never reads paid credentials on outage'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_paid_budget_persists_and_concurrency_cannot_exceed_cap",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 218,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_paid_budget_persists_and_concurrency_cannot_exceed_cap",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.provenance.reserve_paid"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.provenance.reserve_paid is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'paid budget persists and concurrency cannot exceed cap'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.budget_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_paid_budget_default_uses_durable_data_directory",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 234,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_paid_budget_default_uses_durable_data_directory",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.provenance.reserve_paid"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.provenance.reserve_paid is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'paid budget default uses durable data directory'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.budget_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_legacy_chat_fallback_cannot_bypass_route_or_teacher_provenance",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 241,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_legacy_chat_fallback_cannot_bypass_route_or_teacher_provenance",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.jev is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'legacy chat fallback cannot bypass route or teacher provenance'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_saga_refuses_missing_or_unverified_recap_before_generation",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 248,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_saga_refuses_missing_or_unverified_recap_before_generation",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'saga refuses missing or unverified recap before generation'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_verified_output_reconciles_unacknowledged_job_without_calls",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 258,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_verified_output_reconciles_unacknowledged_job_without_calls",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'verified output reconciles unacknowledged job without calls'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_identity_taint_propagates_at_temporal_merge_boundaries",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 272,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_identity_taint_propagates_at_temporal_merge_boundaries",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.kg.quarantine_identities"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'identity taint propagates at temporal merge boundaries'.",
+      "contract_owners": [
+        "pipeline.kg.quarantine_identities"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_tainted_person_retains_source_identity_without_unverified_intro",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 285,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_tainted_person_retains_source_identity_without_unverified_intro",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.kg.quarantine_identities"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.kg.quarantine_identities is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'tainted person retains source identity without unverified intro'.",
+      "contract_owners": [
+        "pipeline.kg.quarantine_identities"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_rebuilding_journal_filters_old_graph_on_fresh_runner_without_cli_flag",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 291,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_rebuilding_journal_filters_old_graph_on_fresh_runner_without_cli_flag",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.classify, pipeline.extract, pipeline.judge, pipeline.kg, pipeline.link, pipeline.llm, pipeline.parse, pipeline.provenance, pipeline.run is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'rebuilding journal filters old graph on fresh runner without cli flag'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_explicit_quality_retry_archives_and_can_complete_from_preserved_extraction",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 302,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_explicit_quality_retry_archives_and_can_complete_from_preserved_extraction",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.link.to_classic"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'explicit quality retry archives and can complete from preserved extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_math_preserves_fraction_and_exponent",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 338,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_math_preserves_fraction_and_exponent",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.parse.DocParser.__init__"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.DocParser.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'math preserves fraction and exponent'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_svg_keeps_accessible_text_or_explicit_unavailable_marker",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 344,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_svg_keeps_accessible_text_or_explicit_unavailable_marker",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.parse.DocParser.__init__"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.DocParser.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'svg keeps accessible text or explicit unavailable marker'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_oversized_paragraph_is_refused_before_extraction",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 351,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_oversized_paragraph_is_refused_before_extraction",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.run.Runner.__init__"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.run.Runner.__init__ is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'oversized paragraph is refused before extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_archive_rejected_before_member_read",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 357,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_archive_rejected_before_member_read",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.parse.parse_epub"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.parse_epub is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'archive rejected before member read'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_epub_detects_english_for_cost_and_extraction",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 366,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_epub_detects_english_for_cost_and_extraction",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.parse.parse_epub"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.parse.parse_epub is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'epub detects english for cost and extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.parse_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_request_deadline_spans_stages_and_refuses_unaffordable_retry",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 380,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_request_deadline_spans_stages_and_refuses_unaffordable_retry",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.llm._sleep",
+        "pipeline.llm._timeout",
+        "pipeline.llm.request_budget"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._sleep, pipeline.llm._timeout, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'request deadline spans stages and refuses unaffordable retry'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_trickled_response_cannot_reset_request_deadline",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 395,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_trickled_response_cannot_reset_request_deadline",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.llm._chunks",
+        "pipeline.llm.request_budget"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._chunks, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'trickled response cannot reset request deadline'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_expired_request_does_not_contact_any_route",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 412,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_expired_request_does_not_contact_any_route",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.llm.jev",
+        "pipeline.llm.request_budget"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.jev, pipeline.llm.request_budget is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'expired request does not contact any route'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_free_context_limit_never_silently_changes_teacher_input",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 421,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_free_context_limit_never_silently_changes_teacher_input",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.llm._Breaker.__init__",
+        "pipeline.llm.jev_free"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm._Breaker.__init__, pipeline.llm.jev_free is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'free context limit never silently changes teacher input'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.llm_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_classic_guard_outage_reuses_raw_extraction",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 426,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_classic_guard_outage_reuses_raw_extraction",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.link.to_classic"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'classic guard outage reuses raw extraction'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_classic_rejected_rewrite_is_withheld",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 441,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_classic_rejected_rewrite_is_withheld",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.link.to_classic"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.link.to_classic is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'classic rejected rewrite is withheld'.",
+      "contract_owners": [
+        "tests.test_pipeline_repair.runner_scenario"
+      ]
+    },
+    {
+      "id": "tests.test_pipeline_repair.PipelineRepair.test_flagged_cache_needs_explicit_deterministic_fallback",
+      "python_source": "tests/test_pipeline_repair.py",
+      "python_line": 454,
+      "dart_file": "core/test/ported/test_pipeline_repair_ported_test.dart",
+      "dart_name": "tests.test_pipeline_repair.PipelineRepair.test_flagged_cache_needs_explicit_deterministic_fallback",
+      "owner_modules": [
+        "pipeline.classify",
+        "pipeline.extract",
+        "pipeline.judge",
+        "pipeline.kg",
+        "pipeline.link",
+        "pipeline.llm",
+        "pipeline.parse",
+        "pipeline.provenance",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A1",
+        "A2",
+        "A2/A4",
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.run.Runner.verified_summary"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.run.Runner.verified_summary is pending (A1, A2, A2/A4, A3, A4, A5); required to check 'flagged cache needs explicit deterministic fallback'.",
+      "contract_owners": [
+        "pipeline.run.Runner.verified_summary"
+      ]
+    },
+    {
+      "id": "tests.test_reading_list.ReadingListHTTP.test_order_receipt_conflict_and_no_progress_inference",
+      "python_source": "tests/test_reading_list.py",
+      "python_line": 20,
+      "dart_file": "core/test/ported/test_reading_list_ported_test.dart",
+      "dart_name": "tests.test_reading_list.ReadingListHTTP.test_order_receipt_conflict_and_no_progress_inference",
+      "owner_modules": [
+        "server.app"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_reading_list.ReadingListHTTP.test_concurrent_reorders_have_exactly_one_winner",
+      "python_source": "tests/test_reading_list.py",
+      "python_line": 34,
+      "dart_file": "core/test/ported/test_reading_list_ported_test.dart",
+      "dart_name": "tests.test_reading_list.ReadingListHTTP.test_concurrent_reorders_have_exactly_one_winner",
+      "owner_modules": [
+        "server.app"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_reading_list.ReadingListHTTP.test_unavailable_slots_preserved_but_new_hidden_or_missing_books_rejected",
+      "python_source": "tests/test_reading_list.py",
+      "python_line": 42,
+      "dart_file": "core/test/ported/test_reading_list_ported_test.dart",
+      "dart_name": "tests.test_reading_list.ReadingListHTTP.test_unavailable_slots_preserved_but_new_hidden_or_missing_books_rejected",
+      "owner_modules": [
+        "server.app"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_reading_list.ReadingListHTTP.test_bad_payload_never_creates_state",
+      "python_source": "tests/test_reading_list.py",
+      "python_line": 54,
+      "dart_file": "core/test/ported/test_reading_list_ported_test.dart",
+      "dart_name": "tests.test_reading_list.ReadingListHTTP.test_bad_payload_never_creates_state",
+      "owner_modules": [
+        "server.app"
+      ],
+      "owner_stages": [
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A6 reading-list HTTP service and scripted fixture adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_release.ReleaseBoundary.test_verified_snapshot_reused_and_data_credentials_excluded",
+      "python_source": "tests/test_release.py",
+      "python_line": 31,
+      "dart_file": "core/test/ported/test_release_ported_test.dart",
+      "dart_name": "tests.test_release.ReleaseBoundary.test_verified_snapshot_reused_and_data_credentials_excluded",
+      "owner_modules": [
+        "scripts.build_release"
+      ],
+      "owner_stages": [
+        "C（发布工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "scripts.build_release.build"
+      ]
+    },
+    {
+      "id": "tests.test_release.ReleaseBoundary.test_changed_source_requires_new_validation",
+      "python_source": "tests/test_release.py",
+      "python_line": 45,
+      "dart_file": "core/test/ported/test_release_ported_test.dart",
+      "dart_name": "tests.test_release.ReleaseBoundary.test_changed_source_requires_new_validation",
+      "owner_modules": [
+        "scripts.build_release"
+      ],
+      "owner_stages": [
+        "C（发布工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "scripts.build_release.build"
+      ]
+    },
+    {
+      "id": "tests.test_release.ReleaseBoundary.test_private_runtime_file_and_symlink_rejected",
+      "python_source": "tests/test_release.py",
+      "python_line": 50,
+      "dart_file": "core/test/ported/test_release_ported_test.dart",
+      "dart_name": "tests.test_release.ReleaseBoundary.test_private_runtime_file_and_symlink_rejected",
+      "owner_modules": [
+        "scripts.build_release"
+      ],
+      "owner_stages": [
+        "C（发布工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "scripts.build_release.build"
+      ]
+    },
+    {
+      "id": "tests.test_release.ReleaseBoundary.test_tampering_refuses_existing_release_reuse",
+      "python_source": "tests/test_release.py",
+      "python_line": 60,
+      "dart_file": "core/test/ported/test_release_ported_test.dart",
+      "dart_name": "tests.test_release.ReleaseBoundary.test_tampering_refuses_existing_release_reuse",
+      "owner_modules": [
+        "scripts.build_release"
+      ],
+      "owner_stages": [
+        "C（发布工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "scripts.build_release.build"
+      ]
+    },
+    {
+      "id": "tests.test_release.ReleaseBoundary.test_root_directory_symlink_is_rejected",
+      "python_source": "tests/test_release.py",
+      "python_line": 70,
+      "dart_file": "core/test/ported/test_release_ported_test.dart",
+      "dart_name": "tests.test_release.ReleaseBoundary.test_root_directory_symlink_is_rejected",
+      "owner_modules": [
+        "scripts.build_release"
+      ],
+      "owner_stages": [
+        "C（发布工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "scripts.build_release.build"
+      ]
+    },
+    {
+      "id": "tests.test_release.ReleaseBoundary.test_worker_stamp_changes_for_assets_and_logic_not_downloads",
+      "python_source": "tests/test_release.py",
+      "python_line": 76,
+      "dart_file": "core/test/ported/test_release_ported_test.dart",
+      "dart_name": "tests.test_release.ReleaseBoundary.test_worker_stamp_changes_for_assets_and_logic_not_downloads",
+      "owner_modules": [
+        "scripts.build_release"
+      ],
+      "owner_stages": [
+        "C（发布工具）"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; C compiled Dart self-hosted release package and retained Web shell adapter is pending.",
+      "contract_owners": [
+        "scripts.build_release.build"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_old_epub_without_language_gets_english_shelf_estimate",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 81,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_old_epub_without_language_gets_english_shelf_estimate",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.wjson",
+        "server.storage.shelf_metadata",
+        "server.storage.signature"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.storage and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.storage"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_upload_never_calls_judge_and_concurrent_same_upload_is_idempotent",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 95,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_upload_never_calls_judge_and_concurrent_same_upload_is_idempotent",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.jobs.Worker and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.jobs.Worker"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_export_import_preserves_images_graph_progress_and_snapshot_state",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 114,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_export_import_preserves_images_graph_progress_and_snapshot_state",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_import_rejects_bad_hash_and_unsorted_graph_without_publication",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 132,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_import_rejects_bad_hash_and_unsorted_graph_without_publication",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_legacy_text_export_import_works_but_missing_images_are_explicit",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 142,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_legacy_text_export_import_works_but_missing_images_are_explicit",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_conflicting_snapshot_is_not_silently_reused_or_overwritten",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 150,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_conflicting_snapshot_is_not_silently_reused_or_overwritten",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_negative_length_and_transfer_encoding_rejected",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 160,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_negative_length_and_transfer_encoding_rejected",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_malformed_json_shape_and_expensive_request_admission",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 164,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_malformed_json_shape_and_expensive_request_admission",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_slow_incomplete_body_has_deadline",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 171,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_slow_incomplete_body_has_deadline",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_static_sibling_cannot_escape_root",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 179,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_static_sibling_cannot_escape_root",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_static_revalidation_and_compression",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 185,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_static_revalidation_and_compression",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_byline_in_file_name_is_shown_as_title_and_author",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 201,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_byline_in_file_name_is_shown_as_title_and_author",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.wjson",
+        "server.storage.display_title"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.storage and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.storage"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_optimistic_progress_does_not_overwrite_other_device",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 216,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_optimistic_progress_does_not_overwrite_other_device",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_explicit_process_queues_completed_pending_quality",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 226,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_explicit_process_queues_completed_pending_quality",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.cached_json",
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.jobs.Worker and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.jobs.Worker"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_progress_end_cutoff_reaches_100_without_losing_resume_anchor",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 238,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_progress_end_cutoff_reaches_100_without_losing_resume_anchor",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_cookie_is_secure_expiring_and_authentication_required",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 249,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_cookie_is_secure_expiring_and_authentication_required",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_health_disabled_worker_and_manifest_revision",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 260,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_health_disabled_worker_and_manifest_revision",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_delete_busy_external_book_refuses_and_keeps_content",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 276,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_delete_busy_external_book_refuses_and_keeps_content",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.jobs.book_lease"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.jobs.Worker and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.jobs.Worker"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_delete_archives_data_and_clears_progress",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 283,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_delete_archives_data_and_clears_progress",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.progress_all",
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.HTTPRepair.test_shelf_uses_small_metadata_and_reflects_book_updates",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 291,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.HTTPRepair.test_shelf_uses_small_metadata_and_reflects_book_updates",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.wjson"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.app.Handler#scripted_http, server.storage and isolated synthetic HTTP/filesystem harness with deterministic request and state capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.app.Handler#scripted_http",
+        "server.storage"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_shared_temporal_contract",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 308,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_shared_temporal_contract",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.temporal.fold"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'shared temporal contract'.",
+      "contract_owners": [
+        "server.temporal.fold"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_early_and_merged_latest_attributes_preserved",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 317,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_early_and_merged_latest_attributes_preserved",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.temporal.fold"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of server.temporal.fold is pending (A1/A6, A5, A6); required to check 'early and merged latest attributes preserved'.",
+      "contract_owners": [
+        "server.temporal.fold"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_failed_guard_never_publishes_rejected_prose",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 326,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_failed_guard_never_publishes_rejected_prose",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.ask.answer"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.answer#scripted and scripted route/retrieve/chat/guard callbacks and emitted-event capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.answer#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_ended_relationship_is_explicitly_historical_in_answer_evidence",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 343,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_ended_relationship_is_explicitly_historical_in_answer_evidence",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.ask.answer"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.answer#scripted and scripted route/retrieve/chat/guard callbacks and emitted-event capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.answer#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_multilingual_fallback_and_query_translation",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 357,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_multilingual_fallback_and_query_translation",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.ask.retrieval_query",
+        "server.ask.retrieve"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.retrieve#scripted, server.ask.retrieval_query#scripted and synthetic book and chat-reply capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.retrieve#scripted",
+        "server.ask.retrieval_query#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_pronoun_exact_span_and_local_candidate",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 368,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_pronoun_exact_span_and_local_candidate",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.ask.who_is"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.ask.who_is#scripted and synthetic graph, exact-span and judge-call capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.ask.who_is#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_cache_budget_and_corruption_visibility",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 378,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_cache_budget_and_corruption_visibility",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.storage.JsonCache.__init__",
+        "server.storage.write_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.storage.JsonCache#scripted and isolated cache/filesystem and read-count capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.storage.JsonCache#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_concurrent_cache_read_parses_one_body",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 388,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_concurrent_cache_read_parses_one_body",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.storage.JsonCache.__init__",
+        "server.storage.write_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.storage.JsonCache#scripted and isolated cache/filesystem and read-count capture are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.storage.JsonCache#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_worker_cancel_owned_process_and_spawn_error_cleanup",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 400,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_worker_cancel_owned_process_and_spawn_error_cleanup",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.jobs.Worker.__init__",
+        "server.storage.JsonCache.__init__",
+        "server.storage.write_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.jobs.Worker#scripted and isolated worker/process fault injection and state snapshots are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.jobs.Worker#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_worker_loop_survives_spawn_failure",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 437,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_worker_loop_survives_spawn_failure",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.jobs.Worker.__init__",
+        "server.storage.JsonCache.__init__",
+        "server.storage.write_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.jobs.Worker#scripted and isolated worker/process fault injection and state snapshots are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.jobs.Worker#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_server_repair.QualityRepair.test_quality_retry_requires_explicit_request_and_survives_launch_failure",
+      "python_source": "tests/test_server_repair.py",
+      "python_line": 455,
+      "dart_file": "core/test/ported/test_server_repair_ported_test.dart",
+      "dart_name": "tests.test_server_repair.QualityRepair.test_quality_retry_requires_explicit_request_and_survives_launch_failure",
+      "owner_modules": [
+        "server.app",
+        "server.ask",
+        "server.jobs",
+        "server.storage",
+        "server.temporal"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.jobs.Worker.__init__",
+        "server.storage.JsonCache.__init__",
+        "server.storage.write_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart owner server.jobs.Worker#scripted and isolated worker/process fault injection and state snapshots are pending (A5/A6); translated assertions remain skipped.",
+      "contract_owners": [
+        "server.jobs.Worker#scripted"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.ThreadWorker.test_manual_start_cancel_resume_and_lock_release",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 17,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.ThreadWorker.test_manual_start_cancel_resume_and_lock_release",
+      "owner_modules": [
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.jobs.Worker.__init__",
+        "server.jobs.book_lease",
+        "server.storage.JsonCache.__init__",
+        "server.storage.write_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.jobs.Worker.__init__"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.ThreadWorker.test_pipeline_pre_cancel_releases_its_file_lock",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 64,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.ThreadWorker.test_pipeline_pre_cancel_releases_its_file_lock",
+      "owner_modules": [
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.run.run_book",
+        "server.jobs.book_lease"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.run.run_book"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.PrivateSettings.test_cost_prompt_does_not_quote_a_paid_judge_or_unknown_model_price",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 76,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.PrivateSettings.test_cost_prompt_does_not_quote_a_paid_judge_or_unknown_model_price",
+      "owner_modules": [
+        "pipeline.models",
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1",
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.models.estimate"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.models.estimate"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.PrivateSettings.test_saved_model_is_used_by_questions_comments_and_new_pipeline_jobs",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 86,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.PrivateSettings.test_saved_model_is_used_by_questions_comments_and_new_pipeline_jobs",
+      "owner_modules": [
+        "pipeline.llm",
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.model_settings",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A3",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.llm.base_for",
+        "pipeline.llm.key_for",
+        "server.model_settings.save"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.model_settings.save"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.PrivateSettings.test_key_is_private_and_never_returned_by_api",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 110,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.PrivateSettings.test_key_is_private_and_never_returned_by_api",
+      "owner_modules": [
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.PrivateSettings.test_processing_without_a_key_is_refused_with_the_reason",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 132,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.PrivateSettings.test_processing_without_a_key_is_refused_with_the_reason",
+      "owner_modules": [
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.app.cached_json"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.PrivateSettings.test_unread_post_body_does_not_poison_the_next_request_on_the_same_connection",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 148,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.PrivateSettings.test_unread_post_body_does_not_poison_the_next_request_on_the_same_connection",
+      "owner_modules": [
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "server.app.Handler.route"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.ModelFailures.test_hopeless_failures_are_explained_and_transient_ones_are_not",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 187,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.ModelFailures.test_hopeless_failures_are_explained_and_transient_ones_are_not",
+      "owner_modules": [
+        "pipeline.llm",
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A3",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.llm.explain"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of pipeline.llm.explain is pending (A1/A6, A3, A5, A6); required to check 'hopeless failures are explained and transient ones are not'.",
+      "contract_owners": [
+        "pipeline.llm.explain"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.ModelFailures.test_a_refusal_is_named_without_a_second_fix_call",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 199,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.ModelFailures.test_a_refusal_is_named_without_a_second_fix_call",
+      "owner_modules": [
+        "pipeline.local",
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.local.extract_local"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.local.extract_local"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.ModelFailures.test_a_hung_stream_is_given_up_on_in_proportion_to_the_model",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 212,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.ModelFailures.test_a_hung_stream_is_given_up_on_in_proportion_to_the_model",
+      "owner_modules": [
+        "pipeline.llm",
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A3",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.llm._record_reply",
+        "pipeline.llm._stall_timeout"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.llm._stall_timeout"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.ModelFailures.test_settings_fill_in_v1_and_nothink",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 225,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.ModelFailures.test_settings_fill_in_v1_and_nothink",
+      "owner_modules": [
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.model_settings",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "server.model_settings.normalize"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Dart implementation of server.model_settings.normalize is pending (A1/A6, A5, A6); required to check 'settings fill in v1 and nothink'.",
+      "contract_owners": [
+        "server.model_settings.normalize"
+      ]
+    },
+    {
+      "id": "tests.test_standalone.ModelFailures.test_web_page_and_thinking_only_replies_are_named",
+      "python_source": "tests/test_standalone.py",
+      "python_line": 233,
+      "dart_file": "core/test/ported/test_standalone_ported_test.dart",
+      "dart_name": "tests.test_standalone.ModelFailures.test_web_page_and_thinking_only_replies_are_named",
+      "owner_modules": [
+        "pipeline.llm",
+        "pipeline.run",
+        "server.app",
+        "server.jobs",
+        "server.storage"
+      ],
+      "owner_stages": [
+        "A1/A6",
+        "A3",
+        "A5",
+        "A6"
+      ],
+      "direct_targets": [
+        "pipeline.llm.chat",
+        "pipeline.llm.explain"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; owning A1/A3/A4/A5/A6 Dart module and scripted test adapter are pending.",
+      "contract_owners": [
+        "pipeline.llm.chat"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_added_worded_relation_gets_own_check_and_negative_is_dropped",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 57,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_added_worded_relation_gets_own_check_and_negative_is_dropped",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.run.drop_unsupported"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner.add_support"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_changed_existing_wording_invalidates_only_its_old_check",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 74,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_changed_existing_wording_invalidates_only_its_old_check",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [
+        "pipeline.run.drop_unsupported"
+      ],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner.add_support"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_confident_context_judge_corrects_a_canonical_reversed_role",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 89,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_confident_context_judge_corrects_a_canonical_reversed_role",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner.add_support"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_legacy_cached_rewrite_is_checked_once_and_other_keys_survive",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 104,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_legacy_cached_rewrite_is_checked_once_and_other_keys_survive",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner.add_support"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_fingerprints_detect_changed_claim_and_complete_passage",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 117,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_fingerprints_detect_changed_claim_and_complete_passage",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner.add_support"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_fresh_event_sampling_is_stable_and_legacy_sampling_is_preserved",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 135,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_fresh_event_sampling_is_stable_and_legacy_sampling_is_preserved",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner.support_items"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_failed_check_retries_from_cache_without_reextracting",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 153,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_failed_check_retries_from_cache_without_reextracting",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner._local_job"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_partial_answer_retries_only_missing_question",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 170,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_partial_answer_retries_only_missing_question",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner.add_support"
+      ]
+    },
+    {
+      "id": "tests.test_support_cache.SupportCache.test_relation_failure_keeps_successful_checks_and_never_reextracts",
+      "python_source": "tests/test_support_cache.py",
+      "python_line": 181,
+      "dart_file": "core/test/ported/test_support_cache_ported_test.dart",
+      "dart_name": "tests.test_support_cache.SupportCache.test_relation_failure_keeps_successful_checks_and_never_reextracts",
+      "owner_modules": [
+        "pipeline.extract",
+        "pipeline.llm",
+        "pipeline.run"
+      ],
+      "owner_stages": [
+        "A3",
+        "A4",
+        "A5"
+      ],
+      "direct_targets": [],
+      "status": "translated_skipped",
+      "skip_reason": "Translated assertion contract; A5 Runner support cache and deterministic judge/file adapters are pending.",
+      "contract_owners": [
+        "pipeline.run.Runner._local_job"
+      ]
+    }
+  ]
+}

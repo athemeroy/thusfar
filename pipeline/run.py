@@ -13,6 +13,7 @@ Usage: python -m pipeline.run data/books/<id> [--model deepseek-flash+nothink] [
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import math
 import threading
@@ -507,19 +508,23 @@ class Runner:
             wjson(path, state, compact=False)
 
     def status(self, state: str, done: int, error: str | None = None):
-        self.usage['jev'] = dict(JEV_STATS)      # the judge is billed on input: count calls and payload
         seg = self.segs[done - 1] if done else None
-        with self.status_lock:
+        with self.lock, self.status_lock:
+            self.usage['jev'] = dict(JEV_STATS)  # judge calls and payload in this process
             self._status(state, done, seg, error)
 
     def _status(self, state, done, seg, error):
+        # A guard can finish after the last model call persisted its usage.
+        # Flush the same snapshot at every progress boundary, including a partial run.
+        usage = copy.deepcopy(self.usage)
+        wjson(self.usage_path, usage, compact=False)
         wjson(self.root / 'status.json', {
             'state': state, 'done': done, 'total': len(self.segs),
             'frontier': seg['o1'] if seg else 0,
             'body_start': self.segs[0]['o0'] if self.segs else 0,
             'body_end': self.segs[-1]['o1'] if self.segs else 0,
             'model': self.model, 'people': sum(1 for p in self.kg.people.values() if not p.get('merged_into')),
-            'updated': time.time(), 'error': error, 'usage': self.usage,
+            'updated': time.time(), 'error': error, 'usage': usage,
             'refused': sorted(getattr(self, 'refused', set())),
             'quality': {'state': 'pending' if getattr(self, 'quality_pending', set()) else 'verified',
                         'pending': sorted(getattr(self, 'quality_pending', set()))},
@@ -532,7 +537,23 @@ class Runner:
     def _publish(self):
         rows, mentions, _, _, _ = quarantine_identities(self.kg.log, self.kg.mentions,
                                                        self.repair_policy.get('identity_taint', {}))
-        log_sorted = sorted(rows, key=lambda r: r['p'])
+        ordered = []
+        for index, row in enumerate(rows):
+            kind = row['t']
+            if kind == 'profile' and row.get('kind') == 'chapter':
+                phase = 1
+            elif kind == 'recap':
+                phase = 2
+            elif kind == 'saga':
+                phase = 3
+            else:
+                phase = 0
+            # Extraction records keep their same-position causal order. Independent
+            # finalization pools use a total tie-breaker instead of completion order.
+            tie = (row.get('chapter', -1), row.get('id', ''),
+                   json.dumps(row, ensure_ascii=False, sort_keys=True)) if phase else ()
+            ordered.append((row['p'], phase, tie, index, row))
+        log_sorted = [row for _, _, _, _, row in sorted(ordered)]
         wjson(self.root / 'kg.json', {'log': log_sorted, 'segments': [[s['o0'], s['o1'], s['chapter']] for s in self.segs]})
         by_ch: dict[int, list] = {}
         chapters = self.book['chapters']
@@ -872,7 +893,7 @@ class Runner:
         def names(p):
             return {n for n in p['aliases'] | {p['name']} if len(n) >= 2}
         pairs = []
-        for a in sorted(recent, key=lambda x: people[x].get('first', 0)):
+        for a in sorted(recent, key=lambda x: (people[x].get('first', 0), x)):
             pa = people[a]
             for b, pb in people.items():
                 if b == a or (min(a, b), max(a, b)) in together or pa.get('gender') and pb.get('gender') and pa['gender'] != pb['gender']:
@@ -885,7 +906,7 @@ class Runner:
                 proper_b = {n for n in nb if not is_generic(n)}
                 same_name = bool(na & nb)
                 same_core = bool({core(n) for n in proper_a} & {core(n) for n in proper_b} - {''})
-                close = any(related(m, n) or related(n, m) for m in proper_a for n in proper_b) if proper_a and proper_b else False
+                close = any(related(m, n) or related(n, m) for m in sorted(proper_a) for n in sorted(proper_b)) if proper_a and proper_b else False
                 if same_name or same_core or close:
                     pairs.append((y, x))
         # someone first known only by a description ("the little man") and later named in the text
@@ -897,8 +918,8 @@ class Runner:
             en = {w.lower() for w in re.findall(r'[A-Za-z]{4,}', txt)} - STOPWORDS
             zh_ = re.sub(r'[^\u4e00-\u9fff]', '', txt)
             return en | {zh_[i:i + 2] for i in range(len(zh_) - 1)}
-        nameless = [a for a in recent if not any(not is_generic(n) for n in names(people[a]))]
-        named = [b for b in people if b not in nameless and any(not is_generic(n) for n in names(people[b]))
+        nameless = [a for a in sorted(recent) if not any(not is_generic(n) for n in sorted(names(people[a])))]
+        named = [b for b in people if b not in nameless and any(not is_generic(n) for n in sorted(names(people[b])))
                  and (b in recent or people[b].get('first', 0) >= start_pos)]
         for a in nameless:
             wa = words(a)
@@ -918,7 +939,7 @@ class Runner:
                 self.desc_pairs.add(pr)
         pairs = list(dict.fromkeys(pairs))[:32]
         dossiers = {}
-        for pid in {q for pr in pairs for q in pr}:
+        for pid in sorted({q for pr in pairs for q in pr}):
             p = kg.people[pid]
             evs = [e['text'] for e in kg.log if e['t'] == 'event' and e['p'] <= end_pos and pid in {kg.canon(w) for w in e['who']}]
             rels = [f"{kg.people[r['b'] if r['a'] == pid else r['a']]['name']}（{r['b_is'] if r['a'] == pid else r['a_is']}）"
@@ -1172,10 +1193,11 @@ class Runner:
         self.replaying = False
         if limit != 0:
             self.resume_final_jobs()
+            for future in self.pending:
+                self.await_future(future)
+        finalized = len(self.pending)
         log(f'replayed {done}/{len(self.segs)} segments')
         if done == len(self.segs):
-            for f in self.pending:
-                self.await_future(f)
             if limit != 0:
                 self.finish_quality_retry()
         self.publish()
@@ -1205,13 +1227,15 @@ class Runner:
             self.checkpoint()
             self.apply(rec)
             self._maybe_recap(i)
+            # The next segment's prompt reads KG state; settle this chapter's
+            # final jobs before that snapshot can observe a timing-dependent subset.
+            for future in self.pending[finalized:]:
+                self.await_future(future)
+            finalized = len(self.pending)
             self.publish()
             done = i + 1
             n += 1
             if done == len(self.segs):
-                for f in self.pending:
-                    self.await_future(f)
-                self.publish()
                 self.finish_quality_retry()
             self.status('running' if done < len(self.segs) else 'done', done)
             d = rec['data']
@@ -1777,6 +1801,9 @@ class Runner:
         self.replaying = False
         if limit != 0:
             self.resume_final_jobs()
+            for future in self.pending:
+                self.await_future(future)
+        finalized = len(self.pending)
         log(f'replayed {done}/{len(self.segs)} segments')
         self.publish()
         self.status('running' if done < len(self.segs) else ('finalizing' if self.pending else 'done'), done)
@@ -1786,10 +1813,16 @@ class Runner:
         futures = {}
         next_job = [done]     # next segment to submit (kept apart from the loop variable)
 
-        def submit_upto(k):
+        def submit_upto(k, current):
             self.checkpoint()
             # the cast shown to segment j is the one linked so far (segments < current), never later text
             cap = min(end, k + 1)
+            # A future chapter must not receive a hint before the current
+            # chapter's biography and recap have settled into the graph.
+            for j in range(current + 1, cap):
+                if self.segs[j]['chapter'] != self.segs[current]['chapter']:
+                    cap = j
+                    break
             if next_job[0] >= cap:
                 return
             with self.lock:
@@ -1798,14 +1831,14 @@ class Runner:
             while next_job[0] < cap:
                 futures[next_job[0]] = local_pool.submit(self._local_job, next_job[0], model, hint, relation_memory)
                 next_job[0] += 1
-        submit_upto(done + concurrency - 1)
         if done < end:
+            submit_upto(done + concurrency - 1, done)
             # A slow model can take minutes per passage; say what the 0% is waiting for.
-            self.notify(f'已把 {min(concurrency, end - done)} 段发给 {model.split("+")[0]}，正在等它回复；每整理完一段，进度会更新')
+            self.notify(f'已把 {next_job[0] - done} 段发给 {model.split("+")[0]}，正在等它回复；每整理完一段，进度会更新')
         t_start = time.time()
         for i in range(done, end):
             self.checkpoint()
-            submit_upto(i + concurrency - 1)
+            submit_upto(i + concurrency - 1, i)
             try:
                 local_rec = self.await_future(futures[i])
                 self.checkpoint()
@@ -1813,6 +1846,9 @@ class Runner:
                 self.checkpoint()
                 self.apply(rec)
                 self._maybe_recap(i)
+                for future in self.pending[finalized:]:
+                    self.await_future(future)
+                finalized = len(self.pending)
             except Cancelled:
                 local_pool.shutdown(wait=False, cancel_futures=True)
                 raise
@@ -1845,17 +1881,22 @@ class Runner:
         last = i == len(self.segs) - 1 or self.segs[i + 1]['chapter'] != seg['chapter']
         if last:
             start = min(s['o0'] for s in self.segs if s['chapter'] == seg['chapter'])
-            if seg['o1'] - self.last_bio >= 12000 or i == len(self.segs) - 1:
-                if self.two_phase:
-                    self.dedupe(seg['chapter'], seg['o1'], self.last_bio)
-                    for step in (self.rate_importance, self.settle_attrs):
-                        try:
-                            step(seg['o1'], self.last_bio)
-                        except Exception as e:
-                            log(f'{step.__name__} failed: {type(e).__name__}: {e}')
-                self.consolidate(seg['chapter'], seg['o1'], self.last_bio)
-                self.last_bio = seg['o1']
-            self.recap(seg['chapter'], seg['o1'], start)
+            do_bio = seg['o1'] - self.last_bio >= 12000 or i == len(self.segs) - 1
+            if do_bio and self.two_phase:
+                self.dedupe(seg['chapter'], seg['o1'], self.last_bio)
+                for step in (self.rate_importance, self.settle_attrs):
+                    try:
+                        step(seg['o1'], self.last_bio)
+                    except Exception as e:
+                        log(f'{step.__name__} failed: {type(e).__name__}: {e}')
+            # A newly queued bio can append chapter profile rows immediately.
+            # Snapshot the classic recap's profile inputs under the same lock
+            # that _apply_bios uses, after applying any existing bio cache.
+            with self.lock:
+                if do_bio:
+                    self.consolidate(seg['chapter'], seg['o1'], self.last_bio)
+                    self.last_bio = seg['o1']
+                self.recap(seg['chapter'], seg['o1'], start)
             if self.two_phase and (seg['o1'] - self.last_saga >= 30000 or i == len(self.segs) - 1):
                 chs = sorted({s['chapter'] for s in self.segs if self.last_saga < s['o1'] <= seg['o1']})
                 self.saga(seg['o1'], chs)

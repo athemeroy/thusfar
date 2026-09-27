@@ -1,26 +1,23 @@
-# Contributing
+# Contributing to Thusfar
 
-Thanks for helping. A few things keep this project honest:
+The released product is the Flutter client in app/ and its Dart engine in core/. The Python and browser implementation is retained as a behavior reference for the port.
 
-1. **No new runtime dependencies** for the server or pipeline. Everything runs on the Python standard
-   library so `python3 -m server.app` works on a clean machine. The web interface has no framework and
-   no build step.
-2. **Spoilers are the bug that matters.** If you change extraction, merging or the judge and claim it
-   is better, write spoiler probes first (see `testsets/*/probes.json` and `tests/spoiler_probes_v3.py`),
-   then run, and report the leaks you found by hand — not only a score.
-3. **Keep test and development books apart.** Once you have looked at individual cases in a book to
-   tune something, it is a development book, not a test book.
-4. **Always report the majority-class baseline** for any judge or classifier accuracy.
-5. **Don't commit book text.** Probes and code only; `data/` is ignored on purpose.
+## What to preserve
 
-## Checks before a pull request
+1. **No spoilers.** Every generated fact needs a source position. Reading at an earlier position must hide facts introduced later, including search snippets, citations, notes and chapter titles.
+2. **Local ownership.** Books, notes, progress and model credentials belong to the reader. An import or backup restore must report damage or conflicts instead of silently dropping data.
+3. **Explicit model work.** Do not start paid model requests without a reader action. Display failures and incomplete processing clearly.
+4. **Evidence for behavior changes.** Use a focused test or fixture for the actual regression. A successful build alone does not establish a safe reader interaction.
 
-```bash
-python3 -m unittest discover -s tests -p 'test*.py'
-for f in tests/*.test.mjs; do node "$f"; done
-python3 scripts/check_i18n.py          # if you touched interface strings
-```
+## Client checks
 
-Interface strings are written in Chinese in the source and translated in `web/js/locales/*.js`;
-`scripts/check_i18n.py` checks every catalog covers every key. Corrections to the translations are
-very welcome.
+From the repository root:
+
+    cd app
+    flutter pub get
+    flutter analyze --no-fatal-infos
+    flutter test test/ask_sheet_test.dart test/backup_test.dart test/graph_view_test.dart test/import_test.dart test/manual_entities_test.dart test/marginalia_sheet_test.dart test/model_settings_test.dart test/notes_test.dart test/people_search_test.dart test/processing_test.dart test/reader_regression_test.dart test/selection_bounds_test.dart test/shared_import_test.dart
+    cd ../core
+    dart analyze --fatal-infos --fatal-warnings
+
+Screenshot suites and device checks cover additional visual and platform behavior. Run the relevant ones for the change you make. Never commit personal books, keys or generated build output.
