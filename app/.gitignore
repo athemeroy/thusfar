@@ -54,3 +54,4 @@ test/shots/**
 !test/shots/foldable-*.png
 !test/shots/phone-reader*.png
 !test/shots/graph-*.png
+!test/shots/typography-sheet-phone.png
