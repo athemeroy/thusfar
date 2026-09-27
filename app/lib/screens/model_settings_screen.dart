@@ -567,7 +567,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
           ),
           const SizedBox(height: 5),
           Text(
-            '用于 Vercel AI Gateway 的 Jev 接口。保存密钥不会自动启用付费判断；你需要在书籍详情中单独选择。它与 classifier.dev 工作区密钥、上方模型密钥不同。',
+            '填写 TypeSafe AI / Jev 官网的 API 密钥。保存密钥不会自动启用 Jev 判断；你需要在书籍详情中单独选择。它与 classifier.dev 工作区密钥、上方模型密钥不同。',
             style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
           ),
           const SizedBox(height: 10),
@@ -606,7 +606,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 _edited();
               },
               decoration: deco(
-                'Vercel AI Gateway API 密钥',
+                'TypeSafe AI / Jev API 密钥',
                 suffix: IconButton(
                   tooltip: showJevApiKey ? '隐藏密钥' : '显示密钥',
                   icon: Icon(

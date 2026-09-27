@@ -1054,7 +1054,7 @@ class _BookSheetState extends State<BookSheet> {
                     ? '上次匿名判断请求被拒绝。已完成的段落和核对结果会保留。可选已配置模型、Jev 网关，或填写有余额的 classifier.dev 工作区密钥。'
                     : '上次 classifier.dev 判断请求被拒绝。已完成的段落会保留；可检查工作区密钥或选择其他判断路线。'
               : jevAuthFailed
-              ? 'Jev 网关拒绝了已保存的密钥（HTTP 401）。已完成的内容和草稿都已保留。请确认填写的是 Vercel AI Gateway API 密钥；也可以改用已配置模型直接核对。'
+              ? 'TypeSafe AI 拒绝了已保存的 Jev 密钥（HTTP 401）。已完成的内容和草稿都已保留。请确认填写的是 TypeSafe AI / Jev 官网密钥；也可以改用已配置模型直接核对。'
               : modelBudgetExceeded
               ? '本书的模型判断额度已用完。已完成的段落会保留；追加额度后可从当前进度继续。'
               : paidBudgetExceeded
@@ -1083,7 +1083,7 @@ class _BookSheetState extends State<BookSheet> {
             widget.settings.hasJevApiKey) ...<Widget>[
           const SizedBox(height: 10),
           Text(
-            '只为这本书启用 Jev 网关判断，会使用你保存的 Vercel AI Gateway 账户额度；每书有单独调用上限，实际费用以网关账单为准。',
+            '只为这本书启用 Jev 判断，会使用你在 TypeSafe AI 的账户额度；每书有单独调用上限，实际费用以服务商账单为准。',
             style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
           ),
           const SizedBox(height: 8),
@@ -1224,7 +1224,7 @@ class _BookSheetState extends State<BookSheet> {
       } else {
         body.addAll(<Widget>[
           Text(
-            '会调用你的模型接口，$cost${modelFallback ? ' 若免费判断不可用，还会额外使用该模型判断；调用量受本书判断额度限制，实际账单以服务商为准。' : ''}${paidFallback ? ' 若免费判断不可用，会使用本书选择的 Jev 网关额度；实际账单以 Vercel AI Gateway 为准。' : ''}${directModel ? ' 本书核对直接使用已配置模型和单书额度。' : ''}${directPaid ? ' 本书核对直接使用 Jev 网关和单书额度。' : ''}',
+            '会调用你的模型接口，$cost${modelFallback ? ' 若免费判断不可用，还会额外使用该模型判断；调用量受本书判断额度限制，实际账单以服务商为准。' : ''}${paidFallback ? ' 若免费判断不可用，会使用本书选择的 Jev 额度；实际账单以 TypeSafe AI 为准。' : ''}${directModel ? ' 本书核对直接使用已配置模型和单书额度。' : ''}${directPaid ? ' 本书核对直接使用 Jev 和单书额度。' : ''}',
             style: TextStyle(fontSize: 13, color: t.ink2),
           ),
           const SizedBox(height: 8),

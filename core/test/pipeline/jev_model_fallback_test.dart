@@ -277,9 +277,12 @@ void main() {
     final PaidJudgeTransport fake = PaidJudgeTransport(valid);
     llm.transport = fake;
     await withBookJudgeContext(book, () => judge.jev('passage', questions));
-    expect(fake.requests.map((r) => r.url.host), <String>[
-      'ai-gateway.vercel.sh',
-    ]);
+    expect(fake.requests.map((r) => r.url.host), <String>['api.typesafe.ai']);
+    expect(fake.requests.single.url.path, '/v1/systemone');
+    expect(
+      (jsonDecode(fake.requests.single.body) as Json)['model'],
+      'jev-latest',
+    );
     expect(
       provenance.readPaidJudgeBudget(
         File('${book.path}/work/judge/paid-budget.json'),
@@ -287,6 +290,44 @@ void main() {
       1,
     );
   });
+
+  test('paid choice answers need every probability and a unit sum', () async {
+    environ['JEV_ROUTE'] = 'paid';
+    environ['JEV_API_KEY'] = 'selected-typesafe-key';
+    environ['JEV_RETRIES'] = '0';
+    final List<String> invalid = <String>[
+      '{"q1":{"choice":"yes","probabilities":{"yes":0.9}}}',
+      '{"q1":{"choice":"yes","probabilities":{"yes":0.9,"no":0.9}}}',
+    ];
+    for (int i = 0; i < invalid.length; i++) {
+      final PaidJudgeTransport fake = PaidJudgeTransport(invalid[i]);
+      llm.transport = fake;
+      await expectLater(
+        judge.jev('invalid paid passage $i', questions),
+        throwsA(isA<llm.LLMError>()),
+      );
+      expect(fake.requests, hasLength(1));
+    }
+    expect(Directory('${root.path}/book/work/judge/cache').existsSync(), false);
+  });
+
+  test(
+    'paid endpoint and model environment overrides remain available',
+    () async {
+      environ['JEV_ROUTE'] = 'paid';
+      environ['JEV_API_KEY'] = 'selected-typesafe-key';
+      environ['JEV_URL'] = 'https://judge.invalid/custom/evaluate';
+      environ['JEV_MODEL'] = 'custom-jev';
+      final PaidJudgeTransport fake = PaidJudgeTransport(valid);
+      llm.transport = fake;
+      await judge.jev('override passage', questions);
+      expect(fake.requests.single.url.toString(), environ['JEV_URL']);
+      expect(
+        (jsonDecode(fake.requests.single.body) as Json)['model'],
+        'custom-jev',
+      );
+    },
+  );
 
   test(
     'incomplete model answers get one repair, then fail without a cache',
@@ -301,7 +342,7 @@ void main() {
       llm.transport = fake;
       await expectLater(
         judge.jev('passage', questions),
-        throwsA(isA<llm.LLMError>()),
+        throwsA(isA<judge.ModelJudgeInvalidAnswer>()),
       );
       expect(
         fake.requests.where((r) => r.url.host == 'offline.invalid'),
@@ -339,6 +380,52 @@ void main() {
           File('${root.path}/book/work/judge/model-budget.json'),
         )['calls'],
         2,
+      );
+    },
+  );
+
+  test(
+    'a short incomplete batch rechecks only its unresolved question',
+    () async {
+      settings.save(<String, Object?>{'jev_route': 'free-then-model'});
+      final Json twoQuestions = <String, Object?>{
+        ...questions,
+        'q2': <String, Object?>{
+          'instructions': 'Does the second claim follow?',
+          'criteria': <String, Object?>{
+            'yes': 'supported',
+            'no': 'unsupported',
+          },
+        },
+      };
+      final JudgeTransport fake = JudgeTransport(
+        modelReplies: <String>[
+          valid,
+          '{}',
+          '{"q2":{"choice":"no","probabilities":{"yes":0.1,"no":0.9}}}',
+        ],
+      );
+      llm.transport = fake;
+      final Json answer = await judge.jev('passage', twoQuestions);
+      expect((answer['q1'] as Json)['choice'], 'yes');
+      expect((answer['q2'] as Json)['choice'], 'no');
+      final List<llm.ChatRequest> modelRequests =
+          fake.requests.where((r) => r.url.host == 'offline.invalid').toList();
+      expect(modelRequests, hasLength(3));
+      final Json lastBody = jsonDecode(modelRequests.last.body) as Json;
+      final List<Object?> messages = lastBody['messages']! as List<Object?>;
+      final String singleQuestion =
+          (messages.last! as Json)['content']! as String;
+      expect((jsonDecode(singleQuestion) as Json)['questions'], contains('q2'));
+      expect(
+        (jsonDecode(singleQuestion) as Json)['questions'],
+        isNot(contains('q1')),
+      );
+      expect(
+        budget.readModelJudgeBudget(
+          File('${root.path}/book/work/judge/model-budget.json'),
+        )['calls'],
+        3,
       );
     },
   );
@@ -641,7 +728,7 @@ void main() {
       await judge.jev('first passage', questions);
       expect(fake.requests.map((r) => r.url.host), <String>[
         'classifier.dev',
-        'ai-gateway.vercel.sh',
+        'api.typesafe.ai',
       ]);
       expect(
         fake.requests.last.headers['Authorization'],

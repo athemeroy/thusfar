@@ -254,11 +254,16 @@ final class ProcessingDiagnostics {
           'failed',
           'complete',
         }),
+        'failure_kind': _code(job['failure_kind'], const <String>{
+          'bio_content',
+          'bio_judge_format',
+        }),
         'generation_attempt': _number(job['generation_attempt']),
         'content_failures': _number(job['content_failures']),
         'retry_requested': _boolean(job['retry_requested']),
         'candidates': _number(review['candidates']),
         'passed': _number(review['passed']),
+        'verification_pending': _boolean(review['verification_pending']),
         'blocked': _number(review['blocked']),
         'missing': _number(review['missing']),
         'rejection_reasons': <String, Object?>{

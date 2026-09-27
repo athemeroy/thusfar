@@ -17,6 +17,12 @@ final class _BioContentError extends llm.LLMError {
   final Map<String, int> rejectionReasons;
 }
 
+/// A biography draft exists, but the configured judge supplied no valid
+/// verdict. Keep the draft for an explicit recheck without publishing it.
+final class _BioJudgeFormatError extends llm.LLMError {
+  const _BioJudgeFormatError(super.message);
+}
+
 Json _approvedBios(Object? value) => {
   for (final e in _obj(value).entries)
     if (e.value is Json &&
@@ -220,6 +226,26 @@ extension RunnerFinalization on Runner {
       if (result == false) throw const llm.LLMError('章节整理尚未通过验证');
     } on Cancelled {
       rethrow;
+    } on _BioJudgeFormatError catch (e) {
+      job['state'] = 'deferred';
+      job['failure_kind'] = 'bio_judge_format';
+      job['bio_review'] = {
+        'candidates': _list(args[3]).length,
+        'passed': 0,
+        'verification_pending': true,
+      };
+      job['error'] = _cut(_typedError(e), 300);
+      writeJson(path, job);
+      qualityPending.add(_stem(path));
+      if (activity) {
+        recordBookActivity(
+          root,
+          'bio_deferred',
+          '第 ${_int(job['key']) + 1} 章人物小传核对回答无效，草稿已保留并继续正文',
+          at: backend.now(),
+        );
+      }
+      return null;
     } catch (e) {
       if (e is _BioContentError) {
         job['generation_attempt'] = _int(job['generation_attempt']) + 1;
@@ -1203,6 +1229,8 @@ extension RunnerFinalization on Runner {
       usage['jev_calls'] = _int(usage['jev_calls']) + 1;
     } on Cancelled {
       rethrow;
+    } on jevClient.ModelJudgeInvalidAnswer catch (e) {
+      throw _BioJudgeFormatError(e.message);
     } catch (e) {
       throw llm.LLMError('人物小传验证失败：${_error(e)}');
     }

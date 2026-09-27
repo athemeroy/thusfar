@@ -21,8 +21,8 @@ import 'models.dart' as pricing;
 import 'provenance.dart';
 
 String get jevUrl =>
-    environ['JEV_URL'] ?? 'https://ai-gateway.vercel.sh/v1/evaluate';
-String get jevModel => environ['JEV_MODEL'] ?? 'typesafe-ai/jev';
+    environ['JEV_URL'] ?? 'https://api.typesafe.ai/v1/systemone';
+String get jevModel => environ['JEV_MODEL'] ?? 'jev-latest';
 String get classifierUrl =>
     environ['CLASSIFIER_URL'] ?? 'https://classifier.dev/v1/classify';
 
@@ -31,6 +31,12 @@ const int classifierDimChars = 16000;
 const int classifierInstructionChars = 4000;
 
 typedef Json = Map<String, Object?>;
+
+/// The configured model answered, but neither bounded attempt supplied a
+/// complete, usable probability distribution. No verdict may be cached.
+final class ModelJudgeInvalidAnswer extends LLMError {
+  const ModelJudgeInvalidAnswer(super.message);
+}
 
 /// What the judge costs; reset per book run.
 final Map<String, num> jevStats = <String, num>{
@@ -136,8 +142,13 @@ Future<Json> llmJudge(
     <String, String>{'role': 'system', 'content': judgeSystem},
     <String, String>{'role': 'user', 'content': user},
   ];
-  final int budget = 200 + 120 * qs.length;
+  // The reply needs a choice and every option probability for each question.
+  // Leave room for the full JSON object even when the provider counts hidden
+  // output tokens against the requested completion limit.
+  final int budget = 400 + 200 * qs.length;
   int promptTokens = 0, completionTokens = 0;
+  final Json valid = <String, Object?>{};
+  final Json pending = Map<String, Object?>.of(questions);
   for (int attempt = 0; attempt < 2; attempt++) {
     if (reserveBudget) {
       try {
@@ -163,31 +174,65 @@ Future<Json> llmJudge(
     completionTokens += output;
     if (reserveBudget) _recordModelJudgeUsage(m, input, output);
     try {
-      final Json out = _strictModelAnswers(
-        parseJson(result.text),
-        questions,
-        m,
-      );
-      out['_usage'] = <String, Object?>{
-        'prompt_tokens': promptTokens,
-        'completion_tokens': completionTokens,
-      };
-      return out;
-    } on ValueError {
-      if (attempt == 1) {
-        throw const LLMError('已配置模型的判断回答不完整或概率无效；已保留进度，请重试');
+      final Object? raw = parseJson(result.text);
+      if (raw is Json) {
+        for (final MapEntry<String, Object?> e in pending.entries.toList()) {
+          try {
+            // Accept only complete, strict answers. An invalid answer for one
+            // question must not discard valid answers for the others.
+            final Json one = _strictModelAnswers(
+              <String, Object?>{e.key: raw[e.key]},
+              <String, Object?>{e.key: e.value},
+              m,
+            );
+            valid[e.key] = one[e.key];
+            pending.remove(e.key);
+          } on ValueError {
+            // This question still needs a model answer.
+          }
+        }
       }
+    } on ValueError {
+      // The entire reply is malformed; the next bounded attempt can repair it.
+    }
+    if (pending.isEmpty) break;
+    if (attempt == 0) {
       msgs.addAll(<Map<String, String>>[
         <String, String>{'role': 'assistant', 'content': result.text},
         <String, String>{
           'role': 'user',
           'content':
-              'Your answer was incomplete. Reply with one JSON object covering every question id. Each choice must be a valid option id, and probabilities must include every option as numbers from 0 to 1 that sum to 1. No explanations.',
+              'Your answer was incomplete. Reply with one JSON object covering these remaining question ids: ${pending.keys.join(', ')}. Each choice must be a valid option id, and probabilities must include every option as numbers from 0 to 1 that sum to 1. No explanations.',
         },
       ]);
     }
   }
-  throw const LLMError('已配置模型的判断回答不完整');
+  // A short batch can fail just because its JSON object is too complex for
+  // the model. Ask only unresolved questions separately, with the same strict
+  // validation and per-call budget accounting. Cap this fallback's cost.
+  if (pending.isNotEmpty && questions.length > 1 && questions.length <= 10) {
+    for (final MapEntry<String, Object?> e in pending.entries.toList()) {
+      final Json one = await llmJudge(
+        state,
+        <String, Object?>{e.key: e.value},
+        model: m,
+        reserveBudget: reserveBudget,
+      );
+      valid[e.key] = one[e.key];
+      final Json usage = one['_usage']! as Json;
+      promptTokens += (usage['prompt_tokens']! as num).toInt();
+      completionTokens += (usage['completion_tokens']! as num).toInt();
+      pending.remove(e.key);
+    }
+  }
+  if (pending.isNotEmpty) {
+    throw const ModelJudgeInvalidAnswer('已配置模型的判断回答不完整或概率无效；已保留进度，请重试');
+  }
+  valid['_usage'] = <String, Object?>{
+    'prompt_tokens': promptTokens,
+    'completion_tokens': completionTokens,
+  };
+  return valid;
 }
 
 Json _strictModelAnswers(Object? raw, Json questions, String model) {
@@ -354,6 +399,45 @@ Json validateAnswers(Object? answers, Json questions, String route) {
     }
   }
   return answers;
+}
+
+/// The paid Choice API promises a complete distribution. Check that promise
+/// before a verdict can be logged or cached; the free route keeps its own
+/// existing response contract.
+Json validatePaidAnswers(Object? answers, Json questions) {
+  final Json checked = validateAnswers(answers, questions, 'Jev');
+  for (final MapEntry<String, Object?> e in questions.entries) {
+    final Object? type = (e.value as Json?)?['type'];
+    if (type != null && type != 'choice') continue;
+    final Json criteria = _criteria(e.value);
+    final Json answer = checked[e.key]! as Json;
+    final Object? raw = answer['probabilities'];
+    if (raw is! Json ||
+        raw.length != criteria.length ||
+        !raw.keys.toSet().containsAll(criteria.keys)) {
+      throw ValueError('Jev: incomplete probabilities for ${e.key}');
+    }
+    double total = 0;
+    double highest = 0;
+    for (final String option in criteria.keys) {
+      final Object? value = raw[option];
+      if (value is! num ||
+          value is bool ||
+          !value.isFinite ||
+          value < 0 ||
+          value > 1) {
+        throw ValueError('Jev: invalid probability for ${e.key}');
+      }
+      final double probability = value.toDouble();
+      total += probability;
+      highest = math.max(highest, probability);
+    }
+    final double chosen = (raw[answer['choice']]! as num).toDouble();
+    if ((total - 1).abs() > 0.02 || chosen == 0 || chosen < highest - 1e-9) {
+      throw ValueError('Jev: inconsistent probabilities for ${e.key}');
+    }
+  }
+  return checked;
 }
 
 /// Keeps a free best-effort route from holding up a book.
@@ -922,7 +1006,7 @@ Future<Json> jevUncached(
           _truthy(data['answers'])
               ? data['answers']
               : (_truthy(data['results']) ? data['results'] : data);
-      validateAnswers(out, questions, 'Jev');
+      validatePaidAnswers(out, questions);
       if (attempt > 0) {
         logLine(
           '[judge] 路由=付费 已恢复 尝试=${attempt + 1}/${tries + 1} 已用=${(started.elapsedMilliseconds / 1000).toStringAsFixed(1)}s',

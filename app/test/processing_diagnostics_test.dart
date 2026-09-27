@@ -164,4 +164,34 @@ void main() {
       '由你暂停',
     );
   });
+
+  test('diagnostic identifies an unverified judge-format biography', () {
+    const String privateText = 'PRIVATE-BOOK-TEXT';
+    Directory('${book.path}/work/jobs').createSync();
+    File('${book.path}/work/jobs/bio-1.json').writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'state': 'deferred',
+        'failure_kind': 'bio_judge_format',
+        'error': privateText,
+        'bio_review': <String, Object?>{
+          'candidates': 2,
+          'passed': 0,
+          'verification_pending': true,
+          'draft': privateText,
+        },
+      }),
+    );
+    final String content = utf8.decode(
+      ProcessingDiagnostics.bytes(
+        bookDirectory: book,
+        workerHealth: <String, Object?>{},
+      ),
+    );
+    expect(content, isNot(contains(privateText)));
+    final Map<String, Object?> result =
+        jsonDecode(content) as Map<String, Object?>;
+    final List<Object?> jobs = result['biography_jobs']! as List<Object?>;
+    expect(jobs.single, containsPair('failure_kind', 'bio_judge_format'));
+    expect(jobs.single, containsPair('verification_pending', true));
+  });
 }

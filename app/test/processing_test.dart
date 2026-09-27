@@ -756,7 +756,7 @@ void main() {
           '人物小传验证失败：Jev HTTP 401: {"error":{"message":"Authentication failed"}}',
     });
     await open(tester);
-    expect(find.textContaining('Jev 网关拒绝了已保存的密钥'), findsOneWidget);
+    expect(find.textContaining('TypeSafe AI 拒绝了已保存的 Jev 密钥'), findsOneWidget);
     expect(find.textContaining('Authentication failed'), findsNothing);
     await tester.ensureVisible(find.text('本书改用已配置模型直接核对'));
     await tester.tap(find.text('本书改用已配置模型直接核对'));

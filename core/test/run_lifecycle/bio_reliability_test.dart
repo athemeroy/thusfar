@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import 'package:thusfar_core/jobs.dart' as jobs;
 import 'package:thusfar_core/run.dart';
 import 'package:thusfar_core/src/env.dart';
+import 'package:thusfar_core/src/pipeline/jev.dart' as jev;
 import 'package:thusfar_core/src/pipeline/judge.dart' as judge;
 import 'package:thusfar_core/src/pipeline/llm.dart' as llm;
 
@@ -237,6 +238,74 @@ void main() {
       await runner.close();
     }
   });
+
+  test(
+    'invalid model judge defers the draft and rechecks it on request',
+    () async {
+      final Directory root = _book(books, 'judge-format-deferred');
+      final ScriptedGeneration backend = ScriptedGeneration(<Object?>[
+        <String, Object?>{'P1': _bio('小林已在本章出场。')},
+      ]);
+      final Runner runner = await Runner.create(
+        root,
+        backend: backend,
+        activity: false,
+      );
+      final File job = File('${root.path}/work/jobs/bio-0.json');
+      _person(runner, 'P1');
+      _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+        'kind': 'bio',
+        'key': 0,
+        'args': <Object?>[
+          0,
+          2500,
+          '【P1｜小林】小林已出场',
+          <String>['P1'],
+        ],
+        'state': 'pending',
+        'generation_attempt': 0,
+        'content_failures': 0,
+      });
+      judge.judgeCall =
+          (Object? state, Json questions) async =>
+              throw const jev.ModelJudgeInvalidAnswer('模型判断回答格式无效');
+      try {
+        await runner.executeFinal(job);
+        final Json deferred = _read(root, 'work/jobs/bio-0.json');
+        expect(deferred['state'], 'deferred');
+        expect(deferred['failure_kind'], 'bio_judge_format');
+        expect(deferred['generation_attempt'], 0);
+        expect(deferred['content_failures'], 0);
+        expect(runner.qualityPending, contains('bio-0'));
+        expect(File('${root.path}/work/bios/0000.json').existsSync(), isFalse);
+        expect(runner.kg.people['P1']!['bio'], isNull);
+        expect(runner.kg.log.where((r) => r['t'] == 'profile'), isEmpty);
+        expect(backend.calls, 1);
+        final Directory drafts = Directory('${root.path}/work/drafts');
+        final List<File> savedDrafts =
+            drafts.listSync().whereType<File>().toList();
+        expect(savedDrafts, hasLength(1));
+        final String originalDraft = savedDrafts.single.readAsStringSync();
+
+        deferred['retry_requested'] = true;
+        _save(root, 'work/jobs/bio-0.json', deferred);
+        judge.judgeCall = (Object? state, Json questions) async => _guard(true);
+        runner.replaying = true;
+        runner.consolidate(0, 2500, 0);
+        expect(_read(root, 'work/jobs/bio-0.json')['state'], 'pending');
+        runner.replaying = false;
+        runner.resumeFinalJobs();
+        await Future.wait(runner.pending);
+        expect(backend.calls, 1, reason: 'the same generated draft is reused');
+        expect(savedDrafts.single.readAsStringSync(), originalDraft);
+        expect(_read(root, 'work/jobs/bio-0.json')['state'], 'complete');
+        expect(runner.qualityPending, isNot(contains('bio-0')));
+        expect(runner.kg.people['P1']!['bio'], '小林已在本章出场。');
+      } finally {
+        await runner.close();
+      }
+    },
+  );
 
   test('interruption keeps the remaining biography repair budget', () async {
     final Directory root = _book(books, 'interrupted-repair');

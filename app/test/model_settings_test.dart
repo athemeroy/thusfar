@@ -191,7 +191,7 @@ void main() {
       final Finder jevField = find.byWidgetPredicate(
         (Widget widget) =>
             widget is TextField &&
-            widget.decoration?.labelText == 'Vercel AI Gateway API 密钥',
+            widget.decoration?.labelText == 'TypeSafe AI / Jev API 密钥',
       );
       await tester.scrollUntilVisible(
         jevField,

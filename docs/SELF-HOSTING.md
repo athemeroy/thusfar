@@ -81,8 +81,8 @@ CLASSIFIER_URL=http://127.0.0.1:8008/v1/evaluate
 
 ```bash
 JEV_ROUTE=paid
-JEV_URL=https://ai-gateway.vercel.sh/v1/evaluate
-JEV_MODEL=typesafe-ai/jev
+JEV_URL=https://api.typesafe.ai/v1/systemone
+JEV_MODEL=jev-latest
 JEV_API_KEY=...
 JEV_PAID_MAX_CALLS=100
 JEV_PAID_MAX_CHARS=500000
