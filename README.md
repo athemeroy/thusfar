@@ -1,68 +1,78 @@
 <p align="center">
-  <img src="app/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png" width="88" alt="Thusfar icon">
+  <img src="assets/brand/icon-1024.png" width="112" alt="Thusfar icon: an open book with a bookmark at the current page">
 </p>
 
-<h1 align="center">Thusfar</h1>
+<h1 align="center">Thusfar · 页读</h1>
+
+<p align="center"><strong>A reader that has only read as far as you.</strong></p>
 
 <p align="center">
-  <b>A book reader that has only read as far as you.</b><br>
-  Tap a name to see who they are as of your current page.
-</p>
-
-<p align="center">
-  <b>English</b> · <a href="README.zh-CN.md">简体中文</a>
+  Remember a character, trace a relationship, or ask what happened—without learning what happens next.
 </p>
 
 <p align="center">
-  <a href="https://github.com/athemeroy/thusfar/releases"><b>Download the apps</b></a>
+  <a href="https://github.com/athemeroy/thusfar/releases/latest"><strong>Download 2.0</strong></a>
+  &nbsp;·&nbsp; <a href="#see-it-in-action">See the app</a>
+  &nbsp;·&nbsp; <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-## Read without spoilers
+---
 
-Long books are full of people. When a name returns hundreds of pages later, searching for it can reveal the ending. Thusfar builds a guide to the book and pins each fact to the place where it first becomes true. Moving back to an earlier page also moves the character cards, cast list and relationship graph back.
+A long novel brings back names you have not seen for hundreds of pages. Looking one up on the web can give away the ending. Thusfar marks where each clue first appears. Character cards, relationships, recaps, and answers stop at your current reading position. Go back a chapter, and they go back with you.
 
-- Tap a name for a profile, aliases and relationships valid at your current page.
-- Browse the relationship graph, search, notes, bookmarks and recaps.
-- Ask a question about what you have read and open its cited passage.
-- Import TXT or EPUB books and read offline.
-- Prepare a character guide on your own device using a model API you configure. Preparation needs a connection; ordinary reading does not.
+## See it in action
 
-The 2.0 app uses Flutter for its interface and a Dart reading engine. Books, notes and model credentials stay in the app's local storage. Preparing a guide sends passages to the model provider you choose and may use classifier.dev for checks. There is no Thusfar account.
+<p align="center">
+  <img src="app/test/shots/01-shelf.png" width="240" alt="Bookshelf and reading progress">
+  &nbsp;
+  <img src="app/test/shots/02-reader.png" width="240" alt="Reading page with tappable names">
+  &nbsp;
+  <img src="app/test/shots/05-person.png" width="240" alt="Character card limited to the current page">
+</p>
+
+<p align="center"><sub>Bookshelf · Reading · Character card at your current page</sub></p>
+
+- **Tap a name.** See a character's identity, aliases, appearances, and relationships, then check the original passage.
+- **Catch up without looking ahead.** The cast list, relationship graph, recaps, and questions share the same reading cutoff. Answers link back to cited passages.
+- **Make the book yours.** Import TXT or EPUB, take notes, add bookmarks, search, and tune the reading layout. Your books and reading history stay on your device.
+- **Choose your own model.** Add a model API to prepare character guides. Preparation uses a connection; everyday reading works offline.
 
 ## Download
 
-[Releases](https://github.com/athemeroy/thusfar/releases) contains the 2.0 preview for Android, macOS, Windows, Linux and iOS. The Android preview installs alongside 1.7.x and uses a separate library. To bring books over, export a backup in 1.7.x and restore it in 2.0.
+Get the installation file for your device from the [latest release](https://github.com/athemeroy/thusfar/releases/latest).
 
-| Platform | Download | Install |
+| Platform | File | Installation |
 | --- | --- | --- |
-| Android 8+ | Preview APK | Install the APK. It appears as 页读 2.0 试用. |
-| macOS 12+ | DMG | Drag Thusfar to Applications. The app is not notarized; use System Settings → Privacy & Security → Open Anyway on first launch. |
-| Windows 10/11 x64 | Installer or portable ZIP | The installer is per user. Windows may show a SmartScreen warning for the unsigned app. |
-| Linux x64 | tar.gz | Extract and run ./thusfar; GTK 3 is required. |
+| Android 8+ | APK | Install the APK. The app appears as 页读 2.0. |
+| macOS 12+ | DMG | Drag Thusfar to Applications. You may need to allow its first launch in Privacy & Security. |
+| Windows 10/11 x64 | Installer or portable ZIP | Install for your user account or extract the ZIP. |
+| Linux x64 | tar.gz | Extract and run `./thusfar`; GTK 3 is required. |
 | iOS / iPadOS 15+ | Unsigned IPA | Sign and sideload with AltStore or SideStore. |
 
-On a computer, you can also open a TXT or EPUB from Finder or Explorer with Thusfar. The original file remains where it is. Use arrow keys, Space, Page Up/Down or the mouse wheel to turn pages.
+Android 2.0 can coexist with 1.7.x; each app has its own library. To move books over, export a backup in 1.7.x and restore it in 2.0. [Version 1.7.5 remains available](https://github.com/athemeroy/thusfar/releases/tag/v1.7.5).
 
-For the previous Android release, see [1.7.5](https://github.com/athemeroy/thusfar/releases/tag/v1.7.5). The 2.0 downloads are previews while device and upgrade coverage continues.
+## Your data
+
+There is no required Thusfar account or Thusfar server. Books, notes, and model credentials are stored locally in the client. When you choose to prepare a guide, relevant passages go to the model provider you configure and may be checked with classifier.dev. Choose a provider that suits your privacy needs.
 
 ## Build from source
 
-Flutter 3.47.5 and Dart 3.13.4 are the versions used for this release. Android builds also need JDK 17 and an Android SDK. From the repository root:
+The client consists of the Flutter interface in `app/` and the Dart reading engine in `core/`. The 2.0 release uses Flutter 3.47.5 / Dart 3.13.4. Android builds also need JDK 17 and an Android SDK.
 
-    cd app
-    flutter pub get
-    flutter run
+```sh
+cd app
+flutter pub get
+flutter run
+```
 
-Choose the target device with Flutter. The Android preview package uses the probe flavor:
+The Android 2.0 package uses the `probe` build flavor:
 
-    flutter build apk --release --flavor probe --target-platform android-arm64
+```sh
+flutter build apk --release --flavor probe --target-platform android-arm64
+```
 
-The client code is in app/ (Flutter interface) and core/ (Dart reading engine). See [app/README.md](app/README.md) for development and validation details.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Spoiler safety is the central correctness rule: information must remain behind its first valid reading position. Work on the 2.0 client has included contributions from Luna and Gemini Flash.
+See the [client guide](app/README.md) for development and checks, and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute. Thanks to Luna and Gemini Flash for their contributions to the 2.0 client.
 
 ## License
 
-[MIT](LICENSE). Bundled fonts retain their own license files.
+[MIT](LICENSE). Bundled fonts retain their own licenses.

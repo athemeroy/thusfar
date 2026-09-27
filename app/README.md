@@ -1,7 +1,7 @@
 # Thusfar Flutter app
 
 Flutter reader for Android, macOS, Windows, Linux and iOS, using the pure Dart
-package in `../core`. This is the active client and the 2.0 preview product.
+package in `../core`. This is the active 2.0 client.
 The Python implementation remains a behavioral reference in the source tree.
 
 The reader provides a local bookshelf, TXT/EPUB and portable-backup import,

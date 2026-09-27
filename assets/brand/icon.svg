@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title description">
+  <title id="title">Thusfar · 页读</title>
+  <desc id="description">An open book with a vermilion bookmark marking the current page.</desc>
+  <rect width="1024" height="1024" rx="218" fill="#F2EDE3"/>
+  <path d="M156 296c125-17 251 7 338 69v387c-89-65-215-87-338-68-17 3-33-10-33-27V329c0-17 15-31 33-33Z" fill="#2C514A"/>
+  <path d="M868 296c-125-17-251 7-338 69v387c89-65 215-87 338-68 17 3 33-10 33-27V329c0-17-15-31-33-33Z" fill="#2C514A"/>
+  <path d="M512 358v414" fill="none" stroke="#B9BBAE" stroke-width="20" stroke-linecap="round"/>
+  <path d="M695 285c44-4 87-4 130 0v240l-65-45-65 45V285Z" fill="#BC4936"/>
+  <path d="M206 738c110-10 220 15 306 73 86-58 196-83 306-73" fill="none" stroke="#2C514A" stroke-width="28" stroke-linecap="round"/>
+</svg>
