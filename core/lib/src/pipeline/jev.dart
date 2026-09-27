@@ -15,7 +15,9 @@ import '../py/py_compat.dart';
 import '../py/py_hash.dart';
 import '../py/py_json.dart';
 import '../py/py_json_decode.dart';
+import 'judge_context.dart';
 import 'llm.dart';
+import 'models.dart' as pricing;
 import 'provenance.dart';
 
 String get jevUrl =>
@@ -37,6 +39,11 @@ final Map<String, num> jevStats = <String, num>{
   'questions': 0,
   'paid_chars': 0,
   'passage_chars': 0,
+  'model_calls': 0,
+  'model_prompt_tokens': 0,
+  'model_completion_tokens': 0,
+  'model_cost_low': 0,
+  'model_cost_high': 0,
 };
 
 void resetJevStats() {
@@ -48,7 +55,26 @@ void resetJevStats() {
       'questions': 0,
       'paid_chars': 0,
       'passage_chars': 0,
+      'model_calls': 0,
+      'model_prompt_tokens': 0,
+      'model_completion_tokens': 0,
+      'model_cost_low': 0,
+      'model_cost_high': 0,
     });
+  try {
+    final Json saved = readModelJudgeBudget(modelJudgeBudgetFile());
+    for (final String key in const <String>[
+      'model_calls',
+      'model_prompt_tokens',
+      'model_completion_tokens',
+      'model_cost_low',
+      'model_cost_high',
+    ]) {
+      jevStats[key] = (saved[key] as num?) ?? 0;
+    }
+  } on Object {
+    // No book is selected yet, or no model fallback has been used.
+  }
 }
 
 /// Where operational log lines go (Python printed them).
@@ -76,8 +102,14 @@ Reply with one compact JSON object and nothing else:
 Json _criteria(Object? q) =>
     ((q! as Json)['criteria'] as Json?) ?? <String, Object?>{};
 
-/// The same contract as [jev], answered by an ordinary chat model.
-Future<Json> llmJudge(Object? state, Json questions, {String? model}) async {
+/// The same contract as [jev], answered by the reader's configured model.
+/// Malformed answers are repaired once, never converted to a first-choice guess.
+Future<Json> llmJudge(
+  Object? state,
+  Json questions, {
+  String? model,
+  bool reserveBudget = false,
+}) async {
   String pick(String k) => environ[k] ?? '';
   final String m =
       model ??
@@ -86,6 +118,9 @@ Future<Json> llmJudge(Object? state, Json questions, {String? model}) async {
           : pick('RECAP_MODEL').isNotEmpty
           ? pick('RECAP_MODEL')
           : 'deepseek-flash+nothink');
+  if (m.isEmpty || keyFor(m.split('+').first)?.isNotEmpty != true) {
+    throw const LLMError('模型判断需要先在「模型设置」保存可用的模型和 API 密钥');
+  }
   final Json qs = <String, Object?>{
     for (final MapEntry<String, Object?> e in questions.entries)
       e.key: <String, Object?>{
@@ -102,80 +137,129 @@ Future<Json> llmJudge(Object? state, Json questions, {String? model}) async {
     <String, String>{'role': 'user', 'content': user},
   ];
   final int budget = 200 + 120 * qs.length;
-  ChatResult r = await chat(m, msgs, maxTokens: budget, temperature: 0);
-  Map<String, Object?> usage = r.usage;
-  Object? data;
-  try {
-    data = parseJson(r.text);
-  } on ValueError {
-    final ChatResult fix = await chat(
+  int promptTokens = 0, completionTokens = 0;
+  for (int attempt = 0; attempt < 2; attempt++) {
+    if (reserveBudget) {
+      try {
+        reserveModelJudge(
+          msgs.fold<int>(0, (n, msg) => n + _cpLen(msg['content'] ?? '')),
+          questions.length,
+        );
+      } on PyException catch (e) {
+        throw LLMError(e.message);
+      }
+    }
+    final ChatResult result = await chat(
       m,
-      <Map<String, String>>[
-        ...msgs,
-        <String, String>{'role': 'assistant', 'content': r.text},
-        <String, String>{
-          'role': 'user',
-          'content': 'Reply again with only the JSON object.',
-        },
-      ],
+      msgs,
       maxTokens: budget,
       temperature: 0,
+      retries: 0,
     );
-    data = parseJson(fix.text);
-    usage = <String, Object?>{
-      for (final String k in const <String>[
-        'prompt_tokens',
-        'completion_tokens',
-      ])
-        k: ((usage[k] as num?) ?? 0) + ((fix.usage[k] as num?) ?? 0),
-    };
-    r = fix;
+    final int input = (result.usage['prompt_tokens'] as num?)?.toInt() ?? 0;
+    final int output =
+        (result.usage['completion_tokens'] as num?)?.toInt() ?? 0;
+    promptTokens += input;
+    completionTokens += output;
+    if (reserveBudget) _recordModelJudgeUsage(m, input, output);
+    try {
+      final Json out = _strictModelAnswers(
+        parseJson(result.text),
+        questions,
+        m,
+      );
+      out['_usage'] = <String, Object?>{
+        'prompt_tokens': promptTokens,
+        'completion_tokens': completionTokens,
+      };
+      return out;
+    } on ValueError {
+      if (attempt == 1) {
+        throw const LLMError('已配置模型的判断回答不完整或概率无效；已保留进度，请重试');
+      }
+      msgs.addAll(<Map<String, String>>[
+        <String, String>{'role': 'assistant', 'content': result.text},
+        <String, String>{
+          'role': 'user',
+          'content':
+              'Your answer was incomplete. Reply with one JSON object covering every question id. Each choice must be a valid option id, and probabilities must include every option as numbers from 0 to 1 that sum to 1. No explanations.',
+        },
+      ]);
+    }
   }
+  throw const LLMError('已配置模型的判断回答不完整');
+}
+
+Json _strictModelAnswers(Object? raw, Json questions, String model) {
+  if (raw is! Json) throw const ValueError('model judge: expected object');
   final Json out = <String, Object?>{};
   for (final MapEntry<String, Object?> e in questions.entries) {
-    final Object? a = data is Json ? data[e.key] : null;
-    final Object? rawProbs = a is Json ? a['probabilities'] : null;
-    final Json given = rawProbs is Json ? rawProbs : <String, Object?>{};
-    final Map<String, double> probs = <String, double>{
-      for (final String o in _criteria(e.value).keys) o: _toFloat(given[o]),
-    };
-    double total = probs.values.fold(0.0, (double a, double b) => a + b);
-    if (total == 0) total = 1.0;
-    final Map<String, double> norm = <String, double>{
-      for (final MapEntry<String, double> p in probs.entries)
-        p.key: PyCompat.roundDigits(p.value / total, 3),
-    };
-    Object? choice = a is Json ? a['choice'] : null;
-    if (!norm.containsKey(choice)) {
-      choice = null;
-      double best = double.negativeInfinity;
-      for (final MapEntry<String, double> p in norm.entries) {
-        if (p.value > best) {
-          best = p.value;
-          choice = p.key;
-        }
+    final Json criteria = _criteria(e.value);
+    final Object? answer = raw[e.key];
+    if (answer is! Json ||
+        answer['choice'] is! String ||
+        !criteria.containsKey(answer['choice'])) {
+      throw const ValueError('model judge: missing choice');
+    }
+    final Object? given = answer['probabilities'];
+    if (given is! Json ||
+        given.length != criteria.length ||
+        !given.keys.toSet().containsAll(criteria.keys)) {
+      throw const ValueError('model judge: incomplete probabilities');
+    }
+    final Map<String, double> probs = <String, double>{};
+    for (final String option in criteria.keys) {
+      final Object? value = given[option];
+      if (value is! num ||
+          value is bool ||
+          !value.isFinite ||
+          value < 0 ||
+          value > 1) {
+        throw const ValueError('model judge: invalid probability');
       }
+      probs[option] = value.toDouble();
+    }
+    final double total = probs.values.fold(0.0, (a, b) => a + b);
+    if ((total - 1).abs() > 0.02 || probs[answer['choice']] == 0) {
+      throw const ValueError('model judge: inconsistent probabilities');
     }
     out[e.key] = <String, Object?>{
       'type': 'choice',
-      'choice': choice,
-      'probabilities': norm,
-      'by': m,
+      'choice': answer['choice'],
+      'probabilities': <String, double>{
+        for (final entry in probs.entries)
+          entry.key: PyCompat.roundDigits(entry.value / total, 3),
+      },
+      'by': model,
     };
   }
-  out['_usage'] = usage;
+  validateAnswers(out, questions, 'model judge');
   return out;
 }
 
-double _toFloat(Object? v) {
-  if (v == null || v == false || v == 0 || v == '') return 0.0;
-  if (v == true) return 1.0;
-  if (v is num) return v.toDouble();
-  if (v is String) {
-    final double? d = double.tryParse(v.trim());
-    if (d != null) return d;
+void _recordModelJudgeUsage(String model, int input, int output) {
+  double low = 0, high = 0;
+  final String name = model.split('+').first;
+  if (pricing.prices.containsKey(name) ||
+      pricing.overrides().containsKey(name)) {
+    final pricing.Price p = pricing.priceOf(name);
+    low =
+        (input * p.price.$1 * p.mult.$1 + output * p.price.$2 * p.mult.$1) /
+        1e6;
+    high =
+        (input * p.price.$1 * p.mult.$2 + output * p.price.$2 * p.mult.$2) /
+        1e6;
   }
-  throw ValueError('could not convert string to float: ${PyJson.encode(v)}');
+  final Json saved = recordModelJudgeUsage(input, output, low, high);
+  for (final String key in const <String>[
+    'model_calls',
+    'model_prompt_tokens',
+    'model_completion_tokens',
+    'model_cost_low',
+    'model_cost_high',
+  ]) {
+    jevStats[key] = saved[key]! as num;
+  }
 }
 
 /// The judge's state as one block of text.
@@ -319,6 +403,17 @@ final Breaker freeBreaker = Breaker(
   fails: _envInt('JEV_FREE_FAILS', '2'),
   cool: _envDouble('JEV_FREE_COOLDOWN', '1800'),
 );
+String? _freeCredentialStamp;
+
+void _syncFreeCredential() {
+  final String stamp = sha256Hex(utf8.encode(llmEnv('CLASSIFIER_KEY') ?? ''));
+  if (_freeCredentialStamp == stamp) return;
+  _freeCredentialStamp = stamp;
+  freeBreaker
+    ..bad = 0
+    ..until = 0
+    ..probing = false;
+}
 
 /// Honor both free-route limits before sending any request.
 List<(List<String>, Json)> classifierBatches(Json questions) {
@@ -385,11 +480,17 @@ Future<Object?> _postJson(
     if (raw.length > 16 * 1024 * 1024) throw const LLMError('模型响应超过大小上限');
   }
   if (resp.status >= 400) {
-    throw _HttpFailure(
-      resp.status,
-      utf8.decode(raw.take(detailBytes).toList(), allowMalformed: true),
-      resp.headers,
+    String detail = utf8.decode(
+      raw.take(detailBytes).toList(),
+      allowMalformed: true,
     );
+    final String? authorization = headers['Authorization'];
+    if (authorization != null && authorization.startsWith('Bearer ')) {
+      detail = redactSecrets(detail, <String>[
+        authorization.substring('Bearer '.length),
+      ]);
+    }
+    throw _HttpFailure(resp.status, detail, resp.headers);
   }
   return pyJsonLoads(utf8.decode(raw, allowMalformed: true));
 }
@@ -399,6 +500,11 @@ final class ReopeningError extends LLMError {
   const ReopeningError(super.message, this.reopensIn);
 
   final double reopensIn;
+}
+
+/// Permanent access refusal: do not send this same anonymous request again.
+final class ClassifierAccessError extends LLMError {
+  const ClassifierAccessError(super.message);
 }
 
 String _typeName(Object e) => switch (e) {
@@ -420,6 +526,7 @@ Future<Json> jevFree(
   int retries = 6,
 }) async {
   if (questions.isEmpty) return <String, Object?>{};
+  _syncFreeCredential();
   if (freeBreaker.open()) throw const LLMError('classifier.dev 暂时跳过（连续失败，冷却中）');
   final int t = math.min(timeout, _envInt('JEV_FREE_TIMEOUT', '20'));
   final int tries = math.min(retries, _envInt('JEV_FREE_RETRIES', '1'));
@@ -535,7 +642,18 @@ Future<Json> jevFree(
           );
           continue;
         }
-        if (e.code == 400 || e.code == 401 || e.code == 403) throw err;
+        if (e.code == 401 || e.code == 403) {
+          final bool hasWorkspaceKey =
+              (llmEnv('CLASSIFIER_KEY') ?? '').isNotEmpty;
+          throw ClassifierAccessError(
+            hasWorkspaceKey
+                ? 'classifier.dev HTTP ${e.code}: 工作区密钥访问被拒绝，请检查密钥和余额'
+                : e.detail.contains('proxy_requires_payment')
+                ? 'classifier.dev HTTP ${e.code}: 匿名免费额度不可用，需要已充值的工作区密钥'
+                : 'classifier.dev HTTP ${e.code}: 匿名访问被拒绝',
+          );
+        }
+        if (e.code == 400) throw err;
         status = 'HTTP ${e.code}';
       } on DeadlineExceeded {
         rethrow;
@@ -579,7 +697,7 @@ final Set<String> _teacherSeen = <String>{};
 
 /// Every judged question as asked and answered, for training later.
 void teacherLog(Object? state, Json questions, Json answers, String route) {
-  final String? d = environ['JUDGE_LOG_DIR'];
+  final String? d = selectedJudgeDirectory();
   if (d == null || d.isEmpty || (environ['JUDGE_LOG'] ?? '1') != '1') return;
   try {
     final Directory path = Directory(d)..createSync(recursive: true);
@@ -605,7 +723,10 @@ void teacherLog(Object? state, Json questions, Json answers, String route) {
           'criteria': q['criteria'] ?? <String, Object?>{},
           'choice': a['choice'],
           'probabilities': a['probabilities'],
-          'model': jevModel,
+          'model':
+              route == 'configured-model'
+                  ? (environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? '')
+                  : jevModel,
           'route': route,
           'capture_schema': 2,
         }),
@@ -687,7 +808,8 @@ bool _sameKeys(Iterable<String> a, Iterable<String> b) =>
 
 String _routeUsed = 'unknown';
 
-/// Call the selected judge route, with explicit bounded paid overflow only.
+/// Call the selected judge route. Model overflow uses the saved model key and
+/// its own per-book allowance; paid Jev remains a separate gateway route.
 Future<Json> jevUncached(
   Object? state,
   Json questions, {
@@ -696,18 +818,24 @@ Future<Json> jevUncached(
 }) async {
   if (questions.isEmpty) return <String, Object?>{};
   final Stopwatch started = Stopwatch()..start();
-  String route = environ['JEV_ROUTE'] ?? 'free-only';
+  String route = selectedJudgeRoute();
   if (route == 'free') route = 'free-only';
   if (!const <String>[
     'local',
     'free-only',
+    'free-then-model',
     'free-then-paid',
     'paid',
   ].contains(route)) {
-    throw const LLMError('未知裁判路由；使用 local、free-only、free-then-paid 或 paid');
+    throw const LLMError(
+      '未知裁判路由；使用 local、free-only、free-then-model、free-then-paid 或 paid',
+    );
   }
   if (route == 'local') return jevLocal(state, questions);
-  if ((route == 'free-only' || route == 'free-then-paid') &&
+  _syncFreeCredential();
+  if ((route == 'free-only' ||
+          route == 'free-then-model' ||
+          route == 'free-then-paid') &&
       freeBreaker.allow()) {
     try {
       final Json out = await jevFree(state, questions, timeout: timeout);
@@ -718,25 +846,41 @@ Future<Json> jevUncached(
     } on DeadlineExceeded {
       rethrow;
     } on Object catch (e) {
+      if (e is ClassifierAccessError) freeBreaker.bad = freeBreaker.fails - 1;
       freeBreaker.failed(
         _str(e),
-        cool: e is ReopeningError && e.reopensIn != 0 ? e.reopensIn : null,
+        cool:
+            e is ReopeningError && e.reopensIn != 0
+                ? e.reopensIn
+                : e is ClassifierAccessError
+                ? 21600
+                : null,
       );
       if (route == 'free-only') {
         throw LLMError('免费裁判暂不可用，未调用付费接口：${_typeName(e)}: ${_str(e)}');
       }
       logLine(
-        '[judge] classifier.dev unavailable, falling back to the paid route: ${String.fromCharCodes(_str(e).runes.take(120))}',
+        '[judge] classifier.dev unavailable; using ${route == 'free-then-model' ? 'the configured model' : 'the Jev gateway'}',
       );
     }
   } else if (route == 'free-only') {
     throw const LLMError('免费裁判处于冷却期，未调用付费接口；稍后可从缓存继续');
   }
+  if (route == 'free-then-model') {
+    final Json out = await llmJudge(state, questions, reserveBudget: true);
+    _routeUsed = 'configured-model';
+    teacherLog(state, questions, out, 'configured-model');
+    return out;
+  }
   final String keyName = environ['JEV_KEY_NAME'] ?? '';
   final String? key =
-      (keyName.isNotEmpty ? llmEnv(keyName) : null) ??
-      (jevUrl.contains('vercel') ? llmEnv('VERCEL_AI_GATEWAY_KEY') : null) ??
-      llmEnv('JEV_API_KEY');
+      environ['LLM_SETTINGS_AUTHORITY'] == '1'
+          ? llmEnv('JEV_API_KEY')
+          : (keyName.isNotEmpty ? llmEnv(keyName) : null) ??
+              llmEnv('JEV_API_KEY') ??
+              (jevUrl.contains('vercel')
+                  ? llmEnv('VERCEL_AI_GATEWAY_KEY')
+                  : null);
   if (key == null || key.isEmpty) throw const LLMError('缺少 Jev 密钥');
   final String body = _dumps(<String, Object?>{
     'model': jevModel,
@@ -848,8 +992,8 @@ Future<Json> jev(
   int timeout = 90,
   int? retries,
 }) async {
-  final String? directory = environ['JUDGE_LOG_DIR'];
-  final String route = environ['JEV_ROUTE'] ?? 'free-only';
+  final String? directory = selectedJudgeDirectory();
+  final String route = selectedJudgeRoute();
   if (directory == null ||
       directory.isEmpty ||
       route == 'local' ||
@@ -863,6 +1007,10 @@ Future<Json> jev(
     'model': jevModel,
     'route': route,
     'url': jevUrl,
+    if (route == 'free-then-model') ...<String, Object?>{
+      'fallback_model': environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? '',
+      'fallback_url': baseFor(protocolFor(environ['JUDGE_MODEL'] ?? '')),
+    },
     'version': 1,
   });
   final File path = File('$directory/cache/$fingerprint.json');
@@ -877,6 +1025,27 @@ Future<Json> jev(
         throw const LLMError('裁判缓存校验失败');
       validateAnswers(saved['answers'], questions, 'judge cache');
       return saved['answers']! as Json;
+    }
+    if (route == 'free-then-model' || route == 'free-then-paid') {
+      // Successful free-only judgments remain reusable after this book opts
+      // into either fallback. A failed free request never creates a cache.
+      final String freeFingerprint = digest(<String, Object?>{
+        'state': state,
+        'questions': questions,
+        'model': jevModel,
+        'route': 'free-only',
+        'url': jevUrl,
+        'version': 1,
+      });
+      final File freePath = File('$directory/cache/$freeFingerprint.json');
+      if (freePath.existsSync()) {
+        final Json saved = pyJsonLoads(freePath.readAsStringSync())! as Json;
+        if (saved['request_sha256'] != freeFingerprint) {
+          throw const LLMError('裁判缓存校验失败');
+        }
+        validateAnswers(saved['answers'], questions, 'judge cache');
+        return saved['answers']! as Json;
+      }
     }
     final Json answers = await jevUncached(
       state,

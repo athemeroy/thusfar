@@ -4,6 +4,7 @@ import 'package:thusfar_core/llm.dart' as llm;
 
 import '../data/model_settings.dart';
 import '../ui/theme.dart';
+import 'package:thusfar_core/judge_budget.dart' as budget;
 
 /// Makes saved settings effective for the engine (`model_settings.apply_environment`).
 void applyModelEnvironment(ModelSettings s) => s.applyEnvironment();
@@ -75,16 +76,26 @@ class ModelSettingsScreen extends StatefulWidget {
   State<ModelSettingsScreen> createState() => _ModelSettingsScreenState();
 }
 
-enum _Test { none, running, ok, slow, failed }
+enum _Test { none, running, ok, slow, saved, failed }
 
 class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
+  final ScrollController formScroll = ScrollController();
   late final TextEditingController url;
   late final TextEditingController model;
   final TextEditingController key = TextEditingController();
+  final TextEditingController classifierKey = TextEditingController();
+  final TextEditingController jevApiKey = TextEditingController();
   late String protocol;
+  late bool judgeFallback;
   bool showKey = false;
+  bool showClassifierKey = false;
+  bool showJevApiKey = false;
   bool replacing = false;
+  bool replacingClassifierKey = false;
+  bool replacingJevApiKey = false;
   bool clearKey = false;
+  bool clearClassifierKey = false;
+  bool clearJevApiKey = false;
   String? error;
   String? urlNote;
   String? modelNote;
@@ -96,6 +107,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     super.initState();
     final (String u, String m, _) = widget.settings.read();
     protocol = widget.settings.protocol;
+    judgeFallback = widget.settings.judgeFallbackEnabled;
     url = TextEditingController(text: u);
     model = TextEditingController(text: m);
   }
@@ -105,7 +117,20 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     url.dispose();
     model.dispose();
     key.dispose();
+    classifierKey.dispose();
+    jevApiKey.dispose();
+    formScroll.dispose();
     super.dispose();
+  }
+
+  void _showResult() {
+    if (formScroll.hasClients) {
+      formScroll.animateTo(
+        0,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   void _edited() => setState(() {
@@ -133,6 +158,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         test = _Test.failed;
         testMessage = '还没有填写模型 API 密钥，请先填写';
       });
+      _showResult();
       return;
     }
     final (String savedUrl, String savedModel, String savedKey) = widget
@@ -152,7 +178,12 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         protocol != widget.settings.protocol ||
         probeUrl != savedUrl ||
         probeModel != savedModel ||
-        probeKey != savedKey;
+        probeKey != savedKey ||
+        judgeFallback != widget.settings.judgeFallbackEnabled ||
+        classifierKey.text.trim().isNotEmpty ||
+        clearClassifierKey ||
+        jevApiKey.text.trim().isNotEmpty ||
+        clearJevApiKey;
     setState(() {
       test = _Test.running;
       testMessage = '';
@@ -164,6 +195,11 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         key: key.text,
         clearKey: clearKey,
         protocol: protocol,
+        judgeFallback: judgeFallback,
+        classifierKey: classifierKey.text,
+        clearClassifierKey: clearClassifierKey,
+        jevApiKey: jevApiKey.text,
+        clearJevApiKey: clearJevApiKey,
       );
       if (!mounted) return;
       setState(() {
@@ -172,9 +208,12 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             : (result['seconds'] as num) > 8
             ? _Test.slow
             : _Test.ok;
-        testMessage = '${result['message']}';
+        testMessage = result['ok'] == true
+            ? '模型${result['message']}（此测试未验证 classifier.dev 或 Jev 网关密钥）'
+            : '${result['message']}';
         if (unsaved && result['ok'] == true) testMessage += '。当前输入尚未保存';
       });
+      _showResult();
       if (saved && widget.returnOnSuccess && mounted && test == _Test.ok) {
         await Future<void>.delayed(const Duration(milliseconds: 900));
         if (mounted) Navigator.of(context).pop(true);
@@ -187,6 +226,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             llm.explain(e) ??
             '连接失败：${e.toString().length > 200 ? e.toString().substring(0, 200) : e}';
       });
+      _showResult();
     }
   }
 
@@ -204,6 +244,11 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
       key: key.text.trim(),
       clearKey: clearKey,
       protocol: protocol,
+      judgeFallback: judgeFallback,
+      classifierKey: classifierKey.text,
+      clearClassifierKey: clearClassifierKey,
+      jevApiKey: jevApiKey.text,
+      clearJevApiKey: clearJevApiKey,
     );
     setState(() {
       error = e;
@@ -219,13 +264,27 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         url.text = u;
         model.text = m;
         key.clear();
+        classifierKey.clear();
+        jevApiKey.clear();
         replacing = false;
+        replacingClassifierKey = false;
+        replacingJevApiKey = false;
         clearKey = false;
+        clearClassifierKey = false;
+        clearJevApiKey = false;
       }
     });
     if (e == null) {
       applyModelEnvironment(widget.settings);
-      _test(saved: true);
+      if (widget.settings.hasKey && widget.settings.read().$2.isNotEmpty) {
+        _test(saved: true);
+      } else {
+        setState(() {
+          test = _Test.saved;
+          testMessage = '密钥已保存。连接测试仅检查上方模型接口，Jev 网关密钥会在你为书籍选择该路线时使用。';
+        });
+        _showResult();
+      }
     }
   }
 
@@ -255,8 +314,13 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         title: const Text('模型设置'),
       ),
       body: ListView(
+        controller: formScroll,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: <Widget>[
+          if (test != _Test.none) ...<Widget>[
+            _testCard(context),
+            const SizedBox(height: 16),
+          ],
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Column(
@@ -279,8 +343,8 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                       Pill(
                         label: p.name,
                         dense: true,
-                        filled: protocol == p.protocol &&
-                            url.text.trim() == p.url,
+                        filled:
+                            protocol == p.protocol && url.text.trim() == p.url,
                         onTap: test == _Test.running
                             ? null
                             : () => _applyPreset(p),
@@ -405,13 +469,160 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 ),
               ),
             ),
+          const SizedBox(height: 20),
+          Material(
+            color: t.raised,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: t.rule),
+            ),
+            child: SwitchListTile.adaptive(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+              title: const Text('免费判断不可用时，使用已配置模型继续'),
+              subtitle: Text(
+                '此设置作用于所有书籍，会消耗上方模型的 API 额度。每本书初始最多 ${budget.modelJudgeInitialCalls} 次判断、${budget.modelJudgeInitialChars ~/ 10000} 万字符；用完可在书籍详情追加。',
+                style: TextStyle(fontSize: 12, color: t.ink2),
+              ),
+              value: judgeFallback,
+              onChanged: test == _Test.running
+                  ? null
+                  : (bool value) {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        judgeFallback = value;
+                        _edited();
+                      });
+                    },
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'classifier.dev 已充值工作区密钥（可选）',
+            style: TextStyle(
+              fontSize: 14,
+              color: t.ink,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '匿名额度用完时，需有余额的 classifier.dev 工作区密钥。会使用该工作区额度；它与上方模型密钥、Jev 网关密钥不同。',
+            style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
+          ),
+          const SizedBox(height: 10),
+          if (widget.settings.hasClassifierKey &&
+              !replacingClassifierKey &&
+              !clearClassifierKey)
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text('已保存 ···${widget.settings.classifierKeyLast4}'),
+                ),
+                TextButton(
+                  onPressed: test == _Test.running
+                      ? null
+                      : () => setState(() => replacingClassifierKey = true),
+                  child: const Text('更换'),
+                ),
+                TextButton(
+                  onPressed: test == _Test.running
+                      ? null
+                      : () => setState(() {
+                          clearClassifierKey = true;
+                          _edited();
+                        }),
+                  child: Text('清除', style: TextStyle(color: t.danger)),
+                ),
+              ],
+            )
+          else
+            TextField(
+              controller: classifierKey,
+              enabled: test != _Test.running,
+              obscureText: !showClassifierKey,
+              onChanged: (String value) {
+                if (value.isNotEmpty) clearClassifierKey = false;
+                _edited();
+              },
+              decoration: deco(
+                'classifier.dev 密钥',
+                suffix: IconButton(
+                  tooltip: showClassifierKey ? '隐藏密钥' : '显示密钥',
+                  icon: Icon(
+                    showClassifierKey ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () =>
+                      setState(() => showClassifierKey = !showClassifierKey),
+                ),
+              ),
+            ),
+          const SizedBox(height: 18),
+          Text(
+            'Jev 网关密钥（可选）',
+            style: TextStyle(
+              fontSize: 14,
+              color: t.ink,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '用于 Vercel AI Gateway 的 Jev 接口。保存密钥不会自动启用付费判断；你需要在书籍详情中单独选择。它与 classifier.dev 工作区密钥、上方模型密钥不同。',
+            style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
+          ),
+          const SizedBox(height: 10),
+          if (widget.settings.hasJevApiKey &&
+              !replacingJevApiKey &&
+              !clearJevApiKey)
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text('已保存 ···${widget.settings.jevApiKeyLast4}'),
+                ),
+                TextButton(
+                  onPressed: test == _Test.running
+                      ? null
+                      : () => setState(() => replacingJevApiKey = true),
+                  child: const Text('更换'),
+                ),
+                TextButton(
+                  onPressed: test == _Test.running
+                      ? null
+                      : () => setState(() {
+                          clearJevApiKey = true;
+                          _edited();
+                        }),
+                  child: Text('清除', style: TextStyle(color: t.danger)),
+                ),
+              ],
+            )
+          else
+            TextField(
+              controller: jevApiKey,
+              enabled: test != _Test.running,
+              obscureText: !showJevApiKey,
+              onChanged: (String value) {
+                if (value.isNotEmpty) clearJevApiKey = false;
+                _edited();
+              },
+              decoration: deco(
+                'Vercel AI Gateway API 密钥',
+                suffix: IconButton(
+                  tooltip: showJevApiKey ? '隐藏密钥' : '显示密钥',
+                  icon: Icon(
+                    showJevApiKey ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: () =>
+                      setState(() => showJevApiKey = !showJevApiKey),
+                ),
+              ),
+            ),
           if (error != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(error!, style: TextStyle(color: t.danger)),
             ),
           const SizedBox(height: 20),
-          if (test != _Test.none) _testCard(context),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -451,6 +662,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
       _Test.running => (t.qing, Icons.hourglass_top, '正在测试…'),
       _Test.ok => (t.ok, Icons.check_circle, '连接成功'),
       _Test.slow => (t.amber, Icons.speed, '能用，但很慢'),
+      _Test.saved => (t.ok, Icons.check_circle, '设置已保存'),
       _ => (t.danger, Icons.error_outline, '连接失败'),
     };
     return AnimatedContainer(
@@ -470,10 +682,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
               child: SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: c,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: c),
               ),
             )
           else

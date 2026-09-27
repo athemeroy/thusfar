@@ -151,6 +151,7 @@ Map<String, Object?> estimate(
       !<String>[
         'free-only',
         'free',
+        'free-then-model',
       ].contains(environ['JEV_ROUTE'] ?? 'free-only')) {
     final double jevTokens = units * defaultJudgeChars / 1.5 / 1e6;
     lo += jevTokens * judgePrice();
@@ -222,5 +223,7 @@ num _num(Object? value) => (value as num?) ?? 0;
     lo += c;
     hi += c;
   }
+  lo += (jev['model_cost_low'] as num?)?.toDouble() ?? 0;
+  hi += (jev['model_cost_high'] as num?)?.toDouble() ?? 0;
   return (PyCompat.roundDigits(lo, 2), PyCompat.roundDigits(hi, 2));
 }

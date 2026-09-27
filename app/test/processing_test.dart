@@ -56,6 +56,9 @@ class FixtureProcessing extends BookProcessing {
   }
 
   @override
+  Future<void> pauseBookUntilIdle(BookEntry book) => pauseBook(book);
+
+  @override
   Future<void> prepareRemoval(BookEntry book) async {
     removals++;
     status(book, <String, Object?>{'state': 'cancelling'});
@@ -546,6 +549,234 @@ void main() {
     expect(processing.pauses, 1);
     expect(find.text('继续整理'), findsOneWidget);
   });
+
+  testWidgets(
+    'classifier 403 offers a one-book model route and a pause-to-disable action',
+    (WidgetTester tester) async {
+      configure();
+      processing.status(entry, <String, Object?>{
+        'state': 'error',
+        'done': 16,
+        'total': 603,
+        'error':
+            '章节摘要验证失败：免费裁判暂不可用，未调用付费接口：LLMError: classifier.dev HTTP 403: {"code":"proxy_requires_payment"}',
+        'retryable': false,
+      });
+      await open(tester);
+      expect(find.textContaining('上次匿名判断请求被拒绝'), findsOneWidget);
+      expect(find.textContaining('proxy_requires_payment'), findsNothing);
+      expect(settings.judgeFallbackEnabled, false);
+      await tester.ensureVisible(find.text('用已配置模型继续整理'));
+      await tester.tap(find.text('用已配置模型继续整理'));
+      await tester.pumpAndSettle();
+      expect(processing.starts, 1);
+      expect(
+        settings.judgeFallbackEnabled,
+        false,
+        reason: 'one-book consent must not alter global settings',
+      );
+      expect(
+        (readJson(File('${bookRoot.path}/meta.json'))
+            as Json)['judge_fallback_route'],
+        'model',
+      );
+      final Directory anotherBook = Directory('${root.path}/books/another')
+        ..createSync();
+      writeJson(File('${anotherBook.path}/meta.json'), <String, Object?>{
+        'auto': false,
+      });
+      expect(
+        (readJson(File('${anotherBook.path}/meta.json')) as Json).containsKey(
+          'judge_fallback_route',
+        ),
+        false,
+      );
+      expect(find.textContaining('判断路线：免费优先'), findsOneWidget);
+      await tester.ensureVisible(find.text('暂停并停用本书判断兜底'));
+      await tester.tap(find.text('暂停并停用本书判断兜底'));
+      await tester.pumpAndSettle();
+      expect(processing.pauses, 1);
+      expect(
+        (readJson(File('${bookRoot.path}/meta.json')) as Json).containsKey(
+          'judge_fallback_route',
+        ),
+        false,
+      );
+    },
+  );
+
+  testWidgets('Jev gateway consent and allowance stay on one book', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    settings.save(
+      url: 'https://example.invalid/v1',
+      model: 'fixture',
+      jevApiKey: 'offline-jev-fixture-key',
+    );
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 16,
+      'total': 603,
+      'error': 'classifier.dev HTTP 403: 匿名免费额度不可用',
+    });
+    await open(tester);
+    expect(settings.judgeFallbackEnabled, false);
+    await tester.ensureVisible(find.text('用 Jev 网关继续整理'));
+    await tester.tap(find.text('用 Jev 网关继续整理'));
+    await tester.pumpAndSettle();
+    expect(processing.starts, 1);
+    expect(settings.judgeFallbackEnabled, false);
+    final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
+    expect(meta['judge_fallback_route'], 'jev');
+    expect(meta.containsKey('judge_model_fallback'), false);
+    expect(find.textContaining('判断路线：免费优先，失败后使用 Jev 网关'), findsOneWidget);
+    expect(find.textContaining('本书 Jev 网关额度：0/1000 次'), findsOneWidget);
+    processing.pauseGate = Completer<void>();
+    await tester.ensureVisible(find.text('暂停并停用本书判断兜底'));
+    await tester.tap(find.text('暂停并停用本书判断兜底'));
+    await tester.pump();
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json'))
+          as Json)['judge_fallback_route'],
+      'jev',
+      reason: 'paid consent stays recorded until the active request settles',
+    );
+    processing.pauseGate!.complete();
+    await tester.pumpAndSettle();
+    expect(processing.pauses, 1);
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json')) as Json).containsKey(
+        'judge_fallback_route',
+      ),
+      false,
+    );
+  });
+
+  testWidgets('paid route stays recorded until idle when UI status is stale', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
+    meta['judge_fallback_route'] = 'jev';
+    writeJson(File('${bookRoot.path}/meta.json'), meta);
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 16,
+      'total': 603,
+      'error': '模型请求状态尚未刷新',
+    });
+    processing.pauseGate = Completer<void>();
+    await open(tester);
+    await tester.ensureVisible(find.text('停用本书判断兜底'));
+    await tester.tap(find.text('停用本书判断兜底'));
+    await tester.pump();
+    expect(
+      processing.pauses,
+      1,
+      reason: 'the UI must ask the worker even if its status looks inactive',
+    );
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json'))
+          as Json)['judge_fallback_route'],
+      'jev',
+    );
+    processing.pauseGate!.complete();
+    await tester.pumpAndSettle();
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json')) as Json).containsKey(
+        'judge_fallback_route',
+      ),
+      false,
+    );
+  });
+
+  testWidgets(
+    'historic anonymous error stays anonymous after adding workspace key',
+    (WidgetTester tester) async {
+      configure();
+      processing.status(entry, <String, Object?>{
+        'state': 'error',
+        'done': 16,
+        'total': 603,
+        'error': 'classifier.dev HTTP 403: proxy_requires_payment',
+      });
+      settings.save(
+        url: 'https://example.invalid/v1',
+        model: 'fixture',
+        classifierKey: 'funded-workspace-key',
+      );
+      await open(tester);
+      expect(find.textContaining('上次匿名判断请求被拒绝'), findsOneWidget);
+      expect(find.textContaining('上次 classifier.dev 工作区密钥被拒绝'), findsNothing);
+    },
+  );
+
+  testWidgets('book budget top-up preserves usage and resumes the same book', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
+    meta['judge_model_fallback'] = true;
+    writeJson(File('${bookRoot.path}/meta.json'), meta);
+    final File allowance = File(
+      '${bookRoot.path}/work/judge/model-budget.json',
+    );
+    writeJson(allowance, <String, Object?>{
+      'calls': 1,
+      'chars': 100,
+      'max_calls': 1,
+      'max_chars': 200,
+    });
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 16,
+      'total': 603,
+      'error': '模型判断额度已达上限；已保留整理缓存',
+    });
+    await open(tester);
+    await tester.ensureVisible(find.text('追加 1000 次额度并继续'));
+    await tester.tap(find.text('追加 1000 次额度并继续'));
+    await tester.pumpAndSettle();
+    final Json after = readJson(allowance) as Json;
+    expect(after['calls'], 1);
+    expect(after['max_calls'], 1001);
+    expect(processing.starts, 1);
+  });
+
+  testWidgets(
+    'Jev allowance top-up preserves usage and resumes only this book',
+    (WidgetTester tester) async {
+      configure();
+      final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
+      meta['judge_fallback_route'] = 'jev';
+      writeJson(File('${bookRoot.path}/meta.json'), meta);
+      final File allowance = File(
+        '${bookRoot.path}/work/judge/paid-budget.json',
+      );
+      writeJson(allowance, <String, Object?>{
+        'calls': 1000,
+        'chars': 5000000,
+        'questions': 1000,
+      });
+      processing.status(entry, <String, Object?>{
+        'state': 'error',
+        'done': 16,
+        'total': 603,
+        'error': '付费裁判预算已达上限；已保留缓存',
+      });
+      await open(tester);
+      await tester.ensureVisible(find.text('追加 500 次 Jev 网关额度并继续'));
+      await tester.tap(find.text('追加 500 次 Jev 网关额度并继续'));
+      await tester.pumpAndSettle();
+      final Json after = readJson(allowance) as Json;
+      expect(after['calls'], 1000);
+      expect(after['chars'], 5000000);
+      expect(after['top_up_calls'], 500);
+      expect(after['top_up_chars'], 2500000);
+      expect(processing.starts, 1);
+    },
+  );
 
   testWidgets('missing key and start failures remain visible and retryable', (
     WidgetTester tester,

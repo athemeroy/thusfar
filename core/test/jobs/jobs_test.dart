@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 import 'package:thusfar_core/jobs.dart';
 import 'package:thusfar_core/src/env.dart';
 import 'package:thusfar_core/src/pipeline/jev.dart' as jev;
+import 'package:thusfar_core/src/pipeline/judge_context.dart';
 import 'package:thusfar_core/storage.dart' show writeJson;
 
 Json read(Directory root, String name) {
@@ -1206,6 +1207,136 @@ void main() {
         jev.jevStats
           ..clear()
           ..addAll(previousStats);
+      }
+    },
+  );
+
+  test(
+    'per-book model and Jev choices do not leak into queued books',
+    () async {
+      final String? previous = environ['JEV_ROUTE'];
+      environ['JEV_ROUTE'] = 'free-only';
+      final List<Directory> roots = <Directory>[
+        book(
+          books,
+          'model',
+          meta: <String, Object?>{
+            'auto': false,
+            'judge_fallback_route': 'model',
+          },
+        ),
+        book(
+          books,
+          'jev',
+          meta: <String, Object?>{'auto': false, 'judge_fallback_route': 'jev'},
+        ),
+        book(
+          books,
+          'legacy',
+          meta: <String, Object?>{'auto': false, 'judge_model_fallback': true},
+        ),
+        book(books, 'free'),
+      ];
+      final List<String> routes = <String>[];
+      final Worker worker = Worker(
+        books,
+        probe: free,
+        settings: () => fixtureSettings,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          routes.add(selectedJudgeRoute());
+          expect(environ['JEV_ROUTE'], 'free-only');
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      try {
+        for (final Directory root in roots) {
+          await worker.startBook(root);
+          await worker.waitIdle();
+        }
+        expect(routes, <String>[
+          'free-then-model',
+          'free-then-paid',
+          'free-then-model',
+          'free-only',
+        ]);
+        expect(environ['JEV_ROUTE'], 'free-only');
+      } finally {
+        if (previous == null) {
+          environ.remove('JEV_ROUTE');
+        } else {
+          environ['JEV_ROUTE'] = previous;
+        }
+      }
+    },
+  );
+
+  test(
+    'active paid book cannot change a concurrent free reader request',
+    () async {
+      final String? previous = environ['JEV_ROUTE'];
+      environ['JEV_ROUTE'] = 'free-only';
+      final Directory paid = book(
+        books,
+        'paid',
+        meta: <String, Object?>{'auto': false, 'judge_fallback_route': 'jev'},
+      );
+      final Directory freeReader = book(books, 'free-reader');
+      final Completer<void> started = Completer<void>();
+      final Completer<void> release = Completer<void>();
+      String? workerRoute, nestedReaderRoute;
+      final Worker worker = Worker(
+        books,
+        probe: free,
+        settings: () => fixtureSettings,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          workerRoute = selectedJudgeRoute();
+          nestedReaderRoute = await withBookJudgeContext(freeReader, () async {
+            await Future<void>.delayed(Duration.zero);
+            return selectedJudgeRoute();
+          });
+          started.complete();
+          await release.future;
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      try {
+        await worker.startBook(paid);
+        await started.future;
+        expect(workerRoute, 'free-then-paid');
+        expect(nestedReaderRoute, 'free-only');
+        expect(environ['JEV_ROUTE'], 'free-only');
+        final String concurrentReaderRoute = await withBookJudgeContext(
+          freeReader,
+          () async {
+            await Future<void>.delayed(Duration.zero);
+            return selectedJudgeRoute();
+          },
+        );
+        expect(concurrentReaderRoute, 'free-only');
+      } finally {
+        release.complete();
+        await worker.waitIdle();
+        if (previous == null) {
+          environ.remove('JEV_ROUTE');
+        } else {
+          environ['JEV_ROUTE'] = previous;
+        }
       }
     },
   );

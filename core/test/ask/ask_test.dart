@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:thusfar_core/ask.dart';
 import 'package:thusfar_core/llm.dart' as llm;
+import 'package:thusfar_core/src/pipeline/judge_context.dart';
+import 'package:thusfar_core/src/pipeline/provenance.dart';
 import 'package:thusfar_core/thusfar_core.dart' show environ;
 
 Json obj(Object? v) => v! as Json;
@@ -159,6 +161,27 @@ class ConfigChangingBackend extends RepeatBackend {
   @override
   Future<Json> guard(String material, String text) async {
     environ['JUDGE_MODEL'] = 'changed-during-question';
+    return super.guard(material, text);
+  }
+}
+
+class ContextBackend extends RepeatBackend {
+  final List<(String, String)> seen = <(String, String)>[];
+
+  Future<void> capture() async {
+    await Future<void>.delayed(Duration.zero);
+    seen.add((selectedJudgeRoute(), modelJudgeBudgetFile().path));
+  }
+
+  @override
+  Future<(String, Json)> route(String question) async {
+    await capture();
+    return super.route(question);
+  }
+
+  @override
+  Future<Json> guard(String material, String text) async {
+    await capture();
     return super.guard(material, text);
   }
 }
@@ -339,6 +362,37 @@ void main() {
         (await service.answer(bookDir, 'Alice?', pos))['text'],
         isNot('mutated'),
       );
+    },
+  );
+
+  test(
+    'AskService keeps the book judge route and budget through async guards',
+    () async {
+      prepare();
+      environ['JEV_ROUTE'] = 'free-only';
+      final File meta = File('${bookDir.path}/meta.json');
+      meta.writeAsStringSync('{"judge_fallback_route":"model"}');
+      final ContextBackend backend = ContextBackend();
+      final AskService service = AskService(backend: backend);
+      final int pos = input['pos']! as int;
+      await service.answer(bookDir, 'Alice?', pos);
+      expect(backend.seen, isNotEmpty);
+      expect(
+        backend.seen,
+        everyElement((
+          'free-then-model',
+          '${bookDir.path}/work/judge/model-budget.json',
+        )),
+      );
+      meta.writeAsStringSync('{"judge_fallback_route":"jev"}');
+      await service.answer(bookDir, 'Alice?', pos);
+      expect(
+        backend.chats,
+        2,
+        reason: 'route changes must invalidate answer cache',
+      );
+      expect(backend.seen.last.$1, 'free-then-paid');
+      expect(environ['JEV_ROUTE'], 'free-only');
     },
   );
 

@@ -42,6 +42,8 @@ class ModelSettings {
         if (const <String>{
           'LLM_BASE_URL',
           'LLM_API_KEY',
+          'CLASSIFIER_KEY',
+          'JEV_API_KEY',
           'EXTRACT_MODEL',
           'JEV_ROUTE',
           'LLM_PROTOCOL',
@@ -72,14 +74,22 @@ class ModelSettings {
               ? values['JEV_ROUTE']!
               : 'free-only',
       'api_key': values['LLM_API_KEY'] ?? '',
+      'classifier_key': values['CLASSIFIER_KEY'] ?? '',
+      'jev_api_key': values['JEV_API_KEY'] ?? '',
     };
   }
 
   Json public() {
     final Json settings = read();
     final String key = settings.remove('api_key')! as String;
+    final String classifierKey = settings.remove('classifier_key')! as String;
+    final String jevKey = settings.remove('jev_api_key')! as String;
     settings['api_key_set'] = key.isNotEmpty;
     settings['api_key_last4'] = PyCompat.slice(key, -4, null);
+    settings['classifier_key_set'] = classifierKey.isNotEmpty;
+    settings['classifier_key_last4'] = PyCompat.slice(classifierKey, -4, null);
+    settings['jev_api_key_set'] = jevKey.isNotEmpty;
+    settings['jev_api_key_last4'] = PyCompat.slice(jevKey, -4, null);
     return settings;
   }
 
@@ -131,6 +141,8 @@ class ModelSettings {
     environ['LLM_KEY_MAP'] = '';
     environ['LLM_KEY_NAME'] = '';
     environ['LLM_API_KEY'] = settings['api_key']! as String;
+    environ['CLASSIFIER_KEY'] = settings['classifier_key']! as String;
+    environ['JEV_API_KEY'] = settings['jev_api_key']! as String;
     environ['LLM_BASE_URL'] = url;
     for (final String route in protocolLabels.keys) {
       environ['LLM_BASE_URL_${route.toUpperCase()}'] =
@@ -171,7 +183,9 @@ class ModelSettings {
     if (model is! String || pyFullmatch(_model, model) == null) {
       throw const ValueError('模型名称无效');
     }
-    if (route != 'free-only') throw const ValueError('JEV 路线无效');
+    if (route != 'free-only' && route != 'free-then-model') {
+      throw const ValueError('JEV 路线无效');
+    }
     if (key is! String ||
         key.runes.length > 1024 ||
         key.runes.any((int c) => c < 33 || c > 126)) {
@@ -180,6 +194,32 @@ class ModelSettings {
     final Object? clear = payload['clear_key'];
     if (clear != null && clear is! bool) throw const ValueError('清除密钥选项无效');
     if (key.isNotEmpty && clear == true) throw const ValueError('不能同时填写和清除密钥');
+    final Object? classifierKey = payload['classifier_key'] ?? '';
+    final Object? clearClassifier = payload['clear_classifier_key'];
+    if (classifierKey is! String ||
+        classifierKey.runes.length > 1024 ||
+        classifierKey.runes.any((int c) => c < 33 || c > 126)) {
+      throw const ValueError('classifier.dev 工作区密钥格式无效');
+    }
+    if (clearClassifier != null && clearClassifier is! bool) {
+      throw const ValueError('清除 classifier.dev 密钥选项无效');
+    }
+    if (classifierKey.isNotEmpty && clearClassifier == true) {
+      throw const ValueError('不能同时填写和清除 classifier.dev 密钥');
+    }
+    final Object? jevKey = payload['jev_api_key'] ?? '';
+    final Object? clearJev = payload['clear_jev_api_key'];
+    if (jevKey is! String ||
+        jevKey.runes.length > 1024 ||
+        jevKey.runes.any((int c) => c < 33 || c > 126)) {
+      throw const ValueError('Jev 网关密钥格式无效');
+    }
+    if (clearJev != null && clearJev is! bool) {
+      throw const ValueError('清除 Jev 网关密钥选项无效');
+    }
+    if (jevKey.isNotEmpty && clearJev == true) {
+      throw const ValueError('不能同时填写和清除 Jev 网关密钥');
+    }
     final (String address, String name) = normalize(
       url,
       model,
@@ -191,6 +231,18 @@ class ModelSettings {
             : key.isNotEmpty
             ? key
             : current['api_key']! as String;
+    final String effectiveClassifier =
+        clearClassifier == true
+            ? ''
+            : classifierKey.isNotEmpty
+            ? classifierKey
+            : current['classifier_key']! as String;
+    final String effectiveJev =
+        clearJev == true
+            ? ''
+            : jevKey.isNotEmpty
+            ? jevKey
+            : current['jev_api_key']! as String;
     if (effective.isNotEmpty &&
         key.isEmpty &&
         (protocol != current['protocol'] || address != current['base_url'])) {
@@ -201,6 +253,8 @@ class ModelSettings {
       'base_url': address,
       'model': name,
       'api_key': effective,
+      'classifier_key': effectiveClassifier,
+      'jev_api_key': effectiveJev,
       'jev_route': route,
     };
   }
@@ -212,6 +266,8 @@ class ModelSettings {
       <String, String>{
             'LLM_BASE_URL': settings['base_url']! as String,
             'LLM_API_KEY': settings['api_key']! as String,
+            'CLASSIFIER_KEY': settings['classifier_key']! as String,
+            'JEV_API_KEY': settings['jev_api_key']! as String,
             'EXTRACT_MODEL': settings['model']! as String,
             'JEV_ROUTE': settings['jev_route']! as String,
             'LLM_PROTOCOL': settings['protocol']! as String,

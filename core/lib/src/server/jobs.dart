@@ -13,6 +13,7 @@ import '../async_util.dart';
 import '../env.dart';
 import '../errors.dart';
 import '../pipeline/jev.dart' as jev;
+import '../pipeline/judge_context.dart';
 import '../pipeline/run.dart' as pipeline;
 import '../pipeline/run_lease.dart';
 import '../py/py_compat.dart';
@@ -732,6 +733,8 @@ class Worker {
     _cancellation = cancellation;
     _currentDone = Completer<void>();
     final String? previousJudgeDirectory = environ['JUDGE_LOG_DIR'];
+    final String route =
+        bookJudgeRoute(meta) ?? environ['JEV_ROUTE'] ?? 'free-only';
     int code = 1;
     try {
       // A native worker runs several books in one isolate. Give each attempt
@@ -760,13 +763,16 @@ class Worker {
       });
       _notify();
       try {
-        await _runBook(
-          root,
-          cancellation: cancellation,
-          retryQuality: retryQuality,
-          model: settings.model,
-          localModel: settings.localModel,
-          concurrency: settings.concurrency,
+        await withJudgeRoute(
+          route,
+          () => _runBook(
+            root,
+            cancellation: cancellation,
+            retryQuality: retryQuality,
+            model: settings.model,
+            localModel: settings.localModel,
+            concurrency: settings.concurrency,
+          ),
         );
         code = 0;
       } on Cancelled {

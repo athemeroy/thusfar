@@ -170,6 +170,42 @@ void main() {
   });
 
   test(
+    'Jev gateway key is private and saving it never enables paid judging',
+    () {
+      final File legacy = File('${root.path}/legacy-jev.env')
+        ..writeAsStringSync('JEV_API_KEY=old-fixture-key\n');
+      environ['HOME'] = root.path;
+      environ['SECRETS_FILE'] = legacy.path;
+      final Json result = settings.save(<String, Object?>{
+        'model': 'fixture',
+        'jev_api_key': 'new-fixture-jev-key',
+      });
+      expect(settings.read()['jev_route'], 'free-only');
+      expect(settings.read()['jev_api_key'], 'new-fixture-jev-key');
+      expect(result['jev_api_key_set'], true);
+      expect(result['jev_api_key_last4'], '-key');
+      expect(result.containsKey('jev_api_key'), false);
+      expect(environ['JEV_API_KEY'], 'new-fixture-jev-key');
+      expect(settings.file.statSync().mode & 0x1ff, 0x180);
+
+      settings.save(<String, Object?>{'clear_jev_api_key': true});
+      expect(settings.read()['jev_api_key'], '');
+      expect(settings.public()['jev_api_key_set'], false);
+      expect(
+        llm.llmEnv('JEV_API_KEY'),
+        '',
+        reason: 'an intentional clear must not inherit the old environment key',
+      );
+      expect(
+        () =>
+            settings.preview(<String, Object?>{'jev_route': 'free-then-paid'}),
+        throwsA(isA<ValueError>()),
+        reason: 'paid route is selected explicitly for an individual book',
+      );
+    },
+  );
+
+  test(
     'legacy empty environment values retain file fallback without settings authority',
     () {
       final File legacy = File('${root.path}/legacy.env')
@@ -263,10 +299,41 @@ void main() {
       expect(settings.read()['base_url'], 'https://custom.invalid/v1');
       expect(settings.read()['model'], 'deepseek-test+nothink');
       expect(settings.read()['protocol'], 'openai');
+      expect(settings.read()['jev_route'], 'free-only');
       expect(settings.public()['api_key_last4'], 'gacy');
       settings.save(<String, Object?>{'model': 'replacement'});
       expect(settings.read()['api_key'], 'offline-legacy');
       expect(settings.read()['base_url'], 'https://custom.invalid/v1');
+    },
+  );
+
+  test(
+    'configured-model route and separate classifier key are explicit and private',
+    () {
+      settings.save(<String, Object?>{
+        'base_url': 'https://model.invalid/v1',
+        'model': 'deepseek-test',
+        'api_key': 'offline-model-key',
+      });
+      expect(settings.read()['jev_route'], 'free-only');
+      settings.save(<String, Object?>{
+        'jev_route': 'free-then-model',
+        'classifier_key': 'offline-classifier-key',
+      });
+      expect(settings.read()['jev_route'], 'free-then-model');
+      expect(settings.read()['classifier_key'], 'offline-classifier-key');
+      expect(settings.public()['classifier_key_set'], true);
+      expect(settings.public().containsKey('classifier_key'), false);
+      expect(environ['CLASSIFIER_KEY'], 'offline-classifier-key');
+      expect(llm.llmEnv('CLASSIFIER_KEY'), 'offline-classifier-key');
+      final Directory home = Directory('${root.path}/home')..createSync();
+      environ['HOME'] = home.path;
+      File(
+        '${home.path}/.env',
+      ).writeAsStringSync('CLASSIFIER_KEY=unrelated-home-key\n');
+      settings.save(<String, Object?>{'clear_classifier_key': true});
+      expect(settings.read()['classifier_key'], '');
+      expect(llm.llmEnv('CLASSIFIER_KEY'), '');
     },
   );
 

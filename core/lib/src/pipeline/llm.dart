@@ -45,6 +45,8 @@ String? llmEnv(String name) {
         'LLM_PROTOCOL_MAP',
         'LLM_KEY_MAP',
         'LLM_API_KEY',
+        'CLASSIFIER_KEY',
+        'JEV_API_KEY',
       }.contains(name);
   if (direct != null && (direct.isNotEmpty || settingsClear)) return direct;
   _envCache ??= _readEnvFiles();

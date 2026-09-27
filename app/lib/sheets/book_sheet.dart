@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/models.dart' as models;
+import 'package:thusfar_core/judge_budget.dart' as judge_budget;
 import 'package:thusfar_core/llm.dart' as llm;
 
 import '../data/library.dart';
@@ -305,6 +306,68 @@ class _BookSheetState extends State<BookSheet> {
     await _action('正在开始整理…', () => widget.processing.startBook(widget.entry));
   }
 
+  Future<void> _continueWithModel() =>
+      _setBookJudgeFallback('model', '正在为这本书启用模型判断并继续整理…');
+
+  Future<void> _continueWithJev() =>
+      _setBookJudgeFallback('jev', '正在为这本书启用 Jev 网关并继续整理…');
+
+  Future<void> _setBookJudgeFallback(String route, String label) =>
+      _action(label, () async {
+        if (route == 'model' &&
+            (!widget.settings.hasKey || widget.settings.read().$2.isEmpty)) {
+          throw StateError('请先保存可用的模型和 API 密钥');
+        }
+        if (route == 'jev' && !widget.settings.hasJevApiKey) {
+          throw StateError('请先在模型设置中保存 Jev 网关密钥');
+        }
+        final File metaFile = File('${widget.entry.dir.path}/meta.json');
+        final Json meta = (readJson(metaFile) as Json?) ?? <String, Object?>{};
+        meta['judge_fallback_route'] = route;
+        meta.remove('judge_model_fallback');
+        writeJson(metaFile, meta);
+        await widget.processing.startBook(widget.entry);
+      });
+
+  String? _bookJudgeFallback(Directory book) {
+    try {
+      final Object? meta = readJson(File('${book.path}/meta.json'));
+      if (meta is! Json) return null;
+      if (meta.containsKey('judge_fallback_route')) {
+        final Object? route = meta['judge_fallback_route'];
+        return route == 'model' || route == 'jev' ? route as String : null;
+      }
+      return meta['judge_model_fallback'] == true ? 'model' : null;
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<void> _disableBookJudgeFallback() =>
+      _action('正在停用这本书的判断兜底…', () async {
+        await widget.processing.pauseBookUntilIdle(widget.entry);
+        final File metaFile = File('${widget.entry.dir.path}/meta.json');
+        final Json meta = (readJson(metaFile) as Json?) ?? <String, Object?>{};
+        meta.remove('judge_fallback_route');
+        meta.remove('judge_model_fallback');
+        writeJson(metaFile, meta);
+      });
+
+  Future<void> _extendJudgeBudget() => _action('正在追加本书的模型判断额度…', () async {
+    judge_budget.extendModelJudgeBudget(
+      File('${widget.entry.dir.path}/work/judge/model-budget.json'),
+    );
+    await widget.processing.startBook(widget.entry);
+  });
+
+  Future<void> _extendPaidJudgeBudget() =>
+      _action('正在追加本书的 Jev 网关判断额度…', () async {
+        judge_budget.extendPaidJudgeBudget(
+          File('${widget.entry.dir.path}/work/judge/paid-budget.json'),
+        );
+        await widget.processing.startBook(widget.entry);
+      });
+
   Future<void> _pause() => _action(
     '正在暂停，等待当前步骤结束…',
     () => widget.processing.pauseBook(widget.entry),
@@ -584,6 +647,46 @@ class _BookSheetState extends State<BookSheet> {
         : const <Object?>[];
     final int queuedAt = queued.indexOf(b.id);
     final List<Widget> body = <Widget>[];
+    final File modelBudgetFile = File(
+      '${b.dir.path}/work/judge/model-budget.json',
+    );
+    late final Map<String, Object?> modelBudget;
+    try {
+      modelBudget = judge_budget.readModelJudgeBudget(modelBudgetFile);
+    } on Object {
+      modelBudget = const <String, Object?>{};
+    }
+    final File paidBudgetFile = File(
+      '${b.dir.path}/work/judge/paid-budget.json',
+    );
+    late final Map<String, Object?> paidBudget;
+    try {
+      paidBudget = judge_budget.readPaidJudgeBudget(paidBudgetFile);
+    } on Object {
+      paidBudget = <String, Object?>{};
+    }
+    final String? statusError = s.error;
+    final bool freeAccessBlocked =
+        statusError != null &&
+        (statusError.contains('proxy_requires_payment') ||
+            statusError.contains('classifier.dev HTTP 401') ||
+            statusError.contains('classifier.dev HTTP 403') ||
+            statusError.contains('匿名免费额度不可用'));
+    final bool deniedWorkspaceKey = statusError?.contains('工作区密钥访问被拒绝') == true;
+    final bool deniedAnonymous =
+        statusError != null &&
+        (statusError.contains('proxy_requires_payment') ||
+            statusError.contains('匿名免费额度不可用') ||
+            statusError.contains('匿名访问被拒绝'));
+    final bool modelBudgetExceeded =
+        statusError?.contains('模型判断额度已达上限') == true;
+    final bool paidBudgetExceeded = statusError?.contains('付费裁判预算已达上限') == true;
+    final String? bookJudgeRoute = _bookJudgeFallback(b.dir);
+    final String effectiveJudgeRoute =
+        bookJudgeRoute ??
+        (widget.settings.judgeFallbackEnabled ? 'model' : 'free');
+    final bool modelFallback = effectiveJudgeRoute == 'model';
+    final bool paidFallback = effectiveJudgeRoute == 'jev';
     if (workerStopped && s.isActive) {
       body.add(
         Text(
@@ -839,9 +942,69 @@ class _BookSheetState extends State<BookSheet> {
         ),
         const SizedBox(height: 6),
         Text(
-          s.error ?? '请稍后重试。',
+          freeAccessBlocked
+              ? deniedWorkspaceKey
+                    ? '上次 classifier.dev 工作区密钥被拒绝，请检查密钥和工作区余额。已完成的段落会保留，可选择其他判断路线继续。'
+                    : deniedAnonymous
+                    ? '上次匿名判断请求被拒绝。已完成的段落和核对结果会保留。可选已配置模型、Jev 网关，或填写有余额的 classifier.dev 工作区密钥。'
+                    : '上次 classifier.dev 判断请求被拒绝。已完成的段落会保留；可检查工作区密钥或选择其他判断路线。'
+              : modelBudgetExceeded
+              ? '本书的模型判断额度已用完。已完成的段落会保留；追加额度后可从当前进度继续。'
+              : paidBudgetExceeded
+              ? '本书的 Jev 网关判断额度已用完。已完成的段落会保留；追加额度后可从当前进度继续。'
+              : s.error ?? '请稍后重试。',
           style: TextStyle(fontSize: 14, height: 1.5, color: t.ink),
         ),
+        if (freeAccessBlocked &&
+            !modelFallback &&
+            widget.settings.hasKey) ...<Widget>[
+          const SizedBox(height: 8),
+          Text(
+            '只为这本书启用 ${widget.settings.read().$2} 判断，会消耗你的模型额度。本书初始限制 ${judge_budget.modelJudgeInitialCalls} 次、${judge_budget.modelJudgeInitialChars ~/ 10000} 万字符，可在此追加。',
+            style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
+          ),
+          const SizedBox(height: 8),
+          Pill(
+            label: '用已配置模型继续整理',
+            filled: true,
+            color: t.zhu,
+            onTap: acting ? null : _continueWithModel,
+          ),
+        ],
+        if (freeAccessBlocked &&
+            !paidFallback &&
+            widget.settings.hasJevApiKey) ...<Widget>[
+          const SizedBox(height: 10),
+          Text(
+            '只为这本书启用 Jev 网关判断，会使用你保存的 Vercel AI Gateway 账户额度；每书有单独调用上限，实际费用以网关账单为准。',
+            style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
+          ),
+          const SizedBox(height: 8),
+          Pill(
+            label: '用 Jev 网关继续整理',
+            filled: true,
+            color: t.zhu,
+            onTap: acting ? null : _continueWithJev,
+          ),
+        ],
+        if (modelBudgetExceeded) ...<Widget>[
+          const SizedBox(height: 8),
+          Pill(
+            label: '追加 ${judge_budget.modelJudgeTopUpCalls} 次额度并继续',
+            filled: true,
+            color: t.zhu,
+            onTap: acting ? null : _extendJudgeBudget,
+          ),
+        ],
+        if (paidBudgetExceeded) ...<Widget>[
+          const SizedBox(height: 8),
+          Pill(
+            label: '追加 ${judge_budget.paidJudgeTopUpCalls} 次 Jev 网关额度并继续',
+            filled: true,
+            color: t.zhu,
+            onTap: acting ? null : _extendPaidJudgeBudget,
+          ),
+        ],
         if (autoRetry) ...<Widget>[
           const SizedBox(height: 6),
           Text(
@@ -858,7 +1021,13 @@ class _BookSheetState extends State<BookSheet> {
           spacing: 10,
           runSpacing: 8,
           children: <Widget>[
-            if (!workerStopped)
+            if (!workerStopped &&
+                !modelBudgetExceeded &&
+                !paidBudgetExceeded &&
+                !(freeAccessBlocked &&
+                    !modelFallback &&
+                    !paidFallback &&
+                    !widget.settings.hasClassifierKey))
               Pill(
                 label: autoRetry ? '现在重试' : '重试整理',
                 filled: true,
@@ -904,9 +1073,9 @@ class _BookSheetState extends State<BookSheet> {
         model: widget.settings.read().$2,
         concurrency: phoneConcurrency,
       );
-      final String cost = minutes == null
+      final String cost = minutes == null || estimate['high'] == null
           ? '费用按你的模型接口计费。'
-          : '预计约 $minutes 分钟、约 ¥${estimate['high']}（${estimate['model']}）';
+          : '正文整理预计约 $minutes 分钟、约 ¥${estimate['high']}（${estimate['model']}）';
       body.add(
         Text(
           '让 AI 读完这本书，整理人物、关系和前情。只显示到你读到的那一页。',
@@ -937,7 +1106,7 @@ class _BookSheetState extends State<BookSheet> {
       } else {
         body.addAll(<Widget>[
           Text(
-            '会调用你的模型接口，$cost',
+            '会调用你的模型接口，$cost${modelFallback ? ' 若免费判断不可用，还会额外使用该模型判断；调用量受本书判断额度限制，实际账单以服务商为准。' : ''}${paidFallback ? ' 若免费判断不可用，会使用本书选择的 Jev 网关额度；实际账单以 Vercel AI Gateway 为准。' : ''}',
             style: TextStyle(fontSize: 13, color: t.ink2),
           ),
           const SizedBox(height: 8),
@@ -967,6 +1136,55 @@ class _BookSheetState extends State<BookSheet> {
             ],
           ),
         ]);
+      }
+    }
+    if (s.isActive || s.isPaused || s.isError || s.isDone) {
+      final String modelName = widget.settings.read().$2;
+      body.insertAll(0, <Widget>[
+        Text(
+          paidFallback
+              ? '判断路线：免费优先，失败后使用 Jev 网关（仅本书）'
+              : modelFallback
+              ? '判断路线：免费优先，失败后使用 $modelName'
+              : widget.settings.hasClassifierKey
+              ? '判断路线：classifier.dev 已配置工作区密钥'
+              : '判断路线：classifier.dev 匿名免费',
+          style: TextStyle(fontSize: 12, color: t.ink2),
+        ),
+        if (modelFallback && modelBudget.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Text(
+              '本书模型判断额度：${modelBudget['calls']}/${modelBudget['max_calls']} 次 · ${modelBudget['chars']}/${modelBudget['max_chars']} 字符',
+              style: TextStyle(fontSize: 12, color: t.ink3),
+            ),
+          )
+        else if (paidFallback)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 8),
+            child: Text(
+              '本书 Jev 网关额度：${paidBudget['calls'] ?? 0}/${paidBudget['max_calls'] ?? judge_budget.paidJudgeDefaultCalls} 次 · ${paidBudget['chars'] ?? 0}/${paidBudget['max_chars'] ?? judge_budget.paidJudgeDefaultChars} 字符',
+              style: TextStyle(fontSize: 12, color: t.ink3),
+            ),
+          )
+        else
+          const SizedBox(height: 8),
+      ]);
+      if (bookJudgeRoute == 'jev' ||
+          (bookJudgeRoute == 'model' &&
+              !widget.settings.judgeFallbackEnabled)) {
+        body.add(
+          Pill(
+            label: widget.settings.judgeFallbackEnabled
+                ? s.isActive
+                      ? '暂停并恢复全局模型判断'
+                      : '恢复全局模型判断'
+                : s.isActive
+                ? '暂停并停用本书判断兜底'
+                : '停用本书判断兜底',
+            onTap: acting ? null : _disableBookJudgeFallback,
+          ),
+        );
       }
     }
     if (bios.firstEnd != null) {

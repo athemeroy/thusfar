@@ -6,7 +6,9 @@ import 'package:test/test.dart';
 import 'package:thusfar_core/marginalia.dart' as m;
 import 'package:thusfar_core/src/env.dart';
 import 'package:thusfar_core/src/errors.dart';
+import 'package:thusfar_core/src/pipeline/judge_context.dart';
 import 'package:thusfar_core/src/pipeline/llm.dart' as llm;
+import 'package:thusfar_core/src/pipeline/provenance.dart';
 import 'package:thusfar_core/src/server/storage.dart' as storage;
 
 import '../golden/codec.dart';
@@ -68,6 +70,28 @@ class ScriptBackend extends m.MarginaliaBackend {
   Future<Json> evaluate(Json state, Json questions) async {
     calls.add({'kind': 'judge', 'state': state, 'questions': questions});
     return obj(script['answers']);
+  }
+}
+
+class ContextScriptBackend extends ScriptBackend {
+  ContextScriptBackend(super.script);
+  final List<(String, String, String)> contexts = <(String, String, String)>[];
+
+  Future<void> capture(String stage) async {
+    await Future<void>.delayed(Duration.zero);
+    contexts.add((stage, selectedJudgeRoute(), modelJudgeBudgetFile().path));
+  }
+
+  @override
+  Future<Json> evaluate(Json state, Json questions) async {
+    await capture('evaluate');
+    return super.evaluate(state, questions);
+  }
+
+  @override
+  Future<Json> guard(String passage, Json items) async {
+    await capture('guard');
+    return super.guard(passage, items);
   }
 }
 
@@ -256,6 +280,39 @@ void main() {
         expect(jsonEncode(call), isNot(contains('UNREAD SECRET')));
         expect(jsonEncode(call), isNot(contains('UNREAD GRAPH SECRET')));
       }
+    });
+  }
+  for (final (String scenarioName, String choice, String stage)
+      in <(String, String, String)>[
+        ('manual_accepted', 'model', 'guard'),
+        ('cues', 'jev', 'evaluate'),
+      ]) {
+    test('$scenarioName reader judge context covers $stage', () async {
+      final Json scenario = (fixture['cases']! as List<Object?>)
+          .cast<Json>()
+          .firstWhere((Json row) => row['name'] == scenarioName);
+      storage.writeJson(File('${root.path}/meta.json'), <String, Object?>{
+        'judge_fallback_route': choice,
+      });
+      environ['JEV_ROUTE'] = 'free-only';
+      final ContextScriptBackend backend = ContextScriptBackend(
+        obj(scenario['script']),
+      );
+      final m.MarginaliaService service = m.MarginaliaService(
+        backend: backend,
+        graphRevision: (_) => fixture['revision'],
+      );
+      await service.respond(root, scenario['input']);
+      expect(backend.contexts.where((c) => c.$1 == stage), isNotEmpty);
+      expect(
+        backend.contexts,
+        everyElement((
+          choice == 'model' ? 'guard' : 'evaluate',
+          choice == 'model' ? 'free-then-model' : 'free-then-paid',
+          '${root.path}/work/judge/model-budget.json',
+        )),
+      );
+      expect(environ['JEV_ROUTE'], 'free-only');
     });
   }
   Json request() =>

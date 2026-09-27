@@ -176,6 +176,43 @@ void main() {
     },
   );
 
+  testWidgets(
+    'Jev gateway key can be saved alone without enabling paid calls',
+    (tester) async {
+      pending = PendingTransport();
+      llm.transport = pending;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.light),
+          home: ModelSettingsScreen(settings: settings),
+        ),
+      );
+      await tester.enterText(find.byType(TextField).at(1), 'fixture');
+      final Finder jevField = find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Vercel AI Gateway API 密钥',
+      );
+      await tester.scrollUntilVisible(
+        jevField,
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.enterText(jevField, 'offline-jev-fixture-key');
+      await tester.tap(find.text('保存'));
+      await tester.pumpAndSettle();
+      expect(settings.hasJevApiKey, true);
+      expect(settings.judgeFallbackEnabled, false);
+      expect(pending.calls, 0);
+      expect(find.text('设置已保存'), findsOneWidget);
+      expect(
+        find.textContaining('fixture-key'),
+        findsNothing,
+        reason: 'the saved key itself must not be shown in the UI',
+      );
+    },
+  );
+
   for (final bool fail in <bool>[false, true]) {
     testWidgets('late ${fail ? 'error' : 'success'} after leaving is safe', (
       tester,

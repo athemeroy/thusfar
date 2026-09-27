@@ -33,7 +33,8 @@ A long novel brings back names you have not seen for hundreds of pages. Looking 
 - **Tap a name.** See a character's identity, aliases, appearances, and relationships, then check the original passage.
 - **Catch up without looking ahead.** The cast list, relationship graph, recaps, and questions share the same reading cutoff. Answers link back to cited passages.
 - **Make the book yours.** Import TXT or EPUB, take notes, add bookmarks, and search. Adjust type size, line spacing, letter spacing, and page margins to fit your screen. Your books and reading history stay on your device.
-- **Choose your own model.** Add a model API to prepare character guides. Preparation uses a connection; everyday reading works offline.
+- **Stay with the page.** Reading controls appear over the page without moving the text. Cover page turns follow your gesture and settle smoothly when you let go.
+- **Choose your own model.** Add a model API to prepare character guides. If free checking is unavailable, you can let one book continue using your configured model or the Jev gateway, or add a funded classifier.dev workspace key. Each credential is stored separately; Jev gateway use requires an explicit choice for each book, with a visible allowance you can extend. Preparation uses a connection; everyday reading works offline.
 - **Keep your place while preparing.** Short network outages retry automatically without discarding completed work. Open a book's details to see the current step, resume processing, or export a diagnostic record that excludes book text and API keys.
 
 ## Download
@@ -52,7 +53,7 @@ Android 2.0 can coexist with 1.7.x; each app has its own library. To move books 
 
 ## Your data
 
-There is no required Thusfar account or Thusfar server. Books, notes, and model credentials are stored locally in the client. When you choose to prepare a guide, relevant passages go to the model provider you configure and may be checked with classifier.dev. Choose a provider that suits your privacy needs.
+There is no required Thusfar account or Thusfar server. Books, notes, and model credentials are stored locally in the client. When you choose to prepare a guide, relevant passages go to the model provider you configure and may be checked with classifier.dev. If you enable the Jev gateway for that book, relevant passages also go to the gateway. Choose a provider that suits your privacy needs.
 
 ## Build from source
 

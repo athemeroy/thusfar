@@ -28,6 +28,16 @@ class ModelSettings {
   String get protocol => _settings.read()['protocol']! as String;
   String get protocolLabel => protocolLabels[protocol]!;
   bool get hasKey => read().$3.isNotEmpty;
+  bool get judgeFallbackEnabled =>
+      _settings.read()['jev_route'] == 'free-then-model';
+  bool get hasClassifierKey =>
+      (_settings.read()['classifier_key'] as String).isNotEmpty;
+  String get classifierKeyLast4 =>
+      (_settings.public()['classifier_key_last4'] as String?) ?? '';
+  bool get hasJevApiKey =>
+      (_settings.read()['jev_api_key'] as String).isNotEmpty;
+  String get jevApiKeyLast4 =>
+      (_settings.public()['jev_api_key_last4'] as String?) ?? '';
   void applyEnvironment() => _settings.applyEnvironment();
 
   static (String, String) normalize(
@@ -42,6 +52,11 @@ class ModelSettings {
     required String key,
     required bool clearKey,
     required String protocol,
+    bool? judgeFallback,
+    String? classifierKey,
+    bool clearClassifierKey = false,
+    String? jevApiKey,
+    bool clearJevApiKey = false,
   }) => _settings.test(
     payload: <String, Object?>{
       'base_url': url.trim(),
@@ -49,6 +64,12 @@ class ModelSettings {
       'api_key': key.trim(),
       'clear_key': clearKey,
       'protocol': protocol,
+      if (judgeFallback != null)
+        'jev_route': judgeFallback ? 'free-then-model' : 'free-only',
+      if (classifierKey != null) 'classifier_key': classifierKey.trim(),
+      'clear_classifier_key': clearClassifierKey,
+      if (jevApiKey != null) 'jev_api_key': jevApiKey.trim(),
+      'clear_jev_api_key': clearJevApiKey,
     },
   );
 
@@ -58,6 +79,11 @@ class ModelSettings {
     String? key,
     bool clearKey = false,
     String? protocol,
+    bool? judgeFallback,
+    String? classifierKey,
+    bool clearClassifierKey = false,
+    String? jevApiKey,
+    bool clearJevApiKey = false,
   }) {
     try {
       _settings.save(<String, Object?>{
@@ -66,6 +92,12 @@ class ModelSettings {
         'api_key': key ?? '',
         'clear_key': clearKey,
         'protocol': protocol ?? this.protocol,
+        if (judgeFallback != null)
+          'jev_route': judgeFallback ? 'free-then-model' : 'free-only',
+        if (classifierKey != null) 'classifier_key': classifierKey.trim(),
+        'clear_classifier_key': clearClassifierKey,
+        if (jevApiKey != null) 'jev_api_key': jevApiKey.trim(),
+        'clear_jev_api_key': clearJevApiKey,
       });
       return null;
     } on PyException catch (error) {

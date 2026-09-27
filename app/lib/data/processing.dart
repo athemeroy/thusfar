@@ -19,6 +19,9 @@ abstract class BookProcessing extends ChangeNotifier {
   Future<void> startBook(BookEntry book);
   Future<void> pauseBook(BookEntry book);
 
+  /// Used before changing a paid route: returns only when this book is idle.
+  Future<void> pauseBookUntilIdle(BookEntry book);
+
   /// Fakes and older implementations retain their ordinary pause behavior.
   Future<void> pauseForBackgroundLimit(BookEntry book) => pauseBook(book);
 
@@ -227,6 +230,10 @@ class ProcessingController extends BookProcessing {
   Future<void> pauseBook(BookEntry book) => _send('pause', book);
 
   @override
+  Future<void> pauseBookUntilIdle(BookEntry book) =>
+      _send('pauseAndWait', book);
+
+  @override
   Future<void> pauseForBackgroundLimit(BookEntry book) =>
       _send('pauseBackgroundLimit', book);
 
@@ -321,6 +328,7 @@ Future<void> _processingIsolate(List<Object?> args) async {
         }
         await worker.startBook(root);
       } else if (operation == 'pause' ||
+          operation == 'pauseAndWait' ||
           operation == 'pauseBackgroundLimit' ||
           operation == 'prepareRemoval') {
         await worker.pauseBook(
@@ -329,7 +337,9 @@ Future<void> _processingIsolate(List<Object?> args) async {
               ? BookPauseReason.backgroundTimeLimit
               : BookPauseReason.user,
         );
-        if (operation == 'prepareRemoval') await worker.waitBookIdle(root);
+        if (operation == 'prepareRemoval' || operation == 'pauseAndWait') {
+          await worker.waitBookIdle(root);
+        }
       } else {
         throw const llm.LLMError('整理操作无效');
       }

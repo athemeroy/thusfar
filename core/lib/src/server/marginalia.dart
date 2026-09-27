@@ -11,6 +11,7 @@ import '../env.dart';
 import '../errors.dart';
 import '../pipeline/jev.dart' as jev;
 import '../pipeline/judge.dart' as judge;
+import '../pipeline/judge_context.dart';
 import '../pipeline/llm.dart' as llm;
 import '../pipeline/provenance.dart';
 import '../py/py_compat.dart';
@@ -651,10 +652,13 @@ class MarginaliaService {
   }) async {
     final MarginaliaCancellation token =
         cancellation ?? MarginaliaCancellation();
-    final Future<Json> operation = Future<Json>.sync(() {
-      token.check();
-      return _respond(root, data, token, onEvent);
-    });
+    final Future<Json> operation = withBookJudgeContext(
+      root,
+      () => Future<Json>.sync(() {
+        token.check();
+        return _respond(root, data, token, onEvent);
+      }),
+    );
     unawaited(
       operation.then<void>(
         (_) => onSettled?.call(),
@@ -734,7 +738,9 @@ class MarginaliaService {
                   'LLM_KEY_MAP',
                   'LLM_KEY_NAME',
                 ])
-                  environ[name] ?? llm.llmEnv(name),
+                  name == 'JEV_ROUTE'
+                      ? selectedJudgeRoute()
+                      : environ[name] ?? llm.llmEnv(name),
               ],
             });
     final Json payload = {
@@ -905,7 +911,9 @@ class MarginaliaService {
                 'LLM_KEY_MAP',
                 'LLM_KEY_NAME',
               ])
-                environ[name] ?? llm.llmEnv(name),
+                name == 'JEV_ROUTE'
+                    ? selectedJudgeRoute()
+                    : environ[name] ?? llm.llmEnv(name),
             ],
           });
           if (now != revision) throw const ValueError('书籍内容或模型设置已更新，请重新生成批注');

@@ -69,11 +69,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     book: book,
   );
   PageController? pc;
-  final ScrollController _pageScroll = ScrollController();
-  final GlobalKey _toolbarPanelKey = GlobalKey();
+  final GlobalKey<CoverPageTurnState> _coverTurnKey =
+      GlobalKey<CoverPageTurnState>();
   PageSpec? spec;
-  double _toolbarHeight = 0;
-  double _pageViewportOverlap = 0;
   double _contentLeft = 0;
   double _contentWidth = 0;
   bool _sheetOpen = false;
@@ -108,7 +106,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _flashTimer?.cancel();
     _wheelTimer?.cancel();
     pc?.dispose();
-    _pageScroll.dispose();
     _focus.dispose();
     super.dispose();
   }
@@ -307,10 +304,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _turn(int delta) {
+    if (widget.prefs.anim == PageAnim.cover) {
+      if (c.pageAt(c.currentIndex + delta) == null) return;
+      if (c.selection != null) c.select(null);
+      _coverTurnKey.currentState?.turn(
+        delta,
+        animate: !MediaQuery.of(context).disableAnimations,
+      );
+      return;
+    }
     final PageController? p = pc;
     if (p == null || !p.hasClients) return;
     if (c.pageAt(c.currentIndex + delta) == null) return;
-    c.select(null);
+    if (c.selection != null) c.select(null);
     if (widget.prefs.anim == PageAnim.none ||
         MediaQuery.of(context).disableAnimations) {
       p.jumpToPage(c.currentIndex + delta);
@@ -666,47 +672,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
             math.max(1, box.maxHeight - top - bottom),
           );
           _ensureLayout(area, context.tk);
-          // Keep pagination fixed while the controls are visible. The current
-          // page can scroll just enough to expose its last line above them.
-          final double overlap = c.toolbar
-              ? math.max(0, _toolbarHeight - bottom)
-              : 0;
-          if (overlap != _pageViewportOverlap) {
-            _pageViewportOverlap = overlap;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted || !_pageScroll.hasClients) return;
-              _pageScroll.animateTo(
-                c.toolbar ? _pageScroll.position.maxScrollExtent : 0,
-                duration: MediaQuery.of(context).disableAnimations
-                    ? const Duration(milliseconds: 1)
-                    : Motion.toolbar,
-                curve: Curves.easeOutCubic,
-              );
-            });
-          }
+          // Controls animate over the page without changing its geometry.
           return Stack(
             children: <Widget>[
               Positioned(
                 left: 0,
                 right: 0,
                 top: top,
-                height: math.max(1, area.height - overlap),
-                child: SingleChildScrollView(
+                height: area.height,
+                child: SizedBox(
                   key: const ValueKey<String>('reader-page-viewport'),
-                  controller: _pageScroll,
-                  physics: c.toolbar
-                      ? const ClampingScrollPhysics()
-                      : const NeverScrollableScrollPhysics(),
-                  child: SizedBox(
-                    height: area.height,
-                    child: _pages(
-                      context,
-                      paper,
-                      viewportWidth: box.maxWidth,
-                      contentInsets: EdgeInsets.only(
-                        left: pageLeft,
-                        right: pageRight,
-                      ),
+                  child: _pages(
+                    context,
+                    paper,
+                    viewportWidth: box.maxWidth,
+                    contentInsets: EdgeInsets.only(
+                      left: pageLeft,
+                      right: pageRight,
                     ),
                   ),
                 ),
@@ -764,6 +746,35 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final World? w = c.world;
     final bool none = widget.prefs.anim == PageAnim.none;
     final bool cover = widget.prefs.anim == PageAnim.cover;
+    Widget? pageBody(int index) {
+      final PageData? page = c.pageAt(index);
+      if (page == null) return null;
+      final bool current = index == c.currentIndex;
+      return ColoredBox(
+        color: paper,
+        child: Padding(
+          padding: contentInsets,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: PageBody(
+              page: page,
+              pager: c.pager!,
+              layers: PageLayers(
+                world: book.hasKnowledge
+                    ? (current ? w : book.world(page.end))
+                    : null,
+                cutoff: page.end,
+                notes: book.notes.live,
+                selection: current ? c.selection : null,
+                flash: current ? c.flash : null,
+              ),
+              onName: _openPerson,
+            ),
+          ),
+        ),
+      );
+    }
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTapUp: (TapUpDetails d) {
@@ -788,76 +799,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
               if ((d.primaryVelocity ?? 0) > 100) _turn(-1);
             }
           : null,
-      child: PageView.builder(
-        key: ValueKey<int>(c.generation),
-        controller: p,
-        physics: none || c.selection != null
-            ? const NeverScrollableScrollPhysics()
-            : const PageScrollPhysics(),
-        onPageChanged: _onPageChanged,
-        itemBuilder: (BuildContext context, int index) {
-          final PageData? page = c.pageAt(index);
-          if (page == null) return null;
-          final bool current = index == c.currentIndex;
-          final Widget body = ColoredBox(
-            color: paper,
-            child: Padding(
-              padding: contentInsets,
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: PageBody(
-                  page: page,
-                  pager: c.pager!,
-                  layers: PageLayers(
-                    world: book.hasKnowledge
-                        ? (current ? w : book.world(page.end))
-                        : null,
-                    cutoff: page.end,
-                    notes: book.notes.live,
-                    selection: current ? c.selection : null,
-                    flash: current ? c.flash : null,
-                  ),
-                  onName: _openPerson,
-                ),
-              ),
+      child: cover
+          ? CoverPageTurn(
+              key: _coverTurnKey,
+              currentIndex: c.currentIndex,
+              generation: c.generation,
+              canShow: (int index) => c.pageAt(index) != null,
+              pageBuilder: (BuildContext _, int index) => pageBody(index)!,
+              onPageChanged: _onPageChanged,
+              swipingEnabled: c.selection == null,
+            )
+          : PageView.builder(
+              key: ValueKey<int>(c.generation),
+              controller: p,
+              physics: none || c.selection != null
+                  ? const NeverScrollableScrollPhysics()
+                  : const PageScrollPhysics(),
+              onPageChanged: _onPageChanged,
+              itemBuilder: (BuildContext context, int index) => pageBody(index),
             ),
-          );
-          if (!cover) return body;
-          return AnimatedBuilder(
-            animation: p,
-            builder: (BuildContext context, Widget? child) {
-              final double pos = p.hasClients && p.position.haveDimensions
-                  ? p.page ?? index.toDouble()
-                  : index.toDouble();
-              final double delta = index - pos;
-              // The next page stays still underneath; the current one slides away.
-              if (delta > 0) {
-                final double width = context.size?.width ?? 0;
-                return Transform.translate(
-                  offset: Offset(-delta * width, 0),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      boxShadow: <BoxShadow>[
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: (0.16 * delta.clamp(0.0, 1.0)),
-                          ),
-                          blurRadius: 16,
-                          spreadRadius: 2,
-                          offset: const Offset(4, 0),
-                        ),
-                      ],
-                    ),
-                    child: child,
-                  ),
-                );
-              }
-              return child!;
-            },
-            child: body,
-          );
-        },
-      ),
     );
   }
 
@@ -1235,19 +1195,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final bool ai = book.hasKnowledge;
     final bool marked = book.notes.bookmarkIn(c.start, c.cutoff) != null;
     final bool reduceMotion = mq.disableAnimations;
-    final Duration duration = reduceMotion
-        ? const Duration(milliseconds: 120)
-        : Motion.toolbar;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final RenderBox? panel =
-          _toolbarPanelKey.currentContext?.findRenderObject() as RenderBox?;
-      if (panel == null || !panel.hasSize) return;
-      final double height = panel.size.height;
-      if ((height - _toolbarHeight).abs() > 0.5) {
-        setState(() => _toolbarHeight = height);
-      }
-    });
+    final Duration duration = reduceMotion ? Duration.zero : Motion.toolbar;
     return IgnorePointer(
       ignoring: !on,
       child: AnimatedOpacity(
@@ -1256,27 +1204,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
         curve: Curves.easeInOut,
         child: Align(
           alignment: Alignment.bottomCenter,
-          child: AnimatedSlide(
-            offset: on ? Offset.zero : const Offset(0, 1),
-            duration: duration,
-            curve: Curves.easeOutCubic,
-            child: KeyedSubtree(
-              key: const ValueKey<String>('reader-toolbar-panel'),
-              child: Material(
-                key: _toolbarPanelKey,
-                color: t.sheet,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      _toolbarActions(context, marked),
-                      if (p != null) ...<Widget>[
-                        _progressRow(context, p),
-                        _toolsRow(context, ai),
-                      ],
+          child: KeyedSubtree(
+            key: const ValueKey<String>('reader-toolbar-panel'),
+            child: Material(
+              color: t.sheet,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    _toolbarActions(context, marked),
+                    if (p != null) ...<Widget>[
+                      _progressRow(context, p),
+                      _toolsRow(context, ai),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -1563,6 +1505,222 @@ class _ReaderScreenState extends State<ReaderScreen> {
           openTypography(context, widget.prefs);
         }),
       ],
+    );
+  }
+}
+
+/// A cover turn keeps the destination fixed below the page being moved.
+/// The reading position changes only after the outgoing page has left view.
+class CoverPageTurn extends StatefulWidget {
+  const CoverPageTurn({
+    super.key,
+    required this.currentIndex,
+    required this.generation,
+    required this.canShow,
+    required this.pageBuilder,
+    required this.onPageChanged,
+    this.swipingEnabled = true,
+  });
+
+  final int currentIndex;
+  final int generation;
+  final bool Function(int index) canShow;
+  final Widget Function(BuildContext context, int index) pageBuilder;
+  final ValueChanged<int> onPageChanged;
+  final bool swipingEnabled;
+
+  @override
+  State<CoverPageTurn> createState() => CoverPageTurnState();
+}
+
+class CoverPageTurnState extends State<CoverPageTurn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _progress = AnimationController(
+    vsync: this,
+    duration: Motion.page,
+  );
+  int? _target;
+  int? _direction;
+  bool _dragging = false;
+  int _epoch = 0;
+  double _viewportWidth = 1;
+
+  @override
+  void didUpdateWidget(CoverPageTurn oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.generation != widget.generation ||
+        oldWidget.currentIndex != widget.currentIndex) {
+      _reset();
+    }
+  }
+
+  @override
+  void dispose() {
+    _epoch++;
+    _progress.dispose();
+    super.dispose();
+  }
+
+  void _reset() {
+    _epoch++;
+    _progress.stop();
+    _target = null;
+    _direction = null;
+    _dragging = false;
+  }
+
+  bool _begin(int direction) {
+    if (_target != null || direction == 0) return false;
+    final int target = widget.currentIndex + direction;
+    if (!widget.canShow(target)) return false;
+    setState(() {
+      _target = target;
+      _direction = direction;
+      _progress.value = 0;
+    });
+    return true;
+  }
+
+  /// Used by tap, volume, and keyboard turns. A turn in flight is not restarted.
+  void turn(int delta, {bool animate = true}) {
+    if (delta == 0 || _target != null || _dragging) return;
+    final int direction = delta.sign;
+    final int target = widget.currentIndex + direction;
+    if (!widget.canShow(target)) return;
+    if (!animate) {
+      widget.onPageChanged(target);
+      return;
+    }
+    if (_begin(direction)) unawaited(_settle(true));
+  }
+
+  Future<void> _settle(bool complete) async {
+    final int? target = _target;
+    if (target == null) return;
+    final int epoch = ++_epoch;
+    final double end = complete ? 1 : 0;
+    final int milliseconds = math.max(
+      80,
+      (Motion.page.inMilliseconds * (end - _progress.value).abs()).round(),
+    );
+    try {
+      await _progress.animateTo(
+        end,
+        duration: Duration(milliseconds: milliseconds),
+        curve: Motion.pageCurve,
+      ).orCancel;
+    } on TickerCanceled {
+      return;
+    }
+    if (!mounted || epoch != _epoch) return;
+    if (complete) widget.onPageChanged(target);
+    setState(() {
+      _target = null;
+      _direction = null;
+      _dragging = false;
+      _progress.value = 0;
+    });
+  }
+
+  void _onDragStart(DragStartDetails details) {
+    if (_target != null) return;
+    _dragging = true;
+  }
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    if (!_dragging) return;
+    final double movement = details.primaryDelta ?? 0;
+    if (movement == 0) return;
+    if (_target == null && !_begin(movement < 0 ? 1 : -1)) return;
+    _progress.value =
+        (_progress.value - _direction! * movement / _viewportWidth).clamp(
+          0.0,
+          1.0,
+        );
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (!_dragging) return;
+    _dragging = false;
+    if (_target == null) return;
+    final double towardTarget = -_direction! * (details.primaryVelocity ?? 0);
+    final bool complete =
+        towardTarget > 450 || (towardTarget >= -450 && _progress.value >= 0.5);
+    unawaited(_settle(complete));
+  }
+
+  void _onDragCancel() {
+    if (!_dragging) return;
+    _dragging = false;
+    if (_target != null) unawaited(_settle(false));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        _viewportWidth = math.max(1, constraints.maxWidth);
+        final Widget current = RepaintBoundary(
+          key: const ValueKey<String>('cover-current-page'),
+          child: widget.pageBuilder(context, widget.currentIndex),
+        );
+        final int? target = _target;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragStart: widget.swipingEnabled ? _onDragStart : null,
+          onHorizontalDragUpdate: widget.swipingEnabled ? _onDragUpdate : null,
+          onHorizontalDragEnd: widget.swipingEnabled ? _onDragEnd : null,
+          onHorizontalDragCancel: widget.swipingEnabled ? _onDragCancel : null,
+          child: ClipRect(
+            child: Stack(
+              fit: StackFit.expand,
+              children: <Widget>[
+                if (target != null)
+                  ExcludeSemantics(
+                    child: IgnorePointer(
+                      child: RepaintBoundary(
+                        key: const ValueKey<String>('cover-target-page'),
+                        child: widget.pageBuilder(context, target),
+                      ),
+                    ),
+                  ),
+                AnimatedBuilder(
+                  animation: _progress,
+                  child: IgnorePointer(
+                    ignoring: target != null,
+                    child: current,
+                  ),
+                  builder: (BuildContext context, Widget? child) {
+                    final int direction = _direction ?? 0;
+                    final double distance =
+                        -direction * _progress.value * _viewportWidth;
+                    return Transform.translate(
+                      offset: Offset(distance, 0),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          boxShadow: direction == 0
+                              ? null
+                              : <BoxShadow>[
+                                  BoxShadow(
+                                    color: Colors.black.withValues(
+                                      alpha: 0.16 * _progress.value,
+                                    ),
+                                    blurRadius: 16,
+                                    spreadRadius: 2,
+                                    offset: Offset(direction * 4.0, 0),
+                                  ),
+                                ],
+                        ),
+                        child: child,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

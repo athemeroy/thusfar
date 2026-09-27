@@ -12,6 +12,7 @@ import 'package:crypto/crypto.dart';
 import '../env.dart';
 import '../errors.dart';
 import '../pipeline/judge.dart' as judge;
+import '../pipeline/judge_context.dart';
 import '../pipeline/llm.dart' as llm;
 import '../py/py_compat.dart';
 import '../py/py_int.dart';
@@ -321,6 +322,25 @@ class AskService {
   /// Memory-only cache: exact source bytes, prefix, question and model settings.
   /// Refused and failed replies never enter the cache.
   Future<Json> answer(
+    Directory directory,
+    String question,
+    int pos, {
+    AskEvent? onEvent,
+    AskCancellation? cancellation,
+    void Function()? onSettled,
+  }) => withBookJudgeContext(
+    directory,
+    () => _answer(
+      directory,
+      question,
+      pos,
+      onEvent: onEvent,
+      cancellation: cancellation,
+      onSettled: onSettled,
+    ),
+  );
+
+  Future<Json> _answer(
     Directory directory,
     String question,
     int pos, {
@@ -913,7 +933,9 @@ String _configFingerprint() =>
                 'LLM_KEY_MAP',
                 'LLM_KEY_NAME',
               ])
-                environ[name] ?? llm.llmEnv(name),
+                name == 'JEV_ROUTE'
+                    ? selectedJudgeRoute()
+                    : environ[name] ?? llm.llmEnv(name),
             ]),
           ),
         )

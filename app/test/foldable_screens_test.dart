@@ -150,52 +150,44 @@ void main() {
       matchesGoldenFile('shots/foldable-vertical-reader.png'),
     );
     expect(find.text('目录与书签'), findsNothing);
-    final Rect page = tester.getRect(find.byType(PageBody).first);
-    final int pageStart = tester
-        .widget<PageBody>(find.byType(PageBody).first)
-        .page
-        .start;
-    final int pageEnd = tester
-        .widget<PageBody>(find.byType(PageBody).first)
-        .page
-        .end;
+    final Finder pageBody = find.byType(PageBody).first;
+    final Finder pageViewport = find.byKey(
+      const ValueKey<String>('reader-page-viewport'),
+    );
+    final Rect page = tester.getRect(pageBody);
+    final Rect viewport = tester.getRect(pageViewport);
+    final int pageStart = tester.widget<PageBody>(pageBody).page.start;
+    final int pageEnd = tester.widget<PageBody>(pageBody).page.end;
+    void expectPageUnmoved() {
+      expect(tester.getRect(pageViewport), viewport);
+      expect(tester.getRect(pageBody), page);
+      expect(tester.widget<PageBody>(pageBody).page.start, pageStart);
+      expect(tester.widget<PageBody>(pageBody).page.end, pageEnd);
+    }
+
     expect(page.width, greaterThan(410));
     await tester.tapAt(const Offset(390, 700));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expectPageUnmoved();
     await tester.pumpAndSettle();
     expect(find.text('目录').hitTestable(), findsOneWidget);
     final Rect controls = tester.getRect(
       find.byKey(const ValueKey<String>('reader-toolbar-panel')),
     );
-    final Rect visiblePage = tester.getRect(
-      find.byKey(const ValueKey<String>('reader-page-viewport')),
-    );
-    expect(visiblePage.bottom, lessThanOrEqualTo(controls.top + 1));
-    expect(
-      tester.getRect(find.byType(PageBody).first).bottom,
-      lessThanOrEqualTo(controls.top + 1),
-    );
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.start,
-      pageStart,
-    );
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.end,
-      pageEnd,
-    );
+    expect(controls.top, lessThan(viewport.bottom));
+    expect(controls.bottom, greaterThan(viewport.bottom));
+    expectPageUnmoved();
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('shots/foldable-vertical-reader-tools.png'),
     );
     await tester.tapAt(const Offset(390, 500));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expectPageUnmoved();
     await tester.pumpAndSettle();
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.start,
-      pageStart,
-    );
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.end,
-      pageEnd,
-    );
+    expectPageUnmoved();
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
@@ -283,51 +275,44 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('shots/phone-reader.png'),
     );
-    final int pageStart = tester
-        .widget<PageBody>(find.byType(PageBody).first)
-        .page
-        .start;
-    final int pageEnd = tester
-        .widget<PageBody>(find.byType(PageBody).first)
-        .page
-        .end;
+    final Finder pageBody = find.byType(PageBody).first;
+    final Finder pageViewport = find.byKey(
+      const ValueKey<String>('reader-page-viewport'),
+    );
+    final Rect page = tester.getRect(pageBody);
+    final Rect viewport = tester.getRect(pageViewport);
+    final int pageStart = tester.widget<PageBody>(pageBody).page.start;
+    final int pageEnd = tester.widget<PageBody>(pageBody).page.end;
+    void expectPageUnmoved() {
+      expect(tester.getRect(pageViewport), viewport);
+      expect(tester.getRect(pageBody), page);
+      expect(tester.widget<PageBody>(pageBody).page.start, pageStart);
+      expect(tester.widget<PageBody>(pageBody).page.end, pageEnd);
+    }
+
     await tester.tapAt(const Offset(195, 500));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expectPageUnmoved();
     await tester.pumpAndSettle();
     expect(find.byTooltip('回书架').hitTestable(), findsOneWidget);
     expect(tester.getRect(find.byTooltip('回书架')).top, greaterThan(500));
     final Rect controls = tester.getRect(
       find.byKey(const ValueKey<String>('reader-toolbar-panel')),
     );
-    final Rect visiblePage = tester.getRect(
-      find.byKey(const ValueKey<String>('reader-page-viewport')),
-    );
-    expect(visiblePage.bottom, lessThanOrEqualTo(controls.top + 1));
-    expect(
-      tester.getRect(find.byType(PageBody).first).bottom,
-      lessThanOrEqualTo(controls.top + 1),
-    );
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.start,
-      pageStart,
-    );
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.end,
-      pageEnd,
-    );
+    expect(controls.top, lessThan(viewport.bottom));
+    expect(controls.bottom, greaterThan(viewport.bottom));
+    expectPageUnmoved();
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('shots/phone-reader-tools.png'),
     );
     await tester.tapAt(const Offset(195, 350));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expectPageUnmoved();
     await tester.pumpAndSettle();
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.start,
-      pageStart,
-    );
-    expect(
-      tester.widget<PageBody>(find.byType(PageBody).first).page.end,
-      pageEnd,
-    );
+    expectPageUnmoved();
     await tester.tapAt(const Offset(355, 500));
     await tester.pumpAndSettle();
     expect(
