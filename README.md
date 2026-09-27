@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="https://github.com/athemeroy/thusfar/releases/latest"><strong>Download 2.0</strong></a>
+  &nbsp;·&nbsp; <a href="https://athemeroy.github.io/thusfar/"><strong>Read in your browser</strong></a>
   &nbsp;·&nbsp; <a href="#see-it-in-action">See the app</a>
   &nbsp;·&nbsp; <a href="README.zh-CN.md">简体中文</a>
 </p>
@@ -41,8 +42,11 @@ A long novel brings back names you have not seen for hundreds of pages. Looking 
 
 Get the installation file for your device from the [latest release](https://github.com/athemeroy/thusfar/releases/latest).
 
+You can also [open the browser reader](https://athemeroy.github.io/thusfar/) without installing anything. Import TXT or EPUB up to 16 MB, read, search, bookmark, take notes, and tune the typography. The browser stores books and progress locally; it does not store model API keys. Use the book menu to export a JSON backup and import it in another browser. The web reader currently does not run character preparation, relationship graphs, recaps, or book questions; use an installed client for those features. Browser storage may be cleared by the browser or device, so export books you want to keep. GitHub Pages projects on the same `athemeroy.github.io` host share a browser origin and can access that origin's storage.
+
 | Platform | File | Installation |
 | --- | --- | --- |
+| Web | [Open Thusfar](https://athemeroy.github.io/thusfar/) | Open in a current browser; no installation or account. |
 | Android 8+ | APK | Install the APK. The app appears as 页读. |
 | macOS 12+ | DMG | Drag Thusfar to Applications. You may need to allow its first launch in Privacy & Security. |
 | Windows 10/11 x64 | Installer or portable ZIP | Install for your user account or extract the ZIP. |
@@ -69,6 +73,12 @@ The Android 2.0 package uses the `probe` build flavor:
 
 ```sh
 flutter build apk --release --flavor probe --target-platform android-arm64
+```
+
+To build the static browser client for this repository's GitHub Pages path:
+
+```sh
+flutter build web --release --target lib/main_web.dart --base-href /thusfar/
 ```
 
 See the [client guide](app/README.md) for development and checks, and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute. Thanks to Luna and Gemini Flash for their contributions to the 2.0 client.

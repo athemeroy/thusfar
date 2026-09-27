@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="https://github.com/athemeroy/thusfar/releases/latest"><strong>下载 2.0 正式版</strong></a>
+  &nbsp;·&nbsp; <a href="https://athemeroy.github.io/thusfar/"><strong>在浏览器阅读</strong></a>
   &nbsp;·&nbsp; <a href="#它怎样陪你读书">看看界面</a>
   &nbsp;·&nbsp; <a href="README.md">English</a>
 </p>
@@ -41,8 +42,11 @@
 
 从 [最新发布页](https://github.com/athemeroy/thusfar/releases/latest) 下载适合设备的安装文件。
 
+也可以直接打开 [页读网页版](https://athemeroy.github.io/thusfar/)，导入不超过 16 MB 的 TXT / EPUB，在浏览器里阅读、搜索、加书签、做摘记和调排版。书籍与进度保存在当前浏览器，网页版不保存模型 API 密钥；书籍菜单可导出 JSON 备份，再导入其他浏览器。网页版目前还不能整理人物、生成关系图或前情、向书提问，这些功能请使用安装版。浏览器或设备可能清除网站数据，重要书籍请主动导出备份。同一 `athemeroy.github.io` 主机下的其他 GitHub Pages 项目与页读共享浏览器同源存储权限。
+
 | 平台 | 下载文件 | 安装方式 |
 | --- | --- | --- |
+| 网页 | [打开页读](https://athemeroy.github.io/thusfar/) | 用现代浏览器打开，无需安装或账号。 |
 | Android 8+ | APK | 安装后显示为“页读”。 |
 | macOS 12+ | DMG | 拖入“应用程序”；首次打开时可能需要在“隐私与安全性”中允许。 |
 | Windows 10/11 x64 | 安装包或免安装 ZIP | 选择安装或直接解压运行。 |
@@ -69,6 +73,12 @@ Android 2.0 安装包使用 `probe` 构建配置：
 
 ```sh
 flutter build apk --release --flavor probe --target-platform android-arm64
+```
+
+为此仓库的 GitHub Pages 路径构建静态网页版：
+
+```sh
+flutter build web --release --target lib/main_web.dart --base-href /thusfar/
 ```
 
 开发和检查方式见 [客户端说明](app/README.md)。欢迎阅读 [贡献指南](CONTRIBUTING.md)。感谢 Luna 和 Gemini Flash 对 2.0 客户端的贡献。

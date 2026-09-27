@@ -1,6 +1,6 @@
 # Thusfar Flutter app
 
-Flutter reader for Android, macOS, Windows, Linux and iOS, using the pure Dart
+Flutter reader for Android, macOS, Windows, Linux, iOS and the browser, using the pure Dart
 package in `../core`. This is the active 2.0 client.
 The Python implementation remains a behavioral reference in the source tree.
 
@@ -41,6 +41,20 @@ On the home environment, run heavy builds on the home Mini rather than NAS.
 flutter pub get
 flutter build apk --release --flavor probe --target-platform android-arm64
 ```
+
+The browser entrypoint is `lib/main_web.dart`. It shares the TXT/EPUB parser
+and visual theme with the native app, while keeping books, progress, bookmarks,
+and notes in browser IndexedDB. Its build is static and needs no Thusfar server:
+
+```sh
+flutter build web --release --target lib/main_web.dart --base-href /thusfar/
+```
+
+GitHub Actions publishes `app/build/web` through `pages.yml` when Pages is set
+to **GitHub Actions** in repository settings. The browser reader supports TXT,
+EPUB, search, notes, bookmarks, reading progress, typography and JSON backup
+import/export. The native AI preparation and question features are not part of
+this entrypoint. Do not pass private API keys or book files to the web build.
 
 The Gradle configuration reads `YEDU_SIGNING_STORE` and
 `YEDU_SIGNING_PASSWORD_FILE`, or the existing NAS private signing paths. Without

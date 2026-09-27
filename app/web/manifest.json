@@ -1,0 +1,22 @@
+{
+    "name": "页读 · Thusfar",
+    "short_name": "页读",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#F2EDE2",
+    "theme_color": "#F2EDE2",
+    "description": "本地导入 TXT 和 EPUB，专注阅读。",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-128.png",
+            "sizes": "128x128",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
