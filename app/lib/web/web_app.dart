@@ -216,7 +216,7 @@ class _WebShelfState extends State<WebShelf> {
                           children: <Widget>[
                             Text(
                               '正在阅读',
-                              style: TextStyle(color: t.ink3, letterSpacing: 2),
+                              style: TextStyle(color: t.ink2, letterSpacing: 2),
                             ),
                             Text(
                               '页读',
@@ -340,7 +340,7 @@ class _WebShelfState extends State<WebShelf> {
                     child: Text(
                       '本地阅读 · 无需账号 · 导出备份可带走书与进度',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: t.ink3, fontSize: 12),
+                      style: TextStyle(color: t.ink2, fontSize: 12),
                     ),
                   ),
                 ),
@@ -420,7 +420,7 @@ class _ShelfBookCard extends StatelessWidget {
                       pct == 0
                           ? '尚未开始'
                           : '读到 ${pct.toStringAsFixed(pct < 1 ? 1 : 0)}%',
-                      style: TextStyle(fontSize: 12, color: t.ink3),
+                      style: TextStyle(fontSize: 12, color: t.ink2),
                     ),
                   ],
                 ),
@@ -542,7 +542,7 @@ class WebReaderPrefs {
   Color get paperColor => Tokens.paperColors[paper].$2;
   bool get dark => paper == Tokens.paperColors.length - 1;
   Color get ink => dark ? Tokens.night.ink : Tokens.light.ink;
-  Color get muted => dark ? Tokens.night.ink3 : Tokens.light.ink3;
+  Color get muted => dark ? Tokens.night.ink2 : Tokens.light.ink2;
   String get family =>
       const <String>['NotoSerifSC', 'LXGWWenKaiScreen', 'sans-serif'][font];
 
@@ -1174,7 +1174,11 @@ class _WebReaderState extends State<WebReader> {
                           _prefs.margin,
                           MediaQuery.paddingOf(context).top + 58,
                           _prefs.margin,
-                          MediaQuery.paddingOf(context).bottom + 90,
+                          // Reserve the expanded toolbar's full height so the
+                          // chapter navigation stays reachable at scroll end.
+                          // Keep this space constant as controls open and close
+                          // to preserve the visible reading position.
+                          MediaQuery.paddingOf(context).bottom + 168,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1233,26 +1237,29 @@ class _WebReaderState extends State<WebReader> {
             top: 0,
             left: 0,
             right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 4),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        '${_current['title'] ?? ''}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            child: ColoredBox(
+              color: paper,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          '${_current['title'] ?? ''}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: _prefs.muted, fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        '${pct.toStringAsFixed(pct < 1 ? 1 : 0)}%',
                         style: TextStyle(color: _prefs.muted, fontSize: 12),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      '${pct.toStringAsFixed(pct < 1 ? 1 : 0)}%',
-                      style: TextStyle(color: _prefs.muted, fontSize: 12),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
