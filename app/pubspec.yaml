@@ -1,7 +1,7 @@
 name: thusfar_app
 description: 页读 / Thusfar — reads only up to your page.
 publish_to: none
-version: 2.0.4+41
+version: 2.0.5+42
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
@@ -22,6 +22,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/OFL-LXGWWenKaiScreen.txt
   fonts:
     - family: NotoSerifSC
       fonts:
@@ -29,3 +31,6 @@ flutter:
     - family: ZCOOLXiaoWei
       fonts:
         - asset: assets/fonts/ZCOOLXiaoWei-Regular.ttf
+    - family: LXGWWenKaiScreen
+      fonts:
+        - asset: assets/fonts/LXGWWenKaiScreen.ttf

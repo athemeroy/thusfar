@@ -74,6 +74,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   PageSpec? spec;
   double _toolbarHeight = 0;
   double _pageViewportOverlap = 0;
+  double _contentLeft = 0;
+  double _contentWidth = 0;
   bool _sheetOpen = false;
   Offset? _pressAt;
   int? _anchor;
@@ -142,6 +144,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       height: area.height,
       fontSize: prefs.fontSize,
       lineHeight: prefs.lineHeight,
+      letterSpacing: prefs.letterSpacing,
       fontFamily: prefs.fontFamily,
       fontFamilyFallback: prefs.fontFallback,
       color: _ink(t),
@@ -333,6 +336,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final PageData? page = c.page;
     final Paginator? p = c.pager;
     if (page == null || p == null) return null;
+    final double x = local.dx - _contentLeft;
+    if (x < 0 || x >= _contentWidth) return null;
     double y = 0;
     for (final Frag f in page.frags) {
       final double h = f.lines * p.spec.line;
@@ -341,9 +346,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final TextPainter tp = p.painterFor(b);
         final int shift = b.kind == 'h' ? 0 : indentShift;
         final int pos =
-            tp
-                .getPositionForOffset(Offset(local.dx, f.top + (local.dy - y)))
-                .offset -
+            tp.getPositionForOffset(Offset(x, f.top + (local.dy - y))).offset -
             shift;
         tp.dispose();
         return b.o + pos.clamp(f.start, math.max(f.start, f.end - 1));
@@ -613,14 +616,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
             e.logicalKey == LogicalKeyboardKey.add) {
           HapticFeedback.selectionClick();
           widget.prefs.update(
-            (Prefs p) => p.fontSize = (p.fontSize + 1).clamp(16, 26),
+            (Prefs p) => p.fontSize = (p.fontSize + 1).clamp(14, 32),
           );
           return KeyEventResult.handled;
         }
         if (e.logicalKey == LogicalKeyboardKey.minus) {
           HapticFeedback.selectionClick();
           widget.prefs.update(
-            (Prefs p) => p.fontSize = (p.fontSize - 1).clamp(16, 26),
+            (Prefs p) => p.fontSize = (p.fontSize - 1).clamp(14, 32),
           );
           return KeyEventResult.handled;
         }
@@ -640,10 +643,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Modal editors handle their own keyboard insets. Keep the book's
           // geometry fixed while the IME animates or the device changes posture.
           final EdgeInsets pagePadding = MediaQuery.viewPaddingOf(context);
-          final double top = pagePadding.top + 48;
-          final double bottom = pagePadding.bottom + 56;
-          final double pageWidth = math.min(560, box.maxWidth - 48);
-          final double pageLeft = (box.maxWidth - pageWidth) / 2;
+          final double verticalMargin = widget.prefs.pageVerticalMargin;
+          final double top = pagePadding.top + 32 + verticalMargin;
+          final double bottom = pagePadding.bottom + 40 + verticalMargin;
+          final double maxInset = math.max(0, (box.maxWidth - 1) / 2);
+          final double pageLeft = math.min(
+            maxInset,
+            pagePadding.left + widget.prefs.pageHorizontalMargin,
+          );
+          final double pageRight = math.min(
+            math.max(0, box.maxWidth - pageLeft - 1),
+            pagePadding.right + widget.prefs.pageHorizontalMargin,
+          );
+          final double pageWidth = math.max(
+            1,
+            box.maxWidth - pageLeft - pageRight,
+          );
+          _contentLeft = pageLeft;
+          _contentWidth = pageWidth;
           final Size area = Size(
             pageWidth,
             math.max(1, box.maxHeight - top - bottom),
@@ -670,8 +687,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           return Stack(
             children: <Widget>[
               Positioned(
-                left: pageLeft,
-                width: pageWidth,
+                left: 0,
+                right: 0,
                 top: top,
                 height: math.max(1, area.height - overlap),
                 child: SingleChildScrollView(
@@ -682,7 +699,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       : const NeverScrollableScrollPhysics(),
                   child: SizedBox(
                     height: area.height,
-                    child: _pages(context, paper),
+                    child: _pages(
+                      context,
+                      paper,
+                      viewportWidth: box.maxWidth,
+                      contentInsets: EdgeInsets.only(
+                        left: pageLeft,
+                        right: pageRight,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -715,8 +740,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ),
               if (c.selection != null) _selectionBar(context, top),
               Positioned(
-                left: pageLeft,
-                right: pageLeft,
+                left: 0,
+                right: 0,
                 top: 0,
                 bottom: 0,
                 child: _toolbar(context),
@@ -728,7 +753,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _pages(BuildContext context, Color paper) {
+  Widget _pages(
+    BuildContext context,
+    Color paper, {
+    required double viewportWidth,
+    required EdgeInsets contentInsets,
+  }) {
     final PageController? p = pc;
     if (p == null) return const SizedBox.shrink();
     final World? w = c.world;
@@ -741,7 +771,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           _clearSelection();
           return;
         }
-        final double x = d.localPosition.dx / math.max(1, spec?.width ?? 1);
+        final double x = d.localPosition.dx / math.max(1, viewportWidth);
         if (x < 1 / 3) {
           _turn(-1);
         } else if (x > 2 / 3) {
@@ -771,19 +801,25 @@ class _ReaderScreenState extends State<ReaderScreen> {
           final bool current = index == c.currentIndex;
           final Widget body = ColoredBox(
             color: paper,
-            child: PageBody(
-              page: page,
-              pager: c.pager!,
-              layers: PageLayers(
-                world: book.hasKnowledge
-                    ? (current ? w : book.world(page.end))
-                    : null,
-                cutoff: page.end,
-                notes: book.notes.live,
-                selection: current ? c.selection : null,
-                flash: current ? c.flash : null,
+            child: Padding(
+              padding: contentInsets,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: PageBody(
+                  page: page,
+                  pager: c.pager!,
+                  layers: PageLayers(
+                    world: book.hasKnowledge
+                        ? (current ? w : book.world(page.end))
+                        : null,
+                    cutoff: page.end,
+                    notes: book.notes.live,
+                    selection: current ? c.selection : null,
+                    flash: current ? c.flash : null,
+                  ),
+                  onName: _openPerson,
+                ),
               ),
-              onName: _openPerson,
             ),
           );
           if (!cover) return body;

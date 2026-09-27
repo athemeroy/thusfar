@@ -122,9 +122,37 @@ void main() {
     await tester.pumpAndSettle();
 
     final Rect page = tester.getRect(find.byType(PageBody).first);
-    expect(page.left, greaterThan(0));
-    expect(page.right, greaterThan(460));
+    final Rect viewport = tester.getRect(
+      find.byKey(const ValueKey<String>('reader-page-viewport')),
+    );
+    expect(viewport.left, 0);
+    expect(viewport.right, 900);
+    expect(page.left, 20);
+    expect(page.right, 880);
     expect(find.text('目录与书签'), findsNothing);
+    final PageController controller = tester
+        .widget<PageView>(find.byType(PageView))
+        .controller!;
+    await tester.tapAt(const Offset(888, 700));
+    await tester.pumpAndSettle();
+    expect(controller.page, closeTo(ReaderController.base + 1, 0.001));
+    await tester.tapAt(const Offset(12, 700));
+    await tester.pumpAndSettle();
+    expect(controller.page, closeTo(ReaderController.base, 0.001));
+    model.prefs.update((prefs) => prefs.pageHorizontalMargin = 96);
+    await tester.pumpAndSettle();
+    final Rect insetPage = tester.getRect(find.byType(PageBody).first);
+    expect(insetPage.left, 96);
+    expect(insetPage.right, 804);
+    final PageController insetController = tester
+        .widget<PageView>(find.byType(PageView))
+        .controller!;
+    await tester.tapAt(const Offset(888, 700));
+    await tester.pumpAndSettle();
+    expect(insetController.page, closeTo(ReaderController.base + 1, 0.001));
+    await tester.tapAt(const Offset(12, 700));
+    await tester.pumpAndSettle();
+    expect(insetController.page, closeTo(ReaderController.base, 0.001));
     await tester.tapAt(const Offset(400, 700));
     await tester.pumpAndSettle();
     expect(find.text('人物').hitTestable(), findsOneWidget);
@@ -606,8 +634,8 @@ void main() {
     await tester.tap(find.text('楷'));
     await tester.pumpAndSettle();
     expect(model.prefs.font, 1);
-    expect(model.prefs.fontFamily, 'KaiTi');
-    expect(model.prefs.fontFallback.contains('ZCOOLXiaoWei'), isTrue);
+    expect(model.prefs.fontFamily, 'LXGWWenKaiScreen');
+    expect(model.prefs.fontFallback, <String>['NotoSerifSC', 'serif']);
 
     // Select 黑
     await tester.tap(find.text('黑'));

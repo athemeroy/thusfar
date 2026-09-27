@@ -32,7 +32,7 @@ A long novel brings back names you have not seen for hundreds of pages. Looking 
 
 - **Tap a name.** See a character's identity, aliases, appearances, and relationships, then check the original passage.
 - **Catch up without looking ahead.** The cast list, relationship graph, recaps, and questions share the same reading cutoff. Answers link back to cited passages.
-- **Make the book yours.** Import TXT or EPUB, take notes, add bookmarks, search, and tune the reading layout. Your books and reading history stay on your device.
+- **Make the book yours.** Import TXT or EPUB, take notes, add bookmarks, and search. Adjust type size, line spacing, letter spacing, and page margins to fit your screen. Your books and reading history stay on your device.
 - **Choose your own model.** Add a model API to prepare character guides. Preparation uses a connection; everyday reading works offline.
 
 ## Download

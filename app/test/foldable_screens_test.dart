@@ -51,6 +51,7 @@ void main() {
     );
     await _font('NotoSerifSC', 'assets/fonts/NotoSerifSC-Regular.otf');
     await _font('ZCOOLXiaoWei', 'assets/fonts/ZCOOLXiaoWei-Regular.ttf');
+    await _font('LXGWWenKaiScreen', 'assets/fonts/LXGWWenKaiScreen.ttf');
   });
 
   Future<AppModel> fixture() async {
@@ -380,10 +381,14 @@ void main() {
     expect(find.byType(NavigationBar), findsNothing);
     await tester.tap(find.text('阿Q正传').first);
     await tester.pumpAndSettle();
-    expect(
-      tester.getRect(find.byType(PageBody).first).width,
-      lessThanOrEqualTo(560),
+    final Rect page = tester.getRect(find.byType(PageBody).first);
+    final Rect viewport = tester.getRect(
+      find.byKey(const ValueKey<String>('reader-page-viewport')),
     );
+    expect(viewport.left, 0);
+    expect(viewport.right, 900);
+    expect(page.left, model.prefs.pageHorizontalMargin);
+    expect(page.right, 900 - model.prefs.pageHorizontalMargin);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });

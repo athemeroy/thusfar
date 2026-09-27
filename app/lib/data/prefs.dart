@@ -12,8 +12,15 @@ enum NightMode { system, always, never }
 class Prefs extends ChangeNotifier {
   Prefs(this.file) {
     final Json j = (readJson(file) as Json?) ?? <String, Object?>{};
-    fontSize = (j['fontSize'] as num?)?.toDouble() ?? 19;
-    spacing = (j['spacing'] as num?)?.toInt() ?? 1;
+    fontSize = _readMetric(j, 'fontSize', 19, 14, 32);
+    spacing = ((j['spacing'] as num?)?.toInt() ?? 1).clamp(0, 2);
+    final Object? savedLineHeight = j['lineHeight'];
+    lineHeightOverride = savedLineHeight is num && savedLineHeight.isFinite
+        ? savedLineHeight.toDouble().clamp(1.2, 2.4)
+        : null;
+    letterSpacing = _readMetric(j, 'letterSpacing', 0, -0.5, 2.5);
+    pageHorizontalMargin = _readMetric(j, 'pageHorizontalMargin', 20, 8, 96);
+    pageVerticalMargin = _readMetric(j, 'pageVerticalMargin', 16, 4, 48);
     font = (j['font'] as num?)?.toInt() ?? 0;
     paper = (j['paper'] as num?)?.toInt() ?? 0;
     anim = PageAnim.values[(j['anim'] as num?)?.toInt() ?? 0];
@@ -31,6 +38,12 @@ class Prefs extends ChangeNotifier {
   /// 0 紧 · 1 中 · 2 松.
   late int spacing;
 
+  /// Custom line height overrides the three older spacing presets.
+  late double? lineHeightOverride;
+  late double letterSpacing;
+  late double pageHorizontalMargin;
+  late double pageVerticalMargin;
+
   /// 0 宋 · 1 楷 · 2 黑.
   late int font;
   late int paper;
@@ -44,14 +57,15 @@ class Prefs extends ChangeNotifier {
   late int updateCheckedAt;
   late String dismissedUpdateTag;
 
-  double get lineHeight => const <double>[1.6, 1.85, 2.1][spacing];
+  double get lineHeight =>
+      lineHeightOverride ?? const <double>[1.6, 1.85, 2.1][spacing];
 
   String? get fontFamily {
     switch (font) {
       case 0:
         return 'NotoSerifSC';
       case 1:
-        return 'KaiTi';
+        return 'LXGWWenKaiScreen';
       case 2:
         return 'sans-serif';
       default:
@@ -69,16 +83,8 @@ class Prefs extends ChangeNotifier {
           'SimSun',
           'serif',
         ];
-      case 1: // 楷 (优先系统楷体，在安卓/小米等无系统楷体设备上回退到内置的站酷小薇楷体风格)
-        return const <String>[
-          'KaiTi',
-          'STKaiti',
-          'Kaiti SC',
-          '楷体-简',
-          '楷体',
-          'ZCOOLXiaoWei',
-          'NotoSerifSC',
-        ];
+      case 1: // 楷：固定使用随应用打包的屏幕阅读版，避免设备映射成黑体。
+        return const <String>['NotoSerifSC', 'serif'];
       case 2: // 黑 (优先系统无衬线黑体，在小米设备上匹配 MiSans，在安卓上匹配 Noto Sans CJK SC)
         return const <String>[
           'MiSans',
@@ -101,6 +107,10 @@ class Prefs extends ChangeNotifier {
     writeJson(file, <String, Object?>{
       'fontSize': fontSize,
       'spacing': spacing,
+      if (lineHeightOverride != null) 'lineHeight': lineHeightOverride,
+      'letterSpacing': letterSpacing,
+      'pageHorizontalMargin': pageHorizontalMargin,
+      'pageVerticalMargin': pageVerticalMargin,
       'font': font,
       'paper': paper,
       'anim': anim.index,
@@ -113,4 +123,17 @@ class Prefs extends ChangeNotifier {
     });
     notifyListeners();
   }
+}
+
+double _readMetric(
+  Json data,
+  String key,
+  double fallback,
+  double minimum,
+  double maximum,
+) {
+  final Object? value = data[key];
+  return value is num && value.isFinite
+      ? value.toDouble().clamp(minimum, maximum)
+      : fallback;
 }

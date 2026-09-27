@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/prefs.dart';
+import '../sheets/typography_sheet.dart';
 import '../ui/device.dart';
 import '../ui/theme.dart';
 
@@ -142,31 +143,16 @@ class SettingsScreen extends StatelessWidget {
                 ]),
                 group('阅读', <Widget>[
                   ListTile(
-                    title: const Text('默认字号'),
-                    trailing: DropdownButton<int>(
-                      value: prefs.fontSize.round(),
-                      underline: const SizedBox.shrink(),
-                      items: <DropdownMenuItem<int>>[
-                        for (int s = 16; s <= 26; s++)
-                          DropdownMenuItem<int>(
-                            value: s,
-                            child: Text(
-                              '$s pt',
-                              style: const TextStyle(
-                                fontFeatures: <FontFeature>[
-                                  FontFeature.tabularFigures(),
-                                ],
-                              ),
-                            ),
-                          ),
-                      ],
-                      onChanged: (int? v) {
-                        HapticFeedback.selectionClick();
-                        prefs.update(
-                          (Prefs p) => p.fontSize = (v ?? 19).toDouble(),
-                        );
-                      },
+                    title: const Text('阅读排版'),
+                    subtitle: Text(
+                      '字号 ${prefs.fontSize.toStringAsFixed(1)} pt · '
+                      '行距 ${prefs.lineHeight.toStringAsFixed(2)}×',
                     ),
+                    trailing: Icon(Icons.chevron_right, color: t.ink3),
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      openTypography(context, prefs);
+                    },
                   ),
                   ListTile(
                     title: const Text('翻页动画'),
@@ -275,6 +261,16 @@ class SettingsScreen extends StatelessWidget {
                     },
                   ),
                   ListTile(
+                    title: const Text('字体授权'),
+                    subtitle: const Text('霞鹜文楷屏幕阅读版 · SIL OFL 1.1'),
+                    trailing: Icon(Icons.chevron_right, color: t.ink3),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const _FontLicenseScreen(),
+                      ),
+                    ),
+                  ),
+                  ListTile(
                     title: const Text('隐私'),
                     subtitle: Text(
                       '书和笔记保存在这台$deviceWord。整理、问书和 AI 批注会把所需原文发送到你配置的接口；测试连接会发送一条测试消息。导出和分享由你选择保存位置或接收方。',
@@ -287,6 +283,37 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FontLicenseScreen extends StatelessWidget {
+  const _FontLicenseScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    final Tokens t = context.tk;
+    return Scaffold(
+      backgroundColor: t.paper,
+      appBar: AppBar(title: const Text('字体授权')),
+      body: FutureBuilder<String>(
+        future: rootBundle.loadString('assets/fonts/OFL-LXGWWenKaiScreen.txt'),
+        builder: (BuildContext context, AsyncSnapshot<String> snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text('暂时无法读取字体授权'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: SelectableText(
+              snapshot.data!,
+              style: TextStyle(color: t.ink, fontSize: 13, height: 1.5),
+            ),
+          );
+        },
       ),
     );
   }

@@ -12,6 +12,7 @@ class PageSpec {
     required this.height,
     required this.fontSize,
     required this.lineHeight,
+    this.letterSpacing = 0,
     required this.fontFamily,
     this.fontFamilyFallback,
     required this.color,
@@ -22,6 +23,7 @@ class PageSpec {
   final double height;
   final double fontSize;
   final double lineHeight;
+  final double letterSpacing;
   final String? fontFamily;
   final List<String>? fontFamilyFallback;
   final Color color;
@@ -33,6 +35,7 @@ class PageSpec {
   TextStyle get body => TextStyle(
     fontSize: fontSize,
     height: lineHeight,
+    letterSpacing: letterSpacing,
     fontFamily: fontFamily,
     fontFamilyFallback:
         fontFamilyFallback ?? const <String>['NotoSerifSC', 'serif'],
@@ -57,6 +60,7 @@ class PageSpec {
       other.height == height &&
       other.fontSize == fontSize &&
       other.lineHeight == lineHeight &&
+      other.letterSpacing == letterSpacing &&
       other.fontFamily == fontFamily &&
       listEquals(other.fontFamilyFallback, fontFamilyFallback) &&
       other.textScaler == textScaler;
@@ -67,6 +71,7 @@ class PageSpec {
     height,
     fontSize,
     lineHeight,
+    letterSpacing,
     fontFamily,
     fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback!),
     textScaler,

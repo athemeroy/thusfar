@@ -45,4 +45,5 @@ jobs:
             test/reader_regression_test.dart test/selection_bounds_test.dart \
             test/screens_test.dart test/shared_import_test.dart \
             test/shelf_processing_action_test.dart \
+            test/typography_prefs_test.dart test/typography_sheet_test.dart \
             test/update_checker_test.dart

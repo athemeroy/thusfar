@@ -62,6 +62,7 @@ void main() {
     );
     await _font('NotoSerifSC', 'assets/fonts/NotoSerifSC-Regular.otf');
     await _font('ZCOOLXiaoWei', 'assets/fonts/ZCOOLXiaoWei-Regular.ttf');
+    await _font('LXGWWenKaiScreen', 'assets/fonts/LXGWWenKaiScreen.ttf');
     root = Directory.systemTemp.createTempSync('thusfar-shots');
     _copy(
       Directory('../oracle/goldens/books/aq_deepseek'),
