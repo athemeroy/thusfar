@@ -283,6 +283,13 @@ extension RunnerLoops on Runner {
       }
       qualityPending.add('chapter-titles');
       writeJson(File('${root.path}/book.json'), book);
+      if (activity) {
+        recordBookActivity(
+          root,
+          'check_titles_pending',
+          '章节标题核对未完成，未确认的标题暂时隐藏；继续整理时将重试',
+        );
+      }
     }
     int done = 0;
     replaying = true;

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/library.dart';
+import '../data/seen.dart';
 import '../ui/theme.dart';
+import 'chapter_title.dart';
 import 'common.dart';
 import 'preview_sheet.dart';
 import 'sheet_host.dart';
@@ -71,6 +73,7 @@ class _SearchPageState extends State<SearchPage> {
     final Tokens t = context.tk;
     final List<_Hit> hits = _search();
     final BookData book = widget.link.c.book;
+    final int read = SeenStore.instance.maxRead(book.id, widget.link.c.cutoff);
     final List<Widget> rows = <Widget>[];
     int? lastChapter;
     for (final _Hit h in hits) {
@@ -80,7 +83,10 @@ class _SearchPageState extends State<SearchPage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
             child: Text(
-              book.chapters[h.chapter].title,
+              safeTitle(
+                book.chapters[h.chapter],
+                book.chapters[h.chapter].o0 < read,
+              ),
               style: TextStyle(fontSize: 12, color: t.ink3, letterSpacing: 0.6),
             ),
           ),
@@ -105,7 +111,10 @@ class _SearchPageState extends State<SearchPage> {
                 );
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -113,7 +122,9 @@ class _SearchPageState extends State<SearchPage> {
                       child: Text.rich(
                         TextSpan(
                           children: <InlineSpan>[
-                            TextSpan(text: h.before.isEmpty ? '' : '…${h.before}'),
+                            TextSpan(
+                              text: h.before.isEmpty ? '' : '…${h.before}',
+                            ),
                             TextSpan(
                               text: h.match,
                               style: TextStyle(

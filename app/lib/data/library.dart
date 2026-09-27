@@ -23,6 +23,11 @@ Object? readJson(File f) {
 /// Atomic JSON write in the Python format, so 1.7.x can still read it.
 void writeJson(File f, Object? value) => storage.writeJson(f, value);
 
+String _fileStamp(String path) {
+  final FileStat st = FileStat.statSync(path);
+  return '${st.type}:${st.size}:${st.modified.microsecondsSinceEpoch}:${st.changed.microsecondsSinceEpoch}';
+}
+
 /// Reading progress as 1.7.x stored it in `progress.json`.
 class Progress {
   const Progress({
@@ -376,13 +381,8 @@ class Library extends ChangeNotifier {
         'error': '无法读取整理状态，请检查书籍数据后重试',
       };
     }
-    String stamp(String path) {
-      final FileStat st = FileStat.statSync(path);
-      return '${st.type}:${st.size}:${st.modified.microsecondsSinceEpoch}:${st.changed.microsecondsSinceEpoch}';
-    }
-
     final String signature =
-        '${jsonEncode(state)}|${stamp('${b.dir.path}/kg.json')}|${stamp('${b.dir.path}/mentions')}|${stamp('${b.dir.path}/manual-entities.json')}';
+        '${jsonEncode(state)}|${_fileStamp('${b.dir.path}/book.json')}|${_fileStamp('${b.dir.path}/kg.json')}|${_fileStamp('${b.dir.path}/mentions')}|${_fileStamp('${b.dir.path}/manual-entities.json')}';
     if (signature == b._processingStamp) return false;
     b._processingStamp = signature;
     b.status = ProcessStatus(state);
@@ -444,7 +444,9 @@ class BookData extends ChangeNotifier {
     : _generatedRecords = List<Json>.of(records);
 
   static BookData open(BookEntry entry) {
-    final Json book = readJson(File('${entry.dir.path}/book.json'))! as Json;
+    final File bookFile = File('${entry.dir.path}/book.json');
+    final String chapterStamp = _fileStamp(bookFile.path);
+    final Json book = readJson(bookFile)! as Json;
     final List<Block> blocks = <Block>[
       for (final Object? b in book['blocks']! as List<Object?>)
         Block(b! as Json),
@@ -463,6 +465,7 @@ class BookData extends ChangeNotifier {
         r! as Json,
     ];
     final BookData data = BookData._(entry, book, blocks, chapters, records);
+    data._chapterStamp = chapterStamp;
     data._loadedRevision = entry.knowledgeRevision;
     data._readManual();
     data._mergeKnowledge();
@@ -485,6 +488,7 @@ class BookData extends ChangeNotifier {
   final Map<int, List<Mention>> _mentions = <int, List<Mention>>{};
   final Map<int, World> _worlds = <int, World>{};
   int _loadedRevision = -1;
+  String _chapterStamp = '';
   String? knowledgeError;
   String? manualError;
 
@@ -569,6 +573,7 @@ class BookData extends ChangeNotifier {
   bool refreshKnowledge() {
     if (_loadedRevision == entry.knowledgeRevision) return false;
     _loadedRevision = entry.knowledgeRevision;
+    _refreshChapterSpoilers();
     try {
       final File file = File('${entry.dir.path}/kg.json');
       final Object? raw = file.existsSync()
@@ -588,6 +593,36 @@ class BookData extends ChangeNotifier {
     _mergeKnowledge();
     notifyListeners();
     return true;
+  }
+
+  /// A title judgment may finish while the reader stays open. Keep its chapter
+  /// objects and reading position, replacing only verdicts for the same text.
+  void _refreshChapterSpoilers() {
+    final File file = File('${entry.dir.path}/book.json');
+    final String stamp = _fileStamp(file.path);
+    if (stamp == _chapterStamp) return;
+    final Object? updated = readJson(file);
+    if (updated is! Json) return;
+    final Object? rows = updated['chapters'];
+    if (rows is! List<Object?> || rows.length != chapters.length) return;
+    for (int i = 0; i < chapters.length; i++) {
+      final Object? row = rows[i];
+      if (row is! Json ||
+          row['title'] != chapters[i].raw['title'] ||
+          row['o0'] != chapters[i].raw['o0'] ||
+          row['o1'] != chapters[i].raw['o1']) {
+        return;
+      }
+    }
+    for (int i = 0; i < chapters.length; i++) {
+      final Object? verdict = (rows[i]! as Json)['spoil'];
+      if (verdict is bool) {
+        chapters[i].raw['spoil'] = verdict;
+      } else {
+        chapters[i].raw.remove('spoil');
+      }
+    }
+    _chapterStamp = stamp;
   }
 
   String get id => entry.id;

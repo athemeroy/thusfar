@@ -708,7 +708,7 @@ Future<List<bool>> titleSpoilers(
   List<String> titles, [
   String bookTitle = '',
 ]) async {
-  final List<bool> out = List<bool>.filled(titles.length, true);
+  final List<bool> out = <bool>[];
   for (int k0 = 0; k0 < titles.length; k0 += batch) {
     final List<int> chunk = <int>[
       for (
@@ -734,16 +734,23 @@ Future<List<bool>> titleSpoilers(
           },
         },
     };
-    final Json ans;
-    try {
-      ans = await judgeCall(<String, Object?>{
-        'note': 'Judge only the title text.',
-      }, qs);
-    } on Object {
-      continue;
-    }
+    final Json ans = await judgeCall(<String, Object?>{
+      'note': 'Judge only the title text.',
+    }, qs);
+    validateAnswers(ans, qs, 'chapter titles');
     for (final int i in chunk) {
-      out[i] = (_get(_probs(_answer(ans, 't$i')), 'spoils', 1)! as num) >= 0.5;
+      final Json answer = _answer(ans, 't$i');
+      final String choice = answer['choice']! as String;
+      final Json probabilities = _probs(answer);
+      final num confidence = probabilities[choice]! as num;
+      final String other = choice == 'spoils' ? 'safe' : 'spoils';
+      final num? otherConfidence = probabilities[other] as num?;
+      if (confidence <= 0.5 ||
+          (otherConfidence != null && otherConfidence >= confidence)) {
+        throw LLMError('章节标题核对结果不确定：t$i');
+      }
+      // The free classifier may return only its selected label and confidence.
+      out.add(choice == 'spoils');
     }
   }
   return out;

@@ -483,4 +483,36 @@ void main() {
       data.dispose();
     },
   );
+
+  test('open reader refreshes chapter spoiler verdicts after processing', () {
+    final BookData data = BookData.open(entry);
+    final Chapter chapter = data.chapters.single;
+    final Object blocks = data.blocks;
+    expect(chapter.raw['spoil'], isNull);
+
+    final Json updated = fixtureBook();
+    final Json row = (updated['chapters']! as List<Object?>).single! as Json;
+    row['spoil'] = false;
+    writeJson(File('${bookRoot.path}/book.json'), updated);
+    expect(library.refreshStatus(entry), isTrue);
+    expect(data.refreshKnowledge(), isTrue);
+    expect(identical(data.chapters.single, chapter), isTrue);
+    expect(identical(data.blocks, blocks), isTrue);
+    expect(chapter.raw['spoil'], isFalse);
+
+    row['spoil'] = true;
+    writeJson(File('${bookRoot.path}/book.json'), updated);
+    expect(library.refreshStatus(entry), isTrue);
+    expect(data.refreshKnowledge(), isTrue);
+    expect(chapter.raw['spoil'], isTrue);
+
+    row['title'] = 'Different chapter';
+    row['spoil'] = false;
+    writeJson(File('${bookRoot.path}/book.json'), updated);
+    expect(library.refreshStatus(entry), isTrue);
+    data.refreshKnowledge();
+    expect(chapter.raw['spoil'], isTrue);
+    data.notes.dispose();
+    data.dispose();
+  });
 }

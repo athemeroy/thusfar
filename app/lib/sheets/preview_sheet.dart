@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/library.dart';
+import '../data/seen.dart';
 import '../ui/theme.dart';
+import 'chapter_title.dart';
 import 'common.dart';
 import 'sheet_host.dart';
 
@@ -40,6 +42,7 @@ class _PreviewPageState extends State<PreviewPage> {
     final Chapter ch = book.chapters[book.chapterAt(widget.start)];
     final int cutoff = widget.link.c.cutoff;
     final bool ahead = widget.start >= cutoff || widget.end > cutoff;
+    final int read = SeenStore.instance.maxRead(book.id, cutoff);
     final int visibleEnd = reveal ? book.length : cutoff;
     final int from = math.max(0, widget.start - 300);
     final int to = math.min(
@@ -57,7 +60,8 @@ class _PreviewPageState extends State<PreviewPage> {
     );
     final Color mark = widget.mine ? t.qing : t.zhu;
     return SheetPage(
-      title: '第 $page 页 · ${ahead && !reveal ? '后面的章节' : ch.title}',
+      title:
+          '第 $page 页 · ${ahead && !reveal ? safeTitle(ch, ch.o0 < read) : ch.title}',
       slivers: <Widget>[
         SliverToBoxAdapter(
           child: Padding(

@@ -4,22 +4,13 @@ import 'package:flutter/services.dart';
 import '../data/library.dart';
 import '../data/seen.dart';
 import '../ui/theme.dart';
+import 'chapter_title.dart';
 import 'common.dart';
 import 'preview_sheet.dart';
 import 'note_editor.dart';
 import 'sheet_host.dart';
 
-final RegExp _chapterNumber = RegExp(
-  r'^(第\s*[0-9零一二三四五六七八九十百千]+\s*[部章回卷节篇集]|(?:chapter|part|book)\s+[0-9ivxlcdm]+)',
-  caseSensitive: false,
-);
-
-/// An unread chapter shows only its number, never a spoiling title.
-String safeTitle(Chapter c, bool read) {
-  if (read) return c.title;
-  final RegExpMatch? m = _chapterNumber.firstMatch(c.title.trim());
-  return m?.group(0) ?? '第 ${c.index + 1} 节';
-}
+export 'chapter_title.dart' show safeTitle;
 
 String formatDate(num? seconds) {
   if (seconds == null) return '';
@@ -169,7 +160,18 @@ class _TocPageState extends State<TocPage> {
           final Chapter c = book.chapters[i];
           final bool current = i == link.c.chapter;
           final bool isRead = c.o0 < read;
+          final bool titleHidden = !isRead && c.raw['spoil'] != false;
           final int page = link.pageNo(c.o0);
+          final Text chapterTitle = Text(
+            safeTitle(c, isRead),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 15,
+              color: current ? t.zhu : (isRead ? t.ink : t.ink2),
+              fontWeight: current ? FontWeight.w600 : FontWeight.w400,
+            ),
+          );
           return Column(
             children: <Widget>[
               InkWell(
@@ -193,28 +195,17 @@ class _TocPageState extends State<TocPage> {
                         margin: const EdgeInsets.only(right: 10),
                       ),
                       Expanded(
-                        child: Row(
-                          children: <Widget>[
-                            Text(
-                              safeTitle(c, isRead),
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: current
-                                    ? t.zhu
-                                    : (isRead ? t.ink : t.ink2),
-                                fontWeight: current
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                            if (!isRead) ...<Widget>[
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Container(height: 1, color: t.rule),
-                              ),
-                            ],
-                          ],
-                        ),
+                        child: titleHidden
+                            ? Row(
+                                children: <Widget>[
+                                  chapterTitle,
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Container(height: 1, color: t.rule),
+                                  ),
+                                ],
+                              )
+                            : chapterTitle,
                       ),
                       const SizedBox(width: 10),
                       Text(
