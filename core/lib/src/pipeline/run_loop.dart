@@ -205,6 +205,7 @@ extension RunnerLoops on Runner {
   }
 
   Future<void> run({int? limit}) async {
+    replayReadOnly = limit == 0;
     if (limit != 0 && _truth(repairPolicy['identity_taint']))
       throw const llm.LLMError('人物关联结果已隔离，请显式重试质量检查后继续处理');
     int done = 0;
@@ -266,6 +267,7 @@ extension RunnerLoops on Runner {
   }
 
   Future<void> run2({int? limit, int concurrency = 12, String? model}) async {
+    replayReadOnly = limit == 0;
     if (concurrency < 1) throw const ValueError('并发数必须大于 0');
     if (limit != 0 && _truth(repairPolicy['identity_taint']))
       throw const llm.LLMError('人物关联结果已隔离，请显式重试质量检查后继续处理');
@@ -465,6 +467,12 @@ Future<void> runBook(
     failed = true;
     final File path = File('${root.path}/status.json');
     final Json state = path.existsSync() ? _read(path) : {};
+    if (runner != null) {
+      state['quality'] = {
+        'state': runner.qualityPending.isNotEmpty ? 'pending' : 'verified',
+        'pending': _sorted(runner.qualityPending),
+      };
+    }
     state.addAll({
       'state': 'error',
       'error': _cut(e is llm.LLMError ? _error(e) : _typedError(e), 300),

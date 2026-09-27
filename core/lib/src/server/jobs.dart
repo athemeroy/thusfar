@@ -104,6 +104,35 @@ bool _truth(Object? v) =>
     !(v is Iterable<Object?> && v.isEmpty) &&
     !(v is Map<Object?, Object?> && v.isEmpty);
 Json _object(Object? v) => v as Json? ?? <String, Object?>{};
+final RegExp _finalJobName = RegExp(r'^(bio|recap|classic-recap|saga)-\d+$');
+final RegExp _bioJobName = RegExp(r'^bio-\d+$');
+
+bool _failedBioJob(Directory root, Json quality, {bool contentOnly = false}) {
+  final Object? pending = quality['pending'];
+  if (pending is! List) return false;
+  for (final Object? item in pending) {
+    if (item is! String || !_bioJobName.hasMatch(item)) continue;
+    final Json? job = _readJson(File('${root.path}/work/jobs/$item.json'));
+    if (job?['state'] == 'failed' &&
+        (!contentOnly || job?['failure_kind'] == 'bio_content'))
+      return true;
+  }
+  return false;
+}
+
+bool _resumeBioFinalJobsInPlace(Directory root, Json quality) {
+  final Object? pending = quality['pending'];
+  if (pending is! List || pending.isEmpty || !_failedBioJob(root, quality))
+    return false;
+  for (final Object? item in pending) {
+    if (item is! String ||
+        !_finalJobName.hasMatch(item) ||
+        !File('${root.path}/work/jobs/$item.json').existsSync())
+      return false;
+  }
+  return true;
+}
+
 String _name(Directory root) =>
     root.uri.pathSegments.where((String s) => s.isNotEmpty).last;
 String _short(Object error) => PyCompat.slice(error.toString(), 0, 200);
@@ -310,8 +339,10 @@ class Worker {
     final Json meta = _json(root, 'meta.json');
     final Json state = _json(root, 'status.json');
     final Json quality = _object(state['quality']);
+    final bool resumeFinalJobs = _resumeBioFinalJobsInPlace(root, quality);
     final bool retryQuality =
         value &&
+        !resumeFinalJobs &&
         (_truth(quality['pending']) || quality['state'] == 'pending') &&
         !<String>{
           'running',
@@ -321,7 +352,7 @@ class Worker {
     meta['auto'] = value;
     if (retryQuality) {
       meta['retry_quality'] = true;
-    } else if (!value) {
+    } else if (!value || resumeFinalJobs) {
       meta.remove('retry_quality');
     }
     _save(root, 'meta.json', meta);
@@ -557,6 +588,9 @@ class Worker {
       state = _json(root, 'status.json');
       meta = _json(root, 'meta.json');
       final bool auto = _truth(meta['auto']);
+      final bool stopAfterBioFailure =
+          code != 0 &&
+          _failedBioJob(root, _object(state['quality']), contentOnly: true);
       if (retryQuality && code != 75) {
         final Json retryAfter = _json(root, 'work/quality-retry.json');
         final bool acknowledged =
@@ -597,6 +631,13 @@ class Worker {
           'message': state['error'],
           'at': _clock(),
         };
+      }
+      if (stopAfterBioFailure) {
+        // A new biography draft must require another explicit tap, rather
+        // than the worker's timed error retry silently issuing paid requests.
+        meta['auto'] = false;
+        meta.remove('retry_quality');
+        _save(root, 'meta.json', meta);
       }
       _receipt(root, <String, Object?>{
         'phase': state['state'] ?? (code == 75 ? 'interrupted' : 'error'),

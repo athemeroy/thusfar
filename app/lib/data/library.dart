@@ -78,6 +78,48 @@ class ProcessStatus {
       !isDone && !isActive && !isPaused && !isError && frontier == 0;
 }
 
+/// Chapter biographies are stored after their evidence has been checked. This
+/// summary contains only counts and a reading offset, never names or text.
+({int count, int? firstEnd}) verifiedChapterBiographies(
+  Iterable<Json> records,
+) {
+  int count = 0;
+  int? firstEnd;
+  for (final Json row in records) {
+    if (row['t'] != 'profile' || row['kind'] != 'chapter') continue;
+    final Object? check = row['chk'];
+    final Object? bio = row['bio'];
+    final Object? position = row['p'];
+    if (check is! Json ||
+        check['verdict'] != 'ok' ||
+        bio is! String ||
+        bio.trim().isEmpty ||
+        position is! num ||
+        position < 0) {
+      continue;
+    }
+    final int end = position.toInt();
+    count++;
+    if (firstEnd == null || end < firstEnd) firstEnd = end;
+  }
+  return (count: count, firstEnd: firstEnd);
+}
+
+/// A chapter ordinal is safe to show before its title or characters are known.
+int? biographyUnlockChapterNumber(List<Object?> chapters, int end) {
+  int bodyNumber = 0;
+  for (final Object? raw in chapters) {
+    if (raw is! Json || (raw['kind'] ?? 'body') != 'body') continue;
+    bodyNumber++;
+    final Object? start = raw['o0'];
+    final Object? stop = raw['o1'];
+    if (start is num && stop is num && start <= end && end <= stop) {
+      return bodyNumber;
+    }
+  }
+  return null;
+}
+
 /// One book on the shelf: cheap metadata only.
 class BookEntry {
   BookEntry({
@@ -434,6 +476,7 @@ class BookData extends ChangeNotifier {
   final List<Chapter> chapters;
   final List<Json> records;
   final List<Json> _generatedRecords;
+  ({int count, int? firstEnd}) _verifiedBios = (count: 0, firstEnd: null);
   List<Json> manualItems = <Json>[];
   late final manual.ManualEntityStore _manualStore = manual.ManualEntityStore(
     File('${entry.dir.path}/manual-entities.json'),
@@ -455,6 +498,7 @@ class BookData extends ChangeNotifier {
   }
 
   void _mergeKnowledge() {
+    _verifiedBios = verifiedChapterBiographies(_generatedRecords);
     // Equal-position records preserve Python's stable ordering: generated rows
     // first, then each manual person's creation and profile revisions.
     final List<(int, Json)> all = <(int, Json)>[];
@@ -547,6 +591,7 @@ class BookData extends ChangeNotifier {
   }
 
   String get id => entry.id;
+  ({int count, int? firstEnd}) get verifiedBios => _verifiedBios;
   int get length => (book['len']! as num).toInt();
   Map<String, String> get footnoteText => <String, String>{
     for (final MapEntry<String, Object?> e

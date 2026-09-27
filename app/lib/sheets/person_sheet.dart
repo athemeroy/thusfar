@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
+import '../data/library.dart';
 import '../data/seen.dart';
 import '../ui/theme.dart';
 import 'common.dart';
@@ -82,6 +83,19 @@ class _PersonPageState extends State<PersonPage> {
     final Map<String, List<Json>> attrs = p.attrs;
     final List<Json> trail = p.trail;
     final bool beyond = link.c.beyondFrontier;
+    final ({int count, int? firstEnd}) bios = link.c.book.verifiedBios;
+    final bool biosAhead =
+        bios.firstEnd != null && link.c.cutoff < bios.firstEnd!;
+    final int? unlockChapter = bios.firstEnd == null
+        ? null
+        : biographyUnlockChapterNumber(
+            (link.c.book.book['chapters'] as List<Object?>?) ??
+                const <Object?>[],
+            bios.firstEnd!,
+          );
+    final String unlockAt = unlockChapter == null
+        ? '对应章节末'
+        : '第 $unlockChapter 章末';
     final List<String> path = <String>[...widget.path, p.name];
     return SheetPage(
       title: p.name,
@@ -203,6 +217,8 @@ class _PersonPageState extends State<PersonPage> {
                   ? '你还没有为这条补充写说明。'
                   : beyond
                   ? '正文还没整理到这一页；下面先看已有线索。'
+                  : biosAhead
+                  ? '本书已有 ${bios.count} 篇核对通过的人物小传，首批读到$unlockAt后解锁。下面先看截至这一页的线索。'
                   : link.c.book.status.isActive
                   ? '这一页还没有核对通过的人物小传，整理仍在继续。下面先看已有线索。'
                   : '这位人物暂无核对通过的小传。下面是截至这一页的线索。',

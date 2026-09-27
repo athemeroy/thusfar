@@ -65,10 +65,26 @@ class _PeoplePageState extends State<PeoplePage> {
     final World? w = link.c.world;
     final ProcessStatus status = link.c.book.status;
     final int page = link.pageNo(link.c.cutoff > 0 ? link.c.cutoff - 1 : 0);
+    final ({int count, int? firstEnd}) bios = link.c.book.verifiedBios;
+    final bool biosAhead =
+        bios.firstEnd != null && link.c.cutoff < bios.firstEnd!;
+    final int? unlockChapter = bios.firstEnd == null
+        ? null
+        : biographyUnlockChapterNumber(
+            (link.c.book.book['chapters'] as List<Object?>?) ??
+                const <Object?>[],
+            bios.firstEnd!,
+          );
+    final String unlockAt = unlockChapter == null
+        ? '对应章节末'
+        : '第 $unlockChapter 章末';
     if (w == null || w.people.isEmpty) {
       final String message;
       final String? actionLabel;
-      if (status.isActive) {
+      if (biosAhead) {
+        message = '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。';
+        actionLabel = status.isActive ? '查看整理过程' : null;
+      } else if (status.isActive) {
         final String progress = status.total > 0
             ? '已完成 ${status.done}/${status.total} 段。'
             : '正在准备书籍。';
@@ -191,6 +207,34 @@ class _PeoplePageState extends State<PeoplePage> {
           slivers: <Widget>[
             if (link.c.book.manualError != null)
               emptyState(context, link.c.book.manualError!),
+            if (biosAhead)
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: t.zhuSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Icon(Icons.lock_outline, size: 18, color: t.zhu),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。',
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: t.ink2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             if (people.isEmpty)
               emptyState(context, tab == 0 ? '这一页没有已整理的人物' : '没有找到')
             else

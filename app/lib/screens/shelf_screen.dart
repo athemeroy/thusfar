@@ -540,7 +540,9 @@ class _ShelfScreenState extends State<ShelfScreen> {
       return s.total == 0 ? '正在准备整理' : '整理中 · 已完成 ${s.done}/${s.total} 段';
     }
     if (s.isDone) return '人物已整理 · ${s.people} 位';
-    if (s.isPaused) return '整理已暂停';
+    if (s.isPaused) {
+      return '整理已暂停${s.people > 0 ? ' · 已识别 ${s.people} 位人物' : ''}';
+    }
     if (s.isError) return '整理停下了，点开看原因';
     return '人物还没整理';
   }

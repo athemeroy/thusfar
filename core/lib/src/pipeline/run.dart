@@ -385,6 +385,7 @@ class Runner {
   late KG kg;
   late Directory work;
   bool replaying = false;
+  bool replayReadOnly = false;
   final List<(File, _RunPool)> deferred = [];
   Set<String> qualityPending = {};
   Set<int> refused = {};

@@ -59,6 +59,81 @@ class _BookSheetState extends State<BookSheet> {
   bool acting = false;
   String? actionLabel;
   bool showAllActivity = false;
+  String? _biographyGraphStamp;
+  String? _biographyGraphRejectedStamp;
+  ({int count, int? firstEnd}) _verifiedBios = (count: 0, firstEnd: null);
+  String? _biographyBookStamp;
+  String? _biographyBookRejectedStamp;
+  int? _biographyChapterEnd;
+  int? _biographyChapterNumber;
+
+  ({int count, int? firstEnd}) _biographySummary() {
+    final File file = File('${widget.entry.dir.path}/kg.json');
+    try {
+      final FileStat stat = file.statSync();
+      if (stat.type != FileSystemEntityType.file) {
+        _biographyGraphStamp = null;
+        _biographyGraphRejectedStamp = null;
+        return _verifiedBios = (count: 0, firstEnd: null);
+      }
+      final String stamp =
+          '${stat.size}:${stat.modified.microsecondsSinceEpoch}:${stat.changed.microsecondsSinceEpoch}';
+      if (stamp == _biographyGraphStamp) return _verifiedBios;
+      if (stamp == _biographyGraphRejectedStamp) {
+        return _verifiedBios = (count: 0, firstEnd: null);
+      }
+      final Object? graph = readJson(file);
+      final Object? log = graph is Json ? graph['log'] : null;
+      if (log is! List<Object?>) {
+        _biographyGraphRejectedStamp = stamp;
+        return _verifiedBios = (count: 0, firstEnd: null);
+      }
+      _verifiedBios = verifiedChapterBiographies(<Json>[
+        for (final Object? row in log)
+          if (row is Json) row,
+      ]);
+      _biographyGraphStamp = stamp;
+      _biographyGraphRejectedStamp = null;
+    } on FormatException {
+      _biographyGraphStamp = null;
+      _verifiedBios = (count: 0, firstEnd: null);
+    } on FileSystemException {
+      _biographyGraphStamp = null;
+      _verifiedBios = (count: 0, firstEnd: null);
+    }
+    return _verifiedBios;
+  }
+
+  int? _biographyChapter(int end) {
+    final File file = File('${widget.entry.dir.path}/book.json');
+    try {
+      final FileStat stat = file.statSync();
+      if (stat.type != FileSystemEntityType.file) return null;
+      final String stamp =
+          '${stat.size}:${stat.modified.microsecondsSinceEpoch}:${stat.changed.microsecondsSinceEpoch}';
+      if (stamp == _biographyBookStamp && end == _biographyChapterEnd) {
+        return _biographyChapterNumber;
+      }
+      if (stamp == _biographyBookRejectedStamp) return null;
+      final Object? book = readJson(file);
+      final Object? chapters = book is Json ? book['chapters'] : null;
+      if (chapters is! List<Object?>) {
+        _biographyBookRejectedStamp = stamp;
+        return null;
+      }
+      _biographyChapterNumber = biographyUnlockChapterNumber(chapters, end);
+      _biographyBookStamp = stamp;
+      _biographyBookRejectedStamp = null;
+      _biographyChapterEnd = end;
+      return _biographyChapterNumber;
+    } on FormatException {
+      _biographyBookStamp = null;
+      return null;
+    } on FileSystemException {
+      _biographyBookStamp = null;
+      return null;
+    }
+  }
 
   List<Json> _activity() {
     final Object? raw = readJson(
@@ -376,6 +451,7 @@ class _BookSheetState extends State<BookSheet> {
     final Tokens t = context.tk;
     final BookEntry b = widget.entry;
     final ProcessStatus s = b.status;
+    final ({int count, int? firstEnd}) bios = _biographySummary();
     final List<Json> activity = _activity();
     final Json? latestActivity = activity.isEmpty ? null : activity.last;
     final num latestAt = latestActivity?['at'] is num
@@ -475,7 +551,7 @@ class _BookSheetState extends State<BookSheet> {
             style: TextStyle(fontSize: 12, color: t.ink3),
           ),
         ],
-        if (s.done > 0) ...<Widget>[
+        if (s.done > 0 && bios.count == 0) ...<Widget>[
           const SizedBox(height: 5),
           Text(
             '段数是正文进度；人物小传还需按章汇总和核对。',
@@ -561,6 +637,13 @@ class _BookSheetState extends State<BookSheet> {
           '已暂停。已经整理好的部分可以直接看。',
           style: TextStyle(fontSize: 14, color: t.ink),
         ),
+        if (s.done > 0 || s.people > 0) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            '已整理 ${s.done}${s.total > 0 ? '/${s.total}' : ''} 段${s.people > 0 ? ' · 已识别 ${s.people} 位人物' : ''}',
+            style: TextStyle(fontSize: 13, color: t.ink2),
+          ),
+        ],
         const SizedBox(height: 10),
         Pill(
           label: '继续整理',
@@ -694,6 +777,19 @@ class _BookSheetState extends State<BookSheet> {
           ),
         ]);
       }
+    }
+    if (bios.firstEnd != null) {
+      final int? chapter = _biographyChapter(bios.firstEnd!);
+      final String unlockAt = chapter == null ? '对应章节末' : '第 $chapter 章末';
+      body.add(
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(
+            '已有 ${bios.count} 篇核对通过的人物小传。首批在$unlockAt解锁；阅读页只显示你读到的部分。',
+            style: TextStyle(fontSize: 13, height: 1.5, color: t.zhu),
+          ),
+        ),
+      );
     }
     if (actionLabel != null) {
       body.add(

@@ -1,5 +1,29 @@
 part of 'run.dart';
 
+final class _BioContentError extends llm.LLMError {
+  const _BioContentError(
+    super.message, {
+    required this.candidates,
+    required this.passed,
+    required this.blocked,
+    required this.missing,
+  });
+
+  final int candidates;
+  final int passed;
+  final int blocked;
+  final int missing;
+}
+
+Json _approvedBios(Object? value) => {
+  for (final e in _obj(value).entries)
+    if (e.value is Json &&
+        _obj(e.value)['bio'] is String &&
+        _truth(_obj(e.value)['bio']) &&
+        _obj(_obj(e.value)['chk'])['verdict'] == 'ok')
+      e.key: e.value,
+};
+
 const Set<String> _stopwords = {
   'that',
   'with',
@@ -85,6 +109,7 @@ extension RunnerFinalization on Runner {
           _int(args[1]),
           args[2]! as String,
           _list(args[3]).cast<String>(),
+          generationAttempt: _int(job['generation_attempt']),
         ),
         'recap' => await chapterRecapJob(
           _int(args[0]),
@@ -111,13 +136,35 @@ extension RunnerFinalization on Runner {
     } on Cancelled {
       rethrow;
     } catch (e) {
+      if (e is _BioContentError) {
+        job['generation_attempt'] = _int(job['generation_attempt']) + 1;
+        job['failure_kind'] = 'bio_content';
+        job['bio_review'] = {
+          'candidates': e.candidates,
+          'passed': e.passed,
+          'blocked': e.blocked,
+          'missing': e.missing,
+        };
+      } else {
+        job.remove('failure_kind');
+      }
       job.addAll({'state': 'failed', 'error': _cut(_typedError(e), 300)});
       writeJson(path, job);
       qualityPending.add(_stem(path));
+      if (activity && job['kind'] == 'bio') {
+        recordBookActivity(
+          root,
+          'bio_failed',
+          '第 ${_int(job['key']) + 1} 章人物小传失败：${_cut(_error(e), 160)}',
+          at: backend.now(),
+        );
+      }
       rethrow;
     }
     job['state'] = 'complete';
     job.remove('error');
+    job.remove('failure_kind');
+    if (job['kind'] == 'bio' && result is Json) job['bio_review'] = result;
     writeJson(path, job);
     qualityPending.remove(_stem(path));
     if (job['kind'] == 'bio') {
@@ -738,19 +785,34 @@ extension RunnerFinalization on Runner {
     checkpoint();
     final File path = bioPath(ci);
     if (quarantined(path)) return;
+    final (String text, List<String> chosen) = dossiers(end, start);
     if (path.existsSync()) {
-      final Json cached = _read(path);
-      applyBios(cached, end);
-      if (_obj(
-        cached['bios'],
-      ).values.every((v) => _obj(_obj(v)['chk'])['verdict'] == 'ok')) {
+      final Json approved = _approvedBios(_read(path)['bios']);
+      if (approved.isNotEmpty) {
+        applyBios({'bios': approved}, end);
         acknowledgeFinalCache('bio', ci);
         return;
       }
     }
-    final (String text, List<String> chosen) = dossiers(end, start);
     if (chosen.isEmpty) {
-      writeJson(path, {'chapter': ci, 'bios': <String, Object?>{}});
+      if (!path.existsSync() ||
+          (_obj(_read(path)['bios']).isEmpty &&
+              _read(path)['reason'] != 'skipped_no_candidates')) {
+        writeJson(path, {
+          'chapter': ci,
+          'bios': <String, Object?>{},
+          'reason': 'skipped_no_candidates',
+        });
+      }
+      acknowledgeFinalCache('bio', ci);
+      if (activity) {
+        recordBookActivity(
+          root,
+          'bio_no_candidates',
+          '第 ${ci + 1} 章没有符合小传条件的人物，已跳过',
+          at: backend.now(),
+        );
+      }
       return;
     }
     queueFinal('bio', ci, [ci, end, text, chosen], pool);
@@ -984,10 +1046,19 @@ extension RunnerFinalization on Runner {
     int ci,
     int end,
     String dossiers,
-    List<String> chosen,
-  ) async {
+    List<String> chosen, {
+    int generationAttempt = 0,
+  }) async {
+    if (activity) {
+      recordBookActivity(
+        root,
+        'bio_generating',
+        '第 ${ci + 1} 章有 ${chosen.length} 位人物小传候选，正在生成并核对',
+        at: backend.now(),
+      );
+    }
     final Object? data = await cachedGeneration(
-      'bio-$ci',
+      generationAttempt == 0 ? 'bio-$ci' : 'bio-$ci-attempt-$generationAttempt',
       model,
       [
         {
@@ -998,6 +1069,9 @@ extension RunnerFinalization on Runner {
                 'chapter': chapterName(ci),
                 'dossiers': dossiers,
               }) +
+              (generationAttempt == 0
+                  ? ''
+                  : '\n上次生成的小传没有完整通过核对。请为上面列出的每个 ID 单独返回 tagline 和 bio；仅写资料有证据支持的事实，资料不足时允许简介短于建议字数，不要补造内容。') +
               lang.outNote(book),
         },
       ],
@@ -1005,13 +1079,35 @@ extension RunnerFinalization on Runner {
       temperature: 0.2,
       jsonOutput: true,
     );
+    if (data is! Map) {
+      throw _BioContentError(
+        '第 ${ci + 1} 章人物小传返回格式无效，${chosen.length} 位候选均未生成',
+        candidates: chosen.length,
+        passed: 0,
+        blocked: 0,
+        missing: chosen.length,
+      );
+    }
+    final Json generated = data.cast<String, Object?>();
     final Json bios = {
-      for (final e in _obj(data).entries)
-        if (chosen.contains(e.key) &&
-            e.value is Json &&
-            _truth(_obj(e.value)['bio']))
-          e.key: e.value,
+      for (final String id in chosen)
+        if (generated[id] is Map &&
+            (generated[id] as Map)['bio'] is String &&
+            ((generated[id] as Map)['bio'] as String).trim().isNotEmpty &&
+            (generated[id] as Map)['tagline'] is String &&
+            ((generated[id] as Map)['tagline'] as String).trim().isNotEmpty)
+          id: (generated[id] as Map).cast<String, Object?>(),
     };
+    final int missing = chosen.length - bios.length;
+    if (bios.isEmpty) {
+      throw _BioContentError(
+        '第 ${ci + 1} 章人物小传没有返回可核对的内容（缺少 $missing/${chosen.length} 位候选），已保留模型草稿',
+        candidates: chosen.length,
+        passed: 0,
+        blocked: 0,
+        missing: missing,
+      );
+    }
     final Json verdicts;
     try {
       verdicts = await judge.guardTexts(dossiers, {}, {
@@ -1024,18 +1120,53 @@ extension RunnerFinalization on Runner {
     } catch (e) {
       throw llm.LLMError('人物小传验证失败：${_error(e)}');
     }
+    int blocked = 0;
     for (final String id in bios.keys.toList()) {
       final Json v = _obj(verdicts[id]);
       if (!['ok', 'flag'].contains(v['verdict']))
         throw const llm.LLMError('人物小传缺少有效验证结果');
       _obj(bios[id])['chk'] = {'jev': v['p'], 'verdict': v['verdict']};
-      if (v['verdict'] == 'flag') bios.remove(id);
+      if (v['verdict'] == 'flag') {
+        blocked++;
+        bios.remove(id);
+      }
     }
-    final Json out = {'chapter': ci, 'bios': bios};
+    final Json review = {
+      'candidates': chosen.length,
+      'passed': bios.length,
+      'blocked': blocked,
+      'missing': missing,
+    };
+    if (activity) {
+      recordBookActivity(
+        root,
+        'bio_review',
+        '第 ${ci + 1} 章人物小传核对：候选 ${chosen.length}，通过 ${bios.length}，拦截 $blocked，缺失 $missing',
+        at: backend.now(),
+      );
+    }
+    if (bios.isEmpty) {
+      throw _BioContentError(
+        '第 ${ci + 1} 章人物小传通过 0/${chosen.length} 位（拦截 $blocked，缺失 $missing），已保留模型草稿',
+        candidates: chosen.length,
+        passed: 0,
+        blocked: blocked,
+        missing: missing,
+      );
+    }
+    final Json out = {'chapter': ci, 'bios': bios, 'review': review};
     writeJson(bioPath(ci), out);
     applyBios(out, end);
     publish();
-    return null;
+    if (activity) {
+      recordBookActivity(
+        root,
+        'bio_complete',
+        '第 ${ci + 1} 章已发布 ${bios.length} 位通过核对的人物小传',
+        at: backend.now(),
+      );
+    }
+    return review;
   }
 
   void applyBios(Json out, int end) {
@@ -1081,6 +1212,8 @@ extension RunnerFinalization on Runner {
         end = _int(seg['o1']),
         ci = _int(seg['chapter']);
     final bool doBio = end - lastBio >= 12000 || i == segs.length - 1;
+    final bool firstChapter =
+        twoPhase && !replayReadOnly && ci == _int(segs.first['chapter']);
     if (doBio && twoPhase) {
       await dedupe(ci, end, lastBio);
       try {
@@ -1094,9 +1227,11 @@ extension RunnerFinalization on Runner {
         rethrow;
       } catch (_) {}
     }
-    if (doBio) {
+    if (doBio || firstChapter) {
       consolidate(ci, end, lastBio);
-      lastBio = end;
+      // This early preview must not move the established 12k milestone:
+      // existing books can already have verified bios cached at that point.
+      if (doBio) lastBio = end;
     }
     recap(ci, end, start);
     if (twoPhase && (end - lastSaga >= 30000 || i == segs.length - 1)) {
