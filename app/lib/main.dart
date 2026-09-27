@@ -20,6 +20,7 @@ import 'reader/reader_screen.dart';
 import 'screens/model_settings_screen.dart';
 import 'screens/notes_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/webdav_screen.dart';
 import 'screens/shelf_screen.dart';
 import 'sheets/book_sheet.dart';
 import 'ui/cover.dart';
@@ -90,6 +91,16 @@ class AppModel {
   /// Worker startup stays deferred for widget fixtures. Production startup
   /// resumes an interrupted book only when its persisted auto flag permits it.
   Future<void> initialize() async {
+    try {
+      final int recovered = recoverPendingBackupMerges(root);
+      if (recovered > 0) {
+        startupError = '上次跨端合并中断，已恢复 $recovered 本书的本地记录。';
+      }
+    } on Object {
+      startupError = '跨端合并恢复未完成。请保留书库和 sync-backups 备份，检查存储空间后重启。';
+      await library.scan();
+      return;
+    }
     await library.scan();
     try {
       await processing.initialize();
@@ -859,6 +870,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (mounted) setState(() {});
   }
 
+  Future<void> openWebDav() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => WebDavScreen(library: m.library)),
+    );
+    if (mounted) setState(() {});
+  }
+
   void openDrawer(BookEntry b, {bool focus = false}) {
     BookSheet.open(
       context,
@@ -964,7 +982,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             lower.endsWith('.azw')) {
           item.error = 'MOBI 请先转成 EPUB';
         } else if (backupsOnly) {
-          item.error = '这不是页读的备份文件（.yedu.json）';
+          item.error = '这不是页读的 JSON 备份文件';
         } else if (lower.endsWith('.txt') || lower.endsWith('.epub')) {
           item.progress = 0.3;
           if (mounted) setState(() {});
@@ -1036,6 +1054,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         onModel: openModelSettings,
         onExportAll: exportAll,
         onRestore: () => pickAndImport(backupsOnly: true),
+        onWebDav: () => openWebDav(),
         onCheckUpdate: () => unawaited(_checkForUpdates(manual: true)),
       ),
     ];

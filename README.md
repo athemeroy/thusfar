@@ -37,12 +37,17 @@ A long novel brings back names you have not seen for hundreds of pages. Looking 
 - **Stay with the page.** Reading controls appear over the page without moving the text. Cover page turns follow your gesture and settle smoothly when you let go.
 - **Choose your own model.** Add a model API to prepare character guides. If free checking is unavailable, you can let one book continue using your configured model or TypeSafe AI's Jev API, or add a funded classifier.dev workspace key. Each credential is stored separately; Jev use requires an explicit choice for each book, with a visible allowance you can extend. Preparation uses a connection; everyday reading works offline.
 - **Keep your place while preparing.** Short network outages retry automatically without discarding completed work. Open a book's details to see the current step, resume processing, or export a diagnostic record that excludes book text and API keys.
+- **Take your library along.** Export a complete book backup with its text, reading position, notes and preparation data, then import it in another client. You can also move immutable snapshots through your own WebDAV folder.
 
 ## Download
 
 Get the installation file for your device from the [latest release](https://github.com/athemeroy/thusfar/releases/latest).
 
-You can also [open the browser reader](https://athemeroy.github.io/thusfar/) without installing anything. Import TXT or EPUB up to 16 MB, read, search, bookmark, take notes, and tune the typography. The browser stores books and progress locally; it does not store model API keys. Use the book menu to export a JSON backup and import it in another browser. The web reader currently does not run character preparation, relationship graphs, recaps, or book questions; use an installed client for those features. Browser storage may be cleared by the browser or device, so export books you want to keep. GitHub Pages projects on the same `athemeroy.github.io` host share a browser origin and can access that origin's storage.
+You can also [open the browser reader](https://athemeroy.github.io/thusfar/) without installing anything. Import TXT or EPUB up to 16 MB, read, search, bookmark, take notes, and tune the typography. Books and progress stay in the site's browser IndexedDB: **updating the page at the same URL does not clear your library**. Importing a book does not upload it to GitHub. The book menu exports a complete JSON backup for transfer between the browser and installed clients. Reimporting the same book merges compatible reading data and reports conflicts instead of silently overwriting it.
+
+The browser can prepare cited drafts of character clues, relationships, and recaps, and answer book questions from the reading page. Tap the preparation icon by a book cover, choose the first chapter, chapters you have finished, or the whole book, then enter **your own** compatible endpoint, model, and API key. Only an explicit start sends the selected text to that provider. Each passage may be requested up to twice. **The provider may charge for these calls; GitHub hosting does not include free model usage.** Your key remains in the current tab's memory and must be entered again after a refresh. Completed passages are saved locally, but processing resumes only when you ask. The panel menu can export a diagnostic record without book text or keys. Unread chapters stay hidden by default; the installed client's character biographies have a separate verification pipeline. A TypeSafe / Jev key cannot be used with the default DeepSeek endpoint, and a custom provider must allow browser cross-origin requests.
+
+Both installed and browser clients can manually upload a new snapshot to your HTTPS WebDAV folder and import one from another device. In the browser, the WebDAV server must allow this page's origin through CORS. Snapshots do not automatically overwrite another device. Clearing site data in the browser or on the device can still remove the local library, so export important books or keep WebDAV snapshots. GitHub Pages projects on the same `athemeroy.github.io` host share a browser origin and can access that origin's storage.
 
 | Platform | File | Installation |
 | --- | --- | --- |
@@ -57,7 +62,7 @@ Android 2.0 can coexist with 1.7.x; each app has its own library. To move books 
 
 ## Your data
 
-There is no required Thusfar account or Thusfar server. Books, notes, and model credentials are stored locally in the client. When you choose to prepare a guide, relevant passages go to the model provider you configure and may be checked with classifier.dev. If you enable Jev for that book, relevant passages also go to TypeSafe AI. Choose a provider that suits your privacy needs.
+There is no required Thusfar account or Thusfar server. Books and notes are stored locally in the client. The installed app keeps model credentials in its private app directory; the browser keeps a key only in the current page's memory. When you choose to prepare a guide, relevant passages go to the model provider you configure. The installed app may also check passages with classifier.dev; if you enable Jev for that book, relevant passages go to TypeSafe AI as well. Choose a provider that suits your privacy needs.
 
 ## Build from source
 

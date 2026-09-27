@@ -11,9 +11,13 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:thusfar_core/title_spoilers.dart';
 
 import '../ui/theme.dart';
+import 'web_ai_panel.dart';
+import 'web_ask_panel.dart';
 import 'web_storage.dart';
+import 'webdav_sync.dart';
 
 const double _wideShelf = 1140;
 
@@ -28,6 +32,8 @@ class _WebShelfState extends State<WebShelf> {
   WebLibrary? _library;
   List<WebBookMeta> _books = const <WebBookMeta>[];
   Map<String, WebReadingState> _states = const <String, WebReadingState>{};
+  Map<String, Json?> _preparations = const <String, Json?>{};
+  Set<String> _invalidPreparations = const <String>{};
   bool _busy = false;
   String? _error;
 
@@ -60,11 +66,30 @@ class _WebShelfState extends State<WebShelf> {
         for (final WebBookMeta book in books) library.state(book.id),
       ],
     );
+    final List<(Json?, bool)> preparations =
+        await Future.wait(<Future<(Json?, bool)>>[
+          for (final WebBookMeta book in books)
+            () async {
+              try {
+                return (await library.loadPreparation(book.id), false);
+              } on Object {
+                // A damaged AI draft must not hide an otherwise readable book.
+                return (null, true);
+              }
+            }(),
+        ]);
     if (!mounted) return;
     setState(() {
       _books = books;
       _states = <String, WebReadingState>{
         for (int i = 0; i < books.length; i++) books[i].id: states[i],
+      };
+      _preparations = <String, Json?>{
+        for (int i = 0; i < books.length; i++) books[i].id: preparations[i].$1,
+      };
+      _invalidPreparations = <String>{
+        for (int i = 0; i < books.length; i++)
+          if (preparations[i].$2) books[i].id,
       };
       _error = null;
     });
@@ -73,6 +98,7 @@ class _WebShelfState extends State<WebShelf> {
   Future<void> _import() async {
     final WebLibrary? library = _library;
     if (library == null || _busy) return;
+    unawaited(WebLibrary.requestPersistence());
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: <String>['txt', 'epub', 'json'],
@@ -128,6 +154,48 @@ class _WebShelfState extends State<WebShelf> {
     }
   }
 
+  Future<void> _openAi(WebBookMeta meta) async {
+    final WebLibrary? library = _library;
+    if (library == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      final WebBook? book = await library.load(meta.id);
+      final WebReadingState reading = await library.state(meta.id);
+      if (!mounted) return;
+      if (book == null) throw StateError('书籍内容已不存在');
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              WebAiPanel(book: book, reading: reading, library: library),
+        ),
+      );
+      await _refresh();
+    } on Object catch (error) {
+      _message('打开整理失败：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openWebDav() async {
+    final WebLibrary? library = _library;
+    if (library == null || _busy) return;
+    unawaited(WebLibrary.requestPersistence());
+    setState(() => _busy = true);
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => WebDavSyncPage(library: library, books: _books),
+        ),
+      );
+      await _refresh();
+    } on Object catch (error) {
+      _message('打开 WebDAV 失败：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _bookMenu(WebBookMeta book) async {
     final WebLibrary? library = _library;
     if (library == null) return;
@@ -138,6 +206,11 @@ class _WebShelfState extends State<WebShelf> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             ListTile(title: Text(book.title), subtitle: const Text('存放在此浏览器')),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('整理人物与前情'),
+              onTap: () => Navigator.pop(context, 'prepare'),
+            ),
             ListTile(
               leading: const Icon(Icons.download_outlined),
               title: const Text('导出书籍与阅读记录'),
@@ -152,7 +225,9 @@ class _WebShelfState extends State<WebShelf> {
         ),
       ),
     );
-    if (choice == 'export') {
+    if (choice == 'prepare') {
+      await _openAi(book);
+    } else if (choice == 'export') {
       try {
         await library.exportBackup(book.id);
       } on Object catch (error) {
@@ -229,6 +304,14 @@ class _WebShelfState extends State<WebShelf> {
                           ],
                         ),
                         const Spacer(),
+                        IconButton(
+                          onPressed: _busy || _library == null
+                              ? null
+                              : _openWebDav,
+                          tooltip: 'WebDAV 快照',
+                          icon: const Icon(Icons.cloud_sync_outlined),
+                        ),
+                        const SizedBox(width: 6),
                         FilledButton.icon(
                           onPressed: _busy || _library == null ? null : _import,
                           icon: const Icon(Icons.add),
@@ -275,7 +358,7 @@ class _WebShelfState extends State<WebShelf> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                '导入 TXT 或 EPUB，在浏览器里直接阅读。书籍只保存在当前浏览器。',
+                                '导入 TXT 或 EPUB，文件不会上传到 GitHub；书库保存在当前浏览器。只有你主动整理时，相关正文才会发给选定的模型服务商。',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: t.ink2, height: 1.6),
                               ),
@@ -325,7 +408,11 @@ class _WebShelfState extends State<WebShelf> {
                                 return _ShelfBookCard(
                                   book: book,
                                   state: _states[book.id] ?? WebReadingState(),
+                                  preparation: _preparations[book.id],
+                                  preparationInvalid: _invalidPreparations
+                                      .contains(book.id),
                                   onOpen: () => _open(book),
+                                  onPrepare: () => _openAi(book),
                                   onMenu: () => _bookMenu(book),
                                 );
                               },
@@ -357,13 +444,19 @@ class _ShelfBookCard extends StatelessWidget {
   const _ShelfBookCard({
     required this.book,
     required this.state,
+    required this.preparation,
+    required this.preparationInvalid,
     required this.onOpen,
+    required this.onPrepare,
     required this.onMenu,
   });
 
   final WebBookMeta book;
   final WebReadingState state;
+  final Json? preparation;
+  final bool preparationInvalid;
   final VoidCallback onOpen;
+  final VoidCallback onPrepare;
   final VoidCallback onMenu;
 
   @override
@@ -375,6 +468,15 @@ class _ShelfBookCard extends StatelessWidget {
             0.0,
             100.0,
           );
+    final int prepared =
+        (preparation?['completed_count'] as num?)?.toInt() ?? 0;
+    final int total = (preparation?['target_count'] as num?)?.toInt() ?? 0;
+    final String aiStatus = switch (preparation?['phase']) {
+      'complete' => '已完成',
+      'error' => '遇到问题',
+      'running' => '可继续',
+      _ => '已暂停',
+    };
     return Material(
       color: t.sheet,
       borderRadius: BorderRadius.circular(18),
@@ -422,13 +524,34 @@ class _ShelfBookCard extends StatelessWidget {
                           : '读到 ${pct.toStringAsFixed(pct < 1 ? 1 : 0)}%',
                       style: TextStyle(fontSize: 12, color: t.ink2),
                     ),
+                    if (total > 0 || preparationInvalid) ...<Widget>[
+                      const SizedBox(height: 3),
+                      Text(
+                        preparationInvalid
+                            ? '整理记录无法读取 · 点人物查看并清除'
+                            : '人物整理 $prepared/$total 片 · $aiStatus',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11, color: t.ink2),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: '书籍选项',
-                onPressed: onMenu,
-                icon: const Icon(Icons.more_vert),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  IconButton(
+                    tooltip: '整理人物与前情',
+                    onPressed: onPrepare,
+                    icon: const Icon(Icons.auto_awesome_outlined),
+                  ),
+                  IconButton(
+                    tooltip: '书籍选项',
+                    onPressed: onMenu,
+                    icon: const Icon(Icons.more_vert),
+                  ),
+                ],
               ),
             ],
           ),
@@ -577,6 +700,10 @@ class WebReader extends StatefulWidget {
 }
 
 class _WebReaderState extends State<WebReader> {
+  static final RegExp _chapterNumber = RegExp(
+    r'^(第\s*[0-9零一二三四五六七八九十百千]+\s*[部章回卷节篇集]|(?:chapter|part|book)\s+[0-9ivxlcdm]+)',
+    caseSensitive: false,
+  );
   final ScrollController _scroll = ScrollController();
   final Map<int, GlobalKey> _blockKeys = <int, GlobalKey>{};
   final WebReaderPrefs _prefs = WebReaderPrefs();
@@ -584,12 +711,34 @@ class _WebReaderState extends State<WebReader> {
   Timer? _displayTimer;
   bool _controls = false;
   bool _restoring = true;
+  String? _selectedText;
   late int _chapter;
   int? _jumpBlock;
 
   List<Json> get _chapters => widget.book.chapters;
   List<Json> get _blocks => widget.book.blocks;
   Json get _current => _chapters[_chapter];
+
+  String _safeChapterTitle(int index) {
+    final Json chapter = _chapters[index];
+    final String title = '${chapter['title'] ?? '第 ${index + 1} 章'}';
+    final Object? status = widget.book.nativeBackup?['status'];
+    final Object? quality = status is Json ? status['quality'] : null;
+    final Object? pending = quality is Json ? quality['pending'] : null;
+    final bool checkPending =
+        pending is List<Object?> && pending.contains('chapter-titles');
+    if (index <= _chapter ||
+        !titleSpoils(
+          chapter['spoil'],
+          title,
+          checkPending: checkPending,
+          checkedByModel: chapter['spoilSource'] == 'model',
+        )) {
+      return title;
+    }
+    return _chapterNumber.firstMatch(title.trim())?.group(0) ??
+        '第 ${index + 1} 节';
+  }
 
   @override
   void initState() {
@@ -678,9 +827,9 @@ class _WebReaderState extends State<WebReader> {
     );
     setState(() {
       if (index >= 0) {
-        widget.state.bookmarks.removeAt(index);
+        widget.state.remove(widget.state.bookmarks[index]);
       } else {
-        widget.state.bookmarks.add((chapter: _chapter, fraction: fraction));
+        widget.state.addBookmark(_chapter, fraction);
       }
     });
     unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
@@ -688,6 +837,72 @@ class _WebReaderState extends State<WebReader> {
       SnackBar(
         content: Text(index >= 0 ? '已移除书签' : '已添加书签'),
         duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Future<void> _openAi() async {
+    _saveTimer?.cancel();
+    await widget.library.saveState(widget.book.meta.id, widget.state);
+    if (!mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => WebAiPanel(
+          book: widget.book,
+          reading: widget.state,
+          library: widget.library,
+        ),
+      ),
+    );
+  }
+
+  int _askCutoffBlockExclusive() {
+    final int first = (_current['b0'] as num?)?.toInt() ?? 0;
+    final int last = (_current['b1'] as num?)?.toInt() ?? first;
+    final double headingBottom = MediaQuery.paddingOf(context).top + 58;
+    for (int i = first; i < last && i < _blocks.length; i++) {
+      // The chapter heading can be rendered separately from the body.
+      if (i == first &&
+          _blocks[i]['k'] == 'h' &&
+          _blocks[i]['t'] == _current['title']) {
+        continue;
+      }
+      final BuildContext? blockContext = _blockKeys[i]?.currentContext;
+      final RenderObject? render = blockContext?.findRenderObject();
+      if (render is! RenderBox || !render.hasSize) return first;
+      final double bottom = render
+          .localToGlobal(Offset(0, render.size.height))
+          .dy;
+      if (bottom > headingBottom) return i;
+    }
+    return last;
+  }
+
+  Future<void> _openAsk({String? selectedText}) async {
+    final int safeBlock = _askCutoffBlockExclusive();
+    _saveTimer?.cancel();
+    await widget.library.saveState(widget.book.meta.id, widget.state);
+    if (!mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => WebAskPanel(
+          book: widget.book,
+          chapterIndex: _chapter,
+          cutoffBlockExclusive: safeBlock,
+          selectedText: selectedText,
+          onCitationTap: (int blockIndex) {
+            final int targetChapter = _chapters.indexWhere((Json chapter) {
+              final int start = (chapter['b0'] as num?)?.toInt() ?? 0;
+              final int end = (chapter['b1'] as num?)?.toInt() ?? start;
+              return start <= blockIndex && blockIndex < end;
+            });
+            if (targetChapter < 0) return;
+            Navigator.of(context).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _go(targetChapter, block: blockIndex);
+            });
+          },
+        ),
       ),
     );
   }
@@ -713,13 +928,9 @@ class _WebReaderState extends State<WebReader> {
                 child: ListView.builder(
                   itemCount: _chapters.length,
                   itemBuilder: (BuildContext context, int index) {
-                    final Json chapter = _chapters[index];
                     return ListTile(
                       selected: index == _chapter,
-                      title: Text(
-                        '${chapter['title'] ?? '第 ${index + 1} 章'}',
-                        maxLines: 2,
-                      ),
+                      title: Text(_safeChapterTitle(index), maxLines: 2),
                       leading: SizedBox(width: 40, child: Text('${index + 1}')),
                       onTap: () {
                         Navigator.pop(context);
@@ -755,7 +966,7 @@ class _WebReaderState extends State<WebReader> {
                           final mark = widget.state.bookmarks[index];
                           return ListTile(
                             leading: const Icon(Icons.bookmark_outline),
-                            title: Text('${_chapters[mark.chapter]['title']}'),
+                            title: Text(_safeChapterTitle(mark.chapter)),
                             subtitle: Text(
                               '本章 ${(mark.fraction * 100).round()}%',
                             ),
@@ -766,9 +977,7 @@ class _WebReaderState extends State<WebReader> {
                             trailing: IconButton(
                               tooltip: '删除书签',
                               onPressed: () {
-                                setState(
-                                  () => widget.state.bookmarks.removeAt(index),
-                                );
+                                setState(() => widget.state.remove(mark));
                                 unawaited(
                                   widget.library.saveState(
                                     widget.book.meta.id,
@@ -825,7 +1034,7 @@ class _WebReaderState extends State<WebReader> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
-                              '${_chapters[note.chapter]['title']} · 本章 ${(note.fraction * 100).round()}%',
+                              '${_safeChapterTitle(note.chapter)} · 本章 ${(note.fraction * 100).round()}%',
                             ),
                             onTap: () {
                               Navigator.pop(context);
@@ -835,9 +1044,7 @@ class _WebReaderState extends State<WebReader> {
                               tooltip: '删除摘记',
                               icon: const Icon(Icons.close),
                               onPressed: () {
-                                setState(
-                                  () => widget.state.notes.removeAt(index),
-                                );
+                                setState(() => widget.state.remove(note));
                                 unawaited(
                                   widget.library.saveState(
                                     widget.book.meta.id,
@@ -887,12 +1094,7 @@ class _WebReaderState extends State<WebReader> {
     );
     controller.dispose();
     if (note == null || note.isEmpty) return;
-    widget.state.notes.add((
-      chapter: _chapter,
-      fraction: _fraction,
-      text: note,
-      created: DateTime.now().millisecondsSinceEpoch,
-    ));
+    widget.state.addNote(_chapter, _fraction, note);
     await widget.library.saveState(widget.book.meta.id, widget.state);
     if (mounted) setState(() {});
   }
@@ -971,7 +1173,7 @@ class _WebReaderState extends State<WebReader> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   subtitle: Text(
-                                    '${_chapters[row.chapter]['title']}',
+                                    _safeChapterTitle(row.chapter),
                                   ),
                                   onTap: () {
                                     Navigator.pop(context);
@@ -1155,6 +1357,26 @@ class _WebReaderState extends State<WebReader> {
                 child: ConstrainedBox(
                   constraints: BoxConstraints(maxWidth: _prefs.columnWidth),
                   child: SelectionArea(
+                    onSelectionChanged: (SelectedContent? content) =>
+                        _selectedText = content?.plainText,
+                    contextMenuBuilder:
+                        (
+                          BuildContext context,
+                          SelectableRegionState selectable,
+                        ) => AdaptiveTextSelectionToolbar.buttonItems(
+                          anchors: selectable.contextMenuAnchors,
+                          buttonItems: <ContextMenuButtonItem>[
+                            ...selectable.contextMenuButtonItems,
+                            ContextMenuButtonItem(
+                              label: '问书',
+                              onPressed: () {
+                                final String? selected = _selectedText;
+                                ContextMenuController.removeAny();
+                                unawaited(_openAsk(selectedText: selected));
+                              },
+                            ),
+                          ],
+                        ),
                     child: NotificationListener<ScrollEndNotification>(
                       onNotification: (ScrollEndNotification _) {
                         if (!_restoring) {
@@ -1424,12 +1646,27 @@ class _WebReaderState extends State<WebReader> {
                 ],
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: <Widget>[
-                  _tool(Icons.list, '目录', _chaptersSheet),
-                  _tool(Icons.bookmark_outline, '书签', _bookmarksSheet),
-                  _tool(Icons.edit_note_outlined, '摘记', _notesSheet),
-                  _tool(Icons.format_size, '排版', _typographySheet),
+                  Expanded(child: _tool(Icons.list, '目录', _chaptersSheet)),
+                  Expanded(
+                    child: _tool(Icons.bookmark_outline, '书签', _bookmarksSheet),
+                  ),
+                  Expanded(
+                    child: _tool(Icons.auto_awesome_outlined, '人物', _openAi),
+                  ),
+                  Expanded(
+                    child: _tool(
+                      Icons.chat_bubble_outline,
+                      '问书',
+                      () => _openAsk(),
+                    ),
+                  ),
+                  Expanded(
+                    child: _tool(Icons.edit_note_outlined, '摘记', _notesSheet),
+                  ),
+                  Expanded(
+                    child: _tool(Icons.format_size, '排版', _typographySheet),
+                  ),
                 ],
               ),
             ],
@@ -1439,10 +1676,18 @@ class _WebReaderState extends State<WebReader> {
     );
   }
 
-  Widget _tool(IconData icon, String label, VoidCallback action) =>
-      TextButton.icon(
-        onPressed: action,
-        icon: Icon(icon, size: 22),
-        label: Text(label),
-      );
+  Widget _tool(IconData icon, String label, VoidCallback action) => TextButton(
+    onPressed: action,
+    style: TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Icon(icon, size: 22),
+        const SizedBox(height: 3),
+        Text(label, style: const TextStyle(fontSize: 12)),
+      ],
+    ),
+  );
 }

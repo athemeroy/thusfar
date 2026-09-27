@@ -11,6 +11,7 @@ import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/processing.dart';
 import '../data/processing_diagnostics.dart';
+import '../screens/imported_web_preparation_screen.dart';
 import '../ui/cover.dart';
 import '../ui/device.dart';
 import '../ui/theme.dart';
@@ -459,6 +460,15 @@ class _BookSheetState extends State<BookSheet> {
     return raw.where((Object? x) => x is Json && x['deleted'] != true).length;
   }
 
+  bool _hasImportedWebDraft() {
+    final Object? transfer = readJson(
+      File('${widget.entry.dir.path}/web-transfer.json'),
+    );
+    if (transfer is! Json || transfer['preparation'] is! Json) return false;
+    final Object? results = (transfer['preparation']! as Json)['results'];
+    return results is Json && results.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
@@ -522,6 +532,21 @@ class _BookSheetState extends State<BookSheet> {
         SliverToBoxAdapter(child: _processingCard(context)),
         SliverList.list(
           children: <Widget>[
+            if (_hasImportedWebDraft())
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                title: const Text('网页整理草稿'),
+                subtitle: const Text('查看跨端带来的已读人物、前情和关系'),
+                trailing: Icon(Icons.chevron_right, color: t.ink3),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ImportedWebPreparationScreen(
+                      entry: b,
+                      progress: widget.library.progressOf(b.id),
+                    ),
+                  ),
+                ),
+              ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               title: const Text('我的摘记'),

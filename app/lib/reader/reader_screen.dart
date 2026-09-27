@@ -1331,7 +1331,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     String bubble() {
       final int offset = _offsetOfPage(shown, p);
       final Chapter ch = book.chapters[book.chapterAt(offset)];
-      return '第 $shown 页 · ${safeTitle(ch, ch.o0 < read)}';
+      return '第 $shown 页 · ${safeTitle(ch, ch.o0 < read, checkPending: book.status.titleCheckPending)}';
     }
 
     return Padding(
@@ -1604,11 +1604,13 @@ class CoverPageTurnState extends State<CoverPageTurn>
       (Motion.page.inMilliseconds * (end - _progress.value).abs()).round(),
     );
     try {
-      await _progress.animateTo(
-        end,
-        duration: Duration(milliseconds: milliseconds),
-        curve: Motion.pageCurve,
-      ).orCancel;
+      await _progress
+          .animateTo(
+            end,
+            duration: Duration(milliseconds: milliseconds),
+            curve: Motion.pageCurve,
+          )
+          .orCancel;
     } on TickerCanceled {
       return;
     }

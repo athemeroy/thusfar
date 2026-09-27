@@ -20,6 +20,12 @@ books are reported, and corrupt personal data cannot silently become an empty
 export. A single Android task and foreground library refresh keep external imports
 visible when returning from another application.
 
+Installed and browser clients exchange complete JSON book backups. A same-book
+restore merges compatible reading records and refuses conflicting edits; native
+merges save a local rollback snapshot before writing. Both clients also support
+manual, append-only WebDAV snapshots in a user-owned HTTPS collection. Credentials
+stay in the open WebDAV screen. This does not run unattended background sync.
+
 ## Data and model configuration
 
 `MainActivity` supplies Android `filesDir` over `thusfar/paths`. The app keeps the
@@ -44,7 +50,9 @@ flutter build apk --release --flavor probe --target-platform android-arm64
 
 The browser entrypoint is `lib/main_web.dart`. It shares the TXT/EPUB parser
 and visual theme with the native app, while keeping books, progress, bookmarks,
-and notes in browser IndexedDB. Its build is static and needs no Thusfar server:
+notes, and preparation drafts in browser IndexedDB. Same-origin Pages deployments
+retain that database, including its versioned schema upgrades. Its build is
+static and needs no Thusfar server:
 
 ```sh
 flutter build web --release --target lib/main_web.dart --base-href /thusfar/
@@ -52,9 +60,18 @@ flutter build web --release --target lib/main_web.dart --base-href /thusfar/
 
 GitHub Actions publishes `app/build/web` through `pages.yml` when Pages is set
 to **GitHub Actions** in repository settings. The browser reader supports TXT,
-EPUB, search, notes, bookmarks, reading progress, typography and JSON backup
-import/export. The native AI preparation and question features are not part of
-this entrypoint. Do not pass private API keys or book files to the web build.
+EPUB, search, notes, bookmarks, reading progress, typography, JSON transfer,
+manual WebDAV snapshots, browser AI preparation and book questions linked to
+exact excerpts from the already-read text.
+Its browser AI flow produces cited drafts of character facts, relationships,
+and chapter recaps from explicitly chosen chapters using a user-supplied
+browser-accessible chat API. It checkpoints completed passages in IndexedDB;
+it does not auto-resume billable work after refresh. The key stays in tab memory,
+while the backup includes drafts but no key. The panel also exports a compact
+diagnostic record without book text or credentials. Browser WebDAV requires
+CORS permission for the page origin and OPTIONS, PROPFIND, GET and PUT. Native
+biographies use a separate verification pipeline. Model calls may be billed by
+the provider. Do not pass private API keys or book files to the web build.
 
 The Gradle configuration reads `YEDU_SIGNING_STORE` and
 `YEDU_SIGNING_PASSWORD_FILE`, or the existing NAS private signing paths. Without

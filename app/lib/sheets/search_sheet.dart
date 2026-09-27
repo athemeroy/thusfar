@@ -86,6 +86,7 @@ class _SearchPageState extends State<SearchPage> {
               safeTitle(
                 book.chapters[h.chapter],
                 book.chapters[h.chapter].o0 < read,
+                checkPending: book.status.titleCheckPending,
               ),
               style: TextStyle(fontSize: 12, color: t.ink3, letterSpacing: 0.6),
             ),

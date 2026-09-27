@@ -61,7 +61,7 @@ class _PreviewPageState extends State<PreviewPage> {
     final Color mark = widget.mine ? t.qing : t.zhu;
     return SheetPage(
       title:
-          '第 $page 页 · ${ahead && !reveal ? safeTitle(ch, ch.o0 < read) : ch.title}',
+          '第 $page 页 · ${ahead && !reveal ? safeTitle(ch, ch.o0 < read, checkPending: book.status.titleCheckPending) : ch.title}',
       slivers: <Widget>[
         SliverToBoxAdapter(
           child: Padding(

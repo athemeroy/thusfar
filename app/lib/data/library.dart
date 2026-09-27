@@ -79,6 +79,12 @@ class ProcessStatus {
   bool get isActive => isRunning || isCancelling;
   bool get isPaused => state == 'paused';
   bool get isError => state == 'error';
+  bool get titleCheckPending {
+    final Object? quality = raw['quality'];
+    final Object? pending = quality is Json ? quality['pending'] : null;
+    return pending is List<Object?> && pending.contains('chapter-titles');
+  }
+
   bool get isIdle =>
       !isDone && !isActive && !isPaused && !isError && frontier == 0;
 }
@@ -296,11 +302,17 @@ class Library extends ChangeNotifier {
 
   Progress? progressOf(String id) => progress[id];
 
-  void saveProgress(String id, int pos, int cutoff, int length) {
+  void saveProgress(
+    String id,
+    int pos,
+    int cutoff,
+    int length, {
+    double? timestamp,
+  }) {
     progress[id] = Progress(
       pos: pos,
       cutoff: cutoff,
-      t: DateTime.now().millisecondsSinceEpoch / 1000,
+      t: timestamp ?? DateTime.now().millisecondsSinceEpoch / 1000,
       pct: (cutoff / math.max(1, length) * 100 * 1000).round() / 1000,
     );
     writeJson(_progressFile, <String, Object?>{
@@ -620,6 +632,11 @@ class BookData extends ChangeNotifier {
         chapters[i].raw['spoil'] = verdict;
       } else {
         chapters[i].raw.remove('spoil');
+      }
+      if ((rows[i]! as Json)['spoilSource'] == 'model') {
+        chapters[i].raw['spoilSource'] = 'model';
+      } else {
+        chapters[i].raw.remove('spoilSource');
       }
     }
     _chapterStamp = stamp;

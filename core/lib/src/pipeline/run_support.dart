@@ -950,6 +950,7 @@ extension RunnerSupport on Runner {
       throw const llm.LLMError('章节标题验证结果不完整');
     for (final (int i, Json c) in chapters.indexed) {
       c['spoil'] = spoils[i];
+      c['spoilSource'] = 'model';
     }
     usage['jev_calls'] =
         _int(usage['jev_calls']) +

@@ -33,8 +33,13 @@ void main() {
 
     expect(safeTitle(chapter(false), false), '第2章 旧城');
     expect(safeTitle(chapter(true), false), '第2章');
-    expect(safeTitle(chapter(null), false), '第2章');
-    expect(safeTitle(chapter('false'), false), '第2章');
+    expect(safeTitle(chapter(null), false), '第2章 旧城');
+    expect(safeTitle(chapter('false'), false), '第2章 旧城');
+    expect(safeTitle(chapter(true), false, checkPending: true), '第2章 旧城');
+    expect(
+      safeTitle(Chapter(2, <String, Object?>{'title': '第3章 主角身亡'}), false),
+      '第3章',
+    );
     expect(safeTitle(chapter(true), true), '第2章 旧城');
     expect(
       safeTitle(
@@ -202,7 +207,7 @@ void main() {
       },
     });
     await showSheet(tester, TocPage(link: link));
-    expect(find.text('章节标题尚待核对，未确认的标题暂时隐藏。可在书籍整理页重试。'), findsOneWidget);
+    expect(find.text('章节标题尚待核对，明显剧透的标题暂时隐藏。可在书籍整理页重试。'), findsOneWidget);
     expect(find.text('第2章 旧城'), findsOneWidget);
     expect(find.text('第3章 主角身亡'), findsNothing);
     expect(find.text('第3章'), findsOneWidget);

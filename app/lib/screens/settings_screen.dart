@@ -20,6 +20,7 @@ class SettingsScreen extends StatelessWidget {
     required this.onModel,
     required this.onExportAll,
     required this.onRestore,
+    required this.onWebDav,
     required this.onCheckUpdate,
   });
 
@@ -29,6 +30,7 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback onModel;
   final VoidCallback onExportAll;
   final VoidCallback onRestore;
+  final VoidCallback onWebDav;
   final VoidCallback onCheckUpdate;
 
   int _size(Directory d) {
@@ -216,6 +218,12 @@ class SettingsScreen extends StatelessWidget {
                       HapticFeedback.lightImpact();
                       onRestore();
                     },
+                  ),
+                  ListTile(
+                    title: const Text('WebDAV 同步'),
+                    subtitle: const Text('把完整备份上传到自己的云端，在其他设备导入'),
+                    trailing: Icon(Icons.chevron_right, color: t.ink3),
+                    onTap: onWebDav,
                   ),
                   ListTile(
                     title: const Text('占用空间'),

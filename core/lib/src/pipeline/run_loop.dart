@@ -349,21 +349,18 @@ extension RunnerLoops on Runner {
     } on Cancelled {
       rethrow;
     } catch (error) {
-      for (final Json chapter in _rows(book['chapters'])) {
-        chapter.putIfAbsent('spoil', () => true);
-      }
       qualityPending.add('chapter-titles');
       writeJson(File('${root.path}/book.json'), book);
       if (activity) {
         recordBookActivity(
           root,
           'check_titles_pending',
-          '章节标题核对未完成，未确认的标题暂时隐藏；继续整理时将重试',
+          '章节标题核对未完成，仅明显剧透的标题暂时隐藏；继续整理时将重试',
         );
       }
       // A temporary provider or network outage must keep the task eligible
-      // for the worker's durable retry. An unverified title stays hidden until
-      // the next run confirms whether it is safe to show.
+      // for the worker's durable retry. The UI applies a local fallback to
+      // unknown titles without treating the fallback as a model verdict.
       if (_retryableTitleError(error)) {
         if (llm.transientFailure(error)) rethrow;
         throw llm.TransientLLMError(

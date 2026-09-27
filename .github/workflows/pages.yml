@@ -37,6 +37,8 @@ jobs:
       - name: Build browser client
         working-directory: app
         run: flutter build web --release --target lib/main_web.dart --base-href /thusfar/
+      - name: Version offline app shell
+        run: python3 app/web/prepare_offline.py app/build/web
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

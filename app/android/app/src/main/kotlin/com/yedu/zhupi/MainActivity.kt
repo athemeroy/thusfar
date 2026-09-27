@@ -203,7 +203,7 @@ class MainActivity : FlutterActivity() {
             }
             val lower = name.lowercase()
             require(lower.endsWith(".txt") || lower.endsWith(".epub") || lower.endsWith(".json")) {
-                "支持 TXT、EPUB 和页读备份（.yedu.json）"
+                "支持 TXT、EPUB 和页读备份（.json）"
             }
             val folder = File(cacheDir, "incoming-books").apply { mkdirs() }
             val copied = File.createTempFile("book-", ".import", folder)

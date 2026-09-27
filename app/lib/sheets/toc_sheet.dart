@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:thusfar_core/title_spoilers.dart';
 
 import '../data/library.dart';
 import '../data/seen.dart';
@@ -153,10 +154,7 @@ class _TocPageState extends State<TocPage> {
     final ReaderLink link = widget.link;
     final BookData book = link.c.book;
     final int read = SeenStore.instance.maxRead(book.id, link.c.cutoff);
-    final Object? quality = book.status.raw['quality'];
-    final Object? pending = quality is Json ? quality['pending'] : null;
-    final bool titlesPending =
-        pending is List<Object?> && pending.contains('chapter-titles');
+    final bool titlesPending = book.status.titleCheckPending;
     return <Widget>[
       if (titlesPending)
         SliverToBoxAdapter(
@@ -175,7 +173,7 @@ class _TocPageState extends State<TocPage> {
                 const SizedBox(width: 9),
                 Expanded(
                   child: Text(
-                    '章节标题尚待核对，未确认的标题暂时隐藏。可在书籍整理页重试。',
+                    '章节标题尚待核对，明显剧透的标题暂时隐藏。可在书籍整理页重试。',
                     style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
                   ),
                 ),
@@ -189,10 +187,17 @@ class _TocPageState extends State<TocPage> {
           final Chapter c = book.chapters[i];
           final bool current = i == link.c.chapter;
           final bool isRead = c.o0 < read;
-          final bool titleHidden = !isRead && c.raw['spoil'] != false;
+          final bool titleHidden =
+              !isRead &&
+              titleSpoils(
+                c.raw['spoil'],
+                c.title,
+                checkPending: titlesPending,
+                checkedByModel: c.raw['spoilSource'] == 'model',
+              );
           final int page = link.pageNo(c.o0);
           final Text chapterTitle = Text(
-            safeTitle(c, isRead),
+            safeTitle(c, isRead, checkPending: titlesPending),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(

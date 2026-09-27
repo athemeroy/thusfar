@@ -166,7 +166,7 @@ void main() {
   });
 
   test(
-    'network failure in the free judge leaves titles hidden for automatic retry',
+    'network failure keeps local spoiler fallback and automatic retry',
     () async {
       final Directory root = _book(temp, 'network-retry');
       judge.judgeCall = (Object? state, Json questions) async {
@@ -187,7 +187,7 @@ void main() {
       );
       expect(_chapters(root).map((Json c) => c['spoil']), <Object?>[
         false,
-        true,
+        null,
       ]);
       expect(File('${root.path}/work/segs/0000.json').existsSync(), isFalse);
 
@@ -210,36 +210,41 @@ void main() {
     },
   );
 
-  test('uncertain check hides unknown title and keeps retry pending', () async {
-    final Directory root = _book(temp, 'retry');
-    final RunCancellation cancellation = RunCancellation();
-    judge.judgeCall = (Object? state, Json questions) async {
-      cancellation.cancel();
-      throw const llm.LLMError('章节标题核对结果不确定：正文提到 TimeoutError');
-    };
-    final Runner runner = await Runner.create(
-      root,
-      cancellation: cancellation,
-      activity: true,
-    );
-    try {
-      await expectLater(runner.run2(limit: 1), throwsA(isA<Cancelled>()));
-      expect(runner.qualityPending, contains('chapter-titles'));
-      expect(_chapters(root).map((Json c) => c['spoil']), <Object?>[
-        false,
-        true,
-      ]);
-      final List<Object?> activity =
-          jsonDecode(File('${root.path}/work/activity.json').readAsStringSync())
-              as List<Object?>;
-      expect(
-        activity.map((Object? row) => (row! as Json)['phase']),
-        contains('check_titles_pending'),
+  test(
+    'uncertain check leaves unknown verdict and keeps retry pending',
+    () async {
+      final Directory root = _book(temp, 'retry');
+      final RunCancellation cancellation = RunCancellation();
+      judge.judgeCall = (Object? state, Json questions) async {
+        cancellation.cancel();
+        throw const llm.LLMError('章节标题核对结果不确定：正文提到 TimeoutError');
+      };
+      final Runner runner = await Runner.create(
+        root,
+        cancellation: cancellation,
+        activity: true,
       );
-    } finally {
-      await runner.close(cancelled: true);
-    }
-  });
+      try {
+        await expectLater(runner.run2(limit: 1), throwsA(isA<Cancelled>()));
+        expect(runner.qualityPending, contains('chapter-titles'));
+        expect(_chapters(root).map((Json c) => c['spoil']), <Object?>[
+          false,
+          null,
+        ]);
+        final List<Object?> activity =
+            jsonDecode(
+                  File('${root.path}/work/activity.json').readAsStringSync(),
+                )
+                as List<Object?>;
+        expect(
+          activity.map((Object? row) => (row! as Json)['phase']),
+          contains('check_titles_pending'),
+        );
+      } finally {
+        await runner.close(cancelled: true);
+      }
+    },
+  );
 
   test(
     'cancelled title check keeps its pending marker across reopening',
@@ -266,7 +271,7 @@ void main() {
       );
       expect(_chapters(root).map((Json c) => c['spoil']), <Object?>[
         false,
-        true,
+        null,
       ]);
 
       int rechecks = 0;
