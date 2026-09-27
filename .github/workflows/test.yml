@@ -26,6 +26,13 @@ jobs:
       - name: Analyze Flutter app
         working-directory: app
         run: flutter analyze --no-fatal-infos
+      - name: Install pinned font for screenshot tests
+        run: |
+          mkdir -p "$HOME/.local/share/fonts"
+          curl --fail --location --retry 3 \
+            --output "$HOME/.local/share/fonts/NotoSansSC.ttf" \
+            'https://raw.githubusercontent.com/google/fonts/2894aab31764f10f29c421bdfd2340d3b382d384/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf'
+          echo 'a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da  '"$HOME/.local/share/fonts/NotoSansSC.ttf" | sha256sum --check
       - name: Client functional tests
         working-directory: app
         run: |
