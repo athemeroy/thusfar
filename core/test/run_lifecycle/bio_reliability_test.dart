@@ -190,70 +190,116 @@ void main() {
     },
   );
 
-  test(
-    'zero output fails visibly, then explicit retry uses a new draft',
-    () async {
-      final Directory root = _book(books, 'empty-then-good');
-      final ScriptedGeneration backend = ScriptedGeneration(<Object?>[
-        <String, Object?>{},
-        <String, Object?>{'P1': _bio('小林已在本章出场。')},
-      ]);
-      final Runner runner = await Runner.create(root, backend: backend);
-      final File job = File('${root.path}/work/jobs/bio-0.json');
-      _person(runner, 'P1');
-      _save(root, 'work/jobs/bio-0.json', <String, Object?>{
-        'kind': 'bio',
-        'key': 0,
-        'args': <Object?>[
-          0,
-          2500,
-          '【P1｜小林】小林已出场',
-          <String>['P1'],
-        ],
-        'state': 'pending',
-      });
-      judge.judgeCall = (Object? state, Json questions) async => _guard(true);
-      try {
-        await expectLater(
-          runner.executeFinal(job),
-          throwsA(isA<llm.LLMError>()),
-        );
-        expect(_read(root, 'work/jobs/bio-0.json')['state'], 'failed');
-        expect(_read(root, 'work/jobs/bio-0.json')['generation_attempt'], 1);
-        expect(
-          _read(root, 'work/jobs/bio-0.json')['bio_review'],
-          <String, Object?>{
-            'candidates': 1,
-            'passed': 0,
-            'blocked': 0,
-            'missing': 1,
-          },
-        );
-        expect(File('${root.path}/work/bios/0000.json').existsSync(), isFalse);
-        expect(Directory('${root.path}/work/drafts').listSync(), hasLength(1));
+  test('zero output gets one bounded automatic repair draft', () async {
+    final Directory root = _book(books, 'empty-then-good');
+    final ScriptedGeneration backend = ScriptedGeneration(<Object?>[
+      <String, Object?>{},
+      <String, Object?>{'P1': _bio('小林已在本章出场。')},
+    ]);
+    final Runner runner = await Runner.create(root, backend: backend);
+    final File job = File('${root.path}/work/jobs/bio-0.json');
+    _person(runner, 'P1');
+    _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+      'kind': 'bio',
+      'key': 0,
+      'args': <Object?>[
+        0,
+        2500,
+        '【P1｜小林】小林已出场',
+        <String>['P1'],
+      ],
+      'state': 'pending',
+    });
+    judge.judgeCall = (Object? state, Json questions) async => _guard(true);
+    try {
+      await runner.executeFinal(job);
+      expect(_read(root, 'work/jobs/bio-0.json')['state'], 'complete');
+      expect(_read(root, 'work/jobs/bio-0.json')['generation_attempt'], 1);
+      expect(
+        _read(root, 'work/jobs/bio-0.json')['bio_review'],
+        <String, Object?>{
+          'candidates': 1,
+          'passed': 1,
+          'blocked': 0,
+          'missing': 0,
+          'rejection_reasons': <String, int>{},
+        },
+      );
+      expect(backend.calls, 2);
+      expect(Directory('${root.path}/work/drafts').listSync(), hasLength(2));
+      expect(_read(root, 'work/jobs/bio-0.json')['failure_kind'], isNull);
+      expect(
+        (_read(root, 'work/bios/0000.json')['bios'] as Json).keys,
+        contains('P1'),
+      );
+      expect(runner.kg.people['P1']!['bio'], '小林已在本章出场。');
+    } finally {
+      await runner.close();
+    }
+  });
 
-        await runner.executeFinal(job);
-        expect(backend.calls, 2);
-        expect(Directory('${root.path}/work/drafts').listSync(), hasLength(2));
-        expect(_read(root, 'work/jobs/bio-0.json')['state'], 'complete');
-        expect(_read(root, 'work/jobs/bio-0.json')['failure_kind'], isNull);
-        expect(
-          (_read(root, 'work/bios/0000.json')['bios'] as Json).keys,
-          contains('P1'),
-        );
-        expect(runner.kg.people['P1']!['bio'], '小林已在本章出场。');
-      } finally {
-        await runner.close();
-      }
-    },
-  );
+  test('interruption keeps the remaining biography repair budget', () async {
+    final Directory root = _book(books, 'interrupted-repair');
+    final ScriptedGeneration backend = ScriptedGeneration(<Object?>[
+      <String, Object?>{'P1': _bio('第一次缺少证据。')},
+      <String, Object?>{'P1': _bio('第二次仍缺少证据。')},
+    ]);
+    final jobs.RunCancellation cancellation = jobs.RunCancellation();
+    final File job = File('${root.path}/work/jobs/bio-0.json');
+    _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+      'kind': 'bio',
+      'key': 0,
+      'args': <Object?>[
+        0,
+        2500,
+        '【P1｜小林】',
+        <String>['P1'],
+      ],
+      'state': 'pending',
+    });
+    final Runner first = await Runner.create(
+      root,
+      backend: backend,
+      cancellation: cancellation,
+    );
+    judge.judgeCall = (Object? state, Json questions) async {
+      cancellation.cancel();
+      return _guard(false);
+    };
+    try {
+      await expectLater(
+        first.executeFinal(job),
+        throwsA(isA<jobs.Cancelled>()),
+      );
+      expect(_read(root, 'work/jobs/bio-0.json')['state'], 'pending');
+      expect(_read(root, 'work/jobs/bio-0.json')['content_failures'], 1);
+      expect(_read(root, 'work/jobs/bio-0.json')['generation_attempt'], 1);
+      expect(backend.calls, 1);
+    } finally {
+      await first.close(cancelled: true);
+    }
+
+    judge.judgeCall = (Object? state, Json questions) async => _guard(false);
+    final Runner resumed = await Runner.create(root, backend: backend);
+    try {
+      await resumed.executeFinal(job);
+      expect(_read(root, 'work/jobs/bio-0.json')['state'], 'deferred');
+      expect(_read(root, 'work/jobs/bio-0.json')['content_failures'], 2);
+      expect(_read(root, 'work/jobs/bio-0.json')['generation_attempt'], 2);
+      expect(backend.calls, 2);
+      expect(Directory('${root.path}/work/drafts').listSync(), hasLength(2));
+    } finally {
+      await resumed.close();
+    }
+  });
 
   test(
-    'guard blocked all bios fails, but a verified partial bio is published',
+    'guard blocked all bios defers without publishing; partial bio is published',
     () async {
       final Directory blockedRoot = _book(books, 'all-blocked');
       final ScriptedGeneration blockedBackend = ScriptedGeneration(<Object?>[
         <String, Object?>{'P1': _bio('缺少证据的说法。')},
+        <String, Object?>{'P1': _bio('仍然缺少证据。')},
       ]);
       final Runner blocked = await Runner.create(
         blockedRoot,
@@ -273,10 +319,14 @@ void main() {
       });
       judge.judgeCall = (Object? state, Json questions) async => _guard(false);
       try {
-        await expectLater(
-          blocked.executeFinal(blockedJob),
-          throwsA(isA<llm.LLMError>()),
+        await blocked.executeFinal(blockedJob);
+        expect(_read(blockedRoot, 'work/jobs/bio-0.json')['state'], 'deferred');
+        expect(
+          _read(blockedRoot, 'work/jobs/bio-0.json')['generation_attempt'],
+          2,
         );
+        expect(blockedBackend.calls, 2);
+        expect(blocked.qualityPending, contains('bio-0'));
         expect(
           _read(blockedRoot, 'work/jobs/bio-0.json')['bio_review'],
           <String, Object?>{
@@ -284,12 +334,19 @@ void main() {
             'passed': 0,
             'blocked': 1,
             'missing': 0,
+            'rejection_reasons': <String, int>{'beyond_text': 1},
           },
         );
         expect(
           File('${blockedRoot.path}/work/bios/0000.json').existsSync(),
           isFalse,
         );
+        blocked.replaying = true;
+        _person(blocked, 'P1');
+        blocked.consolidate(0, 2500, 0);
+        expect(blocked.deferred, isEmpty);
+        expect(_read(blockedRoot, 'work/jobs/bio-0.json')['state'], 'deferred');
+        expect(blockedBackend.calls, 2);
       } finally {
         await blocked.close();
       }
@@ -326,6 +383,7 @@ void main() {
           'passed': 1,
           'blocked': 0,
           'missing': 1,
+          'rejection_reasons': <String, int>{},
         });
         expect(_read(partialRoot, 'work/jobs/bio-0.json')['state'], 'complete');
         expect(partial.kg.people['P1']!['bio'], '小林已出场。');
@@ -334,6 +392,194 @@ void main() {
       }
     },
   );
+
+  test('explicit quality retry reopens only the deferred biography', () async {
+    final Directory root = _book(books, 'explicit-deferred');
+    _save(root, 'status.json', <String, Object?>{
+      'state': 'done',
+      'quality': <String, Object?>{
+        'state': 'pending',
+        'pending': <String>['bio-0'],
+      },
+    });
+    _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+      'kind': 'bio',
+      'key': 0,
+      'args': <Object?>[
+        0,
+        2500,
+        '【P1｜小林】小林已出场',
+        <String>['P1'],
+      ],
+      'state': 'deferred',
+      'generation_attempt': 2,
+      'content_failures': 2,
+      'failure_kind': 'bio_content',
+      'retry_requested': true,
+    });
+    final ScriptedGeneration backend = ScriptedGeneration(<Object?>[
+      <String, Object?>{'P1': _bio('小林已在本章出场。')},
+    ]);
+    judge.judgeCall = (Object? state, Json questions) async => _guard(true);
+    final Runner runner = await Runner.create(root, backend: backend);
+    try {
+      runner.replaying = true;
+      _person(runner, 'P1');
+      runner.consolidate(0, 2500, 0);
+      expect(runner.deferred, hasLength(1));
+      expect(_read(root, 'work/jobs/bio-0.json')['state'], 'pending');
+      expect(_read(root, 'work/jobs/bio-0.json')['content_failures'], 0);
+      expect(_read(root, 'work/jobs/bio-0.json')['generation_attempt'], 2);
+      expect(_read(root, 'work/jobs/bio-0.json')['retry_requested'], isNull);
+      runner.replaying = false;
+      runner.resumeFinalJobs();
+      await Future.wait(runner.pending);
+      expect(backend.calls, 1);
+      expect(_read(root, 'work/jobs/bio-0.json')['state'], 'complete');
+      expect(runner.qualityPending, isNot(contains('bio-0')));
+    } finally {
+      await runner.close();
+    }
+  });
+
+  test(
+    'preflight failure keeps explicit deferred retry until the job reopens',
+    () async {
+      final Directory root = _book(books, 'done-deferred');
+      _save(root, 'status.json', <String, Object?>{
+        'state': 'done',
+        'quality': <String, Object?>{
+          'state': 'pending',
+          'pending': <String>['chapter-titles', 'bio-0'],
+        },
+      });
+      _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+        'kind': 'bio',
+        'key': 0,
+        'args': <Object?>[
+          0,
+          2500,
+          '【P1｜小林】',
+          <String>['P1'],
+        ],
+        'state': 'deferred',
+        'failure_kind': 'bio_content',
+      });
+      int attempts = 0;
+      double now = 1000;
+      final jobs.Worker worker = jobs.Worker(
+        books,
+        probe: (Directory _) async => false,
+        clock: () => now,
+        settings: () => const jobs.WorkerSettings(),
+        run: (
+          Directory root, {
+          required jobs.RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          attempts++;
+          expect(retryQuality, isFalse);
+          expect(
+            _read(root, 'work/jobs/bio-0.json')['retry_requested'],
+            isTrue,
+          );
+          if (attempts == 1) {
+            _save(root, 'status.json', <String, Object?>{
+              'state': 'error',
+              'error': '章节标题网络暂不可用',
+              'retryable': true,
+              'quality': <String, Object?>{
+                'state': 'pending',
+                'pending': <String>['chapter-titles', 'bio-0'],
+              },
+            });
+            throw const llm.TransientLLMError('章节标题网络暂不可用');
+          }
+          final Runner runner = await Runner.create(root, activity: false);
+          try {
+            runner.replaying = true;
+            _person(runner, 'P1');
+            runner.consolidate(0, 2500, 0);
+            expect(runner.deferred, hasLength(1));
+            expect(_read(root, 'work/jobs/bio-0.json')['state'], 'pending');
+            expect(
+              _read(root, 'work/jobs/bio-0.json')['retry_requested'],
+              isNull,
+            );
+          } finally {
+            await runner.close();
+          }
+          _save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      try {
+        await worker.startBook(root);
+        await worker.waitIdle();
+        expect(attempts, 1);
+        expect(_read(root, 'work/jobs/bio-0.json')['retry_requested'], isTrue);
+        now = (_read(root, 'status.json')['retry_at']! as num).toDouble() + 1;
+        await worker.processBook(root);
+        expect(attempts, 2);
+        expect(_read(root, 'meta.json')['retry_quality'], isNull);
+      } finally {
+        await worker.close();
+      }
+    },
+  );
+
+  test('a deferred bio does not disable a later network retry', () async {
+    final Directory root = _book(books, 'deferred-plus-network');
+    _save(root, 'status.json', <String, Object?>{
+      'state': 'paused',
+      'quality': <String, Object?>{
+        'state': 'pending',
+        'pending': <String>['bio-0'],
+      },
+    });
+    _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+      'kind': 'bio',
+      'key': 0,
+      'state': 'deferred',
+      'failure_kind': 'bio_content',
+    });
+    final jobs.Worker worker = jobs.Worker(
+      books,
+      probe: (Directory _) async => false,
+      settings: () => const jobs.WorkerSettings(),
+      run: (
+        Directory root, {
+        required jobs.RunCancellation cancellation,
+        required bool retryQuality,
+        required String model,
+        required String localModel,
+        required int concurrency,
+      }) async {
+        _save(root, 'status.json', <String, Object?>{
+          'state': 'error',
+          'error': '模型网络暂不可用',
+          'retryable': true,
+          'quality': <String, Object?>{
+            'state': 'pending',
+            'pending': <String>['bio-0'],
+          },
+        });
+        throw const llm.TransientLLMError('模型网络暂不可用');
+      },
+    );
+    try {
+      await worker.startBook(root);
+      await worker.waitIdle();
+      expect(_read(root, 'meta.json')['auto'], isTrue);
+      expect(_read(root, 'status.json')['retryable'], isTrue);
+      expect(_read(root, 'status.json')['retry_at'], isA<num>());
+      expect(_read(root, 'work/jobs/bio-0.json')['state'], 'deferred');
+    } finally {
+      await worker.close();
+    }
+  });
 
   test(
     'first-chapter preview does not move a legacy 12k bio milestone',
@@ -578,46 +824,49 @@ void main() {
     },
   );
 
-  test('old failed bio job does not turn title-only retry into a rebuild', () async {
-    final Directory root = _book(books, 'unrelated-quality');
-    _save(root, 'status.json', <String, Object?>{
-      'state': 'error',
-      'quality': <String, Object?>{
-        'state': 'pending',
-        'pending': <String>['chapter-titles'],
-      },
-    });
-    _save(root, 'work/jobs/bio-0.json', <String, Object?>{
-      'kind': 'bio',
-      'key': 0,
-      'state': 'failed',
-      'failure_kind': 'bio_content',
-    });
-    final List<bool> calls = <bool>[];
-    final jobs.Worker worker = jobs.Worker(
-      books,
-      probe: (Directory _) async => false,
-      settings: () => const jobs.WorkerSettings(),
-      run: (
-        Directory root, {
-        required jobs.RunCancellation cancellation,
-        required bool retryQuality,
-        required String model,
-        required String localModel,
-        required int concurrency,
-      }) async {
-        calls.add(retryQuality);
-        _save(root, 'status.json', <String, Object?>{'state': 'done'});
-      },
-    );
-    try {
-      await worker.startBook(root);
-      await worker.waitIdle();
-      expect(calls, <bool>[false]);
-    } finally {
-      await worker.close();
-    }
-  });
+  test(
+    'old failed bio job does not turn title-only retry into a rebuild',
+    () async {
+      final Directory root = _book(books, 'unrelated-quality');
+      _save(root, 'status.json', <String, Object?>{
+        'state': 'error',
+        'quality': <String, Object?>{
+          'state': 'pending',
+          'pending': <String>['chapter-titles'],
+        },
+      });
+      _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+        'kind': 'bio',
+        'key': 0,
+        'state': 'failed',
+        'failure_kind': 'bio_content',
+      });
+      final List<bool> calls = <bool>[];
+      final jobs.Worker worker = jobs.Worker(
+        books,
+        probe: (Directory _) async => false,
+        settings: () => const jobs.WorkerSettings(),
+        run: (
+          Directory root, {
+          required jobs.RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          calls.add(retryQuality);
+          _save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      try {
+        await worker.startBook(root);
+        await worker.waitIdle();
+        expect(calls, <bool>[false]);
+      } finally {
+        await worker.close();
+      }
+    },
+  );
 
   test(
     'completed book retries only title checks without archiving final work',

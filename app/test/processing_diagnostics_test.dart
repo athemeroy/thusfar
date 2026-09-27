@@ -47,6 +47,7 @@ void main() {
     File('${book.path}/meta.json').writeAsStringSync(
       jsonEncode(<String, Object?>{
         'auto': false,
+        'judge_fallback_route': 'jev-direct',
         'title': privateText,
         'url': endpoint,
         'api_key': apiKey,
@@ -60,6 +61,14 @@ void main() {
         'model': privateText,
         'error': endpoint,
         'request_id': apiKey,
+      }),
+    );
+    Directory('${book.path}/work/judge').createSync(recursive: true);
+    File('${book.path}/work/judge/paid-budget.json').writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'calls': 2,
+        'max_calls': 1000,
+        'api_key': apiKey,
       }),
     );
     File('${book.path}/work/activity.json').writeAsStringSync(
@@ -81,6 +90,27 @@ void main() {
           'message': privateText,
         },
       ]),
+    );
+    Directory('${book.path}/work/jobs').createSync();
+    File('${book.path}/work/jobs/bio-1.json').writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'kind': 'bio',
+        'state': 'deferred',
+        'generation_attempt': 2,
+        'args': <String>[privateText, apiKey],
+        'error': endpoint,
+        'bio_review': <String, Object?>{
+          'candidates': 2,
+          'passed': 0,
+          'blocked': 2,
+          'missing': 0,
+          'rejection_reasons': <String, Object?>{
+            'beyond_text': 1,
+            'contradicted': 1,
+            privateText: 999,
+          },
+        },
+      }),
     );
 
     final String content = utf8.decode(
@@ -106,10 +136,27 @@ void main() {
     expect(status['done'], 10);
     expect(status['pending_titles'], 1);
     expect(status['pending_biographies'], 1);
+    expect(
+      (result['meta'] as Map<String, Object?>)['judge_route'],
+      'jev-direct',
+    );
+    expect((result['judge_usage'] as Map<String, Object?>)['jev_calls'], 2);
     final List<Object?> activity = result['activity']! as List<Object?>;
     expect((activity.first! as Map<String, Object?>)['stage'], 'relation');
     expect((activity.first! as Map<String, Object?>)['segment'], 11);
     expect((activity.last! as Map<String, Object?>)['phase'], isNull);
+    final List<Object?> biographyJobs =
+        result['biography_jobs']! as List<Object?>;
+    expect(biographyJobs, hasLength(1));
+    final Map<String, Object?> biographyJob =
+        biographyJobs.first! as Map<String, Object?>;
+    expect(biographyJob['chapter'], 2);
+    expect(biographyJob['state'], 'deferred');
+    expect(biographyJob['blocked'], 2);
+    expect(biographyJob['rejection_reasons'], <String, Object?>{
+      'beyond_text': 1,
+      'contradicted': 1,
+    });
     expect(
       ProcessingDiagnostics.pauseReasonLabel(book, <String, Object?>{
         'pause_reason': 'manual',

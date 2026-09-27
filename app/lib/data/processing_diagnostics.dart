@@ -32,6 +32,8 @@ final class ProcessingDiagnostics {
     'retry',
     'bio_generating',
     'bio_review',
+    'bio_retry',
+    'bio_deferred',
     'bio_complete',
     'bio_no_candidates',
     'bio_failed',
@@ -96,6 +98,12 @@ final class ProcessingDiagnostics {
     final Map<String, Object?> receipt = _object(
       _read(File('${bookDirectory.path}/work/worker-receipt.json')),
     );
+    final Map<String, Object?> modelBudget = _object(
+      _read(File('${bookDirectory.path}/work/judge/model-budget.json')),
+    );
+    final Map<String, Object?> jevBudget = _object(
+      _read(File('${bookDirectory.path}/work/judge/paid-budget.json')),
+    );
     final Object? rawActivity = _read(
       File('${bookDirectory.path}/work/activity.json'),
     );
@@ -143,7 +151,21 @@ final class ProcessingDiagnostics {
             ? (status['refused']! as List<Object?>).length
             : 0,
       },
-      'meta': <String, Object?>{'auto': _boolean(meta['auto'])},
+      'meta': <String, Object?>{
+        'auto': _boolean(meta['auto']),
+        'judge_route': _code(meta['judge_fallback_route'], const <String>{
+          'model',
+          'jev',
+          'model-direct',
+          'jev-direct',
+        }),
+      },
+      'judge_usage': <String, Object?>{
+        'model_calls': _number(modelBudget['calls']),
+        'model_call_limit': _number(modelBudget['max_calls']),
+        'jev_calls': _number(jevBudget['calls']),
+        'jev_call_limit': _number(jevBudget['max_calls']),
+      },
       'worker': <String, Object?>{
         'alive': _boolean(workerHealth['alive']),
         'running_this_book': workerHealth['current'] == bookId,
@@ -180,6 +202,7 @@ final class ProcessingDiagnostics {
               'last_at': _number(raw['last_at']),
             },
       ],
+      'biography_jobs': _biographyJobs(bookDirectory),
     };
     return Uint8List.fromList(
       utf8.encode('${const JsonEncoder.withIndent('  ').convert(snapshot)}\n'),
@@ -193,6 +216,67 @@ final class ProcessingDiagnostics {
     } on Object {
       return null;
     }
+  }
+
+  static List<Map<String, Object?>> _biographyJobs(Directory bookDirectory) {
+    final Directory jobs = Directory('${bookDirectory.path}/work/jobs');
+    if (!jobs.existsSync()) return const <Map<String, Object?>>[];
+    final List<File> files;
+    try {
+      files = jobs
+          .listSync(followLinks: false)
+          .whereType<File>()
+          .where(
+            (File file) =>
+                RegExp(r'^bio-\d+\.json$').hasMatch(file.uri.pathSegments.last),
+          )
+          .take(512)
+          .toList();
+    } on Object {
+      return const <Map<String, Object?>>[];
+    }
+    final List<Map<String, Object?>> result = <Map<String, Object?>>[];
+    for (final File file in files) {
+      final Map<String, Object?> job = _object(_read(file));
+      final Map<String, Object?> review = _object(job['bio_review']);
+      if (review.isEmpty) continue;
+      final String stem = file.uri.pathSegments.last;
+      final int? chapterIndex = int.tryParse(
+        stem.substring(4, stem.length - 5),
+      );
+      if (chapterIndex == null || chapterIndex < 0) continue;
+      final Map<String, Object?> reasons = _object(review['rejection_reasons']);
+      result.add(<String, Object?>{
+        'chapter': chapterIndex + 1,
+        'state': _code(job['state'], const <String>{
+          'pending',
+          'deferred',
+          'failed',
+          'complete',
+        }),
+        'generation_attempt': _number(job['generation_attempt']),
+        'content_failures': _number(job['content_failures']),
+        'retry_requested': _boolean(job['retry_requested']),
+        'candidates': _number(review['candidates']),
+        'passed': _number(review['passed']),
+        'blocked': _number(review['blocked']),
+        'missing': _number(review['missing']),
+        'rejection_reasons': <String, Object?>{
+          for (final String reason in const <String>[
+            'beyond_text',
+            'contradicted',
+            'insufficient_confidence',
+          ])
+            if (_number(reasons[reason]) != null)
+              reason: _number(reasons[reason]),
+        },
+      });
+    }
+    result.sort(
+      (Map<String, Object?> a, Map<String, Object?> b) =>
+          (a['chapter']! as int).compareTo(b['chapter']! as int),
+    );
+    return result;
   }
 
   static Map<String, Object?> _object(Object? value) =>
@@ -211,6 +295,12 @@ final class ProcessingDiagnostics {
   static String? _errorCode(Object? value) {
     if (value is! String || value.trim().isEmpty) return null;
     final String error = value.toLowerCase();
+    if (error.contains('人物小传') &&
+        (error.contains('通过 0/') ||
+            error.contains('没有返回可核对') ||
+            error.contains('返回格式无效'))) {
+      return 'bio_content_rejected';
+    }
     if (RegExp(r'\b(?:401|403)\b').hasMatch(error) ||
         error.contains('unauthorized') ||
         error.contains('invalid api key')) {

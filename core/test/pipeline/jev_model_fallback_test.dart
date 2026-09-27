@@ -239,6 +239,56 @@ void main() {
   );
 
   test(
+    'explicit book model route rechecks even a cached free verdict',
+    () async {
+      final Directory book = Directory('${root.path}/book')..createSync();
+      final JudgeTransport fake = JudgeTransport(
+        freeStatus: 200,
+        modelReplies: <String>[valid],
+      );
+      llm.transport = fake;
+      await judge.jev('same passage', questions);
+      File(
+        '${book.path}/meta.json',
+      ).writeAsStringSync('{"judge_fallback_route":"model-direct"}');
+      await withBookJudgeContext(
+        book,
+        () => judge.jev('same passage', questions),
+      );
+      expect(fake.requests.map((r) => r.url.host), <String>[
+        'classifier.dev',
+        'offline.invalid',
+      ]);
+      expect(
+        budget.readModelJudgeBudget(
+          File('${book.path}/work/judge/model-budget.json'),
+        )['calls'],
+        1,
+      );
+    },
+  );
+
+  test('explicit book Jev route skips a successful free verdict', () async {
+    final Directory book = Directory('${root.path}/book')..createSync();
+    File(
+      '${book.path}/meta.json',
+    ).writeAsStringSync('{"judge_fallback_route":"jev-direct"}');
+    environ['JEV_API_KEY'] = 'selected-gateway-key';
+    final PaidJudgeTransport fake = PaidJudgeTransport(valid);
+    llm.transport = fake;
+    await withBookJudgeContext(book, () => judge.jev('passage', questions));
+    expect(fake.requests.map((r) => r.url.host), <String>[
+      'ai-gateway.vercel.sh',
+    ]);
+    expect(
+      provenance.readPaidJudgeBudget(
+        File('${book.path}/work/judge/paid-budget.json'),
+      )['calls'],
+      1,
+    );
+  });
+
+  test(
     'incomplete model answers get one repair, then fail without a cache',
     () async {
       settings.save(<String, Object?>{'jev_route': 'free-then-model'});

@@ -107,6 +107,28 @@ class _BookSheetState extends State<BookSheet> {
     return _verifiedBios;
   }
 
+  bool _hasBlockedPendingBiography(Object? pending) {
+    if (pending is! List<Object?>) return false;
+    for (final Object? item in pending) {
+      if (item is! String || !RegExp(r'^bio-\d+$').hasMatch(item)) continue;
+      try {
+        final Object? job = readJson(
+          File('${widget.entry.dir.path}/work/jobs/$item.json'),
+        );
+        if (job is! Json || job['state'] != 'deferred') continue;
+        final Object? review = job['bio_review'];
+        if (review is Json &&
+            review['blocked'] is num &&
+            (review['blocked']! as num) > 0) {
+          return true;
+        }
+      } on Object {
+        // A missing or damaged optional job cannot justify a paid recheck.
+      }
+    }
+    return false;
+  }
+
   int? _biographyChapter(int end) {
     final File file = File('${widget.entry.dir.path}/book.json');
     try {
@@ -312,13 +334,18 @@ class _BookSheetState extends State<BookSheet> {
   Future<void> _continueWithJev() =>
       _setBookJudgeFallback('jev', '正在为这本书启用 Jev 网关并继续整理…');
 
+  Future<void> _retryWithDirectModel() =>
+      _setBookJudgeFallback('model-direct', '正在用已配置模型重新核对并继续整理…');
+
+  Future<void> _retryWithDirectJev() =>
+      _setBookJudgeFallback('jev-direct', '正在用 Jev 网关重新核对并继续整理…');
+
   Future<void> _setBookJudgeFallback(String route, String label) =>
       _action(label, () async {
-        if (route == 'model' &&
-            (!widget.settings.hasKey || widget.settings.read().$2.isEmpty)) {
+        if (!widget.settings.hasKey || widget.settings.read().$2.isEmpty) {
           throw StateError('请先保存可用的模型和 API 密钥');
         }
-        if (route == 'jev' && !widget.settings.hasJevApiKey) {
+        if (route.startsWith('jev') && !widget.settings.hasJevApiKey) {
           throw StateError('请先在模型设置中保存 Jev 网关密钥');
         }
         final File metaFile = File('${widget.entry.dir.path}/meta.json');
@@ -335,7 +362,14 @@ class _BookSheetState extends State<BookSheet> {
       if (meta is! Json) return null;
       if (meta.containsKey('judge_fallback_route')) {
         final Object? route = meta['judge_fallback_route'];
-        return route == 'model' || route == 'jev' ? route as String : null;
+        return const <String>{
+              'model',
+              'jev',
+              'model-direct',
+              'jev-direct',
+            }.contains(route)
+            ? route as String
+            : null;
       }
       return meta['judge_model_fallback'] == true ? 'model' : null;
     } on Object {
@@ -678,6 +712,7 @@ class _BookSheetState extends State<BookSheet> {
         (statusError.contains('proxy_requires_payment') ||
             statusError.contains('匿名免费额度不可用') ||
             statusError.contains('匿名访问被拒绝'));
+    final bool jevAuthFailed = statusError?.contains('Jev HTTP 401') == true;
     final bool modelBudgetExceeded =
         statusError?.contains('模型判断额度已达上限') == true;
     final bool paidBudgetExceeded = statusError?.contains('付费裁判预算已达上限') == true;
@@ -687,6 +722,63 @@ class _BookSheetState extends State<BookSheet> {
         (widget.settings.judgeFallbackEnabled ? 'model' : 'free');
     final bool modelFallback = effectiveJudgeRoute == 'model';
     final bool paidFallback = effectiveJudgeRoute == 'jev';
+    final bool directModel = effectiveJudgeRoute == 'model-direct';
+    final bool directPaid = effectiveJudgeRoute == 'jev-direct';
+    final bool modelUsesBudget = modelFallback || directModel;
+    final bool paidUsesBudget = paidFallback || directPaid;
+    final Json? quality = s.raw['quality'] as Json?;
+    final int pendingBiographyCount = quality?['pending'] is List<Object?>
+        ? (quality!['pending']! as List<Object?>)
+              .where(
+                (Object? item) =>
+                    item is String && RegExp(r'^bio-\d+$').hasMatch(item),
+              )
+              .length
+        : 0;
+    final bool pendingBiographyBlocked = _hasBlockedPendingBiography(
+      quality?['pending'],
+    );
+    final bool biographyNeedsReview =
+        pendingBiographyBlocked ||
+        (statusError != null &&
+            RegExp(r'人物小传通过\s*0/\d+.*拦截\s*[1-9]\d*').hasMatch(statusError));
+    List<Widget> directReviewActions() {
+      final bool canChooseModel =
+          widget.settings.hasKey && !directModel && !modelBudgetExceeded;
+      final bool canChooseJev =
+          widget.settings.hasKey &&
+          widget.settings.hasJevApiKey &&
+          !directPaid &&
+          !paidBudgetExceeded;
+      if (!biographyNeedsReview || (!canChooseModel && !canChooseJev)) {
+        return const <Widget>[];
+      }
+      return <Widget>[
+        const SizedBox(height: 10),
+        Text(
+          '未通过事实核对的小传不会展示。可为本书改选直接核对路线；此后的人物整理、问书和前情核对都会使用它，直到你停用。调用会计入本书额度。',
+          style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: <Widget>[
+            if (canChooseModel)
+              Pill(
+                label: '本书用已配置模型直接核对',
+                onTap: acting ? null : _retryWithDirectModel,
+              ),
+            if (canChooseJev)
+              Pill(
+                label: '本书用 Jev 网关直接核对',
+                onTap: acting ? null : _retryWithDirectJev,
+              ),
+          ],
+        ),
+      ];
+    }
+
     if (workerStopped && s.isActive) {
       body.add(
         Text(
@@ -785,6 +877,13 @@ class _BookSheetState extends State<BookSheet> {
             style: TextStyle(fontSize: 12, color: t.ink3),
           ),
         ],
+        if (pendingBiographyCount > 0) ...<Widget>[
+          const SizedBox(height: 5),
+          Text(
+            '$pendingBiographyCount 章人物小传待核对；正文继续整理，未通过的小传不会展示。',
+            style: TextStyle(fontSize: 12, color: t.amber),
+          ),
+        ],
         const SizedBox(height: 5),
         Text(
           '正文最多 $phoneConcurrency 段并行；多本书依次整理。',
@@ -840,12 +939,16 @@ class _BookSheetState extends State<BookSheet> {
           ),
         );
       }
-      final Json? quality = s.raw['quality'] as Json?;
       if (quality != null &&
           (quality['state'] == 'pending' || quality['pending'] == true)) {
         body.addAll(<Widget>[
           const SizedBox(height: 8),
-          Text('部分资料待核对', style: TextStyle(fontSize: 13, color: t.ink2)),
+          Text(
+            pendingBiographyCount > 0
+                ? '正文已整理完，$pendingBiographyCount 章人物小传待核对'
+                : '部分资料待核对',
+            style: TextStyle(fontSize: 13, color: t.ink2),
+          ),
           const SizedBox(height: 8),
           Pill(
             label: '重试待核对部分',
@@ -857,6 +960,7 @@ class _BookSheetState extends State<BookSheet> {
                   },
           ),
         ]);
+        body.addAll(directReviewActions());
       }
     } else if (s.isPaused) {
       final Json? lastWork = activity.cast<Json?>().lastWhere(
@@ -921,6 +1025,7 @@ class _BookSheetState extends State<BookSheet> {
                 },
         ),
       ]);
+      body.addAll(directReviewActions());
     } else if (s.isError) {
       final bool autoRetry =
           s.raw['retryable'] == true &&
@@ -948,6 +1053,8 @@ class _BookSheetState extends State<BookSheet> {
                     : deniedAnonymous
                     ? '上次匿名判断请求被拒绝。已完成的段落和核对结果会保留。可选已配置模型、Jev 网关，或填写有余额的 classifier.dev 工作区密钥。'
                     : '上次 classifier.dev 判断请求被拒绝。已完成的段落会保留；可检查工作区密钥或选择其他判断路线。'
+              : jevAuthFailed
+              ? 'Jev 网关拒绝了已保存的密钥（HTTP 401）。已完成的内容和草稿都已保留。请确认填写的是 Vercel AI Gateway API 密钥；也可以改用已配置模型直接核对。'
               : modelBudgetExceeded
               ? '本书的模型判断额度已用完。已完成的段落会保留；追加额度后可从当前进度继续。'
               : paidBudgetExceeded
@@ -985,6 +1092,17 @@ class _BookSheetState extends State<BookSheet> {
             filled: true,
             color: t.zhu,
             onTap: acting ? null : _continueWithJev,
+          ),
+        ],
+        if (!freeAccessBlocked) ...directReviewActions(),
+        if (jevAuthFailed &&
+            widget.settings.hasKey &&
+            !directModel &&
+            !modelBudgetExceeded) ...<Widget>[
+          const SizedBox(height: 10),
+          Pill(
+            label: '本书改用已配置模型直接核对',
+            onTap: acting ? null : _retryWithDirectModel,
           ),
         ],
         if (modelBudgetExceeded) ...<Widget>[
@@ -1025,8 +1143,8 @@ class _BookSheetState extends State<BookSheet> {
                 !modelBudgetExceeded &&
                 !paidBudgetExceeded &&
                 !(freeAccessBlocked &&
-                    !modelFallback &&
-                    !paidFallback &&
+                    !modelUsesBudget &&
+                    !paidUsesBudget &&
                     !widget.settings.hasClassifierKey))
               Pill(
                 label: autoRetry ? '现在重试' : '重试整理',
@@ -1106,7 +1224,7 @@ class _BookSheetState extends State<BookSheet> {
       } else {
         body.addAll(<Widget>[
           Text(
-            '会调用你的模型接口，$cost${modelFallback ? ' 若免费判断不可用，还会额外使用该模型判断；调用量受本书判断额度限制，实际账单以服务商为准。' : ''}${paidFallback ? ' 若免费判断不可用，会使用本书选择的 Jev 网关额度；实际账单以 Vercel AI Gateway 为准。' : ''}',
+            '会调用你的模型接口，$cost${modelFallback ? ' 若免费判断不可用，还会额外使用该模型判断；调用量受本书判断额度限制，实际账单以服务商为准。' : ''}${paidFallback ? ' 若免费判断不可用，会使用本书选择的 Jev 网关额度；实际账单以 Vercel AI Gateway 为准。' : ''}${directModel ? ' 本书核对直接使用已配置模型和单书额度。' : ''}${directPaid ? ' 本书核对直接使用 Jev 网关和单书额度。' : ''}',
             style: TextStyle(fontSize: 13, color: t.ink2),
           ),
           const SizedBox(height: 8),
@@ -1142,7 +1260,11 @@ class _BookSheetState extends State<BookSheet> {
       final String modelName = widget.settings.read().$2;
       body.insertAll(0, <Widget>[
         Text(
-          paidFallback
+          directPaid
+              ? '判断路线：直接使用 Jev 网关（仅本书）'
+              : directModel
+              ? '判断路线：直接使用 $modelName（仅本书）'
+              : paidFallback
               ? '判断路线：免费优先，失败后使用 Jev 网关（仅本书）'
               : modelFallback
               ? '判断路线：免费优先，失败后使用 $modelName'
@@ -1151,7 +1273,7 @@ class _BookSheetState extends State<BookSheet> {
               : '判断路线：classifier.dev 匿名免费',
           style: TextStyle(fontSize: 12, color: t.ink2),
         ),
-        if (modelFallback && modelBudget.isNotEmpty)
+        if (modelUsesBudget && modelBudget.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Text(
@@ -1159,7 +1281,7 @@ class _BookSheetState extends State<BookSheet> {
               style: TextStyle(fontSize: 12, color: t.ink3),
             ),
           )
-        else if (paidFallback)
+        else if (paidUsesBudget)
           Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Text(
@@ -1171,8 +1293,12 @@ class _BookSheetState extends State<BookSheet> {
           const SizedBox(height: 8),
       ]);
       if (bookJudgeRoute == 'jev' ||
+          bookJudgeRoute == 'jev-direct' ||
+          bookJudgeRoute == 'model-direct' ||
           (bookJudgeRoute == 'model' &&
               !widget.settings.judgeFallbackEnabled)) {
+        final bool directRoute =
+            bookJudgeRoute == 'jev-direct' || bookJudgeRoute == 'model-direct';
         body.add(
           Pill(
             label: widget.settings.judgeFallbackEnabled
@@ -1180,7 +1306,11 @@ class _BookSheetState extends State<BookSheet> {
                       ? '暂停并恢复全局模型判断'
                       : '恢复全局模型判断'
                 : s.isActive
-                ? '暂停并停用本书判断兜底'
+                ? directRoute
+                      ? '暂停并停用本书直接核对'
+                      : '暂停并停用本书判断兜底'
+                : directRoute
+                ? '停用本书直接核对'
                 : '停用本书判断兜底',
             onTap: acting ? null : _disableBookJudgeFallback,
           ),

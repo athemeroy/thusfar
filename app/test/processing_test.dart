@@ -653,6 +653,122 @@ void main() {
     );
   });
 
+  testWidgets('bio rejection offers direct model recheck for this book', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 9,
+      'total': 603,
+      'error': '第 2 章人物小传通过 0/2 位（拦截 2，缺失 0），已保留模型草稿',
+    });
+    await open(tester);
+    await tester.ensureVisible(find.text('本书用已配置模型直接核对'));
+    await tester.tap(find.text('本书用已配置模型直接核对'));
+    await tester.pumpAndSettle();
+    expect(processing.starts, 1);
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json'))
+          as Json)['judge_fallback_route'],
+      'model-direct',
+    );
+    expect(find.textContaining('判断路线：直接使用'), findsOneWidget);
+  });
+
+  testWidgets('bio rejection offers direct Jev recheck for this book', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    settings.save(
+      url: 'https://example.invalid/v1',
+      model: 'fixture',
+      jevApiKey: 'offline-jev-fixture-key',
+    );
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 9,
+      'total': 603,
+      'error': '第 2 章人物小传通过 0/2 位（拦截 2，缺失 0），已保留模型草稿',
+    });
+    await open(tester);
+    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
+    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    await tester.pumpAndSettle();
+    expect(processing.starts, 1);
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json'))
+          as Json)['judge_fallback_route'],
+      'jev-direct',
+    );
+    expect(find.textContaining('判断路线：直接使用 Jev 网关'), findsOneWidget);
+  });
+
+  testWidgets('completed book can recheck a deferred biography with Jev', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    settings.save(
+      url: 'https://example.invalid/v1',
+      model: 'fixture',
+      jevApiKey: 'offline-jev-fixture-key',
+    );
+    processing.status(entry, <String, Object?>{
+      'state': 'done',
+      'done': 603,
+      'total': 603,
+      'quality': <String, Object?>{
+        'state': 'pending',
+        'pending': <String>['bio-1'],
+      },
+    });
+    Directory('${bookRoot.path}/work/jobs').createSync(recursive: true);
+    writeJson(File('${bookRoot.path}/work/jobs/bio-1.json'), <String, Object?>{
+      'kind': 'bio',
+      'state': 'deferred',
+      'bio_review': <String, Object?>{'blocked': 2},
+    });
+    await open(tester);
+    expect(find.text('重试待核对部分'), findsOneWidget);
+    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
+    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    await tester.pumpAndSettle();
+    expect(processing.starts, 1);
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json'))
+          as Json)['judge_fallback_route'],
+      'jev-direct',
+    );
+  });
+
+  testWidgets('Jev 401 explains the key and switches this book to model', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
+    meta['judge_fallback_route'] = 'jev-direct';
+    writeJson(File('${bookRoot.path}/meta.json'), meta);
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 9,
+      'total': 603,
+      'error':
+          '人物小传验证失败：Jev HTTP 401: {"error":{"message":"Authentication failed"}}',
+    });
+    await open(tester);
+    expect(find.textContaining('Jev 网关拒绝了已保存的密钥'), findsOneWidget);
+    expect(find.textContaining('Authentication failed'), findsNothing);
+    await tester.ensureVisible(find.text('本书改用已配置模型直接核对'));
+    await tester.tap(find.text('本书改用已配置模型直接核对'));
+    await tester.pumpAndSettle();
+    expect(processing.starts, 1);
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json'))
+          as Json)['judge_fallback_route'],
+      'model-direct',
+    );
+  });
+
   testWidgets('paid route stays recorded until idle when UI status is stale', (
     WidgetTester tester,
   ) async {

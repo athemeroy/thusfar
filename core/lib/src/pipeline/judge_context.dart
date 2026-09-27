@@ -31,6 +31,8 @@ String? bookJudgeRoute(Map<String, Object?> metadata) {
     return switch (metadata['judge_fallback_route']) {
       'model' => 'free-then-model',
       'jev' => 'free-then-paid',
+      'model-direct' => 'model',
+      'jev-direct' => 'paid',
       _ => null,
     };
   }

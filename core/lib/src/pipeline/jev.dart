@@ -825,10 +825,11 @@ Future<Json> jevUncached(
     'free-only',
     'free-then-model',
     'free-then-paid',
+    'model',
     'paid',
   ].contains(route)) {
     throw const LLMError(
-      '未知裁判路由；使用 local、free-only、free-then-model、free-then-paid 或 paid',
+      '未知裁判路由；使用 local、free-only、free-then-model、free-then-paid、model 或 paid',
     );
   }
   if (route == 'local') return jevLocal(state, questions);
@@ -866,7 +867,7 @@ Future<Json> jevUncached(
   } else if (route == 'free-only') {
     throw const LLMError('免费裁判处于冷却期，未调用付费接口；稍后可从缓存继续');
   }
-  if (route == 'free-then-model') {
+  if (route == 'free-then-model' || route == 'model') {
     final Json out = await llmJudge(state, questions, reserveBudget: true);
     _routeUsed = 'configured-model';
     teacherLog(state, questions, out, 'configured-model');
@@ -1007,9 +1008,11 @@ Future<Json> jev(
     'model': jevModel,
     'route': route,
     'url': jevUrl,
-    if (route == 'free-then-model') ...<String, Object?>{
+    if (route == 'free-then-model' || route == 'model') ...<String, Object?>{
       'fallback_model': environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? '',
-      'fallback_url': baseFor(protocolFor(environ['JUDGE_MODEL'] ?? '')),
+      'fallback_url': baseFor(
+        protocolFor(environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? ''),
+      ),
     },
     'version': 1,
   });

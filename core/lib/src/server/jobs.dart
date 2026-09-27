@@ -118,13 +118,19 @@ Json _object(Object? v) => v as Json? ?? <String, Object?>{};
 final RegExp _finalJobName = RegExp(r'^(bio|recap|classic-recap|saga)-\d+$');
 final RegExp _bioJobName = RegExp(r'^bio-\d+$');
 
-bool _failedBioJob(Directory root, Json quality, {bool contentOnly = false}) {
+bool _failedBioJob(
+  Directory root,
+  Json quality, {
+  bool contentOnly = false,
+  bool includeDeferred = false,
+}) {
   final Object? pending = quality['pending'];
   if (pending is! List) return false;
   for (final Object? item in pending) {
     if (item is! String || !_bioJobName.hasMatch(item)) continue;
     final Json? job = _readJson(File('${root.path}/work/jobs/$item.json'));
-    if (job?['state'] == 'failed' &&
+    if ((job?['state'] == 'failed' ||
+            (includeDeferred && job?['state'] == 'deferred')) &&
         (!contentOnly || job?['failure_kind'] == 'bio_content'))
       return true;
   }
@@ -133,7 +139,9 @@ bool _failedBioJob(Directory root, Json quality, {bool contentOnly = false}) {
 
 bool _resumeBioFinalJobsInPlace(Directory root, Json quality) {
   final Object? pending = quality['pending'];
-  if (pending is! List || pending.isEmpty || !_failedBioJob(root, quality))
+  if (pending is! List ||
+      pending.isEmpty ||
+      !_failedBioJob(root, quality, includeDeferred: true))
     return false;
   for (final Object? item in pending) {
     // Two-phase runs retry title classification before replaying final jobs.
@@ -426,6 +434,21 @@ class Worker {
           'error',
         }.contains(state['state']);
     meta['auto'] = value;
+    if ((value && state['state'] == 'done' && resumeFinalJobs) || !value) {
+      for (final Object? item
+          in (pendingQuality is List ? pendingQuality : [])) {
+        if (item is! String || !_bioJobName.hasMatch(item)) continue;
+        final File path = _file(root, 'work/jobs/$item.json');
+        final Json? job = _read(path);
+        if (job == null || job['state'] != 'deferred') continue;
+        if (value) {
+          job['retry_requested'] = true;
+        } else {
+          job.remove('retry_requested');
+        }
+        _write(path, job);
+      }
+    }
     if (retryQuality) {
       meta['retry_quality'] = true;
     } else if ((!value && !preserveQualityTransaction) ||
@@ -436,6 +459,7 @@ class Worker {
     final bool queued =
         value &&
         (retryQuality ||
+            (resumeFinalJobs && state['state'] == 'done') ||
             (retryOnlyTitles && state['state'] == 'done') ||
             !<String>{
               'done',

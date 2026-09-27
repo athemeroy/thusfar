@@ -7,12 +7,14 @@ final class _BioContentError extends llm.LLMError {
     required this.passed,
     required this.blocked,
     required this.missing,
+    this.rejectionReasons = const <String, int>{},
   });
 
   final int candidates;
   final int passed;
   final int blocked;
   final int missing;
+  final Map<String, int> rejectionReasons;
 }
 
 Json _approvedBios(Object? value) => {
@@ -82,10 +84,27 @@ extension RunnerFinalization on Runner {
     _RunPool target,
   ) {
     final File path = File('${work.path}/jobs/$kind-$key.json');
-    Json job = {'kind': kind, 'key': key, 'args': args, 'state': 'pending'};
+    Json job = {
+      'kind': kind,
+      'key': key,
+      'args': args,
+      'state': 'pending',
+      if (kind == 'bio') 'content_failures': 0,
+    };
     if (path.existsSync()) {
       final Json saved = _read(path);
       if (saved['state'] != 'complete') job = saved;
+    }
+    if (job['state'] == 'deferred') {
+      if (job['retry_requested'] != true) {
+        qualityPending.add(_stem(path));
+        return null;
+      }
+      // Consume the durable request in the same job write that reopens it.
+      // Keep generation_attempt monotonic so the next draft has a fresh key.
+      job['state'] = 'pending';
+      job['content_failures'] = 0;
+      job.remove('retry_requested');
     }
     writeJson(path, job);
     qualityPending.add(_stem(path));
@@ -103,35 +122,101 @@ extension RunnerFinalization on Runner {
     final List<Object?> args = _list(job['args']);
     Object? result;
     try {
-      result = switch (job['kind']) {
-        'bio' => await bioJob(
-          _int(args[0]),
-          _int(args[1]),
-          args[2]! as String,
-          _list(args[3]).cast<String>(),
-          generationAttempt: _int(job['generation_attempt']),
-        ),
-        'recap' => await chapterRecapJob(
-          _int(args[0]),
-          _int(args[1]),
-          _rows(args[2]),
-          _obj(args[3]),
-        ),
-        'classic-recap' => await classicRecapJob(
-          _int(args[0]),
-          _int(args[1]),
-          _rows(args[2]),
-          _obj(args[3]),
-          _list(args[4]),
-          _str(args[5]),
-        ),
-        'saga' => await sagaJob(
-          _int(args[0]),
-          _list(args[1]).cast<int>(),
-          _str(args[3]),
-        ),
-        _ => throw StateError('未知的章节整理任务：${job['kind']}'),
-      };
+      if (job['kind'] == 'bio') {
+        // A legacy interrupted job may have recorded one failed draft before
+        // this counter existed. An explicit retry resets only this counter.
+        int contentFailures =
+            job['content_failures'] is int
+                ? _int(job['content_failures']).clamp(0, 2).toInt()
+                : job['state'] == 'pending' &&
+                    job['failure_kind'] == 'bio_content'
+                ? _int(job['generation_attempt']).clamp(0, 2).toInt()
+                : 0;
+        if (contentFailures >= 2) {
+          job['state'] = 'deferred';
+          job['content_failures'] = 2;
+          writeJson(path, job);
+          qualityPending.add(_stem(path));
+          return null;
+        }
+        while (contentFailures < 2) {
+          try {
+            checkpoint();
+            result = await bioJob(
+              _int(args[0]),
+              _int(args[1]),
+              args[2]! as String,
+              _list(args[3]).cast<String>(),
+              generationAttempt: _int(job['generation_attempt']),
+            );
+            break;
+          } on _BioContentError catch (e) {
+            contentFailures++;
+            job['content_failures'] = contentFailures;
+            job['generation_attempt'] = _int(job['generation_attempt']) + 1;
+            job['failure_kind'] = 'bio_content';
+            job['bio_review'] = {
+              'candidates': e.candidates,
+              'passed': e.passed,
+              'blocked': e.blocked,
+              'missing': e.missing,
+              'rejection_reasons': e.rejectionReasons,
+            };
+            job['error'] = _cut(_typedError(e), 300);
+            qualityPending.add(_stem(path));
+            if (contentFailures < 2) {
+              job['state'] = 'pending';
+              writeJson(path, job);
+              if (activity) {
+                recordBookActivity(
+                  root,
+                  'bio_retry',
+                  '第 ${_int(job['key']) + 1} 章人物小传未通过核对，正在修复草稿（最多再尝试 1 次）',
+                  at: backend.now(),
+                );
+              }
+              continue;
+            }
+            // A failed optional biography must not stall the remaining
+            // segments. Keep the job and its drafts for an explicit retry;
+            // no unverified biography is published to the reader.
+            job['state'] = 'deferred';
+            writeJson(path, job);
+            if (activity) {
+              recordBookActivity(
+                root,
+                'bio_deferred',
+                '第 ${_int(job['key']) + 1} 章人物小传通过 0/${e.candidates} 位，已暂缓发布并继续正文',
+                at: backend.now(),
+              );
+            }
+            return null;
+          }
+        }
+      } else {
+        result = switch (job['kind']) {
+          'recap' => await chapterRecapJob(
+            _int(args[0]),
+            _int(args[1]),
+            _rows(args[2]),
+            _obj(args[3]),
+          ),
+          'classic-recap' => await classicRecapJob(
+            _int(args[0]),
+            _int(args[1]),
+            _rows(args[2]),
+            _obj(args[3]),
+            _list(args[4]),
+            _str(args[5]),
+          ),
+          'saga' => await sagaJob(
+            _int(args[0]),
+            _list(args[1]).cast<int>(),
+            _str(args[3]),
+          ),
+          _ => throw StateError('未知的章节整理任务：${job['kind']}'),
+        };
+      }
       if (result == false) throw const llm.LLMError('章节整理尚未通过验证');
     } on Cancelled {
       rethrow;
@@ -144,6 +229,7 @@ extension RunnerFinalization on Runner {
           'passed': e.passed,
           'blocked': e.blocked,
           'missing': e.missing,
+          'rejection_reasons': e.rejectionReasons,
         };
       } else {
         job.remove('failure_kind');
@@ -1121,6 +1207,7 @@ extension RunnerFinalization on Runner {
       throw llm.LLMError('人物小传验证失败：${_error(e)}');
     }
     int blocked = 0;
+    final Map<String, int> rejectionReasons = <String, int>{};
     for (final String id in bios.keys.toList()) {
       final Json v = _obj(verdicts[id]);
       if (!['ok', 'flag'].contains(v['verdict']))
@@ -1128,6 +1215,12 @@ extension RunnerFinalization on Runner {
       _obj(bios[id])['chk'] = {'jev': v['p'], 'verdict': v['verdict']};
       if (v['verdict'] == 'flag') {
         blocked++;
+        final String reason = switch (v['choice']) {
+          'beyond_text' => 'beyond_text',
+          'contradicted' => 'contradicted',
+          _ => 'insufficient_confidence',
+        };
+        rejectionReasons[reason] = (rejectionReasons[reason] ?? 0) + 1;
         bios.remove(id);
       }
     }
@@ -1136,6 +1229,7 @@ extension RunnerFinalization on Runner {
       'passed': bios.length,
       'blocked': blocked,
       'missing': missing,
+      'rejection_reasons': rejectionReasons,
     };
     if (activity) {
       recordBookActivity(
@@ -1152,6 +1246,7 @@ extension RunnerFinalization on Runner {
         passed: 0,
         blocked: blocked,
         missing: missing,
+        rejectionReasons: rejectionReasons,
       );
     }
     final Json out = {'chapter': ci, 'bios': bios, 'review': review};
