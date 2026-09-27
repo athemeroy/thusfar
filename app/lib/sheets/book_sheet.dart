@@ -107,7 +107,7 @@ class _BookSheetState extends State<BookSheet> {
     return _verifiedBios;
   }
 
-  bool _hasBlockedPendingBiography(Object? pending) {
+  bool _hasReviewablePendingBiography(Object? pending) {
     if (pending is! List<Object?>) return false;
     for (final Object? item in pending) {
       if (item is! String || !RegExp(r'^bio-\d+$').hasMatch(item)) continue;
@@ -118,8 +118,9 @@ class _BookSheetState extends State<BookSheet> {
         if (job is! Json || job['state'] != 'deferred') continue;
         final Object? review = job['bio_review'];
         if (review is Json &&
-            review['blocked'] is num &&
-            (review['blocked']! as num) > 0) {
+            (review['verification_pending'] == true ||
+                (review['blocked'] is num &&
+                    (review['blocked']! as num) > 0))) {
           return true;
         }
       } on Object {
@@ -735,11 +736,11 @@ class _BookSheetState extends State<BookSheet> {
               )
               .length
         : 0;
-    final bool pendingBiographyBlocked = _hasBlockedPendingBiography(
+    final bool pendingBiographyNeedsReview = _hasReviewablePendingBiography(
       quality?['pending'],
     );
     final bool biographyNeedsReview =
-        pendingBiographyBlocked ||
+        pendingBiographyNeedsReview ||
         (statusError != null &&
             RegExp(r'人物小传通过\s*0/\d+.*拦截\s*[1-9]\d*').hasMatch(statusError));
     List<Widget> directReviewActions() {
@@ -750,13 +751,16 @@ class _BookSheetState extends State<BookSheet> {
           widget.settings.hasJevApiKey &&
           !directPaid &&
           !paidBudgetExceeded;
-      if (!biographyNeedsReview || (!canChooseModel && !canChooseJev)) {
+      if (!(biographyNeedsReview || s.isPaused || s.isError) ||
+          (!canChooseModel && !canChooseJev)) {
         return const <Widget>[];
       }
       return <Widget>[
         const SizedBox(height: 10),
         Text(
-          '未通过事实核对的小传不会展示。可为本书改选直接核对路线；此后的人物整理、问书和前情核对都会使用它，直到你停用。调用会计入本书额度。',
+          biographyNeedsReview
+              ? '未通过事实核对的小传不会展示。可为本书改选直接核对路线；此后的人物整理、问书和前情核对都会使用它，直到你停用。调用会计入本书额度。'
+              : '可以为本书改选直接核对路线；此后的人物整理、问书和前情核对都会使用它，直到你停用。调用会计入本书额度。',
           style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
         ),
         const SizedBox(height: 8),

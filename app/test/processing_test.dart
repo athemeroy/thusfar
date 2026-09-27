@@ -741,6 +741,36 @@ void main() {
     );
   });
 
+  testWidgets('invalid model biography check offers official Jev route', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    settings.save(
+      url: 'https://example.invalid/v1',
+      model: 'fixture',
+      jevApiKey: 'offline-jev-fixture-key',
+    );
+    final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
+    meta['judge_fallback_route'] = 'model-direct';
+    writeJson(File('${bookRoot.path}/meta.json'), meta);
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 9,
+      'total': 603,
+      'error': '人物小传验证失败：已配置模型的判断回答不完整或概率无效',
+    });
+    await open(tester);
+    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
+    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    await tester.pumpAndSettle();
+    expect(processing.starts, 1);
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json'))
+          as Json)['judge_fallback_route'],
+      'jev-direct',
+    );
+  });
+
   testWidgets('Jev 401 explains the key and switches this book to model', (
     WidgetTester tester,
   ) async {
