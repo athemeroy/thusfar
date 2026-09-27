@@ -89,8 +89,8 @@ class _AskFailure implements Exception {
 }
 
 class _WebAskPanelState extends State<WebAskPanel> {
-  static const String _defaultEndpoint = 'https://api.deepseek.com';
-  static const String _defaultModel = 'deepseek-flash';
+  static const String _defaultEndpoint = WebAiConfig.geminiEndpoint;
+  static const String _defaultModel = WebAiConfig.geminiFlashLiteModel;
   final TextEditingController _question = TextEditingController();
   late final TextEditingController _endpoint;
   late final TextEditingController _model;

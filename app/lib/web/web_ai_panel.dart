@@ -17,8 +17,10 @@ import 'web_ai_engine.dart';
 import 'web_model_session.dart';
 import 'web_storage.dart';
 
-const String _officialEndpoint = 'https://api.deepseek.com';
-const String _officialModel = 'deepseek-flash';
+const String _officialEndpoint = WebAiConfig.geminiEndpoint;
+const String _officialModel = WebAiConfig.geminiFlashLiteModel;
+const String _deepSeekEndpoint = 'https://api.deepseek.com';
+const String _deepSeekModel = 'deepseek-flash';
 const String _tabOwnerKey = 'thusfar-web-ai-tab-owner-v1';
 
 String _newOwner() =>
@@ -320,10 +322,20 @@ class _WebAiPanelState extends State<WebAiPanel> {
     _events
       ..clear()
       ..addAll(events);
-    _endpoint = saved?['endpoint'] is String
+    final bool oldUnusedDefault =
+        _results.isEmpty &&
+        _events.isEmpty &&
+        (saved?['phase'] == null || saved?['phase'] == 'idle') &&
+        saved?['endpoint'] == _deepSeekEndpoint &&
+        saved?['model'] == _deepSeekModel;
+    _endpoint = oldUnusedDefault
+        ? _officialEndpoint
+        : saved?['endpoint'] is String
         ? saved!['endpoint']! as String
         : _officialEndpoint;
-    _model = saved?['model'] is String
+    _model = oldUnusedDefault
+        ? _officialModel
+        : saved?['model'] is String
         ? saved!['model']! as String
         : _officialModel;
     _scope = const <String>{'first', 'read', 'all'}.contains(saved?['scope'])
@@ -560,6 +572,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
   Future<void> _configureAndStart() async {
     if (_running || _starting || _clearing) return;
     final WebAiConfig? shared = WebModelSession.current.config;
+    // Treat a tab credential as an atomic endpoint/model/key tuple. A book's
+    // migrated default must never be paired with another provider's key.
     final TextEditingController endpoint = TextEditingController(
       text: shared?.endpoint ?? _endpoint,
     );
@@ -570,6 +584,14 @@ class _WebAiPanelState extends State<WebAiPanel> {
       text: shared?.apiKey ?? '',
     );
     String keyEndpoint = shared?.endpoint ?? '';
+    String provider =
+        endpoint.text.trim() == _officialEndpoint &&
+            model.text.trim() == _officialModel
+        ? 'gemini'
+        : endpoint.text.trim() == _deepSeekEndpoint &&
+              model.text.trim() == _deepSeekModel
+        ? 'deepseek'
+        : 'custom';
     String scope = _scope;
     String? error;
     bool showKey = false;
@@ -584,147 +606,227 @@ class _WebAiPanelState extends State<WebAiPanel> {
             final String host = uri?.host.isNotEmpty == true
                 ? uri!.host
                 : '所填模型服务商';
+            final int remaining = _targets(scope)
+                .where(
+                  (WebAiChunk chunk) => !_results.containsKey(_chunkKey(chunk)),
+                )
+                .length;
             return Theme(
               data: Theme.of(context).copyWith(
-                textTheme: Theme.of(context).textTheme.apply(fontFamily: serif),
+                // CanvasKit rendered missing-glyph boxes for some Chinese
+                // characters in the previous serif form on Android Chrome.
+                // System sans matches the working TextField and button glyphs.
+                textTheme: Theme.of(
+                  context,
+                ).textTheme.apply(fontFamily: 'sans-serif'),
               ),
               child: AlertDialog(
                 backgroundColor: t.sheet,
-                title: const Text('整理这本书的 AI 草稿'),
+                insetPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                title: const Text('整理这本书'),
                 content: SizedBox(
                   width: 520,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          '当前尚未发起模型请求。只有点“开始整理”后，浏览器才会把所选正文发送给你配置的模型服务商。GitHub Pages 不提供免费模型额度，服务商可能收费。',
-                          style: TextStyle(color: t.ink, height: 1.5),
-                        ),
-                        const SizedBox(height: 17),
-                        TextField(
-                          controller: endpoint,
-                          decoration: const InputDecoration(
-                            labelText: '模型 API 地址',
-                            hintText: _officialEndpoint,
+                  child: Scrollbar(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            '选择范围并填写自己的模型密钥。点击开始后才会发送正文。',
+                            style: TextStyle(color: t.ink2, height: 1.4),
                           ),
-                          onChanged: (String value) => redraw(() {
-                            if (key.text.isNotEmpty &&
-                                value.trim() != keyEndpoint) {
-                              key.clear();
-                              keyEndpoint = '';
-                              error = '模型地址已改变，请填写这个服务商对应的密钥。';
-                            }
-                          }),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: model,
-                          decoration: const InputDecoration(
-                            labelText: '模型名称',
-                            hintText: _officialModel,
+                          const SizedBox(height: 12),
+                          Text(
+                            '整理范围',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: t.ink,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: key,
-                          obscureText: !showKey,
-                          autocorrect: false,
-                          enableSuggestions: false,
-                          decoration: InputDecoration(
-                            labelText: '你自己的模型 API 密钥',
-                            suffixIcon: IconButton(
-                              tooltip: showKey ? '隐藏密钥' : '显示密钥',
-                              onPressed: () => redraw(() => showKey = !showKey),
-                              icon: Icon(
-                                showKey
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: <Widget>[
+                              for (final String option in const <String>[
+                                'first',
+                                'read',
+                                'all',
+                              ])
+                                ChoiceChip(
+                                  label: Text(
+                                    '${switch (option) {
+                                      'first' => '首章',
+                                      'read' => '已读',
+                                      _ => '全书',
+                                    }} · ${_targets(option).length}',
+                                  ),
+                                  selected: scope == option,
+                                  showCheckmark: false,
+                                  visualDensity: VisualDensity.compact,
+                                  onSelected: (bool selected) {
+                                    if (selected) redraw(() => scope = option);
+                                  },
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${switch (scope) {
+                              'first' => '先试首章，未读结果仍隐藏。',
+                              'read' => '只整理已经读完的章节。',
+                              _ => '整理全书，未读结果仍隐藏。',
+                            }}  $remaining 段待处理。',
+                            style: TextStyle(color: t.ink2, fontSize: 12),
+                          ),
+                          if (scope == 'read' && _targets('read').isEmpty)
+                            Text(
+                              '还没有读完的章节，请选首章试整理或继续阅读。',
+                              style: TextStyle(color: t.amber, fontSize: 12),
+                            ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '模型服务商',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: t.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: <Widget>[
+                              for (final (String value, String label)
+                                  in const <(String, String)>[
+                                    ('gemini', 'Gemini'),
+                                    ('deepseek', 'DeepSeek'),
+                                    ('custom', '自定义'),
+                                  ])
+                                ChoiceChip(
+                                  label: Text(label),
+                                  selected: provider == value,
+                                  showCheckmark: false,
+                                  visualDensity: VisualDensity.compact,
+                                  onSelected: (bool selected) {
+                                    if (!selected || provider == value) return;
+                                    redraw(() {
+                                      provider = value;
+                                      key.clear();
+                                      keyEndpoint = '';
+                                      error = null;
+                                      if (value == 'gemini') {
+                                        endpoint.text = _officialEndpoint;
+                                        model.text = _officialModel;
+                                      } else if (value == 'deepseek') {
+                                        endpoint.text = _deepSeekEndpoint;
+                                        model.text = _deepSeekModel;
+                                      }
+                                    });
+                                  },
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 5),
+                          if (provider == 'gemini')
+                            Text(
+                              '${model.text} · 有可用免费额度，受账户、地区及官方限额约束；免费档内容可能用于改进产品。',
+                              style: TextStyle(color: t.qing, fontSize: 12),
+                            )
+                          else if (provider == 'deepseek')
+                            Text(
+                              '${model.text} · DeepSeek 按其账户规则收费。',
+                              style: TextStyle(color: t.amber, fontSize: 12),
+                            ),
+                          if (provider == 'custom') ...<Widget>[
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: endpoint,
+                              keyboardType: TextInputType.url,
+                              textInputAction: TextInputAction.next,
+                              scrollPadding: const EdgeInsets.only(bottom: 120),
+                              decoration: const InputDecoration(
+                                labelText: '模型 API 地址',
+                                hintText: 'https://example.com/v1',
+                              ),
+                              onChanged: (String value) => redraw(() {
+                                if (key.text.isNotEmpty &&
+                                    value.trim() != keyEndpoint) {
+                                  key.clear();
+                                  keyEndpoint = '';
+                                  error = '地址已改变，请填写对应服务商的密钥。';
+                                }
+                              }),
+                            ),
+                            const SizedBox(height: 10),
+                            TextField(
+                              controller: model,
+                              textInputAction: TextInputAction.next,
+                              scrollPadding: const EdgeInsets.only(bottom: 120),
+                              decoration: const InputDecoration(
+                                labelText: '模型名称',
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: key,
+                            obscureText: !showKey,
+                            autocorrect: false,
+                            enableSuggestions: false,
+                            textInputAction: TextInputAction.done,
+                            scrollPadding: const EdgeInsets.only(bottom: 120),
+                            decoration: InputDecoration(
+                              labelText: '你的 API 密钥',
+                              suffixIcon: IconButton(
+                                tooltip: showKey ? '隐藏密钥' : '显示密钥',
+                                onPressed: () =>
+                                    redraw(() => showKey = !showKey),
+                                icon: Icon(
+                                  showKey
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '这里使用 OpenAI 兼容的对话接口。默认需要 DeepSeek 官方密钥；小鲸等自定义接口须填写对应平台自己的密钥。TypeSafe / Jev 密钥不能用于此接口。自定义服务商还须允许网页跨域访问；本机 localhost 可用 HTTP。',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: t.ink2,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 7),
-                        Text(
-                          '密钥只在这个浏览器标签页内存中供整理与问书共用，不写入书籍备份、浏览器存储或 GitHub。模型地址与名称会保存以便恢复，请勿把密钥写进地址。关闭网页后须重新输入密钥。',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: t.ink2,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 7),
-                        Text(
-                          '每段通常调用模型 1 次；如果回复格式或原文引文不合要求，最多再调用 1 次。网络或额度错误不会自动重试。两次请求都可能计费。',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: t.amber,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          '选择整理范围',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: t.ink,
-                          ),
-                        ),
-                        for (final String option in const <String>[
-                          'first',
-                          'read',
-                          'all',
-                        ])
-                          RadioListTile<String>(
-                            contentPadding: EdgeInsets.zero,
-                            dense: true,
-                            title: Text(
-                              '${_scopeLabel(option)} · ${_targets(option).length} 段',
+                          const SizedBox(height: 8),
+                          Text(
+                            '密钥仅存于当前标签页，关闭后需重填。最多可能调用模型 ${remaining * 2} 次；服务商可能收费。',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: t.ink2,
+                              height: 1.35,
                             ),
-                            subtitle: Text(_scopeDescription(option)),
-                            value: option,
-                            groupValue: scope,
-                            onChanged: (String? value) =>
-                                redraw(() => scope = value ?? scope),
                           ),
-                        Text(
-                          '本次尚需 ${_targets(scope).where((WebAiChunk chunk) => !_results.containsKey(_chunkKey(chunk))).length} 段；通常每段 1 次请求，校验失败最多 2 次。实际费用由服务商决定。',
-                          style: TextStyle(color: t.ink, height: 1.4),
-                        ),
-                        if (scope == 'read' && _targets('read').isEmpty)
-                          Text(
-                            '目前还没有读完的正文章节。继续阅读后可选此范围；“第一章试整理”会提前分析该章，结果仍默认隐藏以防剧透。',
-                            style: TextStyle(color: t.amber, height: 1.4),
+                          if (error != null) ...<Widget>[
+                            const SizedBox(height: 12),
+                            Text(error!, style: TextStyle(color: t.danger)),
+                          ],
+                          ExpansionTile(
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: EdgeInsets.zero,
+                            title: const Text('费用与连接说明'),
+                            children: <Widget>[
+                              Text(
+                                '请求发往 $host。每段通常调用 1 次；回复格式或引文校验失败时最多追加 1 次，两次均可能计费。网络或额度错误不会自动重试。',
+                                style: TextStyle(color: t.ink2, fontSize: 12),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '自定义兼容接口需要允许网页跨域访问。密钥不会写入备份、浏览器存储或 GitHub；地址和模型名称会保存在本机。关闭网页会暂停，重开后不会自动发起请求。',
+                                style: TextStyle(color: t.ink2, fontSize: 12),
+                              ),
+                            ],
                           ),
-                        if (scope == 'all')
-                          Text(
-                            '整本书可能产生大量调用和费用。后续章节虽可提前整理，结果仍会按阅读进度隐藏。',
-                            style: TextStyle(color: t.amber, height: 1.4),
-                          ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '请求发往 $host。关闭或刷新网页会停止整理；重开后不会自动发起付费请求。若上一段响应未保存，重试可能再次计费。',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: t.ink2,
-                            height: 1.5,
-                          ),
-                        ),
-                        if (error != null) ...<Widget>[
-                          const SizedBox(height: 12),
-                          Text(error!, style: TextStyle(color: t.danger)),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
@@ -777,7 +879,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                               ),
                             );
                           },
-                    child: const Text('开始整理（模型可能收费）'),
+                    child: const Text('开始整理'),
                   ),
                 ],
               ),
@@ -791,18 +893,19 @@ class _WebAiPanelState extends State<WebAiPanel> {
       key.dispose();
     }
     if (choice == null || !mounted) return;
-    if (choice.scope == 'all' && _targets('all').length > 20) {
-      final int remaining = _targets('all')
-          .where((WebAiChunk chunk) => !_results.containsKey(_chunkKey(chunk)))
-          .length;
+    final _RunChoice selected = choice;
+    final int remaining = _targets(selected.scope)
+        .where((WebAiChunk chunk) => !_results.containsKey(_chunkKey(chunk)))
+        .length;
+    if (remaining > 20) {
       final bool? confirmed = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: const Text('确认整理整本书？'),
+          title: Text('确认整理${_scopeLabel(selected.scope)}？'),
           content: Text(
-            '全书共 ${_targets('all').length} 段，尚有 $remaining 段，通常还需 $remaining 次模型请求；'
+            '本次尚有 $remaining 段，通常需要 $remaining 次模型请求；'
             '若各段都需校验重试，最多可能发起 ${remaining * 2} 次。'
-            '这些请求可能产生费用，由 ${Uri.parse(choice!.config.endpoint).host} 按其账户规则收取；页读无法确定你的实际单价。'
+            '这些请求可能产生费用，由 ${Uri.parse(selected.config.endpoint).host} 按其账户规则收取；页读无法确定你的实际单价。'
             '网页关闭后不会自动继续。',
           ),
           actions: <Widget>[
@@ -819,20 +922,14 @@ class _WebAiPanelState extends State<WebAiPanel> {
       );
       if (confirmed != true || !mounted) return;
     }
-    WebModelSession.current.set(choice.config);
-    await _run(choice.config, choice.scope);
+    WebModelSession.current.set(selected.config);
+    await _run(selected.config, selected.scope);
   }
 
   String _scopeLabel(String scope) => switch (scope) {
     'all' => '整本书',
     'read' => '已读完的章节',
     _ => '第一章试整理',
-  };
-
-  String _scopeDescription(String scope) => switch (scope) {
-    'all' => '明确选择全书，仍按阅读进度隐藏后续内容',
-    'read' => '只整理已读完的章；当前章读到末尾才纳入',
-    _ => '跳过纯封面或空的“开始”章；可能提前整理未读内容',
   };
 
   Future<void> _clear() async {

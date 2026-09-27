@@ -9,8 +9,11 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart'
+    show KeyEvent, KeyUpEvent, LogicalKeyboardKey;
 import 'package:thusfar_core/title_spoilers.dart';
 
 import '../ui/theme.dart';
@@ -621,6 +624,24 @@ class _WebCover extends StatelessWidget {
   }
 }
 
+class _WebPageFragment {
+  const _WebPageFragment({
+    required this.block,
+    required this.kind,
+    required this.startLine,
+    required this.lines,
+    required this.height,
+    this.text = '',
+  });
+
+  final int block;
+  final String kind;
+  final int startLine;
+  final int lines;
+  final double height;
+  final String text;
+}
+
 class WebReaderPrefs {
   WebReaderPrefs() {
     try {
@@ -649,6 +670,7 @@ class WebReaderPrefs {
         Tokens.paperColors.length - 1,
       );
       font = ((json['font'] as num?)?.toInt() ?? 0).clamp(0, 2);
+      pageMode = json['pageMode'] is bool ? json['pageMode'] as bool : true;
     } on Object {
       // A malformed preference must never prevent the book from opening.
     }
@@ -661,6 +683,7 @@ class WebReaderPrefs {
   double columnWidth = 960;
   int paper = 0;
   int font = 0;
+  bool pageMode = true;
 
   Color get paperColor => Tokens.paperColors[paper].$2;
   bool get dark => paper == Tokens.paperColors.length - 1;
@@ -679,6 +702,7 @@ class WebReaderPrefs {
           'columnWidth': columnWidth,
           'paper': paper,
           'font': font,
+          'pageMode': pageMode,
         });
   }
 }
@@ -705,8 +729,18 @@ class _WebReaderState extends State<WebReader> {
     caseSensitive: false,
   );
   final ScrollController _scroll = ScrollController();
+  final FocusNode _readerFocus = FocusNode();
   final Map<int, GlobalKey> _blockKeys = <int, GlobalKey>{};
   final WebReaderPrefs _prefs = WebReaderPrefs();
+  List<List<_WebPageFragment>> _pages = const <List<_WebPageFragment>>[];
+  int? _pageLayoutKey;
+  int _pageIndex = 0;
+  int _turnDirection = 1;
+  bool _wheelLocked = false;
+  Timer? _wheelTimer;
+  Offset? _pointerStart;
+  DateTime? _pointerStarted;
+  bool _pointerStartedWithSelection = false;
   Timer? _saveTimer;
   Timer? _displayTimer;
   bool _controls = false;
@@ -745,9 +779,13 @@ class _WebReaderState extends State<WebReader> {
     super.initState();
     _chapter = widget.state.chapter.clamp(0, math.max(0, _chapters.length - 1));
     _scroll.addListener(_scrolled);
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _restoreFraction(widget.state.fraction),
-    );
+    html.window.addEventListener('keydown', _domKey, true);
+    html.window.addEventListener('wheel', _domWheel, true);
+    if (!_prefs.pageMode) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _restoreFraction(widget.state.fraction),
+      );
+    }
   }
 
   void _scrolled() {
@@ -762,6 +800,10 @@ class _WebReaderState extends State<WebReader> {
   }
 
   double get _fraction {
+    if (_prefs.pageMode) {
+      if (_pages.isEmpty) return widget.state.fraction;
+      return _pages.length == 1 ? 1 : _pageIndex / (_pages.length - 1);
+    }
     if (!_scroll.hasClients || _scroll.position.maxScrollExtent <= 0) return 0;
     return (_scroll.offset / _scroll.position.maxScrollExtent).clamp(0.0, 1.0);
   }
@@ -806,6 +848,9 @@ class _WebReaderState extends State<WebReader> {
     _restoring = true;
     _jumpBlock = block;
     _blockKeys.clear();
+    _pageLayoutKey = null;
+    _pages = const <List<_WebPageFragment>>[];
+    _pageIndex = 0;
     setState(() {
       _chapter = chapter;
       widget.state.chapter = chapter;
@@ -814,9 +859,11 @@ class _WebReaderState extends State<WebReader> {
       _controls = false;
     });
     unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _restoreFraction(fraction),
-    );
+    if (!_prefs.pageMode) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _restoreFraction(fraction),
+      );
+    }
   }
 
   void _bookmark() {
@@ -859,6 +906,17 @@ class _WebReaderState extends State<WebReader> {
   int _askCutoffBlockExclusive() {
     final int first = (_current['b0'] as num?)?.toInt() ?? 0;
     final int last = (_current['b1'] as num?)?.toInt() ?? first;
+    if (_prefs.pageMode && _pages.isNotEmpty) {
+      for (int page = _pageIndex + 1; page < _pages.length; page++) {
+        for (final _WebPageFragment fragment in _pages[page]) {
+          if (fragment.block >= first && fragment.block < last) {
+            // A paragraph continued on the next page is still unread in full.
+            return fragment.block;
+          }
+        }
+      }
+      return last;
+    }
     final double headingBottom = MediaQuery.paddingOf(context).top + 58;
     for (int i = first; i < last && i < _blocks.length; i++) {
       // The chapter heading can be rendered separately from the body.
@@ -905,6 +963,7 @@ class _WebReaderState extends State<WebReader> {
         ),
       ),
     );
+    _selectedText = null;
   }
 
   double get _progress {
@@ -1200,9 +1259,21 @@ class _WebReaderState extends State<WebReader> {
       builder: (BuildContext context) => StatefulBuilder(
         builder: (BuildContext context, StateSetter update) {
           void change(void Function() action) {
+            final double fraction = _fraction;
             update(action);
+            widget.state.fraction = fraction;
+            _pageLayoutKey = null;
+            _pages = const <List<_WebPageFragment>>[];
+            _pageIndex = 0;
+            _restoring = true;
             setState(() {});
             _prefs.save();
+            _queueSave();
+            if (!_prefs.pageMode) {
+              WidgetsBinding.instance.addPostFrameCallback(
+                (_) => _restoreFraction(fraction),
+              );
+            }
           }
 
           return SafeArea(
@@ -1214,6 +1285,35 @@ class _WebReaderState extends State<WebReader> {
                   const Text(
                     '阅读排版',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text('阅读方式'),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: <Widget>[
+                      ChoiceChip(
+                        label: const Text('翻页'),
+                        selected: _prefs.pageMode,
+                        onSelected: (_) => change(() => _prefs.pageMode = true),
+                      ),
+                      ChoiceChip(
+                        label: const Text('连续滚动'),
+                        selected: !_prefs.pageMode,
+                        onSelected: (_) =>
+                            change(() => _prefs.pageMode = false),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _prefs.pageMode
+                        ? '轻触左右侧、横滑、按方向键或空格翻页；鼠标滚轮每次翻一页。'
+                        : '上下滑动连续阅读；需要翻页时可随时切换。',
+                    style: TextStyle(
+                      color: Theme.of(context).hintColor,
+                      fontSize: 12,
+                    ),
                   ),
                   const SizedBox(height: 18),
                   _metric(
@@ -1318,7 +1418,11 @@ class _WebReaderState extends State<WebReader> {
   void dispose() {
     _saveTimer?.cancel();
     _displayTimer?.cancel();
+    _wheelTimer?.cancel();
+    html.window.removeEventListener('keydown', _domKey, true);
+    html.window.removeEventListener('wheel', _domWheel, true);
     unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
+    _readerFocus.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -1340,117 +1444,157 @@ class _WebReaderState extends State<WebReader> {
       fontSize: _prefs.fontSize,
       height: _prefs.lineHeight,
       letterSpacing: _prefs.letterSpacing,
+      leadingDistribution: TextLeadingDistribution.even,
     );
     return Scaffold(
       backgroundColor: paper,
       body: Stack(
         children: <Widget>[
           Positioned.fill(
-            child: GestureDetector(
-              onTap: () => setState(() => _controls = !_controls),
-              onHorizontalDragEnd: (DragEndDetails details) {
-                final double velocity = details.primaryVelocity ?? 0;
-                if (velocity < -350) _go(_chapter + 1);
-                if (velocity > 350) _go(_chapter - 1);
-              },
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: _prefs.columnWidth),
-                  child: SelectionArea(
-                    onSelectionChanged: (SelectedContent? content) =>
-                        _selectedText = content?.plainText,
-                    contextMenuBuilder:
-                        (
-                          BuildContext context,
-                          SelectableRegionState selectable,
-                        ) => AdaptiveTextSelectionToolbar.buttonItems(
-                          anchors: selectable.contextMenuAnchors,
-                          buttonItems: <ContextMenuButtonItem>[
-                            ...selectable.contextMenuButtonItems,
-                            ContextMenuButtonItem(
-                              label: '问书',
-                              onPressed: () {
-                                final String? selected = _selectedText;
-                                ContextMenuController.removeAny();
-                                unawaited(_openAsk(selectedText: selected));
-                              },
+            child: Focus(
+              focusNode: _readerFocus,
+              autofocus: true,
+              onKeyEvent: _readerKey,
+              child: Listener(
+                onPointerSignal: _wheel,
+                onPointerDown: _readerPointerDown,
+                onPointerUp: _readerPointerUp,
+                onPointerCancel: (_) {
+                  _pointerStart = null;
+                  _pointerStarted = null;
+                },
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapUp: (TapUpDetails details) {
+                    if (_prefs.pageMode) return;
+                    if (_selectedText?.isNotEmpty == true) return;
+                    setState(() => _controls = !_controls);
+                    _readerFocus.requestFocus();
+                  },
+                  onHorizontalDragEnd: (DragEndDetails details) {
+                    if (_prefs.pageMode) return;
+                    final double velocity = details.primaryVelocity ?? 0;
+                    if (velocity < -350) _go(_chapter + 1);
+                    if (velocity > 350) _go(_chapter - 1);
+                  },
+                  child: _prefs.pageMode
+                      ? _pageBody(bodyStyle)
+                      : Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: _prefs.columnWidth,
                             ),
-                          ],
-                        ),
-                    child: NotificationListener<ScrollEndNotification>(
-                      onNotification: (ScrollEndNotification _) {
-                        if (!_restoring) {
-                          _saveTimer?.cancel();
-                          unawaited(
-                            widget.library.saveState(
-                              widget.book.meta.id,
-                              widget.state,
-                            ),
-                          );
-                        }
-                        return false;
-                      },
-                      child: SingleChildScrollView(
-                        controller: _scroll,
-                        padding: EdgeInsets.fromLTRB(
-                          _prefs.margin,
-                          MediaQuery.paddingOf(context).top + 58,
-                          _prefs.margin,
-                          // Reserve the expanded toolbar's full height so the
-                          // chapter navigation stays reachable at scroll end.
-                          // Keep this space constant as controls open and close
-                          // to preserve the visible reading position.
-                          MediaQuery.paddingOf(context).bottom + 168,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            Text(
-                              '${_current['title'] ?? ''}',
-                              style: bodyStyle.copyWith(
-                                fontSize: _prefs.fontSize * 1.36,
-                                fontWeight: FontWeight.w600,
+                            child: SelectionArea(
+                              onSelectionChanged: (SelectedContent? content) =>
+                                  _selectedText = content?.plainText,
+                              contextMenuBuilder:
+                                  (
+                                    BuildContext context,
+                                    SelectableRegionState selectable,
+                                  ) => AdaptiveTextSelectionToolbar.buttonItems(
+                                    anchors: selectable.contextMenuAnchors,
+                                    buttonItems: <ContextMenuButtonItem>[
+                                      ...selectable.contextMenuButtonItems,
+                                      ContextMenuButtonItem(
+                                        label: '问书',
+                                        onPressed: () {
+                                          final String? selected =
+                                              _selectedText;
+                                          ContextMenuController.removeAny();
+                                          unawaited(
+                                            _openAsk(selectedText: selected),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                              child: NotificationListener<ScrollEndNotification>(
+                                onNotification: (ScrollEndNotification _) {
+                                  if (!_restoring) {
+                                    _saveTimer?.cancel();
+                                    unawaited(
+                                      widget.library.saveState(
+                                        widget.book.meta.id,
+                                        widget.state,
+                                      ),
+                                    );
+                                  }
+                                  return false;
+                                },
+                                child: SingleChildScrollView(
+                                  controller: _scroll,
+                                  padding: EdgeInsets.fromLTRB(
+                                    _prefs.margin,
+                                    MediaQuery.paddingOf(context).top + 58,
+                                    _prefs.margin,
+                                    // Reserve the expanded toolbar's full height so the
+                                    // chapter navigation stays reachable at scroll end.
+                                    // Keep this space constant as controls open and close
+                                    // to preserve the visible reading position.
+                                    MediaQuery.paddingOf(context).bottom + 168,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: <Widget>[
+                                      Text(
+                                        '${_current['title'] ?? ''}',
+                                        style: bodyStyle.copyWith(
+                                          fontSize: _prefs.fontSize * 1.36,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      SizedBox(height: _prefs.fontSize * 1.5),
+                                      for (
+                                        int i = first;
+                                        i < last && i < _blocks.length;
+                                        i++
+                                      )
+                                        if (!(i == first &&
+                                            _blocks[i]['k'] == 'h' &&
+                                            _blocks[i]['t'] ==
+                                                _current['title']))
+                                          Padding(
+                                            key: _blockKeys.putIfAbsent(
+                                              i,
+                                              GlobalKey.new,
+                                            ),
+                                            padding: EdgeInsets.only(
+                                              bottom: _prefs.fontSize * 0.65,
+                                            ),
+                                            child: _paragraph(i, bodyStyle),
+                                          ),
+                                      const SizedBox(height: 42),
+                                      Row(
+                                        children: <Widget>[
+                                          if (_chapter > 0)
+                                            TextButton.icon(
+                                              onPressed: () =>
+                                                  _go(_chapter - 1),
+                                              icon: const Icon(
+                                                Icons.arrow_back,
+                                              ),
+                                              label: const Text('上一章'),
+                                            ),
+                                          const Spacer(),
+                                          if (_chapter + 1 < _chapters.length)
+                                            TextButton.icon(
+                                              onPressed: () =>
+                                                  _go(_chapter + 1),
+                                              icon: const Icon(
+                                                Icons.arrow_forward,
+                                              ),
+                                              label: const Text('下一章'),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
-                            SizedBox(height: _prefs.fontSize * 1.5),
-                            for (
-                              int i = first;
-                              i < last && i < _blocks.length;
-                              i++
-                            )
-                              if (!(i == first &&
-                                  _blocks[i]['k'] == 'h' &&
-                                  _blocks[i]['t'] == _current['title']))
-                                Padding(
-                                  key: _blockKeys.putIfAbsent(i, GlobalKey.new),
-                                  padding: EdgeInsets.only(
-                                    bottom: _prefs.fontSize * 0.65,
-                                  ),
-                                  child: _paragraph(i, bodyStyle),
-                                ),
-                            const SizedBox(height: 42),
-                            Row(
-                              children: <Widget>[
-                                if (_chapter > 0)
-                                  TextButton.icon(
-                                    onPressed: () => _go(_chapter - 1),
-                                    icon: const Icon(Icons.arrow_back),
-                                    label: const Text('上一章'),
-                                  ),
-                                const Spacer(),
-                                if (_chapter + 1 < _chapters.length)
-                                  TextButton.icon(
-                                    onPressed: () => _go(_chapter + 1),
-                                    icon: const Icon(Icons.arrow_forward),
-                                    label: const Text('下一章'),
-                                  ),
-                              ],
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -1689,5 +1833,466 @@ class _WebReaderState extends State<WebReader> {
         Text(label, style: const TextStyle(fontSize: 12)),
       ],
     ),
+  );
+
+  TextStyle _fragmentStyle(_WebPageFragment fragment, TextStyle body) {
+    if (fragment.kind == 'title') {
+      return body.copyWith(
+        fontSize: _prefs.fontSize * 1.36,
+        fontWeight: FontWeight.w600,
+      );
+    }
+    if (fragment.kind == 'h') {
+      return body.copyWith(
+        fontSize: _prefs.fontSize * 1.13,
+        fontWeight: FontWeight.w600,
+      );
+    }
+    return body;
+  }
+
+  String _fragmentText(_WebPageFragment fragment) {
+    return fragment.text;
+  }
+
+  StrutStyle _bodyStrut() => StrutStyle(
+    fontSize: _prefs.fontSize,
+    height: _prefs.lineHeight,
+    forceStrutHeight: true,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  List<List<_WebPageFragment>> _paginate(
+    double width,
+    double height,
+    TextStyle bodyStyle,
+  ) {
+    final TextScaler scaler = MediaQuery.textScalerOf(context);
+    final double capacity = math.max(1, height - 12);
+    final List<List<_WebPageFragment>> pages = <List<_WebPageFragment>>[];
+    List<_WebPageFragment> current = <_WebPageFragment>[];
+    double used = 0;
+
+    void flush() {
+      if (current.isEmpty) return;
+      pages.add(current);
+      current = <_WebPageFragment>[];
+      used = 0;
+    }
+
+    void gap(double space, double nextLine) {
+      if (current.isNotEmpty && used + space + nextLine <= capacity) {
+        current.add(
+          _WebPageFragment(
+            block: -1,
+            kind: 'space',
+            startLine: 0,
+            lines: 0,
+            height: space,
+          ),
+        );
+        used += space;
+      }
+    }
+
+    void addText(int block, String kind, String text, TextStyle style) {
+      if (text.isEmpty) return;
+      final TextPainter painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+        textAlign: kind == 'p' ? TextAlign.justify : TextAlign.left,
+        strutStyle: kind == 'p' ? _bodyStrut() : null,
+        textScaler: scaler,
+      )..layout(maxWidth: width);
+      final List<LineMetrics> metrics = painter.computeLineMetrics();
+      final int totalLines = math.max(1, metrics.length);
+      final double line = math.max(1, painter.height / totalLines);
+      final List<int> lineStarts = <int>[0];
+      for (int i = 1; i < totalLines; i++) {
+        final LineMetrics metric = metrics[i];
+        final double middle =
+            metric.baseline - metric.ascent + metric.height / 2;
+        final int start = painter
+            .getLineBoundary(painter.getPositionForOffset(Offset(1, middle)))
+            .start
+            .clamp(lineStarts.last, text.length);
+        lineStarts.add(start);
+      }
+      int from = 0;
+      while (from < totalLines) {
+        int fit = ((capacity - used) / line).floor();
+        if (fit < 1 && current.isNotEmpty) {
+          flush();
+          continue;
+        }
+        fit = math.max(1, fit);
+        final int take = math.min(fit, totalLines - from);
+        final int start = from == 0 ? 0 : lineStarts[from];
+        final int end = from + take >= totalLines
+            ? text.length
+            : lineStarts[from + take];
+        current.add(
+          _WebPageFragment(
+            block: block,
+            kind: kind,
+            startLine: from,
+            lines: take,
+            height: take * line,
+            text: text.substring(
+              start.clamp(0, text.length),
+              end.clamp(start, text.length),
+            ),
+          ),
+        );
+        used += take * line;
+        from += take;
+        if (from < totalLines) flush();
+      }
+      painter.dispose();
+      gap(
+        kind == 'title' ? _prefs.fontSize * 1.15 : _prefs.fontSize * 0.38,
+        line,
+      );
+    }
+
+    final String title = '${_current['title'] ?? ''}';
+    addText(
+      -1,
+      'title',
+      title,
+      bodyStyle.copyWith(
+        fontSize: _prefs.fontSize * 1.36,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final int first = (_current['b0'] as num?)?.toInt() ?? 0;
+    final int last = (_current['b1'] as num?)?.toInt() ?? first;
+    for (int i = first; i < last && i < _blocks.length; i++) {
+      final Json block = _blocks[i];
+      final String kind = '${block['k'] ?? 'p'}';
+      if (i == first && kind == 'h' && block['t'] == title) continue;
+      if (kind == 'img') {
+        final double imageHeight = math.min(capacity * 0.55, width * 0.8);
+        if (current.isNotEmpty && used + imageHeight > capacity) flush();
+        current.add(
+          _WebPageFragment(
+            block: i,
+            kind: 'img',
+            startLine: 0,
+            lines: 0,
+            height: imageHeight,
+          ),
+        );
+        used += imageHeight;
+        gap(_prefs.fontSize * 0.38, _prefs.fontSize * _prefs.lineHeight);
+      } else {
+        final String text = '${block['t'] ?? ''}';
+        addText(
+          i,
+          kind == 'h' ? 'h' : 'p',
+          kind == 'h' ? text : '　　$text',
+          kind == 'h'
+              ? bodyStyle.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: _prefs.fontSize * 1.13,
+                )
+              : bodyStyle,
+        );
+      }
+    }
+    flush();
+    if (pages.isEmpty) pages.add(<_WebPageFragment>[]);
+    return pages;
+  }
+
+  void _ensurePages(double width, double height, TextStyle bodyStyle) {
+    final int key = Object.hash(
+      _chapter,
+      width.round(),
+      height.round(),
+      _prefs.fontSize,
+      _prefs.lineHeight,
+      _prefs.letterSpacing,
+      _prefs.font,
+      _prefs.margin,
+      MediaQuery.textScalerOf(context).scale(10).toStringAsFixed(2),
+    );
+    if (_pageLayoutKey == key) return;
+    _pages = _paginate(width, height, bodyStyle);
+    int target = -1;
+    if (_jumpBlock != null) {
+      target = _pages.indexWhere(
+        (List<_WebPageFragment> page) => page.any(
+          (_WebPageFragment fragment) => fragment.block == _jumpBlock,
+        ),
+      );
+    }
+    if (target < 0) {
+      target = _pages.length == 1
+          ? 0
+          : (widget.state.fraction * (_pages.length - 1)).round();
+    }
+    _pageIndex = target.clamp(0, _pages.length - 1);
+    if (widget.state.fraction != _fraction) {
+      widget.state.fraction = _fraction;
+      _queueSave();
+    }
+    _jumpBlock = null;
+    _pageLayoutKey = key;
+    _restoring = false;
+  }
+
+  void _turnPage(int delta) {
+    if (!_prefs.pageMode || _pages.isEmpty) return;
+    final int next = _pageIndex + delta;
+    if (next < 0) {
+      _go(_chapter - 1, fraction: 1);
+      return;
+    }
+    if (next >= _pages.length) {
+      _go(_chapter + 1);
+      return;
+    }
+    setState(() {
+      _pageIndex = next;
+      _turnDirection = delta.sign;
+      _controls = false;
+      _selectedText = null;
+      widget.state.fraction = _fraction;
+      widget.state.lastOpened = DateTime.now().millisecondsSinceEpoch;
+    });
+    _queueSave();
+  }
+
+  void _wheel(PointerSignalEvent event) {
+    if (event is PointerScrollEvent) _wheelTurn(event.scrollDelta.dy);
+  }
+
+  void _wheelTurn(double dy) {
+    if (!_prefs.pageMode || _wheelLocked) return;
+    if (dy.abs() < 4) return;
+    _wheelLocked = true;
+    _wheelTimer?.cancel();
+    _wheelTimer = Timer(const Duration(milliseconds: 350), () {
+      _wheelLocked = false;
+    });
+    _turnPage(dy > 0 ? 1 : -1);
+  }
+
+  bool get _readerRouteActive =>
+      mounted && ModalRoute.of(context)?.isCurrent == true;
+
+  void _domWheel(html.Event event) {
+    if (!_readerRouteActive || event is! html.WheelEvent) return;
+    _wheelTurn(event.deltaY.toDouble());
+  }
+
+  void _domKey(html.Event event) {
+    if (!_readerRouteActive ||
+        !_prefs.pageMode ||
+        _controls ||
+        event is! html.KeyboardEvent) {
+      return;
+    }
+    if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+      return;
+    }
+    final html.Element? active = html.document.activeElement;
+    if (active is html.InputElement ||
+        active is html.TextAreaElement ||
+        active is html.SelectElement) {
+      return;
+    }
+    final int direction = switch (event.key) {
+      'ArrowRight' || 'ArrowDown' || 'PageDown' || ' ' || 'j' || 'l' => 1,
+      'ArrowLeft' || 'ArrowUp' || 'PageUp' || 'k' || 'h' => -1,
+      _ => 0,
+    };
+    if (direction == 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    _turnPage(direction);
+  }
+
+  void _readerPointerDown(PointerDownEvent event) {
+    if (!_prefs.pageMode || event.buttons != 1) return;
+    _pointerStart = event.localPosition;
+    _pointerStarted = DateTime.now();
+    _pointerStartedWithSelection = _selectedText?.isNotEmpty == true;
+  }
+
+  void _readerPointerUp(PointerUpEvent event) {
+    final Offset? start = _pointerStart;
+    final DateTime? started = _pointerStarted;
+    _pointerStart = null;
+    _pointerStarted = null;
+    if (!_prefs.pageMode || start == null || started == null) return;
+    final Offset delta = event.localPosition - start;
+    final int elapsed = DateTime.now().difference(started).inMilliseconds;
+    if (elapsed > 900) return;
+    // A normal short tap can dismiss a prior selection and turn the page.
+    // Keep a dragged selection intact for copy or 问书.
+    if (delta.distance > 14 &&
+        (_pointerStartedWithSelection || _selectedText?.isNotEmpty == true)) {
+      return;
+    }
+    _selectedText = null;
+    _readerFocus.requestFocus();
+    if (delta.dx.abs() > 55 && delta.dx.abs() > delta.dy.abs() * 1.3) {
+      _turnPage(delta.dx < 0 ? 1 : -1);
+      return;
+    }
+    if (delta.distance > 14 || elapsed > 600) return;
+    final double x =
+        event.localPosition.dx / math.max(1, MediaQuery.sizeOf(context).width);
+    if (x < 1 / 3) {
+      _turnPage(-1);
+    } else if (x > 2 / 3) {
+      _turnPage(1);
+    } else {
+      setState(() => _controls = !_controls);
+    }
+  }
+
+  KeyEventResult _readerKey(FocusNode _, KeyEvent event) {
+    if (!_prefs.pageMode || event is KeyUpEvent) {
+      return KeyEventResult.ignored;
+    }
+    final LogicalKeyboardKey key = event.logicalKey;
+    if (key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.pageDown ||
+        key == LogicalKeyboardKey.space ||
+        key == LogicalKeyboardKey.keyJ ||
+        key == LogicalKeyboardKey.keyL) {
+      _turnPage(1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.pageUp ||
+        key == LogicalKeyboardKey.keyK ||
+        key == LogicalKeyboardKey.keyH) {
+      _turnPage(-1);
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape && _controls) {
+      setState(() => _controls = false);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  Widget _selectionArea(Widget child) => SelectionArea(
+    onSelectionChanged: (SelectedContent? content) =>
+        _selectedText = content?.plainText,
+    contextMenuBuilder:
+        (BuildContext context, SelectableRegionState selectable) =>
+            AdaptiveTextSelectionToolbar.buttonItems(
+              anchors: selectable.contextMenuAnchors,
+              buttonItems: <ContextMenuButtonItem>[
+                ...selectable.contextMenuButtonItems,
+                ContextMenuButtonItem(
+                  label: '问书',
+                  onPressed: () {
+                    final String? selected = _selectedText;
+                    ContextMenuController.removeAny();
+                    unawaited(_openAsk(selectedText: selected));
+                  },
+                ),
+              ],
+            ),
+    child: child,
+  );
+
+  Widget _pageFragment(
+    _WebPageFragment fragment,
+    double width,
+    TextStyle body,
+  ) {
+    if (fragment.kind == 'space') return SizedBox(height: fragment.height);
+    if (fragment.kind == 'img') {
+      final String? encoded =
+          widget.book.images['${_blocks[fragment.block]['src']}'];
+      return SizedBox(
+        height: fragment.height,
+        child: encoded == null
+            ? Center(child: Text('[图片未保存]', style: body))
+            : Image.memory(base64Decode(encoded), fit: BoxFit.contain),
+      );
+    }
+    final TextStyle style = _fragmentStyle(fragment, body);
+    final String text = _fragmentText(fragment);
+    return SizedBox(
+      height: fragment.height,
+      child: ClipRect(
+        child: SizedBox(
+          width: width,
+          child: Text(
+            text,
+            style: style,
+            textAlign: fragment.kind == 'p'
+                ? TextAlign.justify
+                : TextAlign.left,
+            strutStyle: fragment.kind == 'p' ? _bodyStrut() : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _pageBody(TextStyle bodyStyle) => LayoutBuilder(
+    builder: (BuildContext context, BoxConstraints box) {
+      final EdgeInsets safe = MediaQuery.paddingOf(context);
+      final double top = safe.top + 58;
+      final double bottom = safe.bottom + 70;
+      final double width = math.min(box.maxWidth, _prefs.columnWidth);
+      final double textWidth = math.max(1, width - _prefs.margin * 2);
+      final double height = math.max(1, box.maxHeight - top - bottom);
+      _ensurePages(textWidth, height, bodyStyle);
+      final List<_WebPageFragment> page = _pages[_pageIndex];
+      return Padding(
+        padding: EdgeInsets.only(top: top, bottom: bottom),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: ClipRect(
+              child: AnimatedSwitcher(
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 180),
+                transitionBuilder:
+                    (Widget child, Animation<double> animation) =>
+                        SlideTransition(
+                          position: Tween<Offset>(
+                            begin: Offset(_turnDirection * 0.12, 0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: FadeTransition(
+                            opacity: animation,
+                            child: child,
+                          ),
+                        ),
+                child: Padding(
+                  key: ValueKey<String>('$_chapter:$_pageIndex'),
+                  padding: EdgeInsets.symmetric(horizontal: _prefs.margin),
+                  child: _selectionArea(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        for (final _WebPageFragment fragment in page)
+                          _pageFragment(fragment, textWidth, bodyStyle),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    },
   );
 }

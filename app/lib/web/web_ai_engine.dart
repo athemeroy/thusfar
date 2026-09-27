@@ -11,6 +11,12 @@ import 'web_storage.dart';
 /// only by the caller while a request is in progress; this class does not save
 /// it in IndexedDB, localStorage, a URL, or an error message.
 class WebAiConfig {
+  /// Google documents this OpenAI-compatible REST endpoint for Gemini. Its
+  /// Flash-Lite model has a rate-limited free tier for eligible accounts.
+  static const String geminiEndpoint =
+      'https://generativelanguage.googleapis.com/v1beta/openai/';
+  static const String geminiFlashLiteModel = 'gemini-3.5-flash-lite';
+
   const WebAiConfig({
     required this.endpoint,
     required this.model,
@@ -21,6 +27,10 @@ class WebAiConfig {
   const WebAiConfig.deepSeek({required this.apiKey})
     : endpoint = 'https://api.deepseek.com',
       model = 'deepseek-flash';
+
+  const WebAiConfig.geminiFlashLite({required this.apiKey})
+    : endpoint = geminiEndpoint,
+      model = geminiFlashLiteModel;
 
   final String endpoint;
   final String model;
