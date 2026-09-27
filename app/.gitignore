@@ -52,4 +52,5 @@ test/shots/**
 !test/shots/10-ask.png
 !test/shots/11-search-empty.png
 !test/shots/foldable-*.png
+!test/shots/phone-reader*.png
 !test/shots/graph-*.png
