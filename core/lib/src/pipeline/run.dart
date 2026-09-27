@@ -123,6 +123,10 @@ void recordBookActivity(
   String message, {
   int? done,
   int? total,
+  int? segment,
+  int? attempt,
+  String? stage,
+  double? startedAt,
   double? at,
 }) {
   try {
@@ -137,9 +141,23 @@ void recordBookActivity(
       'message': message,
       if (done != null) 'done': done,
       if (total != null) 'total': total,
+      if (segment != null) 'segment': segment,
+      if (attempt != null) 'attempt': attempt,
+      if (stage != null) 'stage': stage,
+      if (startedAt != null) 'started_at': startedAt,
     };
     if (previous.isNotEmpty && previous.last is Json) {
       final Json last = previous.last! as Json;
+      if (phase == 'stage_heartbeat' &&
+          last['phase'] == phase &&
+          last['segment'] == segment &&
+          last['stage'] == stage) {
+        // A long wait is one event with an updated duration, not a hundred
+        // near-identical rows that push the actual failure out of the log.
+        previous[previous.length - 1] = next;
+        writeJson(file, previous);
+        return;
+      }
       if (last['phase'] == phase &&
           last['message'] == message &&
           last['done'] == done &&
@@ -802,10 +820,11 @@ class Runner {
     state.addAll({'notice': notice, 'updated': backend.now()});
     writeJson(path, state, compact: false);
     if (activity && notice != null) {
+      final bool failed = notice.contains('请求失败');
       recordBookActivity(
         root,
-        notice.startsWith('模型请求失败') ? 'retry' : 'waiting_for_model',
-        notice.startsWith('模型请求失败') ? '模型请求失败，正在重试' : '已发送分段请求，正在等待模型回复',
+        failed ? 'retry' : 'waiting_for_model',
+        failed ? '模型请求失败，正在检查是否重试' : '已发送分段请求，正在等待模型回复',
         done: _int(state['done']),
         total: _int(state['total']),
         at: backend.now(),
@@ -814,7 +833,7 @@ class Runner {
     onProgress?.call(state);
   }
 
-  void status(String state, int done, {String? error}) {
+  void status(String state, int done, {String? error, bool retryable = false}) {
     final Json? seg = done > 0 ? segs[done - 1] : null;
     usage['jev'] = {...jevClient.jevStats};
     final Json snapshot = _clone(usage)! as Json;
@@ -830,6 +849,7 @@ class Runner {
       'people': kg.people.values.where((p) => !_truth(p['merged_into'])).length,
       'updated': backend.now(),
       'error': error,
+      if (state == 'error') 'retryable': retryable,
       'usage': snapshot,
       'refused': refused.toList()..sort(),
       'quality': {

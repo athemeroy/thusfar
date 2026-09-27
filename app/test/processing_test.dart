@@ -200,36 +200,33 @@ void main() {
     model.dispose();
   });
 
-  test(
-    'real worker isolate reconciles interrupted work without starting models',
-    () async {
-      writeJson(File('${bookRoot.path}/meta.json'), <String, Object?>{
-        'auto': true,
-      });
-      writeJson(File('${bookRoot.path}/status.json'), <String, Object?>{
-        'state': 'running',
-        'done': 1,
-        'total': 2,
-      });
-      final ProcessingController actual = ProcessingController(library);
-      try {
-        await actual.initialize().timeout(const Duration(seconds: 10));
-        expect(entry.status.state, 'paused');
-        await expectLater(actual.startBook(entry), throwsA(isA<Exception>()));
-        expect(entry.status.state, 'paused');
-        expect(
-          File('${bookRoot.path}/work/worker-receipt.json').existsSync(),
-          isTrue,
-        );
-      } finally {
-        await actual.close().timeout(const Duration(seconds: 10));
-        actual.dispose();
-      }
-    },
-  );
+  test('real worker isolate leaves explicitly disabled work paused', () async {
+    writeJson(File('${bookRoot.path}/meta.json'), <String, Object?>{
+      'auto': false,
+    });
+    writeJson(File('${bookRoot.path}/status.json'), <String, Object?>{
+      'state': 'running',
+      'done': 1,
+      'total': 2,
+    });
+    final ProcessingController actual = ProcessingController(library);
+    try {
+      await actual.initialize().timeout(const Duration(seconds: 10));
+      expect(entry.status.state, 'paused');
+      await expectLater(actual.startBook(entry), throwsA(isA<Exception>()));
+      expect(entry.status.state, 'paused');
+      expect(
+        File('${bookRoot.path}/work/worker-receipt.json').existsSync(),
+        isTrue,
+      );
+    } finally {
+      await actual.close().timeout(const Duration(seconds: 10));
+      actual.dispose();
+    }
+  });
 
   test(
-    'dead worker marks unowned active work as error without replacing its receipt',
+    'dead worker pauses unowned manual work without replacing its receipt',
     () async {
       final File status = File('${bookRoot.path}/status.json');
       final File receipt = File('${bookRoot.path}/work/worker-receipt.json');
@@ -250,14 +247,76 @@ void main() {
         'running',
       ); // disk changes are refreshed by the controller
       library.refreshStatus(entry);
-      expect(entry.status.state, 'error');
+      expect(entry.status.state, 'paused');
       expect(entry.status.done, 3);
       expect(entry.status.frontier, 9042);
-      expect(entry.status.error, '整理任务意外停止');
+      expect(entry.status.raw['pause_reason'], 'interrupted');
       expect((readJson(receipt) as Json)['request_id'], 'original-request');
       expect(File('${bookRoot.path}/work/activity.json').existsSync(), isTrue);
     },
   );
+
+  test(
+    'dead worker keeps authorized work queued for the next startup',
+    () async {
+      final File status = File('${bookRoot.path}/status.json');
+      final File receipt = File('${bookRoot.path}/work/worker-receipt.json');
+      writeJson(File('${bookRoot.path}/meta.json'), <String, Object?>{
+        'auto': true,
+      });
+      writeJson(status, <String, Object?>{
+        'state': 'running',
+        'done': 10,
+        'total': 603,
+        'frontier': 9042,
+      });
+      writeJson(receipt, <String, Object?>{
+        'request_id': 'original-request',
+        'phase': 'running',
+      });
+      library.refreshStatus(entry);
+
+      await reconcileStoppedWorker(library, '整理任务意外停止');
+
+      final Json saved = readJson(status)! as Json;
+      expect(saved['state'], 'queued');
+      expect(saved['done'], 10);
+      expect(saved['frontier'], 9042);
+      expect(saved['error'], isNull);
+      expect(saved['notice'], '整理任务意外停止');
+      expect((readJson(receipt) as Json)['request_id'], 'original-request');
+      expect(
+        (readJson(File('${bookRoot.path}/meta.json')) as Json)['auto'],
+        true,
+      );
+      expect(
+        File('${bookRoot.path}/work/activity.json').readAsStringSync(),
+        contains('重新打开应用后自动继续'),
+      );
+    },
+  );
+
+  test('dead worker respects an already recorded user pause', () async {
+    final File status = File('${bookRoot.path}/status.json');
+    writeJson(File('${bookRoot.path}/meta.json'), <String, Object?>{
+      'auto': true,
+    });
+    writeJson(status, <String, Object?>{
+      'state': 'cancelling',
+      'pause_reason': 'user',
+      'done': 10,
+    });
+    library.refreshStatus(entry);
+
+    await reconcileStoppedWorker(library, 'worker stopped');
+
+    expect((readJson(status) as Json)['state'], 'paused');
+    expect((readJson(status) as Json)['pause_reason'], 'user');
+    expect(
+      (readJson(File('${bookRoot.path}/meta.json')) as Json)['auto'],
+      false,
+    );
+  });
 
   test('dead worker does not overwrite an active independent lease', () async {
     final File status = File('${bookRoot.path}/status.json');
@@ -309,6 +368,54 @@ void main() {
     },
   );
 
+  test(
+    'background-limit pause forwards to legacy processing implementations',
+    () async {
+      processing.status(entry, <String, Object?>{'state': 'running'});
+      await processing.pauseForBackgroundLimit(entry);
+      expect(processing.pauses, 1);
+      expect(entry.status.state, 'paused');
+    },
+  );
+
+  testWidgets(
+    'foreground resumes a background-limit pause after late settlement',
+    (WidgetTester tester) async {
+      configure();
+      late FixtureProcessing appProcessing;
+      final AppModel model = AppModel(
+        root,
+        createProcessing: (Library value) =>
+            appProcessing = FixtureProcessing(value),
+      );
+      model.prefs.update(
+        (p) => p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch,
+      );
+      await model.initialize();
+      final BookEntry appBook = model.library.books.single;
+      appProcessing.status(appBook, <String, Object?>{
+        'state': 'cancelling',
+        'pause_reason': 'background_time_limit',
+      });
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(appProcessing.starts, 0);
+
+      appProcessing.status(appBook, <String, Object?>{
+        'state': 'paused',
+        'pause_reason': 'background_time_limit',
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(appProcessing.starts, 1);
+      expect(appBook.status.state, 'running');
+
+      await tester.pumpWidget(const SizedBox());
+      model.dispose();
+    },
+  );
+
   testWidgets('preflight and model wait remain visible before first segment', (
     WidgetTester tester,
   ) async {
@@ -334,9 +441,21 @@ void main() {
     expect(find.text('正在准备整理'), findsOneWidget);
     expect(find.textContaining('正在检查书籍和整理缓存'), findsWidgets);
     expect(find.textContaining('准备 · 正在检查书籍和整理缓存'), findsOneWidget);
-    expect(find.textContaining('已等待 1 分'), findsOneWidget);
+    expect(find.textContaining('已等待 1 分'), findsNothing);
     expect(find.text('整理记录'), findsOneWidget);
 
+    final double waitingSince =
+        DateTime.now().millisecondsSinceEpoch / 1000 - 70;
+    writeJson(File('${bookRoot.path}/work/activity.json'), <Object?>[
+      <String, Object?>{
+        'at': waitingSince,
+        'started_at': waitingSince,
+        'phase': 'stage_heartbeat',
+        'stage': 'extract',
+        'segment': 1,
+        'message': '第 1 段正文抽取仍在等待模型',
+      },
+    ]);
     processing.status(entry, <String, Object?>{
       'state': 'running',
       'done': 0,
@@ -346,6 +465,7 @@ void main() {
     await tester.pump();
     expect(find.text('已整理 0 / 603 段'), findsOneWidget);
     expect(find.text('已发送 4 段，正在等待模型回复'), findsOneWidget);
+    expect(find.textContaining('已等待 1 分'), findsOneWidget);
 
     writeJson(File('${bookRoot.path}/work/activity.json'), <Object?>[
       <String, Object?>{
@@ -363,6 +483,68 @@ void main() {
     });
     await tester.pump();
     expect(find.textContaining('正文 · 已完成 9 / 603 段'), findsOneWidget);
+  });
+
+  testWidgets('paused card names the unfinished segment and last stage', (
+    WidgetTester tester,
+  ) async {
+    writeJson(File('${bookRoot.path}/work/activity.json'), <Object?>[
+      <String, Object?>{
+        'at': 1780000000,
+        'phase': 'stage_heartbeat',
+        'message': 'not used by the paused summary',
+        'done': 10,
+        'total': 603,
+        'segment': 11,
+        'stage': 'relation',
+        'started_at': 1779999940,
+      },
+      <String, Object?>{
+        'at': 1780000060,
+        'phase': 'paused',
+        'message': '整理已暂停',
+      },
+    ]);
+    processing.status(entry, <String, Object?>{
+      'state': 'paused',
+      'done': 10,
+      'total': 603,
+      'pause_reason': 'interrupted',
+      'updated': 1780000060,
+    });
+    await open(tester);
+    expect(find.text('下一段：第 11 / 603 段，尚未完成。'), findsOneWidget);
+    expect(find.textContaining('上次整理中断后已暂停'), findsOneWidget);
+    expect(find.textContaining('第 11 段 · 人物关联已等待'), findsWidgets);
+    expect(find.text('导出整理诊断'), findsOneWidget);
+  });
+
+  testWidgets('automatic retry can be stopped from the book card', (
+    WidgetTester tester,
+  ) async {
+    writeJson(File('${bookRoot.path}/meta.json'), <String, Object?>{
+      'auto': true,
+    });
+    processing.runtimeHealth = <String, Object?>{
+      'alive': true,
+      'current': null,
+      'queued': const <String>[],
+    };
+    processing.status(entry, <String, Object?>{
+      'state': 'error',
+      'done': 10,
+      'total': 603,
+      'error': '模型连接超时',
+      'retryable': true,
+      'retry_at': DateTime.now().millisecondsSinceEpoch / 1000 + 600,
+    });
+    await open(tester);
+    expect(find.text('模型请求遇到问题，等待自动重试'), findsOneWidget);
+    expect(find.textContaining('自动重试；已经整理好的部分会保留'), findsOneWidget);
+    await tester.tap(find.text('停止自动重试'));
+    await tester.pumpAndSettle();
+    expect(processing.pauses, 1);
+    expect(find.text('继续整理'), findsOneWidget);
   });
 
   testWidgets('missing key and start failures remain visible and retryable', (

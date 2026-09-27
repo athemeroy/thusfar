@@ -34,6 +34,7 @@ A long novel brings back names you have not seen for hundreds of pages. Looking 
 - **Catch up without looking ahead.** The cast list, relationship graph, recaps, and questions share the same reading cutoff. Answers link back to cited passages.
 - **Make the book yours.** Import TXT or EPUB, take notes, add bookmarks, and search. Adjust type size, line spacing, letter spacing, and page margins to fit your screen. Your books and reading history stay on your device.
 - **Choose your own model.** Add a model API to prepare character guides. Preparation uses a connection; everyday reading works offline.
+- **Keep your place while preparing.** Short network outages retry automatically without discarding completed work. Open a book's details to see the current step, resume processing, or export a diagnostic record that excludes book text and API keys.
 
 ## Download
 

@@ -593,8 +593,25 @@ extension RunnerSupport on Runner {
     Json? rec;
     int refusals = 0;
     Object? lastError;
-    for (int attempt = 0; attempt < 4; attempt++) {
+    final int maxAttempts = math.min(
+      4,
+      math.max(1, int.tryParse(environ['LOCAL_SEGMENT_RETRIES'] ?? '') ?? 4),
+    );
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
       checkpoint();
+      if (activity) {
+        recordBookActivity(
+          root,
+          'model_attempt',
+          '第 ${i + 1} 段正在请求模型（第 ${attempt + 1}/$maxAttempts 次）',
+          done: i,
+          total: segs.length,
+          segment: i + 1,
+          stage: 'extract',
+          attempt: attempt + 1,
+          at: backend.now(),
+        );
+      }
       try {
         final double start = backend.now();
         final (Json data, Json tokens) = await backend.extractLocal(
@@ -664,21 +681,32 @@ extension RunnerSupport on Runner {
         final String? reason = llm.explain(e);
         if (reason != null && reason.isNotEmpty) throw llm.LLMError(reason);
         lastError = e;
-        notify('模型请求失败，正在重试（第 ${attempt + 1} 次）：${_cut(_error(e), 160)}');
+        final bool willRetry = attempt + 1 < maxAttempts;
+        notify(
+          willRetry
+              ? '第 ${i + 1} 段请求失败，准备第 ${attempt + 2}/$maxAttempts 次：${_cut(_error(e), 160)}'
+              : '第 ${i + 1} 段本轮请求失败：${_cut(_error(e), 160)}',
+        );
         final bool rate =
             e is llm.LLMError &&
             pyRe(
               r'\b(429|5\d\d)\b|timed out|timeout',
               ignoreCase: true,
             ).hasMatch(_error(e));
-        if (attempt < 3)
+        if (willRetry)
           await awaitFuture(
             backend.sleep(Duration(seconds: rate ? 15 * (attempt + 1) : 1)),
           );
       }
     }
-    if (rec == null)
-      throw llm.LLMError('第 $i 段连续四次请求模型都失败，已暂停：${_cut('$lastError', 200)}');
+    if (rec == null) {
+      final String reason =
+          '第 ${i + 1} 段连续 $maxAttempts 次请求模型都失败：${_cut('$lastError', 200)}';
+      if (lastError != null && llm.transientFailure(lastError)) {
+        throw llm.TransientLLMError(reason);
+      }
+      throw llm.LLMError(reason);
+    }
     checkpoint();
     return addSupport(await addRelations(rec, i, model), i);
   }

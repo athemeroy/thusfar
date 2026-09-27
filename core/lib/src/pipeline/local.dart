@@ -208,11 +208,18 @@ Future<(Json, Map<String, Object?>)> extractLocal(
     prev,
     castHint: castHint,
   );
+  // The phone worker keeps extraction retries at the segment boundary, where
+  // each attempt can be shown in the book's activity record. Other clients
+  // retain the regular chat retry policy.
+  final int? chatRetries = int.tryParse(
+    environ['LOCAL_EXTRACT_CHAT_RETRIES'] ?? '',
+  );
   final ChatResult first = await chat(
     m,
     msgs,
     maxTokens: 9000,
     temperature: 0.2,
+    retries: chatRetries,
   );
   String text = first.text;
   Map<String, Object?> usage = first.usage;
@@ -237,6 +244,7 @@ Future<(Json, Map<String, Object?>)> extractLocal(
       ],
       maxTokens: 9000,
       temperature: 0,
+      retries: chatRetries,
     );
     data = parseJson(fix.text);
     text = fix.text;

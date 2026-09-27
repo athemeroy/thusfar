@@ -22,6 +22,16 @@ export '../pipeline/run_lease.dart'
     show RunCancellation, Cancelled, AlreadyRunning, RunLease, isBookRunning;
 
 typedef Json = Map<String, Object?>;
+
+/// A safe, durable explanation for why a book stopped processing.
+enum BookPauseReason {
+  user('user'),
+  backgroundTimeLimit('background_time_limit');
+
+  const BookPauseReason(this.value);
+  final String value;
+}
+
 typedef WorkerRun =
     Future<void> Function(
       Directory root, {
@@ -158,12 +168,13 @@ bool _same(Object? a, Object? b) {
   return a == b;
 }
 
-/// Application-owned worker. Construct and use in one isolate; start() never
-/// enables automatic paid requests. The default mode only runs explicit actions.
+/// Application-owned worker. Construct and use in one isolate. An explicit
+/// client may opt into recovering work it previously authorized on startup.
 class Worker {
   Worker(
     this.books, {
     this.enabled = false,
+    this.resumeInterrupted = false,
     WorkerRun? run,
     WorkerSettings Function()? settings,
     this.onChange,
@@ -181,6 +192,7 @@ class Worker {
 
   final Directory books;
   final bool enabled;
+  final bool resumeInterrupted;
   final void Function(Json)? onChange;
   final Duration scanInterval;
   final WorkerRun _runBook;
@@ -196,6 +208,7 @@ class Worker {
   Completer<void>? _currentDone;
   RunCancellation? _cancellation;
   Timer? _timer;
+  Timer? _retryTimer;
   bool _alive = false;
   bool _stopping = false;
   bool _scanAgain = false;
@@ -274,6 +287,7 @@ class Worker {
     if (_stopping) return;
     _alive = true;
     if (enabled) _timer = Timer.periodic(scanInterval, (_) => _wake());
+    _scheduleRetryWake();
     _notify();
     if (enabled || _queue.isNotEmpty) _wake();
   }
@@ -293,6 +307,7 @@ class Worker {
         }.contains(state['state']))
           continue;
         if (await _probe(root)) continue;
+        String? reconciled;
         await _withLease(root, () {
           state = _json(root, 'status.json');
           if (!<String>{
@@ -303,20 +318,39 @@ class Worker {
           }.contains(state['state']))
             return;
           final Json meta = _json(root, 'meta.json');
+          final bool manualPause =
+              state['pause_reason'] == BookPauseReason.user.value;
           final String next =
-              enabled && _truth(meta['auto']) ? 'queued' : 'paused';
+              (enabled || resumeInterrupted) &&
+                      _truth(meta['auto']) &&
+                      !manualPause
+                  ? 'queued'
+                  : 'paused';
+          if (manualPause && _truth(meta['auto'])) {
+            // A crash between writing the user's pause cause and disabling
+            // auto must never turn that explicit stop into an auto resume.
+            meta['auto'] = false;
+            _save(root, 'meta.json', meta);
+          }
+          reconciled = next;
           state.addAll(<String, Object?>{
             'state': next,
             'updated': _clock(),
             'error': null,
           });
+          if (next == 'queued') {
+            state.remove('pause_reason');
+          } else {
+            state['pause_reason'] ??= 'interrupted';
+          }
           _save(root, 'status.json', state);
           _receipt(root, <String, Object?>{
             'phase': next,
-            'reason': 'reconciled',
+            'reason': next == 'queued' ? 'recovered' : 'reconciled',
             'owner_pid': null,
           });
         });
+        if (reconciled == 'queued' && !enabled) _queue.add(_name(root));
       } on BusyBook {
         continue;
       } on Object catch (error) {
@@ -328,6 +362,7 @@ class Worker {
       }
     }
     _notify();
+    if (_alive && _queue.isNotEmpty) _wake();
   }
 
   Future<void> startBook(Directory root) async {
@@ -338,7 +373,11 @@ class Worker {
   Future<void> resumeBook(Directory root) => startBook(root);
 
   /// Preserve Python's explicit quality-retry acknowledgement protocol.
-  Future<void> setAuto(Directory root, bool value) async {
+  Future<void> setAuto(
+    Directory root,
+    bool value, {
+    bool preserveQualityRetry = false,
+  }) async {
     _checkRoot(root);
     if (value && _stopping) throw const RuntimeError('处理器已停止，请重新打开书库');
     if (value &&
@@ -352,19 +391,44 @@ class Worker {
     final bool resumeFinalJobs = _resumeBioFinalJobsInPlace(root, quality);
     final bool retryOnlyTitles = _retryOnlyTitlesInPlace(quality);
     final bool resumeInPlace = resumeFinalJobs || retryOnlyTitles;
+    final Object? pendingQuality = quality['pending'];
+    final bool criticalRepair =
+        (pendingQuality is List &&
+            pendingQuality.contains('quarantined-critical-checks')) ||
+        _truth(_json(root, 'work/repair-policy.json')['identity_taint']);
+    // A transient failure continues the same run from its cached frontier.
+    // Preserve its retry count when the user asks to try immediately.
+    final bool continuingTransientFailure =
+        value &&
+        !criticalRepair &&
+        state['retryable'] == true &&
+        <String>{'error', 'paused'}.contains(state['state']);
     final bool retryQuality =
         value &&
-        !resumeInPlace &&
-        (_truth(quality['pending']) || quality['state'] == 'pending') &&
-        !<String>{
+        (state['state'] == 'done' ||
+            (criticalRepair &&
+                <String>{'error', 'paused'}.contains(state['state']))) &&
+        (criticalRepair ||
+            (!resumeInPlace &&
+                (_truth(quality['pending']) || quality['state'] == 'pending')));
+    final bool preserveQualityTransaction =
+        !value &&
+        preserveQualityRetry &&
+        _truth(meta['retry_quality']) &&
+        state['state'] != 'done' &&
+        <String>{
+          'queued',
           'running',
           'finalizing',
           'cancelling',
+          'paused',
+          'error',
         }.contains(state['state']);
     meta['auto'] = value;
     if (retryQuality) {
       meta['retry_quality'] = true;
-    } else if (!value || resumeInPlace) {
+    } else if ((!value && !preserveQualityTransaction) ||
+        (resumeInPlace && state['state'] == 'done')) {
       meta.remove('retry_quality');
     }
     _save(root, 'meta.json', meta);
@@ -384,12 +448,17 @@ class Worker {
         'updated': _clock(),
         'error': null,
       });
+      state
+        ..remove('pause_reason')
+        ..remove('retryable')
+        ..remove('retry_at');
+      if (!continuingTransientFailure) state.remove('retry_count');
       _save(root, 'status.json', state);
       _receipt(
         root,
         <String, Object?>{
           'phase': 'queued',
-          'retry_quality': retryQuality,
+          'retry_quality': _truth(meta['retry_quality']),
           'owner_pid': null,
         },
         newRequest:
@@ -404,6 +473,7 @@ class Worker {
       _queue.add(id);
     }
     _notify();
+    _scheduleRetryWake();
     _wake();
   }
 
@@ -413,21 +483,46 @@ class Worker {
     Directory root, {
     Duration timeout = const Duration(seconds: 15),
     bool preserveAuto = false,
+    BookPauseReason reason = BookPauseReason.user,
   }) async {
     _checkRoot(root);
+    final String id = _name(root);
+    // A later Android timeout must not turn an explicit user pause into an
+    // automatically resumable background-limit pause.
+    if (reason == BookPauseReason.backgroundTimeLimit &&
+        _json(root, 'status.json')['pause_reason'] ==
+            BookPauseReason.user.value) {
+      return;
+    }
+    if (_current != id && await _probe(root)) throw const BusyBook();
+    if (_current == id && !preserveAuto) {
+      // Persist the cause before signalling cancellation. The pipeline can
+      // settle immediately and must see the same reason in its paused state.
+      final Json state = _json(root, 'status.json');
+      if (state['state'] != 'done') {
+        state['pause_reason'] = reason.value;
+        _save(root, 'status.json', state);
+      }
+    }
     // Mark intent before the first await, so a rapid resume cannot flip auto
     // back on while this run is already leaving its cancellation boundary.
-    if (_current == _name(root)) _cancellation?.cancel();
-    if (!preserveAuto) await setAuto(root, false);
-    _queue.remove(_name(root));
-    final Completer<void>? active =
-        _current == _name(root) ? _currentDone : null;
+    if (_current == id) _cancellation?.cancel();
+    if (!preserveAuto) {
+      await setAuto(root, false, preserveQualityRetry: true);
+    }
+    _queue.remove(id);
+    final Completer<void>? active = _current == id ? _currentDone : null;
     if (active != null) {
       _cancellation!.cancel();
       final Json state = _json(root, 'status.json');
       state.addAll(<String, Object?>{
         'state': 'cancelling',
         'updated': _clock(),
+        if (!preserveAuto)
+          'pause_reason':
+              state['pause_reason'] == BookPauseReason.user.value
+                  ? BookPauseReason.user.value
+                  : reason.value,
       });
       _save(root, 'status.json', state);
       _receipt(root, <String, Object?>{'phase': 'cancelling'});
@@ -450,6 +545,14 @@ class Worker {
           'updated': _clock(),
           'error': null,
         });
+        if (preserveAuto) {
+          state.remove('pause_reason');
+        } else {
+          state['pause_reason'] =
+              state['pause_reason'] == BookPauseReason.user.value
+                  ? BookPauseReason.user.value
+                  : reason.value;
+        }
         _save(root, 'status.json', state);
         _receipt(root, <String, Object?>{'phase': next, 'owner_pid': null});
       }
@@ -462,7 +565,13 @@ class Worker {
     Directory root, {
     Duration timeout = const Duration(seconds: 15),
     bool preserveAuto = false,
-  }) => pauseBook(root, timeout: timeout, preserveAuto: preserveAuto);
+    BookPauseReason reason = BookPauseReason.user,
+  }) => pauseBook(
+    root,
+    timeout: timeout,
+    preserveAuto: preserveAuto,
+    reason: reason,
+  );
 
   void _wake() {
     if (!_alive || _stopping) return;
@@ -531,12 +640,75 @@ class Worker {
     }
   }
 
+  static double _retryDelay(int count) {
+    // No retry cap for a transient outage; delay stops growing at 15 minutes.
+    final int power = (count - 1).clamp(0, 5);
+    final double seconds = 30.0 * (1 << power);
+    return seconds > 900 ? 900 : seconds;
+  }
+
+  double _retryAt(Json state) {
+    final Object? stored = state['retry_at'];
+    if (stored is num && stored.isFinite) return stored.toDouble();
+    final int count = ((state['retry_count'] as num?)?.toInt() ?? 1).clamp(
+      1,
+      1000000,
+    );
+    final double updated = (state['updated'] as num?)?.toDouble() ?? _clock();
+    return updated + _retryDelay(count);
+  }
+
+  bool _retryPending(Json meta, Json state) =>
+      _truth(meta['auto']) &&
+      state['state'] == 'error' &&
+      state['retryable'] == true;
+
+  /// One-shot wakeups are enough for the explicit client worker. Re-read
+  /// durable files on each wake so an external lease or a user pause wins.
+  void _scheduleRetryWake() {
+    _retryTimer?.cancel();
+    _retryTimer = null;
+    if (!_alive || _stopping || (!enabled && !resumeInterrupted)) return;
+    final double now = _clock();
+    double? next;
+    bool queued = false;
+    for (final Directory root in _roots()) {
+      try {
+        final Json meta = _json(root, 'meta.json');
+        final Json state = _json(root, 'status.json');
+        if (!_retryPending(meta, state)) continue;
+        final double at = _retryAt(state);
+        if (at <= now && _current != _name(root)) {
+          _queue.add(_name(root));
+          queued = true;
+        }
+        // If a separate process owns a due book, retry the lease check later.
+        final double wake = at <= now ? now + 60 : at;
+        if (next == null || wake < next) next = wake;
+      } on Object catch (error) {
+        _lastError = <String, Object?>{
+          'book': _name(root),
+          'message': _short(error),
+          'at': now,
+        };
+      }
+    }
+    if (next != null) {
+      final int millis = ((next - now) * 1000).ceil().clamp(1, 900000);
+      _retryTimer = Timer(Duration(milliseconds: millis), _scheduleRetryWake);
+    }
+    if (queued) {
+      _notify();
+      _wake();
+    }
+  }
+
   bool _eligible(Directory root, Json meta, Json state) =>
       _file(root, 'book.json').existsSync() &&
       _truth(meta['auto']) &&
       !(state['state'] == 'done' && !_truth(meta['retry_quality'])) &&
-      !(state['state'] == 'error' &&
-          _clock() - ((state['updated'] as num?) ?? 0) < 1800);
+      (state['state'] != 'error' ||
+          (_retryPending(meta, state) && _clock() >= _retryAt(state)));
 
   /// One serialized attempt, also useful for deterministic offline executors.
   /// This does not grant permission: meta.auto must already be explicit/true.
@@ -549,6 +721,8 @@ class Worker {
     state = _json(root, 'status.json');
     if (_stopping || !_eligible(root, meta, state)) return;
     final bool retryQuality = _truth(meta['retry_quality']);
+    final int priorRetryCount =
+        (state['retry_count'] as num?)?.toInt().clamp(0, 1000000) ?? 0;
     final Json? retryBefore =
         retryQuality ? _read(_file(root, 'work/quality-retry.json')) : null;
     final WorkerSettings settings = _settings();
@@ -565,6 +739,16 @@ class Worker {
       environ['JUDGE_LOG_DIR'] = '${root.path}/work/judge';
       jev.resetJevStats();
       final Json prior = _json(root, 'work/worker-receipt.json');
+      if (state['state'] == 'error') {
+        // An interrupted retry is an active task on the next launch, rather
+        // than an error that has silently lost its retry schedule.
+        state
+          ..['state'] = 'running'
+          ..['updated'] = _clock()
+          ..remove('retryable')
+          ..remove('retry_at');
+        _save(root, 'status.json', state);
+      }
       _receipt(root, <String, Object?>{
         'phase': 'running',
         'owner_pid': pid,
@@ -638,6 +822,14 @@ class Worker {
           'error':
               _truth(state['error']) ? state['error'] : '处理进程未完成（退出码 $code）',
         });
+        if (state['retryable'] == true && !stopAfterBioFailure) {
+          final int count = priorRetryCount + 1;
+          state['retry_count'] = count;
+          state['retry_at'] = _clock() + _retryDelay(count);
+        } else {
+          state.remove('retry_at');
+          if (stopAfterBioFailure) state['retryable'] = false;
+        }
         _save(root, 'status.json', state);
         _lastError = <String, Object?>{
           'book': _name(root),
@@ -658,6 +850,7 @@ class Worker {
         'owner_pid': null,
         'finished_at': _clock(),
       });
+      _scheduleRetryWake();
     } finally {
       if (previousJudgeDirectory == null) {
         environ.remove('JUDGE_LOG_DIR');
@@ -679,7 +872,8 @@ class Worker {
             ? <String, Object?>{}
             : _json(root, 'work/worker-receipt.json');
     final double now = _clock();
-    _save(root, 'work/worker-receipt.json', <String, Object?>{
+    final String phase = '${fields['phase'] ?? ''}';
+    final Json receipt = <String, Object?>{
       'schema': 1,
       'book': _name(root),
       'request_id': '${(now * 1000000).round()}-$pid-${++_sequence}',
@@ -688,12 +882,28 @@ class Worker {
       ...previous,
       ...fields,
       'updated': now,
-    });
-    final String phase = '${fields['phase'] ?? ''}';
+    };
+    final String? pauseReason;
+    if (phase == 'paused' || phase == 'cancelling') {
+      final Object? cause =
+          fields['pause_reason'] ?? _json(root, 'status.json')['pause_reason'];
+      pauseReason = cause is String ? cause : null;
+      if (pauseReason != null) receipt['pause_reason'] = pauseReason;
+    } else {
+      pauseReason = null;
+      receipt.remove('pause_reason');
+    }
+    _save(root, 'work/worker-receipt.json', receipt);
     final String? message = switch (phase) {
+      'queued' when fields['reason'] == 'recovered' => '中断后自动继续',
       'queued' => '已加入整理队列',
       'running' => '正在检查书籍和整理缓存',
+      'cancelling' when pauseReason == 'background_time_limit' =>
+        '系统后台整理时段结束，正在暂停',
       'cancelling' => '正在暂停，等待当前请求结束',
+      'paused' when pauseReason == 'background_time_limit' => '系统后台整理时段结束，已暂停',
+      'paused' when pauseReason == 'user' => '已手动暂停整理',
+      'paused' when pauseReason == 'interrupted' => '整理中断，等待手动继续',
       'paused' => '整理已暂停',
       'done' => '整理完成',
       'error' => '整理出错，请查看状态详情',
@@ -710,6 +920,8 @@ class Worker {
     _stopping = true;
     _timer?.cancel();
     _timer = null;
+    _retryTimer?.cancel();
+    _retryTimer = null;
     _cancellation?.cancel();
     _queue.clear();
     if (_current == null) _alive = false;

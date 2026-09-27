@@ -142,6 +142,19 @@ void main() {
           await worker.processBook(root);
         }
       }
+      final Json expected = <String, Object?>{...scenario['output']! as Json};
+      if (spec['run'] == 'cancel') {
+        expected['status'] = <String, Object?>{
+          ...expected['status']! as Json,
+          'pause_reason': 'user',
+        };
+      }
+      if (scenario['case'] == 'expired_error_can_run') {
+        // The client now requires an explicit retryable classification before
+        // automatically rerunning an error, regardless of its age.
+        expected['status'] = spec['status'];
+        expected['calls'] = <Object?>[];
+      }
       expect(<String, Object?>{
         'meta': read(root, 'meta.json'),
         'status': read(root, 'status.json'),
@@ -152,12 +165,12 @@ void main() {
             File('${root.path}/work/quality-retry.json').existsSync()
                 ? read(root, 'work/quality-retry.json')
                 : null,
-      }, scenario['output']);
+      }, expected);
     });
   }
 
   test(
-    'startup reconciles stale states without dispatching persisted auto flags or rebuilding caches',
+    'startup resumes stale auto work on the explicit worker without rebuilding caches',
     () async {
       final List<Directory> roots = <Directory>[
         for (final String state in <String>[
@@ -191,9 +204,10 @@ void main() {
           'quality': <String, Object?>{'state': 'pending'},
         },
       );
-      int calls = 0;
+      final List<String> calls = <String>[];
       final Worker worker = Worker(
         books,
+        resumeInterrupted: true,
         probe: free,
         run: (
           Directory root, {
@@ -203,28 +217,78 @@ void main() {
           required String localModel,
           required int concurrency,
         }) async {
-          calls++;
+          calls.add(root.path);
+          save(root, 'status.json', <String, Object?>{
+            ...read(root, 'status.json'),
+            'state': 'done',
+          });
         },
       );
       workers.add(worker);
       await worker.start();
       await worker.waitIdle();
-      expect(calls, 0);
+      expect(calls, roots.map((Directory root) => root.path).toList()..sort());
       expect(worker.health()['alive'], isTrue);
       for (final Directory root in roots) {
-        expect(read(root, 'status.json')['state'], 'paused');
+        expect(read(root, 'status.json')['state'], 'done');
         expect(read(root, 'status.json')['done'], 4);
         expect(read(root, 'status.json')['frontier'], 120);
         expect(read(root, 'meta.json'), <String, Object?>{'auto': true});
         expect(read(root, 'work/seg-0000.json'), <String, Object?>{
           'local': 'do not rewrite',
         });
-        expect(read(root, 'work/worker-receipt.json')['reason'], 'reconciled');
+        expect(read(root, 'work/worker-receipt.json')['reason'], 'recovered');
+        final List<Object?> activity =
+            jsonDecode(
+                  File('${root.path}/work/activity.json').readAsStringSync(),
+                )
+                as List<Object?>;
+        expect(
+          activity.cast<Json>().map((Json row) => row['message']),
+          contains('中断后自动继续'),
+        );
       }
       expect(read(done, 'status.json')['state'], 'done');
       expect(read(done, 'meta.json').containsKey('retry_quality'), isFalse);
     },
   );
+
+  test('startup keeps an interrupted user pause stopped', () async {
+    final Directory root = book(
+      books,
+      'manual-interrupted',
+      meta: <String, Object?>{'auto': true},
+      status: <String, Object?>{
+        'state': 'cancelling',
+        'pause_reason': 'user',
+        'done': 10,
+      },
+    );
+    int calls = 0;
+    final Worker worker = Worker(
+      books,
+      resumeInterrupted: true,
+      probe: free,
+      run: (
+        Directory root, {
+        required RunCancellation cancellation,
+        required bool retryQuality,
+        required String model,
+        required String localModel,
+        required int concurrency,
+      }) async {
+        calls++;
+      },
+    );
+    workers.add(worker);
+    await worker.start();
+    await worker.waitIdle();
+    expect(calls, 0);
+    expect(read(root, 'status.json')['state'], 'paused');
+    expect(read(root, 'status.json')['pause_reason'], 'user');
+    expect(read(root, 'status.json')['done'], 10);
+    expect(read(root, 'meta.json')['auto'], false);
+  });
 
   test(
     'explicit tasks serialize and resolve current settings for each job',
@@ -267,13 +331,10 @@ void main() {
       expect(calls, <String>[a.path]);
       expect(worker.health()['current'], 'a');
       expect(worker.health()['queued'], <String>['b']);
-      final List<Object?> earlyActivity = jsonDecode(
-        File('${a.path}/work/activity.json').readAsStringSync(),
-      ) as List<Object?>;
-      expect(
-        (earlyActivity.last! as Json)['message'],
-        '正在检查书籍和整理缓存',
-      );
+      final List<Object?> earlyActivity =
+          jsonDecode(File('${a.path}/work/activity.json').readAsStringSync())
+              as List<Object?>;
+      expect((earlyActivity.last! as Json)['message'], '正在检查书籍和整理缓存');
       settings = const WorkerSettings(
         model: 'new-reader-model',
         localModel: 'new-reader-model',
@@ -288,9 +349,9 @@ void main() {
       expect(maximum, 1);
       expect(worker.health()['current'], isNull);
       expect(read(a, 'work/worker-receipt.json')['phase'], 'done');
-      final List<Object?> activity = jsonDecode(
-        File('${b.path}/work/activity.json').readAsStringSync(),
-      ) as List<Object?>;
+      final List<Object?> activity =
+          jsonDecode(File('${b.path}/work/activity.json').readAsStringSync())
+              as List<Object?>;
       expect(
         activity.cast<Json>().map((Json row) => row['phase']),
         containsAllInOrder(<String>['queued', 'running', 'done']),
@@ -348,6 +409,7 @@ void main() {
       expect(tokens[0].isCancelled, isTrue);
       expect(worker.health()['current'], 'a');
       expect(read(a, 'status.json')['state'], 'cancelling');
+      expect(read(a, 'status.json')['pause_reason'], 'user');
       expect(calls, <String>[a.path]);
       await expectLater(
         worker.resumeBook(a),
@@ -370,6 +432,8 @@ void main() {
       await removal;
       expect(removalReady, isTrue);
       expect(read(a, 'status.json')['state'], 'paused');
+      expect(read(a, 'status.json')['pause_reason'], 'user');
+      expect(read(a, 'work/worker-receipt.json')['pause_reason'], 'user');
       pending[1].complete();
       await worker.waitIdle();
       await worker.resumeBook(a);
@@ -383,6 +447,611 @@ void main() {
       pending[2].complete();
       await worker.waitIdle();
       expect(calls, <String>[a.path, b.path, a.path]);
+    },
+  );
+
+  test('background time limit records its cause through final pause', () async {
+    final Directory root = book(books, 'limited');
+    final Completer<void> started = Completer<void>();
+    final Worker worker = Worker(
+      books,
+      probe: free,
+      run: (
+        Directory root, {
+        required RunCancellation cancellation,
+        required bool retryQuality,
+        required String model,
+        required String localModel,
+        required int concurrency,
+      }) async {
+        save(root, 'status.json', <String, Object?>{
+          'state': 'running',
+          'done': 10,
+          'total': 603,
+        });
+        started.complete();
+        await cancellation.whenCancelled;
+        throw const Cancelled();
+      },
+    );
+    workers.add(worker);
+    await worker.startBook(root);
+    await started.future;
+    await worker.pauseBook(root, reason: BookPauseReason.backgroundTimeLimit);
+    await worker.waitIdle();
+    expect(read(root, 'status.json')['state'], 'paused');
+    expect(read(root, 'status.json')['done'], 10);
+    expect(read(root, 'status.json')['pause_reason'], 'background_time_limit');
+    expect(read(root, 'meta.json')['auto'], isFalse);
+    expect(
+      read(root, 'work/worker-receipt.json')['pause_reason'],
+      'background_time_limit',
+    );
+    final List<Object?> activity =
+        jsonDecode(File('${root.path}/work/activity.json').readAsStringSync())
+            as List<Object?>;
+    expect(
+      activity.cast<Json>().map((Json row) => row['message']),
+      contains('系统后台整理时段结束，已暂停'),
+    );
+  });
+
+  test('a later background timeout cannot replace a user pause', () async {
+    final Directory root = book(books, 'manual-first');
+    final Completer<void> started = Completer<void>();
+    final Completer<void> release = Completer<void>();
+    final Worker worker = Worker(
+      books,
+      probe: free,
+      run: (
+        Directory root, {
+        required RunCancellation cancellation,
+        required bool retryQuality,
+        required String model,
+        required String localModel,
+        required int concurrency,
+      }) async {
+        save(root, 'status.json', <String, Object?>{'state': 'running'});
+        started.complete();
+        await release.future;
+        cancellation.check();
+      },
+    );
+    workers.add(worker);
+    await worker.startBook(root);
+    await started.future;
+    await worker.pauseBook(root, timeout: Duration.zero);
+    expect(read(root, 'status.json')['state'], 'cancelling');
+    expect(read(root, 'status.json')['pause_reason'], 'user');
+    await worker.pauseBook(
+      root,
+      timeout: Duration.zero,
+      reason: BookPauseReason.backgroundTimeLimit,
+    );
+    expect(read(root, 'status.json')['pause_reason'], 'user');
+    release.complete();
+    await worker.waitIdle();
+    expect(read(root, 'status.json')['state'], 'paused');
+    expect(read(root, 'status.json')['pause_reason'], 'user');
+    expect(read(root, 'work/worker-receipt.json')['pause_reason'], 'user');
+  });
+
+  test(
+    'user pause wins when an earlier background pause finishes last',
+    () async {
+      final Directory root = book(books, 'background-first');
+      final Completer<void> started = Completer<void>();
+      final Completer<void> release = Completer<void>();
+      final Completer<void> backgroundAtProbe = Completer<void>();
+      final Completer<void> releaseBackgroundProbe = Completer<void>();
+      bool pauseProbes = false;
+      int probes = 0;
+      final Worker worker = Worker(
+        books,
+        probe: (_) async {
+          if (pauseProbes && ++probes == 1) {
+            backgroundAtProbe.complete();
+            await releaseBackgroundProbe.future;
+          }
+          return false;
+        },
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          save(root, 'status.json', <String, Object?>{'state': 'running'});
+          started.complete();
+          await release.future;
+          cancellation.check();
+        },
+      );
+      workers.add(worker);
+      await worker.startBook(root);
+      await started.future;
+      pauseProbes = true;
+      final Future<void> background = worker.pauseBook(
+        root,
+        reason: BookPauseReason.backgroundTimeLimit,
+      );
+      await until(() => read(root, 'status.json')['state'] == 'cancelling');
+      final Future<void> user = worker.pauseBook(root);
+      await until(() => read(root, 'status.json')['pause_reason'] == 'user');
+      release.complete();
+      await backgroundAtProbe.future;
+      await user;
+      expect(read(root, 'status.json')['pause_reason'], 'user');
+      releaseBackgroundProbe.complete();
+      await background;
+      expect(read(root, 'status.json')['state'], 'paused');
+      expect(read(root, 'status.json')['pause_reason'], 'user');
+      expect(read(root, 'work/worker-receipt.json')['pause_reason'], 'user');
+    },
+  );
+
+  test(
+    'a due transient retry resumes after restart, fatal error does not',
+    () async {
+      final Directory transient = book(
+        books,
+        'transient',
+        meta: <String, Object?>{'auto': true},
+        status: <String, Object?>{
+          'state': 'error',
+          'error': 'network unavailable',
+          'retryable': true,
+          'retry_count': 3,
+          'retry_at': 100,
+        },
+      );
+      final Directory fatal = book(
+        books,
+        'fatal',
+        meta: <String, Object?>{'auto': true},
+        status: <String, Object?>{
+          'state': 'error',
+          'error': 'HTTP 401',
+          'retryable': false,
+          'retry_at': 100,
+        },
+      );
+      final List<String> calls = <String>[];
+      final Worker worker = Worker(
+        books,
+        clock: () => 200,
+        resumeInterrupted: true,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          calls.add(root.path);
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      await worker.start();
+      await worker.waitIdle();
+      expect(calls, <String>[transient.path]);
+      expect(read(transient, 'status.json')['state'], 'done');
+      expect(read(fatal, 'status.json')['state'], 'error');
+    },
+  );
+
+  test(
+    'manual retry of a network error keeps cached segments in place',
+    () async {
+      final Directory root = book(
+        books,
+        'transient-with-quality-marker',
+        meta: <String, Object?>{'auto': true},
+        status: <String, Object?>{
+          'state': 'error',
+          'done': 10,
+          'total': 603,
+          'frontier': 9042,
+          'retryable': true,
+          'retry_count': 4,
+          'retry_at': 5900,
+          'quality': <String, Object?>{
+            'state': 'pending',
+            'pending': <String>['derived-context-review'],
+          },
+        },
+      );
+      save(root, 'work/segs/0009.json', <String, Object?>{'verified': true});
+      int calls = 0;
+      final Worker worker = Worker(
+        books,
+        resumeInterrupted: true,
+        clock: () => 5000,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          calls++;
+          expect(retryQuality, isFalse);
+          expect(read(root, 'status.json')['done'], 10);
+          expect(read(root, 'status.json')['retry_count'], 4);
+          expect(read(root, 'status.json').containsKey('retry_at'), isFalse);
+          expect(read(root, 'work/segs/0009.json')['verified'], true);
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      await worker.startBook(root);
+      await worker.waitIdle();
+      expect(calls, 1);
+      expect(read(root, 'meta.json').containsKey('retry_quality'), isFalse);
+      expect(read(root, 'work/worker-receipt.json')['retry_quality'], false);
+    },
+  );
+
+  test(
+    'resume from paused quality marker keeps verified biographies',
+    () async {
+      final Directory root = book(
+        books,
+        'paused-with-biography',
+        status: <String, Object?>{
+          'state': 'paused',
+          'done': 10,
+          'quality': <String, Object?>{
+            'state': 'pending',
+            'pending': <String>['derived-context-review'],
+          },
+        },
+      );
+      save(root, 'work/bios/0000.json', <String, Object?>{'verified': true});
+      final Worker worker = Worker(
+        books,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          expect(retryQuality, isFalse);
+          expect(read(root, 'work/bios/0000.json')['verified'], true);
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      await worker.startBook(root);
+      await worker.waitIdle();
+      expect(read(root, 'work/bios/0000.json')['verified'], true);
+      expect(read(root, 'meta.json').containsKey('retry_quality'), isFalse);
+    },
+  );
+
+  test(
+    'identity taint requires repair even beside a failed biography',
+    () async {
+      final Directory root = book(
+        books,
+        'identity-taint',
+        status: <String, Object?>{
+          'state': 'paused',
+          'quality': <String, Object?>{
+            'state': 'pending',
+            'pending': <String>['bio-0'],
+          },
+        },
+      );
+      save(root, 'work/jobs/bio-0.json', <String, Object?>{
+        'state': 'failed',
+        'failure_kind': 'bio_content',
+      });
+      save(root, 'work/repair-policy.json', <String, Object?>{
+        'identity_taint': <String, Object?>{'P1': 0},
+      });
+      bool repaired = false;
+      final Worker worker = Worker(
+        books,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          repaired = retryQuality;
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      await worker.startBook(root);
+      await worker.waitIdle();
+      expect(repaired, true);
+    },
+  );
+
+  test('transient retry preserves an earlier explicit quality retry', () async {
+    final Directory root = book(
+      books,
+      'existing-quality-retry',
+      meta: <String, Object?>{'auto': true, 'retry_quality': true},
+      status: <String, Object?>{
+        'state': 'error',
+        'retryable': true,
+        'retry_at': 5900,
+        'quality': <String, Object?>{
+          'state': 'pending',
+          'pending': <String>['chapter-titles'],
+        },
+      },
+    );
+    final Worker worker = Worker(
+      books,
+      resumeInterrupted: true,
+      clock: () => 5000,
+      probe: free,
+      run: (
+        Directory root, {
+        required RunCancellation cancellation,
+        required bool retryQuality,
+        required String model,
+        required String localModel,
+        required int concurrency,
+      }) async {
+        expect(retryQuality, isTrue);
+        save(root, 'status.json', <String, Object?>{'state': 'done'});
+      },
+    );
+    workers.add(worker);
+    await worker.startBook(root);
+    await worker.waitIdle();
+    expect(read(root, 'meta.json')['retry_quality'], true);
+  });
+
+  test(
+    'pausing an in-progress quality transaction keeps its resume intent',
+    () async {
+      final Directory root = book(
+        books,
+        'paused-quality-transaction',
+        meta: <String, Object?>{'auto': true, 'retry_quality': true},
+        status: <String, Object?>{
+          'state': 'running',
+          'quality': <String, Object?>{
+            'state': 'pending',
+            'pending': <String>['derived-context-review'],
+          },
+        },
+      );
+      save(root, 'work/quality-retry.json', <String, Object?>{
+        'state': 'rebuilding',
+      });
+      bool resumedExistingTransaction = false;
+      final Worker worker = Worker(
+        books,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          resumedExistingTransaction = retryQuality;
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      await worker.pauseBook(root);
+      expect(read(root, 'status.json')['state'], 'paused');
+      expect(read(root, 'meta.json')['retry_quality'], true);
+      await worker.resumeBook(root);
+      await worker.waitIdle();
+      expect(resumedExistingTransaction, true);
+      expect(read(root, 'meta.json').containsKey('retry_quality'), false);
+    },
+  );
+
+  test(
+    'queued quality retry survives a pause before its journal exists',
+    () async {
+      final Directory root = book(
+        books,
+        'queued-quality-before-journal',
+        meta: <String, Object?>{'auto': true, 'retry_quality': true},
+        status: <String, Object?>{
+          'state': 'queued',
+          'quality': <String, Object?>{
+            'state': 'pending',
+            'pending': <String>['derived-context-review'],
+          },
+        },
+      );
+      bool resumedQualityRetry = false;
+      final Worker worker = Worker(
+        books,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          resumedQualityRetry = retryQuality;
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      await worker.pauseBook(root);
+      expect(read(root, 'status.json')['state'], 'paused');
+      expect(read(root, 'meta.json')['auto'], false);
+      expect(read(root, 'meta.json')['retry_quality'], true);
+      expect(File('${root.path}/work/quality-retry.json').existsSync(), false);
+      await worker.resumeBook(root);
+      await worker.waitIdle();
+      expect(resumedQualityRetry, true);
+    },
+  );
+
+  test(
+    'one-shot timer retries a transient error while the app stays open',
+    () async {
+      final double due = DateTime.now().microsecondsSinceEpoch / 1e6 + 0.05;
+      final Directory root = book(
+        books,
+        'timed-retry',
+        meta: <String, Object?>{'auto': true},
+        status: <String, Object?>{
+          'state': 'error',
+          'retryable': true,
+          'retry_count': 1,
+          'retry_at': due,
+        },
+      );
+      int calls = 0;
+      final Worker worker = Worker(
+        books,
+        resumeInterrupted: true,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          calls++;
+          save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      workers.add(worker);
+      await worker.start();
+      await until(() => calls == 1);
+      await worker.waitIdle();
+      expect(read(root, 'status.json')['state'], 'done');
+    },
+  );
+
+  test('manual pause cancels a scheduled transient retry', () async {
+    final double due = DateTime.now().microsecondsSinceEpoch / 1e6 + 0.1;
+    final Directory root = book(
+      books,
+      'paused-retry',
+      meta: <String, Object?>{'auto': true},
+      status: <String, Object?>{
+        'state': 'error',
+        'retryable': true,
+        'retry_count': 1,
+        'retry_at': due,
+      },
+    );
+    int calls = 0;
+    final Worker worker = Worker(
+      books,
+      resumeInterrupted: true,
+      probe: free,
+      run: (
+        Directory root, {
+        required RunCancellation cancellation,
+        required bool retryQuality,
+        required String model,
+        required String localModel,
+        required int concurrency,
+      }) async {
+        calls++;
+      },
+    );
+    workers.add(worker);
+    await worker.start();
+    await worker.pauseBook(root);
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    expect(calls, 0);
+    expect(read(root, 'status.json')['state'], 'paused');
+    expect(read(root, 'status.json')['pause_reason'], 'user');
+    expect(read(root, 'meta.json')['auto'], isFalse);
+  });
+
+  test(
+    'transient failures persist capped backoff without a retry cap',
+    () async {
+      final Directory root = book(books, 'retry');
+      final Worker worker = Worker(
+        books,
+        clock: () => 5000,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          save(root, 'status.json', <String, Object?>{
+            'state': 'error',
+            'error': 'HTTP 503',
+            'retryable': true,
+          });
+          throw StateError('temporary outage');
+        },
+      );
+      workers.add(worker);
+      await worker.startBook(root);
+      await worker.waitIdle();
+      expect(read(root, 'status.json')['retry_count'], 1);
+      expect(read(root, 'status.json')['retry_at'], 5030);
+      expect(read(root, 'status.json')['retryable'], isTrue);
+      await worker.close();
+
+      // A later process retains the count and keeps retrying after the cap.
+      final Json state = read(root, 'status.json');
+      state
+        ..['retry_count'] = 9
+        ..['retry_at'] = 0;
+      save(root, 'status.json', state);
+      final Worker resumed = Worker(
+        books,
+        clock: () => 6000,
+        resumeInterrupted: true,
+        probe: free,
+        run: (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          save(root, 'status.json', <String, Object?>{
+            'state': 'error',
+            'error': 'HTTP 503',
+            'retryable': true,
+          });
+          throw StateError('temporary outage');
+        },
+      );
+      workers.add(resumed);
+      await resumed.start();
+      await resumed.waitIdle();
+      expect(read(root, 'status.json')['retry_count'], 10);
+      expect(read(root, 'status.json')['retry_at'], 6900);
     },
   );
 

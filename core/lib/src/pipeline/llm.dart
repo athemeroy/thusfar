@@ -25,6 +25,11 @@ final class DeadlineExceeded extends LLMError {
   const DeadlineExceeded(super.message);
 }
 
+/// A provider or transport failure that may recover without changing input.
+final class TransientLLMError extends LLMError {
+  const TransientLLMError(super.message);
+}
+
 String get gateway => environ['LLM_BASE_URL'] ?? 'https://api.deepseek.com/v1';
 
 Map<String, String>? _envCache;
@@ -381,20 +386,36 @@ final class IoTransport implements ChatTransport {
     final HttpClientRequest req = await _client
         .postUrl(request.url)
         .timeout(timeout);
-    request.headers.forEach(req.headers.set);
-    req.add(utf8.encode(request.body));
-    final HttpClientResponse resp = await req.close().timeout(timeout);
-    final String? retry = resp.headers.value('retry-after');
-    return ChatResponse(
-      resp.statusCode,
-      resp.headers.contentType?.toString() ?? '',
-      resp.timeout(timeout),
-      headers: <String, String>{if (retry != null) 'Retry-After': retry},
-    );
+    try {
+      request.headers.forEach(req.headers.set);
+      req.add(utf8.encode(request.body));
+      final HttpClientResponse resp = await req.close().timeout(timeout);
+      final String? retry = resp.headers.value('retry-after');
+      return ChatResponse(
+        resp.statusCode,
+        resp.headers.contentType?.toString() ?? '',
+        resp.timeout(timeout),
+        headers: <String, String>{if (retry != null) 'Retry-After': retry},
+      );
+    } on Object {
+      // Do not leave a timed-out request uploading while a retry is sent.
+      req.abort();
+      rethrow;
+    }
   }
 }
 
 ChatTransport transport = IoTransport();
+
+/// Stop receiving a response immediately. Transport cleanup may complete only
+/// after its event loop advances, so it must not extend the request deadline.
+Future<void> _cancelResponse<T>(StreamIterator<T> iterator) async {
+  try {
+    await iterator.cancel();
+  } on Object {
+    // The request has already finished or failed; retain that outcome.
+  }
+}
 
 /// Injected wait for retries; tests make it instant.
 Future<void> Function(Duration) sleep = Future<void>.delayed;
@@ -408,6 +429,28 @@ double stallTimeout(String model) {
   final List<double> seen = _replySeconds[model] ?? const <double>[];
   if (seen.length < 3) return 300.0;
   return math.min(600.0, math.max(90.0, 3 * seen.reduce(math.max)));
+}
+
+/// Only failures likely to recover when a connection or provider recovers.
+/// Permanent credentials, endpoint and response-format errors require a person.
+bool transientFailure(Object error) {
+  if (error is DeadlineExceeded ||
+      error is TransientLLMError ||
+      error is TimeoutException ||
+      error is SocketException ||
+      error is HttpException ||
+      error is HandshakeException) {
+    return true;
+  }
+  // Parsing and validation errors can quote arbitrary model output. Never
+  // classify their text as a network failure and retry paid calls forever.
+  if (error is! LLMError) return false;
+  if (explain(error) != null) return false;
+  final String message = error.message;
+  return RegExp(
+    r'^(?:HTTP (?:408|429|5\d\d)\b|模型调用失败：(HTTP (?:408|429|5\d\d)\b|TimeoutException|SocketException|HandshakeException|HttpException|Connection (?:closed|reset|refused|terminated)|Failed host lookup|No route to host|Network is unreachable))',
+    caseSensitive: false,
+  ).hasMatch(message);
 }
 
 /// The reply text and token usage of one chat.
@@ -432,6 +475,12 @@ Future<ChatResult> chat(
 }) async {
   final bool adaptive = timeout == null;
   final double wait = timeout ?? stallTimeout(fullModel);
+  final double wall =
+      double.tryParse(environ['LLM_WALL_TIMEOUT'] ?? '') ??
+      math.max(wait, 600.0);
+  if (!wall.isFinite || wall <= 0) {
+    throw const LLMError('模型请求总时限必须大于零');
+  }
   final int tries = retries ?? int.parse(environ['LLM_RETRIES'] ?? '4');
   final int plus = fullModel.indexOf('+');
   final String model = plus < 0 ? fullModel : fullModel.substring(0, plus);
@@ -455,11 +504,27 @@ Future<ChatResult> chat(
         baseUrl: baseUrl,
       );
       final Stopwatch clock = Stopwatch()..start();
+      Duration remaining() {
+        final int milliseconds =
+            (wall * 1000).round() - clock.elapsedMilliseconds;
+        if (milliseconds <= 0) {
+          throw TimeoutException('模型请求超过 ${wall.round()} 秒总时限');
+        }
+        return Duration(milliseconds: milliseconds);
+      }
+
       double? first;
-      final ChatResponse resp = await transport.post(
-        req,
-        Duration(milliseconds: (wait * 1000).round()),
-      );
+      final ChatResponse resp = await transport
+          .post(
+            req,
+            Duration(
+              milliseconds: math.min(
+                (wait * 1000).round(),
+                remaining().inMilliseconds,
+              ),
+            ),
+          )
+          .timeout(remaining());
       if (resp.status >= 400) {
         final List<int> raw = <int>[];
         // Include enough of a credential crossing the diagnostic boundary to
@@ -471,9 +536,20 @@ Future<ChatResult> chat(
               (int longest, String variant) =>
                   math.max(longest, utf8.encode(variant).length),
             );
-        await for (final List<int> chunk in resp.body) {
-          raw.addAll(chunk);
-          if (raw.length >= readLimit) break;
+        final StreamIterator<List<int>> chunks = StreamIterator<List<int>>(
+          resp.body,
+        );
+        bool exhausted = false;
+        try {
+          while (raw.length < readLimit) {
+            if (!await chunks.moveNext().timeout(remaining())) {
+              exhausted = true;
+              break;
+            }
+            raw.addAll(chunks.current);
+          }
+        } finally {
+          if (!exhausted) unawaited(_cancelResponse(chunks));
         }
         final String safe = redactSecrets(
           utf8.decode(raw.take(readLimit).toList(), allowMalformed: true),
@@ -490,32 +566,40 @@ Future<ChatResult> chat(
       }
       final StringBuffer parts = StringBuffer();
       final Map<String, Object?> usage = <String, Object?>{};
-      bool doneStream = false;
-      await for (final String raw in resp.body
-          .cast<List<int>>()
-          .transform(const Utf8Decoder(allowMalformed: true))
-          .transform(const LineSplitter())) {
-        if (doneStream) continue;
-        final String line = raw.trim();
-        if (!line.startsWith('data:')) continue;
-        final String data = line.substring(5).trim();
-        if (data == '[DONE]') {
-          doneStream = true;
-          continue;
+      final StreamIterator<String> lines = StreamIterator<String>(
+        resp.body
+            .transform(const Utf8Decoder(allowMalformed: true))
+            .transform(const LineSplitter()),
+      );
+      bool exhausted = false;
+      try {
+        while (true) {
+          if (!await lines.moveNext().timeout(remaining())) {
+            exhausted = true;
+            break;
+          }
+          final String line = lines.current.trim();
+          if (!line.startsWith('data:')) continue;
+          final String data = line.substring(5).trim();
+          if (data == '[DONE]') {
+            break;
+          }
+          final Object? ev;
+          try {
+            ev = jsonDecode(data);
+          } on FormatException {
+            continue;
+          }
+          if (ev is! Map<String, Object?>) continue;
+          final String text = delta(protocol, ev, usage);
+          if (text.isNotEmpty) {
+            first ??= clock.elapsedMilliseconds / 1000;
+            parts.write(text);
+            onText?.call(parts.toString());
+          }
         }
-        final Object? ev;
-        try {
-          ev = jsonDecode(data);
-        } on FormatException {
-          continue;
-        }
-        if (ev is! Map<String, Object?>) continue;
-        final String text = delta(protocol, ev, usage);
-        if (text.isNotEmpty) {
-          first ??= clock.elapsedMilliseconds / 1000;
-          parts.write(text);
-          onText?.call(parts.toString());
-        }
+      } finally {
+        if (!exhausted) unawaited(_cancelResponse(lines));
       }
       final String text = parts.toString();
       if (text.trim().isEmpty) {
@@ -570,12 +654,12 @@ Future<ChatResult> chat(
       );
     }
   }
-  throw LLMError(
-    redactSecrets(
-      '模型调用失败：${last is PyException ? last.message : last}',
-      <String>[key],
-    ),
+  final String reason = redactSecrets(
+    '模型调用失败：${last is PyException ? last.message : last}',
+    <String>[key],
   );
+  if (last != null && transientFailure(last)) throw TransientLLMError(reason);
+  throw LLMError(reason);
 }
 
 final class _Fatal implements Exception {

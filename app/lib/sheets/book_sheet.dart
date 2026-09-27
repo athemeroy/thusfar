@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/models.dart' as models;
@@ -8,6 +9,7 @@ import 'package:thusfar_core/llm.dart' as llm;
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/processing.dart';
+import '../data/processing_diagnostics.dart';
 import '../ui/cover.dart';
 import '../ui/device.dart';
 import '../ui/theme.dart';
@@ -146,8 +148,64 @@ class _BookSheetState extends State<BookSheet> {
     ];
   }
 
+  List<Json> _compactActivity(List<Json> activity) {
+    final List<Json> result = <Json>[];
+    for (final Json row in activity) {
+      if (row['phase'] == 'stage_heartbeat' &&
+          result.isNotEmpty &&
+          result.last['phase'] == 'stage_heartbeat' &&
+          result.last['segment'] == row['segment'] &&
+          result.last['stage'] == row['stage']) {
+        result.last = row;
+      } else {
+        result.add(row);
+      }
+    }
+    return result;
+  }
+
+  String _stageName(Object? value) => switch (value) {
+    'extract' => '正文抽取',
+    'relation' => '人物关联',
+    'recap' => '前情整理',
+    'finalize' => '人物资料',
+    _ => '当前阶段',
+  };
+
+  String _activityDescription(Json row) {
+    if (row['phase'] != 'stage_heartbeat') return '${row['message']}';
+    final Object? segment = row['segment'];
+    final String prefix = segment is num && segment > 0
+        ? '第 ${segment.toInt()} 段 · '
+        : '';
+    final Object? first = row['started_at'];
+    final Object? last = row['last_at'] ?? row['at'];
+    final int? minutes = first is num && last is num && last >= first
+        ? ((last - first) / 60).floor()
+        : null;
+    return '$prefix${_stageName(row['stage'])}'
+        '${minutes == null ? '仍在等待' : '已等待 $minutes 分钟'}';
+  }
+
+  String _lastStageSummary(Json row) {
+    if (row['phase'] == 'stage_heartbeat') return _activityDescription(row);
+    if (row['phase'] == 'model_attempt') {
+      final Object? segment = row['segment'];
+      final Object? attempt = row['attempt'];
+      if (segment is num && attempt is num) {
+        return '第 ${segment.toInt()} 段 · 第 ${attempt.toInt()} 次模型请求';
+      }
+    }
+    if (row['phase'] == 'waiting_for_model' || row['phase'] == 'retry') {
+      return _activityDescription(row);
+    }
+    return _activityPhase(row);
+  }
+
   String _activityTime(Object? value) {
-    if (value is! num) return '';
+    if (value is! num || !value.isFinite || value < 0 || value > 4102444800) {
+      return '';
+    }
     final DateTime time = DateTime.fromMillisecondsSinceEpoch(
       (value * 1000).round(),
     );
@@ -177,6 +235,8 @@ class _BookSheetState extends State<BookSheet> {
       'check_titles' || 'check_titles_pending' => '标题',
       'resume_final_jobs' => '资料',
       'waiting_for_model' => '模型',
+      'stage_heartbeat' => '模型',
+      'model_attempt' => '模型',
       'retry' => '重试',
       'finalizing' => '汇总',
       'bio_generating' ||
@@ -249,6 +309,38 @@ class _BookSheetState extends State<BookSheet> {
     '正在暂停，等待当前步骤结束…',
     () => widget.processing.pauseBook(widget.entry),
   );
+
+  Future<void> _exportDiagnostics() async {
+    if (acting) return;
+    setState(() {
+      acting = true;
+      actionLabel = '正在准备整理诊断…';
+    });
+    String message;
+    try {
+      final DateTime now = DateTime.now();
+      final String? path = await FilePicker.platform.saveFile(
+        dialogTitle: '导出整理诊断',
+        fileName: ProcessingDiagnostics.fileName(now),
+        bytes: ProcessingDiagnostics.bytes(
+          bookDirectory: widget.entry.dir,
+          workerHealth: widget.processing.health,
+          now: now,
+        ),
+      );
+      message = path == null ? '没有导出整理诊断' : '整理诊断已导出';
+    } on Object {
+      message = '整理诊断导出没有完成，请检查存储空间后重试。';
+    }
+    if (!mounted) return;
+    setState(() {
+      acting = false;
+      actionLabel = null;
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
   Future<void> _remove() => _action('正在停止整理，完成后移除…', () async {
     await widget.processing.prepareRemoval(widget.entry);
@@ -393,6 +485,18 @@ class _BookSheetState extends State<BookSheet> {
                 widget.onExport();
               },
             ),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+              title: const Text('导出整理诊断'),
+              subtitle: const Text('仅含进度与阶段记录，不含正文或模型密钥'),
+              trailing: Icon(Icons.chevron_right, color: t.ink3),
+              onTap: acting
+                  ? null
+                  : () {
+                      HapticFeedback.lightImpact();
+                      _exportDiagnostics();
+                    },
+            ),
             const SizedBox(height: 12),
             if (!confirmRemove)
               TextButton(
@@ -464,7 +568,7 @@ class _BookSheetState extends State<BookSheet> {
     final BookEntry b = widget.entry;
     final ProcessStatus s = b.status;
     final ({int count, int? firstEnd}) bios = _biographySummary();
-    final List<Json> activity = _activity();
+    final List<Json> activity = _compactActivity(_activity());
     final Json? latestActivity = activity.isEmpty ? null : activity.last;
     final num latestAt = latestActivity?['at'] is num
         ? latestActivity!['at']! as num
@@ -543,7 +647,7 @@ class _BookSheetState extends State<BookSheet> {
         ] else if (thisBookIsRunning && latestActivity != null) ...<Widget>[
           const SizedBox(height: 6),
           Text(
-            '${latestActivity['message']}',
+            _activityDescription(latestActivity),
             style: TextStyle(fontSize: 13, height: 1.4, color: t.ink2),
           ),
         ],
@@ -556,10 +660,18 @@ class _BookSheetState extends State<BookSheet> {
         ],
         if (thisBookIsRunning &&
             activity.isNotEmpty &&
-            _activityAge(activity.last['at']).isNotEmpty) ...<Widget>[
+            <String>{
+              'waiting_for_model',
+              'stage_heartbeat',
+              'model_attempt',
+              'retry',
+            }.contains(activity.last['phase']) &&
+            _activityAge(
+              activity.last['started_at'] ?? activity.last['at'],
+            ).isNotEmpty) ...<Widget>[
           const SizedBox(height: 5),
           Text(
-            '${_activityAge(activity.last['at'])}；等待时长不代表已完成新段落。',
+            '${_activityAge(activity.last['started_at'] ?? activity.last['at'])}；等待时长不代表已完成新段落。',
             style: TextStyle(fontSize: 12, color: t.ink3),
           ),
         ],
@@ -644,6 +756,24 @@ class _BookSheetState extends State<BookSheet> {
         ]);
       }
     } else if (s.isPaused) {
+      final Json? lastWork = activity.cast<Json?>().lastWhere(
+        (Json? row) =>
+            row != null &&
+            <String>{
+              'stage_heartbeat',
+              'model_attempt',
+              'waiting_for_model',
+              'retry',
+              'bio_generating',
+              'bio_review',
+              'check_titles',
+            }.contains(row['phase']),
+        orElse: () => null,
+      );
+      final String pausedAt = _activityTime(s.raw['updated']);
+      final String lastWorkAt = lastWork == null
+          ? ''
+          : _activityTime(lastWork['last_at'] ?? lastWork['at']);
       body.addAll(<Widget>[
         Text(
           '已暂停。已经整理好的部分可以直接看。',
@@ -653,6 +783,25 @@ class _BookSheetState extends State<BookSheet> {
           const SizedBox(height: 6),
           Text(
             '已整理 ${s.done}${s.total > 0 ? '/${s.total}' : ''} 段${s.people > 0 ? ' · 已识别 ${s.people} 位人物' : ''}',
+            style: TextStyle(fontSize: 13, color: t.ink2),
+          ),
+        ],
+        if (s.total > s.done) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            '下一段：第 ${s.done + 1} / ${s.total} 段，尚未完成。',
+            style: TextStyle(fontSize: 13, color: t.ink2),
+          ),
+        ],
+        const SizedBox(height: 6),
+        Text(
+          '${ProcessingDiagnostics.pauseReasonLabel(b.dir, s.raw)}${pausedAt.isEmpty ? '' : ' · $pausedAt'}',
+          style: TextStyle(fontSize: 13, color: t.ink2),
+        ),
+        if (lastWork != null) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            '暂停前最后阶段：${_lastStageSummary(lastWork)}${lastWorkAt.isEmpty ? '' : ' · $lastWorkAt'}',
             style: TextStyle(fontSize: 13, color: t.ink2),
           ),
         ],
@@ -670,9 +819,18 @@ class _BookSheetState extends State<BookSheet> {
         ),
       ]);
     } else if (s.isError) {
+      final bool autoRetry =
+          s.raw['retryable'] == true &&
+          ProcessingDiagnostics.autoEnabled(b.dir) &&
+          health['alive'] == true;
+      final String retryAt = _activityTime(s.raw['retry_at']);
+      final bool retryTimePassed =
+          s.raw['retry_at'] is num &&
+          (s.raw['retry_at']! as num) <=
+              DateTime.now().millisecondsSinceEpoch / 1000;
       body.addAll(<Widget>[
         Text(
-          '整理停下了',
+          autoRetry ? '模型请求遇到问题，等待自动重试' : '整理遇到问题',
           style: TextStyle(
             fontSize: 15,
             color: t.amber,
@@ -684,6 +842,17 @@ class _BookSheetState extends State<BookSheet> {
           s.error ?? '请稍后重试。',
           style: TextStyle(fontSize: 14, height: 1.5, color: t.ink),
         ),
+        if (autoRetry) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            retryAt.isEmpty
+                ? '任务会自动重试，已经整理好的部分会保留。'
+                : retryTimePassed
+                ? '已到预计重试时间，正在等待整理任务处理。已经整理好的部分会保留。'
+                : '预计 $retryAt 自动重试；已经整理好的部分会保留。',
+            style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
+          ),
+        ],
         const SizedBox(height: 10),
         Wrap(
           spacing: 10,
@@ -691,7 +860,7 @@ class _BookSheetState extends State<BookSheet> {
           children: <Widget>[
             if (!workerStopped)
               Pill(
-                label: '重试整理',
+                label: autoRetry ? '现在重试' : '重试整理',
                 filled: true,
                 color: t.zhu,
                 onTap: acting
@@ -699,6 +868,16 @@ class _BookSheetState extends State<BookSheet> {
                     : () {
                         HapticFeedback.lightImpact();
                         _start();
+                      },
+              ),
+            if (autoRetry)
+              Pill(
+                label: '停止自动重试',
+                onTap: acting
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        _pause();
                       },
               ),
             Pill(
@@ -846,7 +1025,7 @@ class _BookSheetState extends State<BookSheet> {
           Padding(
             padding: const EdgeInsets.only(bottom: 5),
             child: Text(
-              '${_activityTime(row['at'])}  ${_activityPhase(row)} · ${row['message']}',
+              '${_activityTime(row['last_at'] ?? row['at'])}  ${_activityPhase(row)} · ${_activityDescription(row)}',
               style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
             ),
           ),

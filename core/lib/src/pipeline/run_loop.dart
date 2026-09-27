@@ -1,5 +1,40 @@
 part of 'run.dart';
 
+/// Judge routes wrap transport errors before title classification sees them.
+/// Match only their known wrappers, never arbitrary text from a chapter title
+/// or an invalid model answer.
+bool _retryableTitleError(Object error) {
+  if (llm.transientFailure(error)) return true;
+  if (error is! llm.LLMError) return false;
+  String detail = error.message;
+  if (detail.startsWith('免费裁判处于冷却期，未调用付费接口') ||
+      detail.startsWith('classifier.dev 暂时跳过（连续失败，冷却中）')) {
+    return true;
+  }
+  const List<String> wrappers = <String>[
+    '免费裁判暂不可用，未调用付费接口：',
+    'classifier.dev 调用失败：',
+    'Jev 调用失败：',
+    '本地裁判失败，未调用付费接口：',
+  ];
+  bool wrapped = false;
+  for (int depth = 0; depth < 3; depth++) {
+    if (detail.startsWith('LLMError: ')) {
+      detail = detail.substring('LLMError: '.length);
+      continue;
+    }
+    final String? wrapper = wrappers.where(detail.startsWith).firstOrNull;
+    if (wrapper == null) break;
+    wrapped = true;
+    detail = detail.substring(wrapper.length);
+  }
+  if (!wrapped) return false;
+  return RegExp(
+    r'^(?:(?:classifier\.dev|Jev) HTTP (?:408|429|5\d\d)\b|HTTP (?:408|429|5\d\d)\b|TimeoutError\b|TimeoutException\b|ConnectionError\b|SocketException\b|HandshakeException\b|HttpException\b|OSError: (?:HttpException|HandshakeException)\b)',
+    caseSensitive: false,
+  ).hasMatch(detail);
+}
+
 extension RunnerLoops on Runner {
   Future<Json> process(int i) async {
     final Json seg = segs[i], state = kg.promptState();
@@ -273,11 +308,47 @@ extension RunnerLoops on Runner {
       throw const llm.LLMError('人物关联结果已隔离，请显式重试质量检查后继续处理');
     final String extractionModel = model ?? local.localModel;
     twoPhase = true;
+    Future<void> waitForFinalJobs(
+      Iterable<Future<Object?>> jobs,
+      int completed,
+    ) async {
+      final List<Future<Object?>> remaining = jobs.toList();
+      if (remaining.isEmpty) return;
+      final double startedAt = backend.now();
+      final Stopwatch waiting = Stopwatch()..start();
+      void heartbeat() {
+        if (!activity) return;
+        recordBookActivity(
+          root,
+          'stage_heartbeat',
+          '正在核对人物与章节资料，已 ${waiting.elapsed.inMinutes} 分钟',
+          done: completed,
+          total: segs.length,
+          stage: 'finalize',
+          startedAt: startedAt,
+          at: backend.now(),
+        );
+      }
+
+      heartbeat();
+      final Timer timer = Timer.periodic(
+        const Duration(minutes: 1),
+        (_) => heartbeat(),
+      );
+      try {
+        for (final Future<Object?> job in remaining) {
+          await awaitFuture(job);
+        }
+      } finally {
+        timer.cancel();
+      }
+    }
+
     try {
       if (limit != 0) await markTitles();
     } on Cancelled {
       rethrow;
-    } catch (_) {
+    } catch (error) {
       for (final Json chapter in _rows(book['chapters'])) {
         chapter.putIfAbsent('spoil', () => true);
       }
@@ -288,6 +359,15 @@ extension RunnerLoops on Runner {
           root,
           'check_titles_pending',
           '章节标题核对未完成，未确认的标题暂时隐藏；继续整理时将重试',
+        );
+      }
+      // A temporary provider or network outage must keep the task eligible
+      // for the worker's durable retry. An unverified title stays hidden until
+      // the next run confirms whether it is safe to show.
+      if (_retryableTitleError(error)) {
+        if (llm.transientFailure(error)) rethrow;
+        throw llm.TransientLLMError(
+          error is llm.LLMError ? error.message : '$error',
         );
       }
     }
@@ -307,9 +387,8 @@ extension RunnerLoops on Runner {
         recordBookActivity(root, 'resume_final_jobs', '正在恢复未完成的章节资料');
       }
       resumeFinalJobs();
-      for (final Future<Object?> f in pending) {
-        await awaitFuture(f);
-      }
+      if (pending.isNotEmpty) status('finalizing', done);
+      await waitForFinalJobs(pending, done);
     }
     int finalized = pending.length;
     publish();
@@ -356,30 +435,52 @@ extension RunnerLoops on Runner {
     for (int i = done; i < end; i++) {
       checkpoint();
       submitUpto(i + concurrency - 1, i);
+      String stage = 'extract';
+      double stageStarted = backend.now();
+      final Stopwatch stageClock = Stopwatch()..start();
+      void heartbeat() {
+        if (!activity) return;
+        final String action = switch (stage) {
+          'relation' => '关联人物',
+          'recap' => '整理前情',
+          'finalize' => '核对章节资料',
+          _ => '等待模型抽取',
+        };
+        recordBookActivity(
+          root,
+          'stage_heartbeat',
+          '第 ${i + 1} 段正在$action，已 ${stageClock.elapsed.inMinutes} 分钟',
+          done: i,
+          total: segs.length,
+          segment: i + 1,
+          stage: stage,
+          startedAt: stageStarted,
+          at: backend.now(),
+        );
+      }
+
+      void nextStage(String value) {
+        stage = value;
+        stageStarted = backend.now();
+        stageClock.reset();
+        heartbeat();
+      }
+
+      heartbeat();
+      final Timer timer = Timer.periodic(
+        const Duration(minutes: 1),
+        (_) => heartbeat(),
+      );
       try {
-        final Stopwatch waiting = Stopwatch()..start();
-        final Timer heartbeat = Timer.periodic(const Duration(minutes: 1), (_) {
-          if (activity)
-            recordBookActivity(
-              root,
-              'waiting_for_model',
-              '第 ${i + 1} 段仍在等待模型，已 ${waiting.elapsed.inMinutes} 分钟',
-              done: i,
-              total: segs.length,
-              at: backend.now(),
-            );
-        });
-        final Json localRec;
-        try {
-          localRec = await awaitFuture(futures[i]!);
-        } finally {
-          heartbeat.cancel();
-        }
+        final Json localRec = await awaitFuture(futures[i]!);
         checkpoint();
+        nextStage('relation');
         final Json rec = await link(i, localRec);
         checkpoint();
         apply(rec);
+        nextStage('recap');
         await maybeRecap(i);
+        nextStage('finalize');
         for (final Future<Object?> f in pending.skip(finalized)) {
           await awaitFuture(f);
         }
@@ -392,18 +493,19 @@ extension RunnerLoops on Runner {
           'error',
           i,
           error: _cut(e is llm.LLMError ? _error(e) : _typedError(e), 300),
+          retryable: llm.transientFailure(e),
         );
         localPool!.stopped = true;
         rethrow;
+      } finally {
+        timer.cancel();
       }
       done = i + 1;
       if (done % 3 == 0 || done == end) publish();
       status(done < segs.length ? 'running' : 'finalizing', done);
     }
     await localPool!.close();
-    for (final Future<Object?> f in pending) {
-      await awaitFuture(f);
-    }
+    await waitForFinalJobs(pending.skip(finalized), done);
     publish();
     if (done == segs.length && limit != 0) finishQualityRetry();
     status(done < segs.length ? 'running' : 'done', done);
@@ -465,6 +567,10 @@ Future<void> runBook(
         'state': 'paused',
         'updated': backend.now(),
         'error': null,
+        'quality': {
+          'state': runner.qualityPending.isNotEmpty ? 'pending' : 'verified',
+          'pending': _sorted(runner.qualityPending),
+        },
       });
       writeJson(path, state, compact: false);
       onProgress?.call(state);
@@ -483,6 +589,7 @@ Future<void> runBook(
     state.addAll({
       'state': 'error',
       'error': _cut(e is llm.LLMError ? _error(e) : _typedError(e), 300),
+      'retryable': state['retryable'] == true || llm.transientFailure(e),
       'notice': null,
       'updated': backend.now(),
     });
@@ -503,6 +610,10 @@ Future<void> runBook(
           final File path = File('${root.path}/status.json');
           final Json state = path.existsSync() ? _read(path) : {};
           state['usage'] = usage;
+          state['quality'] = {
+            'state': runner.qualityPending.isNotEmpty ? 'pending' : 'verified',
+            'pending': _sorted(runner.qualityPending),
+          };
           state['updated'] = backend.now();
           writeJson(path, state, compact: false);
           onProgress?.call(state);

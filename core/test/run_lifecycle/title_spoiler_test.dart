@@ -165,12 +165,57 @@ void main() {
     }
   });
 
-  test('failed check hides unknown title and keeps retry pending', () async {
+  test(
+    'network failure in the free judge leaves titles hidden for automatic retry',
+    () async {
+      final Directory root = _book(temp, 'network-retry');
+      judge.judgeCall = (Object? state, Json questions) async {
+        throw const llm.LLMError(
+          '免费裁判暂不可用，未调用付费接口：LLMError: classifier.dev 调用失败：SocketException: Network is unreachable',
+        );
+      };
+
+      await expectLater(runBook(root, limit: 1), throwsA(isA<llm.LLMError>()));
+      final Json status =
+          jsonDecode(File('${root.path}/status.json').readAsStringSync())
+              as Json;
+      expect(status['state'], 'error');
+      expect(status['retryable'], isTrue);
+      expect(
+        (status['quality']! as Json)['pending'],
+        contains('chapter-titles'),
+      );
+      expect(_chapters(root).map((Json c) => c['spoil']), <Object?>[
+        false,
+        true,
+      ]);
+      expect(File('${root.path}/work/segs/0000.json').existsSync(), isFalse);
+
+      judge.judgeCall =
+          (Object? state, Json questions) async => <String, Object?>{
+            't0': _label('safe'),
+            't1': _label('spoils'),
+          };
+      final Runner resumed = await Runner.create(root, activity: false);
+      try {
+        await resumed.markTitles();
+        expect(_chapters(root).map((Json c) => c['spoil']), <Object?>[
+          false,
+          true,
+        ]);
+        expect(resumed.qualityPending, isNot(contains('chapter-titles')));
+      } finally {
+        await resumed.close();
+      }
+    },
+  );
+
+  test('uncertain check hides unknown title and keeps retry pending', () async {
     final Directory root = _book(temp, 'retry');
     final RunCancellation cancellation = RunCancellation();
     judge.judgeCall = (Object? state, Json questions) async {
       cancellation.cancel();
-      throw StateError('classifier unavailable');
+      throw const llm.LLMError('章节标题核对结果不确定：正文提到 TimeoutError');
     };
     final Runner runner = await Runner.create(
       root,
@@ -195,4 +240,49 @@ void main() {
       await runner.close(cancelled: true);
     }
   });
+
+  test(
+    'cancelled title check keeps its pending marker across reopening',
+    () async {
+      final Directory root = _book(temp, 'cancelled-reopen');
+      final RunCancellation cancellation = RunCancellation();
+      judge.judgeCall = (Object? state, Json questions) async {
+        cancellation.cancel();
+        throw const llm.LLMError('章节标题核对结果不确定');
+      };
+
+      await expectLater(
+        runBook(root, limit: 1, cancellation: cancellation),
+        throwsA(isA<Cancelled>()),
+      );
+      final Json status =
+          jsonDecode(File('${root.path}/status.json').readAsStringSync())
+              as Json;
+      expect(status['state'], 'paused');
+      expect(status['retryable'], isNot(true));
+      expect(
+        (status['quality']! as Json)['pending'],
+        contains('chapter-titles'),
+      );
+      expect(_chapters(root).map((Json c) => c['spoil']), <Object?>[
+        false,
+        true,
+      ]);
+
+      int rechecks = 0;
+      judge.judgeCall = (Object? state, Json questions) async {
+        rechecks++;
+        return <String, Object?>{'t0': _label('safe'), 't1': _label('spoils')};
+      };
+      final Runner reopened = await Runner.create(root, activity: false);
+      try {
+        expect(reopened.qualityPending, contains('chapter-titles'));
+        await reopened.markTitles();
+        expect(rechecks, 1);
+        expect(reopened.qualityPending, isNot(contains('chapter-titles')));
+      } finally {
+        await reopened.close();
+      }
+    },
+  );
 }

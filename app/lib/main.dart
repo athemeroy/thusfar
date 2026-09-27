@@ -88,7 +88,7 @@ class AppModel {
   String? startupError;
 
   /// Worker startup stays deferred for widget fixtures. Production startup
-  /// reconciles abandoned state; it does not restart paid work.
+  /// resumes an interrupted book only when its persisted auto flag permits it.
   Future<void> initialize() async {
     await library.scan();
     try {
@@ -162,6 +162,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   String? flashId;
   Future<void> _importTail = Future<void>.value();
   Future<void>? _resumeRefresh;
+  Future<void>? _backgroundResume;
   Timer? _importFeedback;
   Timer? _updatePromptRetry;
   final Set<String> _notifiedBooks = <String>{};
@@ -193,7 +194,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       if (mounted) unawaited(_takeSharedImports());
       if (mounted) unawaited(_checkForUpdates());
       if (mounted) unawaited(_takeProcessingNotification());
-      if (mounted) unawaited(_takeBackgroundTimeLimit());
+      if (mounted) {
+        unawaited(
+          _takeBackgroundTimeLimit().whenComplete(
+            _resumeBackgroundLimitedBooks,
+          ),
+        );
+      }
     });
     if (m.startupError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -223,7 +230,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _appResumed = state == AppLifecycleState.resumed;
     if (state == AppLifecycleState.resumed) {
-      unawaited(_refreshLibraryOnResume());
+      unawaited(
+        _refreshLibraryOnResume().then((_) => _resumeBackgroundLimitedBooks()),
+      );
       unawaited(_checkForUpdates());
       _queueNotificationSync();
     }
@@ -334,10 +343,42 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     }
   })().whenComplete(() => _resumeRefresh = null);
 
+  /// A dataSync background time limit pauses requests. Once the app is
+  /// foreground again, the saved pause cause shows that the user did not ask
+  /// to stop, so the original processing intent can be resumed safely.
+  Future<void> _resumeBackgroundLimitedBooks() =>
+      _backgroundResume ??= Future<void>.microtask(() async {
+        if (!mounted || !_appResumed || !m.settings.hasKey) return;
+        for (final BookEntry book in List<BookEntry>.of(m.library.books)) {
+          if (!mounted || !_appResumed) return;
+          m.library.refreshStatus(book);
+          if (!book.status.isPaused ||
+              book.status.raw['pause_reason'] != 'background_time_limit') {
+            continue;
+          }
+          try {
+            await m.processing.startBook(book);
+          } on Object {
+            // The visible task state retains the reason if startup fails.
+          }
+        }
+      }).whenComplete(() => _backgroundResume = null);
+
   void _changed() {
     if (mounted) {
       setState(() {});
       _queueNotificationSync();
+      // Cancellation can settle after the first foreground scan. The worker
+      // refresh is the authoritative transition from cancelling to paused.
+      if (_appResumed &&
+          _backgroundResume == null &&
+          m.library.books.any(
+            (BookEntry book) =>
+                book.status.isPaused &&
+                book.status.raw['pause_reason'] == 'background_time_limit',
+          )) {
+        unawaited(_resumeBackgroundLimitedBooks());
+      }
     }
   }
 
@@ -368,17 +409,21 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   }
 
   Future<void> _handleBackgroundTimeLimit(List<String> bookIds) async {
+    bool affected = false;
     for (final String id in bookIds.toSet()) {
       final BookEntry? book = m.library.byId(id);
-      if (book == null || !book.status.isActive) continue;
+      if (book == null) continue;
+      m.library.refreshStatus(book);
+      if (!book.status.isRunning) continue;
+      affected = true;
       try {
-        await m.processing.pauseBook(book);
+        await m.processing.pauseForBackgroundLimit(book);
       } on Object {
         // The worker may already have stopped; its durable status is read below.
       }
       m.library.refreshStatus(book);
     }
-    if (mounted) {
+    if (mounted && affected) {
       _queueNotificationSync();
       _updateMessage('系统后台整理时段已结束。请打开整理任务查看状态后继续。');
     }
@@ -672,7 +717,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                                 ),
                               ),
                               const Spacer(),
-                              Icon(Icons.arrow_forward, size: 18, color: t.qing),
+                              Icon(
+                                Icons.arrow_forward,
+                                size: 18,
+                                color: t.qing,
+                              ),
                             ],
                           ),
                         ],
@@ -1083,9 +1132,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                             right: BorderSide(color: t.rule, width: .5),
                           ),
                         ),
-                        child: SafeArea(
-                          child: _foldableNavigation(t),
-                        ),
+                        child: SafeArea(child: _foldableNavigation(t)),
                       ),
                     ),
                     SizedBox(

@@ -368,7 +368,19 @@ void main() {
               }
 
               if (name.startsWith('books-import')) removeEstimate(result);
+              if (name == 'book-process-delete') {
+                // The client now records why an explicit pause happened. The
+                // Python recording predates this additive status field.
+                ((result as Json)['status']! as Json).remove('pause_reason');
+              }
               return result;
+            }
+
+            if (name == 'book-process-delete') {
+              expect(
+                ((actual as Json)['status']! as Json)['pause_reason'],
+                'user',
+              );
             }
 
             expect(

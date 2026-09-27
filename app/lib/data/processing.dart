@@ -4,7 +4,7 @@ import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:thusfar_core/jobs.dart'
-    show AlreadyRunning, RunLease, Worker, WorkerSettings;
+    show AlreadyRunning, BookPauseReason, RunLease, Worker, WorkerSettings;
 import 'package:thusfar_core/llm.dart' as llm;
 import 'package:thusfar_core/run.dart' show recordBookActivity;
 import 'package:thusfar_core/thusfar_core.dart' show environ;
@@ -19,13 +19,17 @@ abstract class BookProcessing extends ChangeNotifier {
   Future<void> startBook(BookEntry book);
   Future<void> pauseBook(BookEntry book);
 
+  /// Fakes and older implementations retain their ordinary pause behavior.
+  Future<void> pauseForBackgroundLimit(BookEntry book) => pauseBook(book);
+
   /// Complete only after this book has no in-flight work or another live owner.
   Future<void> prepareRemoval(BookEntry book);
   Future<void> close();
 }
 
-/// A dead worker cannot keep claiming active books. Check the actual book
-/// lease before changing durable state so an independent live owner wins.
+/// A dead worker cannot keep claiming active books. Preserve an authorized
+/// auto request so the next worker can resume it from its cached frontier.
+/// Check the book lease first so an independent live owner wins.
 Future<void> reconcileStoppedWorker(Library library, String reason) async {
   for (final BookEntry book in List<BookEntry>.of(library.books)) {
     if (!book.status.isActive || !book.dir.existsSync()) continue;
@@ -39,14 +43,32 @@ Future<void> reconcileStoppedWorker(Library library, String reason) async {
       final File file = File('${book.dir.path}/status.json');
       final Object? raw = readJson(file);
       if (raw is! Json || !ProcessStatus(raw).isActive) continue;
+      final Json meta =
+          (readJson(File('${book.dir.path}/meta.json')) as Json?) ??
+          <String, Object?>{};
+      final bool manualPause = raw['pause_reason'] == 'user';
+      final bool resume = meta['auto'] == true && !manualPause;
+      if (manualPause) {
+        meta['auto'] = false;
+        writeJson(File('${book.dir.path}/meta.json'), meta);
+      }
       raw.addAll(<String, Object?>{
-        'state': 'error',
-        'error': reason,
-        'notice': null,
+        'state': resume ? 'queued' : 'paused',
+        'error': null,
+        'notice': resume ? reason : null,
         'updated': DateTime.now().microsecondsSinceEpoch / 1e6,
       });
+      if (resume) {
+        raw.remove('pause_reason');
+      } else {
+        raw['pause_reason'] ??= 'interrupted';
+      }
       writeJson(file, raw);
-      recordBookActivity(book.dir, 'error', '整理任务意外停止，请重新打开应用后继续');
+      recordBookActivity(
+        book.dir,
+        resume ? 'queued' : 'paused',
+        resume ? '整理任务意外中断，重新打开应用后自动继续' : '整理任务意外中断，等待手动继续',
+      );
     } finally {
       lease.release();
     }
@@ -205,6 +227,10 @@ class ProcessingController extends BookProcessing {
   Future<void> pauseBook(BookEntry book) => _send('pause', book);
 
   @override
+  Future<void> pauseForBackgroundLimit(BookEntry book) =>
+      _send('pauseBackgroundLimit', book);
+
+  @override
   Future<void> prepareRemoval(BookEntry book) => _send('prepareRemoval', book);
 
   @override
@@ -240,6 +266,12 @@ Future<void> _processingIsolate(List<Object?> args) async {
     settings.applyEnvironment();
     final String model = settings.read().$2;
     environ['LOCAL_CONCURRENCY'] = '4';
+    // These limits apply to this worker isolate only. The UI isolate retains
+    // its own environment, including the model settings probe behavior.
+    environ['LLM_RETRIES'] = '1';
+    environ['LOCAL_EXTRACT_CHAT_RETRIES'] = '0';
+    environ['LOCAL_SEGMENT_RETRIES'] = '2';
+    environ['LLM_WALL_TIMEOUT'] = '300';
     return WorkerSettings(
       model: model,
       localModel: model,
@@ -249,6 +281,7 @@ Future<void> _processingIsolate(List<Object?> args) async {
 
   final Worker worker = Worker(
     Directory('${data.path}/books'),
+    resumeInterrupted: true,
     settings: snapshot,
     onChange: (Map<String, Object?> health) =>
         parent.send(<String, Object?>{'health': health}),
@@ -287,8 +320,15 @@ Future<void> _processingIsolate(List<Object?> args) async {
           throw const llm.LLMError('还没有填写模型 API 密钥，请先到「模型设置」填写');
         }
         await worker.startBook(root);
-      } else if (operation == 'pause' || operation == 'prepareRemoval') {
-        await worker.pauseBook(root);
+      } else if (operation == 'pause' ||
+          operation == 'pauseBackgroundLimit' ||
+          operation == 'prepareRemoval') {
+        await worker.pauseBook(
+          root,
+          reason: operation == 'pauseBackgroundLimit'
+              ? BookPauseReason.backgroundTimeLimit
+              : BookPauseReason.user,
+        );
         if (operation == 'prepareRemoval') await worker.waitBookIdle(root);
       } else {
         throw const llm.LLMError('整理操作无效');
