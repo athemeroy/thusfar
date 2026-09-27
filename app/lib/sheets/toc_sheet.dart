@@ -153,7 +153,36 @@ class _TocPageState extends State<TocPage> {
     final ReaderLink link = widget.link;
     final BookData book = link.c.book;
     final int read = SeenStore.instance.maxRead(book.id, link.c.cutoff);
+    final Object? quality = book.status.raw['quality'];
+    final Object? pending = quality is Json ? quality['pending'] : null;
+    final bool titlesPending =
+        pending is List<Object?> && pending.contains('chapter-titles');
     return <Widget>[
+      if (titlesPending)
+        SliverToBoxAdapter(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: t.amber.withValues(alpha: 0.08),
+              border: Border.all(color: t.amber.withValues(alpha: 0.24)),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(Icons.info_outline, color: t.amber, size: 18),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    '章节标题尚待核对，未确认的标题暂时隐藏。可在书籍整理页重试。',
+                    style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       SliverList.builder(
         itemCount: book.chapters.length,
         itemBuilder: (BuildContext context, int i) {

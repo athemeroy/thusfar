@@ -39,6 +39,7 @@ void main() {
     final BookEntry book = library.books.single;
     int opens = 0;
     int drawers = 0;
+    int imports = 0;
     bool focused = false;
     Future<void> render() async {
       await tester.pumpWidget(
@@ -53,7 +54,7 @@ void main() {
               drawers++;
               focused = focus;
             },
-            onImport: () {},
+            onImport: () => imports++,
             onRestore: () {},
             onModelSettings: () {},
           ),
@@ -65,6 +66,10 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(400, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await render();
+
+    expect(find.byType(FloatingActionButton), findsNothing);
+    await tester.tap(find.text('导入'));
+    expect(imports, 1);
 
     await tester.tap(find.byKey(ValueKey<String>('process-${book.id}')));
     expect(drawers, 1);

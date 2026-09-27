@@ -163,21 +163,33 @@ class _BookSheetState extends State<BookSheet> {
     return '已等待 ${seconds ~/ 60} 分 ${seconds % 60} 秒';
   }
 
-  String _activityPhase(Object? raw) => switch ('$raw') {
-    'queued' => '排队',
-    'running' ||
-    'detect_kind' ||
-    'classify_chapters' ||
-    'check_titles' ||
-    'resume_final_jobs' => '准备',
-    'waiting_for_model' => '模型',
-    'retry' => '重试',
-    'finalizing' => '汇总',
-    'done' => '完成',
-    'paused' || 'cancelling' => '暂停',
-    'error' => '错误',
-    _ => '进度',
-  };
+  String _activityPhase(Json row) {
+    final String phase = '${row['phase']}';
+    // Older activity files used "running" for both the worker's preflight
+    // check and completed body segments. Keep their existing labels accurate.
+    if (phase == 'running' && row['message'] == '正在检查书籍和整理缓存') {
+      return '准备';
+    }
+    return switch (phase) {
+      'queued' => '排队',
+      'running' => '正文',
+      'detect_kind' || 'classify_chapters' => '准备',
+      'check_titles' || 'check_titles_pending' => '标题',
+      'resume_final_jobs' => '资料',
+      'waiting_for_model' => '模型',
+      'retry' => '重试',
+      'finalizing' => '汇总',
+      'bio_generating' ||
+      'bio_review' ||
+      'bio_complete' ||
+      'bio_no_candidates' ||
+      'bio_failed' => '人物',
+      'done' => '完成',
+      'paused' || 'cancelling' => '暂停',
+      'error' => '错误',
+      _ => '进度',
+    };
+  }
 
   @override
   void initState() {
@@ -834,7 +846,7 @@ class _BookSheetState extends State<BookSheet> {
           Padding(
             padding: const EdgeInsets.only(bottom: 5),
             child: Text(
-              '${_activityTime(row['at'])}  ${_activityPhase(row['phase'])} · ${row['message']}',
+              '${_activityTime(row['at'])}  ${_activityPhase(row)} · ${row['message']}',
               style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
             ),
           ),

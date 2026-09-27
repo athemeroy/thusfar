@@ -53,7 +53,6 @@ class _ShelfScreenState extends State<ShelfScreen> {
   int filter = 0;
   bool searching = false;
   String query = '';
-  bool fabWide = true;
 
   static const List<String> sorts = <String>['最近阅读', '书名', '阅读进度', '最近加入'];
 
@@ -124,199 +123,154 @@ class _ShelfScreenState extends State<ShelfScreen> {
     ];
     return Scaffold(
       backgroundColor: t.paper,
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: widget.imports.isEmpty ? 0 : 52),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          child: fabWide
-              ? FloatingActionButton.extended(
-                  heroTag: 'import',
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    widget.onImport();
-                  },
-                  backgroundColor: t.ink,
-                  foregroundColor: t.sheet,
-                  shape: const StadiumBorder(),
-                  icon: const Icon(Icons.add),
-                  label: const Text('导入'),
-                )
-              : FloatingActionButton(
-                  heroTag: 'import',
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    widget.onImport();
-                  },
-                  backgroundColor: t.ink,
-                  foregroundColor: t.sheet,
-                  shape: const CircleBorder(),
-                  child: const Icon(Icons.add),
-                ),
-        ),
-      ),
       body: Stack(
         children: <Widget>[
-          NotificationListener<UserScrollNotification>(
-            onNotification: (UserScrollNotification n) {
-              final bool wide = n.direction != ScrollDirection.reverse;
-              if (wide != fabWide) setState(() => fabWide = wide);
-              return false;
-            },
-            child: RefreshIndicator(
-              color: t.zhu,
-              onRefresh: lib.scan,
-              child: CustomScrollView(
-                slivers: <Widget>[
-                  _appBar(context),
-                  if (cont != null && query.isEmpty)
-                    SliverToBoxAdapter(child: _continueCard(context, cont)),
-                  if (processingBooks.isNotEmpty && query.isEmpty)
-                    SliverToBoxAdapter(
-                      child: _processingBanner(context, processingBooks),
-                    ),
-                  if (queue.isNotEmpty && query.isEmpty) ...<Widget>[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
-                        child: Row(
-                          children: <Widget>[
-                            Text(
-                              '接下来读',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: t.ink,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Spacer(),
-                            Tooltip(
-                              message: '编辑接下来读',
-                              child: TextButton(
-                                onPressed: () {
-                                  HapticFeedback.lightImpact();
-                                  _editQueue(context);
-                                },
-                                child: Text(
-                                  '编辑',
-                                  style: TextStyle(color: t.ink2),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 124,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: queue.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 12),
-                          itemBuilder: (BuildContext context, int i) =>
-                              GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  widget.onOpen(queue[i]);
-                                },
-                                child: BookCover(entry: queue[i], width: 82),
-                              ),
-                        ),
-                      ),
-                    ),
-                  ],
+          RefreshIndicator(
+            color: t.zhu,
+            onRefresh: lib.scan,
+            child: CustomScrollView(
+              slivers: <Widget>[
+                _appBar(context),
+                if (cont != null && query.isEmpty)
+                  SliverToBoxAdapter(child: _continueCard(context, cont)),
+                if (processingBooks.isNotEmpty && query.isEmpty)
+                  SliverToBoxAdapter(
+                    child: _processingBanner(context, processingBooks),
+                  ),
+                if (queue.isNotEmpty && query.isEmpty) ...<Widget>[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 22, 8, 4),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
                       child: Row(
                         children: <Widget>[
                           Text(
-                            '全部书籍 ',
+                            '接下来读',
                             style: TextStyle(
                               fontSize: 15,
                               color: t.ink,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          Text(
-                            '${lib.books.length}',
-                            style: TextStyle(fontSize: 15, color: t.ink3),
-                          ),
                           const Spacer(),
-                          _sortMenu(context),
+                          Tooltip(
+                            message: '编辑接下来读',
+                            child: TextButton(
+                              onPressed: () {
+                                HapticFeedback.lightImpact();
+                                _editQueue(context);
+                              },
+                              child: Text(
+                                '编辑',
+                                style: TextStyle(color: t.ink2),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: _FilterBar(
-                      filter: filter,
-                      onChanged: (int i) => setState(() => filter = i),
-                      color: t.paper,
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 124,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: queue.length,
+                        separatorBuilder: (_, _) => const SizedBox(width: 12),
+                        itemBuilder: (BuildContext context, int i) =>
+                            GestureDetector(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                widget.onOpen(queue[i]);
+                              },
+                              child: BookCover(entry: queue[i], width: 82),
+                            ),
+                      ),
                     ),
                   ),
-                  if (books.isEmpty && (query.isNotEmpty || filter != 0))
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _emptyResults(context),
-                    )
-                  else if (widget.prefs.listView)
-                    SliverList.builder(
-                      itemCount: books.length,
-                      itemBuilder: (BuildContext context, int i) =>
-                          _listRow(context, books[i]),
-                    )
-                  else
-                    SliverLayoutBuilder(
-                      builder:
-                          (
-                            BuildContext context,
-                            SliverConstraints constraints,
-                          ) {
-                            final double extent = constraints.crossAxisExtent;
-                            final bool compact = extent < 600;
-                            final double inset = extent < 360 ? 12 : 20;
-                            final double gap = extent < 360
-                                ? 8
-                                : compact
-                                ? 12
-                                : 20;
-                            final int columns = compact
-                                ? (extent < 500 ? 2 : 3)
-                                : (extent / 168).floor().clamp(3, 6);
-                            final double tileWidth =
-                                (extent - inset * 2 - gap * (columns - 1)) /
-                                columns;
-                            final double textScale =
-                                MediaQuery.textScalerOf(context).scale(16) / 16;
-                            final double tileHeight =
-                                (tileWidth - 4) * 4 / 3 + 32 + 56 * textScale;
-                            return SliverPadding(
-                              padding: EdgeInsets.fromLTRB(
-                                inset,
-                                8,
-                                inset,
-                                120,
-                              ),
-                              sliver: SliverGrid.builder(
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: columns,
-                                      crossAxisSpacing: gap,
-                                      mainAxisSpacing: compact ? 18 : 22,
-                                      mainAxisExtent: tileHeight,
-                                    ),
-                                itemCount: books.length,
-                                itemBuilder: (BuildContext context, int i) =>
-                                    _gridCell(context, books[i]),
-                              ),
-                            );
-                          },
-                    ),
                 ],
-              ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 22, 8, 4),
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          '全部书籍 ',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: t.ink,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          '${lib.books.length}',
+                          style: TextStyle(fontSize: 15, color: t.ink3),
+                        ),
+                        const Spacer(),
+                        _sortMenu(context),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _FilterBar(
+                    filter: filter,
+                    onChanged: (int i) => setState(() => filter = i),
+                    color: t.paper,
+                  ),
+                ),
+                if (books.isEmpty && (query.isNotEmpty || filter != 0))
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _emptyResults(context),
+                  )
+                else if (widget.prefs.listView)
+                  SliverList.builder(
+                    itemCount: books.length,
+                    itemBuilder: (BuildContext context, int i) =>
+                        _listRow(context, books[i]),
+                  )
+                else
+                  SliverLayoutBuilder(
+                    builder:
+                        (BuildContext context, SliverConstraints constraints) {
+                          final double extent = constraints.crossAxisExtent;
+                          final bool compact = extent < 600;
+                          final double inset = extent < 360 ? 12 : 20;
+                          final double gap = extent < 360
+                              ? 8
+                              : compact
+                              ? 12
+                              : 20;
+                          final int columns = compact
+                              ? (extent < 500 ? 2 : 3)
+                              : (extent / 168).floor().clamp(3, 6);
+                          final double tileWidth =
+                              (extent - inset * 2 - gap * (columns - 1)) /
+                              columns;
+                          final double textScale =
+                              MediaQuery.textScalerOf(context).scale(16) / 16;
+                          final double tileHeight =
+                              (tileWidth - 4) * 4 / 3 + 32 + 56 * textScale;
+                          return SliverPadding(
+                            padding: EdgeInsets.fromLTRB(inset, 8, inset, 32),
+                            sliver: SliverGrid.builder(
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: columns,
+                                    crossAxisSpacing: gap,
+                                    mainAxisSpacing: compact ? 18 : 22,
+                                    mainAxisExtent: tileHeight,
+                                  ),
+                              itemCount: books.length,
+                              itemBuilder: (BuildContext context, int i) =>
+                                  _gridCell(context, books[i]),
+                            ),
+                          );
+                        },
+                  ),
+              ],
             ),
           ),
           if (widget.imports.isNotEmpty)
@@ -386,6 +340,19 @@ class _ShelfScreenState extends State<ShelfScreen> {
             setState(() => searching = true);
           },
         ),
+        TextButton.icon(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            widget.onImport();
+          },
+          icon: const Icon(Icons.add, size: 20),
+          label: const Text('导入'),
+          style: TextButton.styleFrom(
+            foregroundColor: t.ink,
+            minimumSize: const Size(0, 44),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+        ),
         const SizedBox(width: 8),
       ],
       flexibleSpace: LayoutBuilder(
@@ -397,7 +364,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
             padding: EdgeInsets.fromLTRB(
               20,
               MediaQuery.of(context).padding.top,
-              60,
+              154,
               0,
             ),
             child: Align(
@@ -436,7 +403,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
     final Tokens t = context.tk;
     final bool hasQuery = query.isNotEmpty;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

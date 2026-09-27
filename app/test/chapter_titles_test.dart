@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/data/seen.dart';
@@ -14,6 +15,15 @@ import 'package:thusfar_app/sheets/toc_sheet.dart';
 import 'package:thusfar_app/ui/theme.dart';
 
 void main() {
+  Future<void> loadFont(String family, String path) async {
+    await (FontLoader(family)..addFont(
+          Future<ByteData>.value(
+            ByteData.sublistView(File(path).readAsBytesSync()),
+          ),
+        ))
+        .load();
+  }
+
   test('unread titles follow their individual spoiler verdict', () {
     Chapter chapter(Object? spoiler) {
       final Json raw = <String, Object?>{'title': '第2章 旧城'};
@@ -162,9 +172,63 @@ void main() {
     tester,
   ) async {
     await showSheet(tester, TocPage(link: link));
+    expect(find.textContaining('章节标题尚待核对'), findsNothing);
     expect(find.text('第2章 旧城'), findsOneWidget);
     expect(find.text('第3章 主角身亡'), findsNothing);
     expect(find.text('第3章'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('title retry notice is book-wide and keeps chapter verdicts', (
+    tester,
+  ) async {
+    final String sdkRoot =
+        Platform.environment['FLUTTER_ROOT'] ??
+        '${Platform.environment['HOME']}/.local/share/flutter';
+    await loadFont(
+      'MaterialIcons',
+      '$sdkRoot/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf',
+    );
+    await loadFont(
+      'Roboto',
+      Platform.environment['THUSFAR_TEST_SANS_FONT'] ??
+          '${Platform.environment['HOME']}/.local/share/fonts/NotoSansSC.ttf',
+    );
+    book.entry.status = const ProcessStatus(<String, Object?>{
+      'state': 'paused',
+      'quality': <String, Object?>{
+        'state': 'pending',
+        'pending': <String>['bio-0', 'chapter-titles'],
+      },
+    });
+    await showSheet(tester, TocPage(link: link));
+    expect(find.text('章节标题尚待核对，未确认的标题暂时隐藏。可在书籍整理页重试。'), findsOneWidget);
+    expect(find.text('第2章 旧城'), findsOneWidget);
+    expect(find.text('第3章 主角身亡'), findsNothing);
+    expect(find.text('第3章'), findsOneWidget);
+    await expectLater(
+      find.byType(SheetFrame),
+      matchesGoldenFile('shots/title-pending-toc.png'),
+    );
+
+    book.entry.status = const ProcessStatus(<String, Object?>{
+      'state': 'paused',
+      'quality': <String, Object?>{
+        'state': 'pending',
+        'pending': <String>['bio-0'],
+      },
+    });
+    controller.touch();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('章节标题尚待核对'), findsNothing);
+
+    book.entry.status = const ProcessStatus(<String, Object?>{
+      'state': 'paused',
+      'quality': <String, Object?>{'pending': true},
+    });
+    controller.touch();
+    await tester.pumpAndSettle();
+    expect(find.textContaining('章节标题尚待核对'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

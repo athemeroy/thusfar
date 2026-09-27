@@ -125,12 +125,22 @@ bool _resumeBioFinalJobsInPlace(Directory root, Json quality) {
   if (pending is! List || pending.isEmpty || !_failedBioJob(root, quality))
     return false;
   for (final Object? item in pending) {
+    // Two-phase runs retry title classification before replaying final jobs.
+    // A pending title check does not require archiving verified biographies.
+    if (item == 'chapter-titles') continue;
     if (item is! String ||
         !_finalJobName.hasMatch(item) ||
         !File('${root.path}/work/jobs/$item.json').existsSync())
       return false;
   }
   return true;
+}
+
+bool _retryOnlyTitlesInPlace(Json quality) {
+  final Object? pending = quality['pending'];
+  return pending is List &&
+      pending.isNotEmpty &&
+      pending.every((Object? item) => item == 'chapter-titles');
 }
 
 String _name(Directory root) =>
@@ -340,9 +350,11 @@ class Worker {
     final Json state = _json(root, 'status.json');
     final Json quality = _object(state['quality']);
     final bool resumeFinalJobs = _resumeBioFinalJobsInPlace(root, quality);
+    final bool retryOnlyTitles = _retryOnlyTitlesInPlace(quality);
+    final bool resumeInPlace = resumeFinalJobs || retryOnlyTitles;
     final bool retryQuality =
         value &&
-        !resumeFinalJobs &&
+        !resumeInPlace &&
         (_truth(quality['pending']) || quality['state'] == 'pending') &&
         !<String>{
           'running',
@@ -352,13 +364,14 @@ class Worker {
     meta['auto'] = value;
     if (retryQuality) {
       meta['retry_quality'] = true;
-    } else if (!value || resumeFinalJobs) {
+    } else if (!value || resumeInPlace) {
       meta.remove('retry_quality');
     }
     _save(root, 'meta.json', meta);
     final bool queued =
         value &&
         (retryQuality ||
+            (retryOnlyTitles && state['state'] == 'done') ||
             !<String>{
               'done',
               'running',

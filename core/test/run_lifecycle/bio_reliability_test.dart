@@ -499,7 +499,86 @@ void main() {
     },
   );
 
-  test('unrelated quality is not hidden by an old failed bio job', () async {
+  test(
+    'failed bio and pending title check retry without archiving verified work',
+    () async {
+      final Directory root = _book(books, 'bio-and-titles', chapters: 2);
+      _save(root, 'status.json', <String, Object?>{
+        'state': 'error',
+        'quality': <String, Object?>{
+          'state': 'pending',
+          'pending': <String>['bio-0', 'chapter-titles'],
+        },
+      });
+      _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+        'kind': 'bio',
+        'key': 0,
+        'state': 'failed',
+        'failure_kind': 'bio_content',
+        'generation_attempt': 1,
+      });
+      final Json verifiedBio = <String, Object?>{
+        'chapter': 1,
+        'bios': <String, Object?>{
+          'P1': <String, Object?>{
+            ..._bio('已核对的小传。'),
+            'chk': <String, Object?>{'verdict': 'ok'},
+          },
+        },
+      };
+      _save(root, 'work/bios/0001.json', verifiedBio);
+      _save(root, 'work/jobs/bio-1.json', <String, Object?>{
+        'kind': 'bio',
+        'key': 1,
+        'state': 'complete',
+      });
+      _save(root, 'work/drafts/bio-1.json', <String, Object?>{
+        'text': '已保留的生成草稿',
+      });
+      final List<bool> calls = <bool>[];
+      final jobs.Worker worker = jobs.Worker(
+        books,
+        probe: (Directory _) async => false,
+        settings: () => const jobs.WorkerSettings(),
+        run: (
+          Directory root, {
+          required jobs.RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          calls.add(retryQuality);
+          if (retryQuality) {
+            final Runner runner = await Runner.create(root, activity: false);
+            try {
+              runner.prepareQualityRetry();
+            } finally {
+              await runner.close();
+            }
+          }
+          _save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      try {
+        await worker.startBook(root);
+        await worker.waitIdle();
+        expect(calls, <bool>[false]);
+        expect(_read(root, 'meta.json')['retry_quality'], isNull);
+        expect(_read(root, 'work/bios/0001.json'), verifiedBio);
+        expect(_read(root, 'work/jobs/bio-1.json')['state'], 'complete');
+        expect(_read(root, 'work/drafts/bio-1.json')['text'], '已保留的生成草稿');
+        expect(
+          File('${root.path}/work/quality-retry.json').existsSync(),
+          isFalse,
+        );
+      } finally {
+        await worker.close();
+      }
+    },
+  );
+
+  test('old failed bio job does not turn title-only retry into a rebuild', () async {
     final Directory root = _book(books, 'unrelated-quality');
     _save(root, 'status.json', <String, Object?>{
       'state': 'error',
@@ -534,9 +613,154 @@ void main() {
     try {
       await worker.startBook(root);
       await worker.waitIdle();
-      expect(calls, <bool>[true]);
+      expect(calls, <bool>[false]);
     } finally {
       await worker.close();
     }
   });
+
+  test(
+    'completed book retries only title checks without archiving final work',
+    () async {
+      final Directory root = _book(books, 'titles-only');
+      _save(root, 'status.json', <String, Object?>{
+        'state': 'done',
+        'done': 1,
+        'total': 1,
+        'quality': <String, Object?>{
+          'state': 'pending',
+          'pending': <String>['chapter-titles'],
+        },
+      });
+      final Map<String, Object?> retained = <String, Object?>{
+        'work/bios/0000.json': <String, Object?>{'verified': true},
+        'work/drafts/bio-0.json': <String, Object?>{'draft': true},
+        'work/jobs/bio-0.json': <String, Object?>{
+          'kind': 'bio',
+          'state': 'complete',
+        },
+        'work/segs/0000.json': <String, Object?>{
+          'mode': 'two-phase',
+          'verified': true,
+        },
+      };
+      for (final MapEntry<String, Object?> entry in retained.entries) {
+        _save(root, entry.key, entry.value);
+      }
+      environ['JUDGE_TITLES'] = '1';
+      int titleChecks = 0;
+      judge.judgeCall = (Object? _, Json questions) async {
+        titleChecks++;
+        return <String, Object?>{
+          for (final String key in questions.keys)
+            key: <String, Object?>{
+              'choice': 'spoils',
+              'probabilities': <String, Object?>{'spoils': 0.95},
+            },
+        };
+      };
+      final List<bool> attempts = <bool>[];
+      final jobs.Worker worker = jobs.Worker(
+        books,
+        probe: (Directory _) async => false,
+        settings: () => const jobs.WorkerSettings(),
+        run: (
+          Directory root, {
+          required jobs.RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          attempts.add(retryQuality);
+          final Runner runner = await Runner.create(root, activity: false);
+          try {
+            if (retryQuality) runner.prepareQualityRetry();
+            await runner.markTitles();
+          } finally {
+            await runner.close();
+          }
+          final Json status = _read(root, 'status.json');
+          status['state'] = 'done';
+          status['quality'] = <String, Object?>{
+            'state': 'verified',
+            'pending': <String>[],
+          };
+          _save(root, 'status.json', status);
+        },
+      );
+      try {
+        await worker.startBook(root);
+        await worker.waitIdle();
+        expect(attempts, <bool>[false]);
+        expect(titleChecks, 1);
+        final Json book = _read(root, 'book.json');
+        expect(
+          (book['chapters']! as List<Object?>).first,
+          containsPair('spoil', true),
+        );
+        for (final MapEntry<String, Object?> entry in retained.entries) {
+          expect(_read(root, entry.key), entry.value, reason: entry.key);
+        }
+        expect(
+          File('${root.path}/work/quality-retry.json').existsSync(),
+          isFalse,
+        );
+        expect(_read(root, 'status.json')['quality'], <String, Object?>{
+          'state': 'verified',
+          'pending': <String>[],
+        });
+      } finally {
+        await worker.close();
+      }
+    },
+  );
+
+  test(
+    'critical quality pending still requests a rebuild beside failed bio',
+    () async {
+      final Directory root = _book(books, 'critical-and-bio');
+      _save(root, 'status.json', <String, Object?>{
+        'state': 'error',
+        'quality': <String, Object?>{
+          'state': 'pending',
+          'pending': <String>[
+            'bio-0',
+            'chapter-titles',
+            'quarantined-critical-checks',
+          ],
+        },
+      });
+      _save(root, 'work/jobs/bio-0.json', <String, Object?>{
+        'kind': 'bio',
+        'key': 0,
+        'state': 'failed',
+        'failure_kind': 'bio_content',
+      });
+      final List<bool> calls = <bool>[];
+      final jobs.Worker worker = jobs.Worker(
+        books,
+        probe: (Directory _) async => false,
+        settings: () => const jobs.WorkerSettings(),
+        run: (
+          Directory root, {
+          required jobs.RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          calls.add(retryQuality);
+          _save(root, 'status.json', <String, Object?>{'state': 'done'});
+        },
+      );
+      try {
+        await worker.startBook(root);
+        await worker.waitIdle();
+        expect(calls, <bool>[true]);
+      } finally {
+        await worker.close();
+      }
+    },
+  );
 }

@@ -80,28 +80,36 @@ class _PeoplePageState extends State<PeoplePage> {
         : '第 $unlockChapter 章末';
     if (w == null || w.people.isEmpty) {
       final String message;
-      final String? actionLabel;
+      final String? actionLabel = status.isActive
+          ? '查看整理过程'
+          : status.isPaused
+          ? '继续整理'
+          : status.isError
+          ? '查看原因'
+          : !link.c.book.hasKnowledge
+          ? '开始整理'
+          : null;
       if (biosAhead) {
-        message = '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。';
-        actionLabel = status.isActive ? '查看整理过程' : null;
+        final String state = status.isPaused
+            ? '\n整理已暂停，更多资料需要继续整理。'
+            : status.isError
+            ? '\n整理停下了，可以查看原因。'
+            : '';
+        message =
+            '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。$state';
       } else if (status.isActive) {
         final String progress = status.total > 0
             ? '已完成 ${status.done}/${status.total} 段。'
             : '正在准备书籍。';
         message = '这本书正在整理人物，$progress人物小传会在章节整理并核对后逐步出现。';
-        actionLabel = '查看整理过程';
       } else if (status.isPaused) {
         message = '人物整理已暂停。已经完成的内容仍会保留。';
-        actionLabel = '继续整理';
       } else if (status.isError) {
         message = '人物整理停下了。请查看原因，再决定是否继续。';
-        actionLabel = '查看原因';
       } else if (!link.c.book.hasKnowledge) {
         message = link.c.book.manualError ?? '这本书还没有整理人物';
-        actionLabel = '开始整理';
       } else {
         message = '截至这一页，还没有可展示的人物资料。';
-        actionLabel = null;
       }
       return SheetPage(
         title: '人物',

@@ -261,6 +261,9 @@ void main() {
     expect(covers, findsNWidgets(3));
     expect(tester.getSize(covers.at(1)).width, greaterThan(130));
     expect(tester.getSize(covers.at(2)).width, greaterThan(130));
+    final Finder importAction = find.text('导入');
+    expect(importAction, findsOneWidget);
+    expect(tester.getRect(importAction).right, lessThanOrEqualTo(320));
     expect(tester.takeException(), isNull);
   });
 

@@ -333,6 +333,7 @@ void main() {
     await open(tester, settle: false);
     expect(find.text('正在准备整理'), findsOneWidget);
     expect(find.textContaining('正在检查书籍和整理缓存'), findsWidgets);
+    expect(find.textContaining('准备 · 正在检查书籍和整理缓存'), findsOneWidget);
     expect(find.textContaining('已等待 1 分'), findsOneWidget);
     expect(find.text('整理记录'), findsOneWidget);
 
@@ -345,6 +346,23 @@ void main() {
     await tester.pump();
     expect(find.text('已整理 0 / 603 段'), findsOneWidget);
     expect(find.text('已发送 4 段，正在等待模型回复'), findsOneWidget);
+
+    writeJson(File('${bookRoot.path}/work/activity.json'), <Object?>[
+      <String, Object?>{
+        'at': DateTime.now().millisecondsSinceEpoch / 1000,
+        'phase': 'running',
+        'message': '已完成 9 / 603 段',
+        'done': 9,
+        'total': 603,
+      },
+    ]);
+    processing.status(entry, <String, Object?>{
+      'state': 'running',
+      'done': 9,
+      'total': 603,
+    });
+    await tester.pump();
+    expect(find.textContaining('正文 · 已完成 9 / 603 段'), findsOneWidget);
   });
 
   testWidgets('missing key and start failures remain visible and retryable', (

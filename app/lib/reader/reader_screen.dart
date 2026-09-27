@@ -69,7 +69,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
     book: book,
   );
   PageController? pc;
+  final ScrollController _pageScroll = ScrollController();
+  final GlobalKey _toolbarPanelKey = GlobalKey();
   PageSpec? spec;
+  double _toolbarHeight = 0;
+  double _pageViewportOverlap = 0;
   bool _sheetOpen = false;
   Offset? _pressAt;
   int? _anchor;
@@ -102,6 +106,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _flashTimer?.cancel();
     _wheelTimer?.cancel();
     pc?.dispose();
+    _pageScroll.dispose();
     _focus.dispose();
     super.dispose();
   }
@@ -644,14 +649,42 @@ class _ReaderScreenState extends State<ReaderScreen> {
             math.max(1, box.maxHeight - top - bottom),
           );
           _ensureLayout(area, context.tk);
+          // Keep pagination fixed while the controls are visible. The current
+          // page can scroll just enough to expose its last line above them.
+          final double overlap = c.toolbar
+              ? math.max(0, _toolbarHeight - bottom)
+              : 0;
+          if (overlap != _pageViewportOverlap) {
+            _pageViewportOverlap = overlap;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted || !_pageScroll.hasClients) return;
+              _pageScroll.animateTo(
+                c.toolbar ? _pageScroll.position.maxScrollExtent : 0,
+                duration: MediaQuery.of(context).disableAnimations
+                    ? const Duration(milliseconds: 1)
+                    : Motion.toolbar,
+                curve: Curves.easeOutCubic,
+              );
+            });
+          }
           return Stack(
             children: <Widget>[
               Positioned(
                 left: pageLeft,
                 width: pageWidth,
                 top: top,
-                height: area.height,
-                child: _pages(context, paper),
+                height: math.max(1, area.height - overlap),
+                child: SingleChildScrollView(
+                  key: const ValueKey<String>('reader-page-viewport'),
+                  controller: _pageScroll,
+                  physics: c.toolbar
+                      ? const ClampingScrollPhysics()
+                      : const NeverScrollableScrollPhysics(),
+                  child: SizedBox(
+                    height: area.height,
+                    child: _pages(context, paper),
+                  ),
+                ),
               ),
               Positioned(
                 left: pageLeft,
@@ -1169,6 +1202,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final Duration duration = reduceMotion
         ? const Duration(milliseconds: 120)
         : Motion.toolbar;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final RenderBox? panel =
+          _toolbarPanelKey.currentContext?.findRenderObject() as RenderBox?;
+      if (panel == null || !panel.hasSize) return;
+      final double height = panel.size.height;
+      if ((height - _toolbarHeight).abs() > 0.5) {
+        setState(() => _toolbarHeight = height);
+      }
+    });
     return IgnorePointer(
       ignoring: !on,
       child: AnimatedOpacity(
@@ -1181,19 +1224,23 @@ class _ReaderScreenState extends State<ReaderScreen> {
             offset: on ? Offset.zero : const Offset(0, 1),
             duration: duration,
             curve: Curves.easeOutCubic,
-            child: Material(
-              color: t.sheet,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    _toolbarActions(context, marked),
-                    if (p != null) ...<Widget>[
-                      _progressRow(context, p),
-                      _toolsRow(context, ai),
+            child: KeyedSubtree(
+              key: const ValueKey<String>('reader-toolbar-panel'),
+              child: Material(
+                key: _toolbarPanelKey,
+                color: t.sheet,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _toolbarActions(context, marked),
+                      if (p != null) ...<Widget>[
+                        _progressRow(context, p),
+                        _toolsRow(context, ai),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),

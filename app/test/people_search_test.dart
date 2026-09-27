@@ -11,6 +11,8 @@ import 'package:thusfar_app/sheets/people_sheet.dart';
 import 'package:thusfar_app/sheets/sheet_host.dart';
 import 'package:thusfar_app/ui/theme.dart';
 
+import 'support/graph_fixture.dart';
+
 void main() {
   testWidgets('people search stays visible when returning to the all tab', (
     WidgetTester tester,
@@ -224,6 +226,60 @@ void main() {
       book.dispose();
       library.dispose();
       root.deleteSync(recursive: true);
+    }
+  });
+
+  testWidgets('unread biographies keep a paused book action visible', (
+    WidgetTester tester,
+  ) async {
+    final GraphFixture fixture = GraphFixture();
+    fixture.records
+      ..removeRange(2, fixture.records.length)
+      ..[0]['p'] = 100
+      ..[1]['p'] = 200
+      ..add(<String, Object?>{
+        't': 'profile',
+        'id': 'P1',
+        'kind': 'chapter',
+        'p': 700,
+        'bio': '仅作为通过核对的小传测试内容。',
+        'chk': <String, Object?>{'verdict': 'ok'},
+      });
+    writeJson(File('${fixture.directory.path}/status.json'), <String, Object?>{
+      'state': 'paused',
+      'done': 9,
+      'total': 603,
+      'frontier': 700,
+    });
+    fixture.refresh();
+    fixture.setCutoff(20);
+    final ScrollController scroll = ScrollController();
+    int opened = 0;
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.light),
+          home: Scaffold(
+            body: SheetFrame(
+              scroll: scroll,
+              root: PeoplePage(
+                link: fixture.link,
+                onStartProcessing: () => opened++,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('已有 1 篇核对通过的人物小传'), findsOneWidget);
+      expect(find.text('继续整理'), findsOneWidget);
+      await tester.tap(find.text('继续整理'));
+      expect(opened, 1);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await tester.pumpWidget(const SizedBox.shrink());
+      scroll.dispose();
+      fixture.dispose();
     }
   });
 }
