@@ -43,7 +43,7 @@ Get the installation file for your device from the [latest release](https://gith
 
 | Platform | File | Installation |
 | --- | --- | --- |
-| Android 8+ | APK | Install the APK. The app appears as 页读 2.0. |
+| Android 8+ | APK | Install the APK. The app appears as 页读. |
 | macOS 12+ | DMG | Drag Thusfar to Applications. You may need to allow its first launch in Privacy & Security. |
 | Windows 10/11 x64 | Installer or portable ZIP | Install for your user account or extract the ZIP. |
 | Linux x64 | tar.gz | Extract and run `./thusfar`; GTK 3 is required. |
