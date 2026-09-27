@@ -126,6 +126,31 @@ void main() {
     },
   );
 
+  test('identical text under different book titles remains separate', () async {
+    final Json firstBook = sample();
+    final Json secondBook = jsonDecode(jsonEncode(firstBook)) as Json;
+    (secondBook['book']! as Json)['title'] = 'Another book';
+    final ImportResult first = restoreBackup(
+      library,
+      'first.yedu.json',
+      bytes(firstBook),
+    );
+    final ImportResult second = restoreBackup(
+      library,
+      'second.yedu.json',
+      bytes(secondBook),
+    );
+    expect(first.error, isNull);
+    expect(second.error, isNull);
+    expect(second.existed, isFalse);
+    expect(second.id, isNot(first.id));
+    await library.scan();
+    expect(library.books.map((BookEntry book) => book.title).toSet(), <String>{
+      'Backup fixture',
+      'Another book',
+    });
+  });
+
   test(
     'invalid progress is rejected before any directory or progress is published',
     () {

@@ -96,15 +96,14 @@ Json _normalizedMentions(Json value) => <String, Object?>{
     '${int.parse(row.key)}': row.value,
 };
 
-bool _sameText(Json a, Json b) =>
-    _same(a['len'], b['len']) &&
-    _same(a['blocks'], b['blocks']) &&
-    verdicts.sameChapterContent(a['chapters'], b['chapters']) &&
-    _same(
-      a['notes'] ?? <String, Object?>{},
-      b['notes'] ?? <String, Object?>{},
-    ) &&
-    _same(a['cover'], b['cover']);
+bool _sameText(Json a, Json b) {
+  // Chapter verdicts can change without changing a book's identity. Every
+  // other book field, including its title, must still match exactly.
+  final Json left = <String, Object?>{...a}..remove('chapters');
+  final Json right = <String, Object?>{...b}..remove('chapters');
+  return _same(left, right) &&
+      verdicts.sameChapterContent(a['chapters'], b['chapters']);
+}
 
 bool _orderedSubset(List<Object?> older, List<Object?> newer) {
   if (older.length > newer.length) return false;
