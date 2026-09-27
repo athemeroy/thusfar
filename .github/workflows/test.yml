@@ -31,9 +31,11 @@ jobs:
         run: |
           flutter test --no-pub \
             test/ask_sheet_test.dart test/backup_test.dart \
-            test/graph_view_test.dart test/import_test.dart \
+            test/foldable_screens_test.dart test/graph_view_test.dart test/import_test.dart \
             test/manual_entities_test.dart test/marginalia_sheet_test.dart \
             test/model_settings_test.dart test/notes_test.dart \
             test/people_search_test.dart test/processing_test.dart \
             test/reader_regression_test.dart test/selection_bounds_test.dart \
-            test/shared_import_test.dart
+            test/screens_test.dart test/shared_import_test.dart \
+            test/shelf_processing_action_test.dart \
+            test/update_checker_test.dart

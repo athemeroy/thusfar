@@ -440,13 +440,14 @@ class Worker {
           _queue.clear();
         } else {
           final List<String> ids = _queue.toList()..sort(PyCompat.compare);
-          _queue.clear();
           roots = <Directory>[
             for (final String id in ids) Directory('${books.path}/$id'),
           ];
         }
         for (final Directory root in roots) {
           if (_stopping) break;
+          _queue.remove(_name(root));
+          _notify();
           try {
             await processBook(root);
           } on Object catch (error) {
@@ -634,6 +635,19 @@ class Worker {
       ...fields,
       'updated': now,
     });
+    final String phase = '${fields['phase'] ?? ''}';
+    final String? message = switch (phase) {
+      'queued' => '已加入整理队列',
+      'running' => '正在检查书籍和整理缓存',
+      'cancelling' => '正在暂停，等待当前请求结束',
+      'paused' => '整理已暂停',
+      'done' => '整理完成',
+      'error' => '整理出错，请查看状态详情',
+      _ => null,
+    };
+    if (message != null) {
+      pipeline.recordBookActivity(root, phase, message, at: now);
+    }
   }
 
   /// Stop accepting work and preserve automatic intent for an explicit restart.

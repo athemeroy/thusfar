@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' show DisplayFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart'
@@ -248,13 +247,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     });
 
     try {
-      final Json res = await ask.whoIs(
-        book.book,
-        book.records,
-        c.cutoff,
-        s,
-        e,
-      );
+      final Json res = await ask.whoIs(book.book, book.records, c.cutoff, s, e);
       if (!mounted) return;
       setState(() {
         _whoIsLoading = false;
@@ -264,10 +257,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (!mounted) return;
       setState(() {
         _whoIsLoading = false;
-        _whoIsResult = <String, Object?>{
-          'ok': false,
-          'word': word,
-        };
+        _whoIsResult = <String, Object?>{'ok': false, 'word': word};
       });
     }
   }
@@ -278,38 +268,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
         full: true,
         anchorPoint: anchorPoint,
       );
-
-  Offset? _foldableAnchor(BuildContext context, {bool lowerPane = false}) {
-    final MediaQueryData media = MediaQuery.of(context);
-    final DisplayFeature? vertical = media.displayFeatures
-        .where(
-          (DisplayFeature feature) =>
-              feature.bounds.height >= media.size.height * .85 &&
-              feature.bounds.width < media.size.width * .4,
-        )
-        .firstOrNull;
-    if (vertical != null) {
-      return Offset(
-        vertical.bounds.right + (media.size.width - vertical.bounds.right) / 2,
-        media.size.height / 2,
-      );
-    }
-    final DisplayFeature? horizontal = media.displayFeatures
-        .where(
-          (DisplayFeature feature) =>
-              feature.bounds.width >= media.size.width * .85 &&
-              feature.bounds.height < media.size.height * .4,
-        )
-        .firstOrNull;
-    if (horizontal == null) return null;
-    return Offset(
-      media.size.width / 2,
-      lowerPane
-          ? horizontal.bounds.bottom +
-                (media.size.height - horizontal.bounds.bottom) / 2
-          : horizontal.bounds.top / 2,
-    );
-  }
 
   void _startProcessing() {
     Navigator.of(context).popUntil((Route<dynamic> r) => r is PageRoute);
@@ -512,7 +470,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    final MediaQueryData mq = MediaQuery.of(context);
     final Color paper = _paper(t);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -544,75 +501,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             builder: (BuildContext context) => Scaffold(
               backgroundColor: paper,
               resizeToAvoidBottomInset: false,
-              body: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints box) {
-                  final DisplayFeature? verticalHinge = mq.displayFeatures
-                      .where(
-                        (DisplayFeature feature) =>
-                            feature.bounds.height >= box.maxHeight * .85 &&
-                            feature.bounds.width < box.maxWidth * .4,
-                      )
-                      .firstOrNull;
-                  final DisplayFeature? horizontalHinge = mq.displayFeatures
-                      .where(
-                        (DisplayFeature feature) =>
-                            feature.bounds.width >= box.maxWidth * .85 &&
-                            feature.bounds.height < box.maxHeight * .4,
-                      )
-                      .firstOrNull;
-                  if (verticalHinge != null) {
-                    final double leftWidth = verticalHinge.bounds.left
-                        .clamp(0, box.maxWidth)
-                        .toDouble();
-                    final double right = verticalHinge.bounds.right
-                        .clamp(leftWidth, box.maxWidth)
-                        .toDouble();
-                    return Row(
-                      children: <Widget>[
-                        SizedBox(
-                          width: leftWidth,
-                          height: box.maxHeight,
-                          child: _readerPane(context, paper),
-                        ),
-                        SizedBox(width: verticalHinge.bounds.width),
-                        SizedBox(
-                          width: box.maxWidth - right,
-                          height: box.maxHeight,
-                          child: _foldableReaderPanel(context),
-                        ),
-                      ],
-                    );
-                  }
-                  if (horizontalHinge != null) {
-                    final double top = horizontalHinge.bounds.top
-                        .clamp(0, box.maxHeight)
-                        .toDouble();
-                    final double hingeBottom = horizontalHinge.bounds.bottom
-                        .clamp(top, box.maxHeight)
-                        .toDouble();
-                    return Column(
-                      children: <Widget>[
-                        SizedBox(
-                          width: box.maxWidth,
-                          height: top,
-                          child: _readerPane(context, paper),
-                        ),
-                        SizedBox(
-                          width: box.maxWidth,
-                          height: horizontalHinge.bounds.height,
-                          child: ColoredBox(color: paper),
-                        ),
-                        SizedBox(
-                          width: box.maxWidth,
-                          height: box.maxHeight - hingeBottom,
-                          child: _foldableControls(context),
-                        ),
-                      ],
-                    );
-                  }
-                  return _readerPane(context, paper);
-                },
-              ),
+              body: _readerPane(context, paper),
             ),
           ),
         ),
@@ -700,7 +589,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           return KeyEventResult.handled;
         }
         if (e.logicalKey == LogicalKeyboardKey.keyR) {
-          _sheet(RecapPage(link: link));
+          _sheet(RecapPage(link: link, onOpenProcessing: _startProcessing));
           return KeyEventResult.handled;
         }
         if (e.logicalKey == LogicalKeyboardKey.slash) {
@@ -806,194 +695,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _foldableReaderPanel(BuildContext context) {
-    final Tokens t = context.tk;
-    final double progress = book.length == 0 ? 0 : c.cutoff / book.length;
-    final String chapter = c.page == null ? '' : book.chapters[c.chapter].title;
-    final int currentPage = c.pager == null ? 1 : link.pageNo(c.start);
-    Widget action(String label, IconData icon, VoidCallback onPressed) =>
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: onPressed,
-              icon: Icon(icon, size: 19),
-              label: Text(label),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 48),
-                alignment: Alignment.centerLeft,
-                foregroundColor: t.ink,
-                side: BorderSide(color: t.rule),
-              ),
-            ),
-          ),
-        );
-    return ColoredBox(
-      color: t.sheet,
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text('正在阅读', style: TextStyle(fontSize: 12, color: t.ink3)),
-                const SizedBox(height: 8),
-                Text(
-                  widget.entry.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: display,
-                    fontSize: 24,
-                    height: 1.2,
-                    color: t.ink,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$chapter · 第 $currentPage 页',
-                  style: TextStyle(fontSize: 13, color: t.ink2),
-                ),
-                const SizedBox(height: 14),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(value: progress, minHeight: 4),
-                ),
-                const SizedBox(height: 24),
-                action('目录与书签', Icons.list_alt, () {
-                  _sheet(
-                    TocPage(link: link),
-                    full: true,
-                    anchorPoint: _foldableAnchor(context),
-                  );
-                }),
-                action('人物与关系', Icons.hub_outlined, () {
-                  _sheet(
-                    PeoplePage(link: link, tab: 3),
-                    full: true,
-                    anchorPoint: _foldableAnchor(context),
-                  );
-                }),
-                action('本章前情', Icons.history_edu, () {
-                  _sheet(
-                    RecapPage(link: link),
-                    full: true,
-                    anchorPoint: _foldableAnchor(context),
-                  );
-                }),
-                action('问这本书', Icons.question_answer_outlined, () {
-                  _openAsk(anchorPoint: _foldableAnchor(context));
-                }),
-                action('阅读排版', Icons.text_fields, () {
-                  openTypography(context, widget.prefs);
-                }),
-                const Divider(height: 24),
-                Row(
-                  children: <Widget>[
-                    IconButton.filledTonal(
-                      tooltip: '上一页',
-                      onPressed: () => _turn(-1),
-                      icon: const Icon(Icons.chevron_left),
-                    ),
-                    const Spacer(),
-                    Text('翻页', style: TextStyle(color: t.ink3)),
-                    const Spacer(),
-                    IconButton.filledTonal(
-                      tooltip: '下一页',
-                      onPressed: () => _turn(1),
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _foldableControls(BuildContext context) {
-    final Tokens t = context.tk;
-    Widget control(String label, IconData icon, VoidCallback onPressed) =>
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                onPressed();
-              },
-              icon: Icon(icon, size: 18),
-              label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 48),
-                foregroundColor: t.ink,
-                side: BorderSide(color: t.rule),
-              ),
-            ),
-          ),
-        );
-    return ColoredBox(
-      color: t.sheet,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
-          child: Column(
-            children: <Widget>[
-              Text(
-                widget.entry.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: display,
-                  fontSize: 19,
-                  color: t.ink,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: <Widget>[
-                  control('上一页', Icons.chevron_left, () => _turn(-1)),
-                  control('工具栏', Icons.menu, () => c.setToolbar(!c.toolbar)),
-                  control('下一页', Icons.chevron_right, () => _turn(1)),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: <Widget>[
-                  control('目录', Icons.list_alt, () {
-                    _sheet(
-                      TocPage(link: link),
-                      full: true,
-                      anchorPoint: _foldableAnchor(context, lowerPane: true),
-                    );
-                  }),
-                  control('人物', Icons.hub_outlined, () {
-                    _sheet(
-                      PeoplePage(link: link, tab: 3),
-                      full: true,
-                      anchorPoint: _foldableAnchor(context, lowerPane: true),
-                    );
-                  }),
-                  control('问书', Icons.question_answer_outlined, () {
-                    _openAsk(
-                      anchorPoint: _foldableAnchor(context, lowerPane: true),
-                    );
-                  }),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _pages(BuildContext context, Color paper) {
     final PageController? p = pc;
     if (p == null) return const SizedBox.shrink();
@@ -1007,7 +708,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           _clearSelection();
           return;
         }
-        final double x = d.localPosition.dx / (context.size?.width ?? 1);
+        final double x = d.localPosition.dx / math.max(1, spec?.width ?? 1);
         if (x < 1 / 3) {
           _turn(-1);
         } else if (x > 2 / 3) {
@@ -1115,9 +816,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             style: TextStyle(
               fontSize: 11,
               color: t.ink3,
-              fontFeatures: const <FontFeature>[
-                FontFeature.tabularFigures(),
-              ],
+              fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
             ),
           ),
       ],
@@ -1222,10 +921,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   void _toggleBookmark() => _changeNote(() {
     HapticFeedback.lightImpact();
-    final Json? existing = book.notes.bookmarkIn(
-      c.start,
-      c.cutoff,
-    );
+    final Json? existing = book.notes.bookmarkIn(c.start, c.cutoff);
     if (existing != null) {
       book.notes.delete(existing);
     } else {
@@ -1239,25 +935,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
   });
 
   Widget _ribbon(BuildContext context) => Tooltip(
-        message: '已加书签',
-        child: GestureDetector(
-          onTap: _toggleBookmark,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: -34, end: 0),
-            duration: const Duration(milliseconds: 260),
-            curve: Curves.easeOutBack,
-            builder: (BuildContext context, double value, Widget? child) =>
-                Transform.translate(
-              offset: Offset(0, value),
-              child: child,
-            ),
-            child: CustomPaint(
-              size: const Size(14, 34),
-              painter: _Ribbon(context.tk.qing),
-            ),
-          ),
+    message: '已加书签',
+    child: GestureDetector(
+      onTap: _toggleBookmark,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: -34, end: 0),
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutBack,
+        builder: (BuildContext context, double value, Widget? child) =>
+            Transform.translate(offset: Offset(0, value), child: child),
+        child: CustomPaint(
+          size: const Size(14, 34),
+          painter: _Ribbon(context.tk.qing),
         ),
-      );
+      ),
+    ),
+  );
 
   Widget _returnPill(BuildContext context) {
     final Tokens t = context.tk;
@@ -1357,8 +1050,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                       cutoff: c.cutoff,
                     );
                   }),
-                  if (len <= 12)
-                    action('这是谁', () => _identifyWho(s, e)),
+                  if (len <= 12) action('这是谁', () => _identifyWho(s, e)),
                   action('问书', () {
                     final String quote = book.textBetween(s, e);
                     _clearSelection();
@@ -1366,7 +1058,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   }),
                   action('复制', () {
                     HapticFeedback.lightImpact();
-                    Clipboard.setData(ClipboardData(text: book.textBetween(s, e)));
+                    Clipboard.setData(
+                      ClipboardData(text: book.textBetween(s, e)),
+                    );
                     _clearSelection();
                     ScaffoldMessenger.of(
                       context,
@@ -1404,17 +1098,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
               SizedBox(
                 width: 14,
                 height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: t.zhu,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: t.zhu),
               ),
               const SizedBox(width: 10),
-              Text(
-                '正在判断…',
-                style: TextStyle(fontSize: 13, color: t.ink2),
-              ),
-            ] else if (_whoIsResult != null && _whoIsResult!['ok'] == true) ...<Widget>[
+              Text('正在判断…', style: TextStyle(fontSize: 13, color: t.ink2)),
+            ] else if (_whoIsResult != null &&
+                _whoIsResult!['ok'] == true) ...<Widget>[
               Text(
                 '这里的「${_whoIsResult!['word'] ?? _whoIsWord}」指 ',
                 style: TextStyle(fontSize: 13, color: t.ink2),
@@ -1441,10 +1130,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ] else ...<Widget>[
               Icon(Icons.help_outline, size: 16, color: t.ink3),
               const SizedBox(width: 6),
-              Text(
-                '这里看不出指的是谁',
-                style: TextStyle(fontSize: 13, color: t.ink3),
-              ),
+              Text('这里看不出指的是谁', style: TextStyle(fontSize: 13, color: t.ink3)),
               const SizedBox(width: 8),
               Pill(
                 label: '问问这本书',
@@ -1489,149 +1175,124 @@ class _ReaderScreenState extends State<ReaderScreen> {
         opacity: on ? 1 : 0,
         duration: duration,
         curve: Curves.easeInOut,
-        child: Stack(
-          children: <Widget>[
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: AnimatedSlide(
-                offset: on ? Offset.zero : const Offset(0, -1),
-                duration: duration,
-                curve: Curves.easeOutCubic,
-                child: Material(
-                  color: t.sheet,
-                  elevation: 2,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: mq.padding.top),
-                    child: SizedBox(
-                      height: 56,
-                      child: Row(
-                        children: <Widget>[
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            onPressed: () {
-                              _clearSelection();
-                              c.setToolbar(false);
-                              Navigator.of(context).pop();
-                            },
-                            tooltip: '回书架',
-                          ),
-                          Expanded(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  widget.entry.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: t.ink,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  c.page == null
-                                      ? ''
-                                      : book.chapters[c.chapter].title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 12, color: t.ink3),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: '书签',
-                            icon: Icon(
-                              marked ? Icons.bookmark : Icons.bookmark_border,
-                              color: marked ? t.qing : t.ink,
-                            ),
-                            onPressed: _toggleBookmark,
-                          ),
-                          IconButton(
-                            tooltip: '搜索',
-                            icon: const Icon(Icons.search),
-                            onPressed: () =>
-                                _sheet(SearchPage(link: link), full: true),
-                          ),
-                          PopupMenuButton<int>(
-                            tooltip: '更多操作',
-                            icon: const Icon(Icons.more_horiz),
-                            onSelected: (int i) {
-                              HapticFeedback.lightImpact();
-                              switch (i) {
-                                case 0:
-                                  _openBookSheet();
-                                case 1:
-                                  Clipboard.setData(
-                                    ClipboardData(text: notesMarkdown(book)),
-                                  );
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('摘记已复制为 Markdown'),
-                                    ),
-                                  );
-                                case 2:
-                                  c.setToolbar(false);
-                                  openTypography(context, widget.prefs);
-                                case 3:
-                                  if (c.page != null) {
-                                    _sheet(
-                                      MarginaliaPage(
-                                        link: link,
-                                        start: c.page!.start,
-                                        end: c.page!.end,
-                                        pageMode: true,
-                                      ),
-                                      full: true,
-                                    );
-                                  }
-                              }
-                            },
-                            itemBuilder: (_) => const <PopupMenuEntry<int>>[
-                              PopupMenuItem<int>(value: 0, child: Text('这本书')),
-                              PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
-                              PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
-                              PopupMenuItem<int>(value: 3, child: Text('本页批注')),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+        child: Align(
+          alignment: Alignment.bottomCenter,
+          child: AnimatedSlide(
+            offset: on ? Offset.zero : const Offset(0, 1),
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            child: Material(
+              color: t.sheet,
+              child: Padding(
+                padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    _toolbarActions(context, marked),
+                    if (p != null) ...<Widget>[
+                      _progressRow(context, p),
+                      _toolsRow(context, ai),
+                    ],
+                  ],
                 ),
               ),
             ),
-            if (p != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: AnimatedSlide(
-                  offset: on ? Offset.zero : const Offset(0, 1),
-                  duration: duration,
-                  curve: Curves.easeOutCubic,
-                  child: Material(
-                    color: t.sheet,
-                    elevation: 8,
-                    child: Padding(
-                      padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 6),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          _progressRow(context, p),
-                          _toolsRow(context, ai),
-                        ],
-                      ),
-                    ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _toolbarActions(BuildContext context, bool marked) {
+    final Tokens t = context.tk;
+    return SizedBox(
+      height: 52,
+      child: Row(
+        children: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              _clearSelection();
+              c.setToolbar(false);
+              Navigator.of(context).pop();
+            },
+            tooltip: '回书架',
+          ),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  widget.entry.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: t.ink,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-          ],
-        ),
+                Text(
+                  c.page == null ? '' : book.chapters[c.chapter].title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, color: t.ink3),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: '书签',
+            icon: Icon(
+              marked ? Icons.bookmark : Icons.bookmark_border,
+              color: marked ? t.qing : t.ink,
+            ),
+            onPressed: _toggleBookmark,
+          ),
+          IconButton(
+            tooltip: '搜索',
+            icon: const Icon(Icons.search),
+            onPressed: () => _sheet(SearchPage(link: link), full: true),
+          ),
+          PopupMenuButton<int>(
+            tooltip: '更多操作',
+            icon: const Icon(Icons.more_horiz),
+            onSelected: (int i) {
+              HapticFeedback.lightImpact();
+              switch (i) {
+                case 0:
+                  _openBookSheet();
+                case 1:
+                  Clipboard.setData(ClipboardData(text: notesMarkdown(book)));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('摘记已复制为 Markdown')),
+                  );
+                case 2:
+                  c.setToolbar(false);
+                  openTypography(context, widget.prefs);
+                case 3:
+                  if (c.page != null) {
+                    _sheet(
+                      MarginaliaPage(
+                        link: link,
+                        start: c.page!.start,
+                        end: c.page!.end,
+                        pageMode: true,
+                      ),
+                      full: true,
+                    );
+                  }
+              }
+            },
+            itemBuilder: (_) => const <PopupMenuEntry<int>>[
+              PopupMenuItem<int>(value: 0, child: Text('这本书')),
+              PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
+              PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
+              PopupMenuItem<int>(value: 3, child: Text('本页批注')),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1684,10 +1345,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPressed: c.chapter > 0
                     ? () {
                         HapticFeedback.lightImpact();
-                        _jump(
-                          book.chapters[c.chapter - 1].o0,
-                          remember: false,
-                        );
+                        _jump(book.chapters[c.chapter - 1].o0, remember: false);
                       }
                     : null,
                 child: const Text('上一章'),
@@ -1734,10 +1392,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPressed: c.chapter + 1 < book.chapters.length
                     ? () {
                         HapticFeedback.lightImpact();
-                        _jump(
-                          book.chapters[c.chapter + 1].o0,
-                          remember: false,
-                        );
+                        _jump(book.chapters[c.chapter + 1].o0, remember: false);
                       }
                     : null,
                 child: const Text('下一章'),
@@ -1816,7 +1471,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           Icons.auto_stories_outlined,
           '前情',
           true,
-          () => _sheet(RecapPage(link: link)),
+          () =>
+              _sheet(RecapPage(link: link, onOpenProcessing: _startProcessing)),
         ),
         tool(Icons.chat_bubble_outline, '问书', true, () => _openAsk()),
         tool(Icons.text_fields, '排版', false, () {

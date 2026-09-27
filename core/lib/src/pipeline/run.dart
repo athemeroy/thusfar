@@ -115,6 +115,50 @@ void writeJson(File file, Object? data, {bool compact = true}) {
   }
 }
 
+/// Bounded, book-local processing milestones. Never store prompts, book text,
+/// provider responses or credentials here; the reader can show this log safely.
+void recordBookActivity(
+  Directory root,
+  String phase,
+  String message, {
+  int? done,
+  int? total,
+  double? at,
+}) {
+  try {
+    final File file = File('${root.path}/work/activity.json');
+    final List<Object?> previous =
+        file.existsSync()
+            ? (jsonDecode(file.readAsStringSync()) as List<Object?>)
+            : <Object?>[];
+    final Json next = <String, Object?>{
+      'at': at ?? DateTime.now().microsecondsSinceEpoch / 1e6,
+      'phase': phase,
+      'message': message,
+      if (done != null) 'done': done,
+      if (total != null) 'total': total,
+    };
+    if (previous.isNotEmpty && previous.last is Json) {
+      final Json last = previous.last! as Json;
+      if (last['phase'] == phase &&
+          last['message'] == message &&
+          last['done'] == done &&
+          last['total'] == total) {
+        return;
+      }
+    }
+    writeJson(
+      file,
+      <Object?>[
+        ...previous,
+        next,
+      ].skip(math.max(0, previous.length + 1 - 100)).toList(),
+    );
+  } on Object {
+    // Activity is diagnostic; a storage error must not fail a paid request.
+  }
+}
+
 /// Override only the external boundaries in deterministic offline tests.
 class RunBackend {
   const RunBackend();
@@ -328,12 +372,14 @@ class Runner {
     this.cancellation,
     this.backend,
     this.onProgress,
+    this.activity,
   );
   final Directory root;
   final String model;
   final RunCancellation? cancellation;
   final RunBackend backend;
   final void Function(Json)? onProgress;
+  final bool activity;
   late Json book;
   late List<Json> segs;
   late KG kg;
@@ -364,6 +410,7 @@ class Runner {
     RunCancellation? cancellation,
     RunBackend backend = const RunBackend(),
     void Function(Json)? onProgress,
+    bool activity = true,
   }) async {
     final Runner r = Runner._(
       root,
@@ -371,12 +418,14 @@ class Runner {
       cancellation,
       backend,
       onProgress,
+      activity,
     );
     r.book = _read(File('${root.path}/book.json'));
     final bool legacy = Directory('${root.path}/work/segs').existsSync();
     final _PolicyBackend pb = _PolicyBackend(backend);
     if ((!_truth(r.book['genre']) && !legacy) ||
         _truth(r.book['genre_provisional'])) {
+      if (activity) recordBookActivity(root, 'detect_kind', '正在识别书籍类型');
       final (String genre, num confidence) = await policy.detectKind(
         r.book,
         backend: pb,
@@ -393,6 +442,7 @@ class Runner {
       }
     }
     if (!_truth(r.book['classified'])) {
+      if (activity) recordBookActivity(root, 'classify_chapters', '正在识别正文与章节');
       final List<String> kinds = await policy.classifyChapters(
         r.book,
         backend: pb,
@@ -750,6 +800,16 @@ class Runner {
     }
     state.addAll({'notice': notice, 'updated': backend.now()});
     writeJson(path, state, compact: false);
+    if (activity && notice != null) {
+      recordBookActivity(
+        root,
+        notice.startsWith('模型请求失败') ? 'retry' : 'waiting_for_model',
+        notice.startsWith('模型请求失败') ? '模型请求失败，正在重试' : '已发送分段请求，正在等待模型回复',
+        done: _int(state['done']),
+        total: _int(state['total']),
+        at: backend.now(),
+      );
+    }
     onProgress?.call(state);
   }
 
@@ -777,6 +837,20 @@ class Runner {
       },
     };
     writeJson(File('${root.path}/status.json'), out, compact: false);
+    if (activity)
+      recordBookActivity(
+        root,
+        state,
+        switch (state) {
+          'done' => '整理完成',
+          'finalizing' => '正在整理本章人物与前情',
+          'error' => '整理出错，请查看状态详情',
+          _ => '已完成 $done / ${segs.length} 段',
+        },
+        done: done,
+        total: segs.length,
+        at: backend.now(),
+      );
     onProgress?.call(out);
   }
 

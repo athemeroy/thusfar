@@ -204,8 +204,8 @@ void main() {
 
     final Finder covers = find.byType(BookCover);
     expect(covers, findsNWidgets(3));
-    expect(tester.getSize(covers.at(1)).width, lessThan(120));
-    expect(tester.getSize(covers.at(2)).width, lessThan(120));
+    expect(tester.getSize(covers.at(1)).width, greaterThan(130));
+    expect(tester.getSize(covers.at(2)).width, greaterThan(130));
 
     await tester.tap(find.byTooltip('搜索'));
     await settle(tester);
@@ -259,8 +259,8 @@ void main() {
 
     final Finder covers = find.byType(BookCover);
     expect(covers, findsNWidgets(3));
-    expect(tester.getSize(covers.at(1)).width, lessThan(100));
-    expect(tester.getSize(covers.at(2)).width, lessThan(100));
+    expect(tester.getSize(covers.at(1)).width, greaterThan(130));
+    expect(tester.getSize(covers.at(2)).width, greaterThan(130));
     expect(tester.takeException(), isNull);
   });
 

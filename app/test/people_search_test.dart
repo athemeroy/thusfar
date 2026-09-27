@@ -211,7 +211,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('这本书还没整理人物'), findsOneWidget);
+      expect(find.text('这本书还没有整理人物'), findsOneWidget);
       await tester.tap(find.text('开始整理'));
       await tester.pump();
       expect(started, 1);

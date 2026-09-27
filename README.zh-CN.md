@@ -4,10 +4,10 @@
 
 <h1 align="center">页读 · Thusfar</h1>
 
-<p align="center"><strong>只读到你这一页。</strong></p>
+<p align="center"><strong>安心读下去，不被提前剧透。</strong></p>
 
 <p align="center">
-  人物是谁、关系怎么变、前面发生了什么——答案都停在你的阅读进度。
+  点开人名、追踪关系、回顾情节。所有答案都停在你读到的这一页。
 </p>
 
 <p align="center">
@@ -23,14 +23,12 @@
 ## 它怎样陪你读书
 
 <p align="center">
-  <img src="app/test/shots/01-shelf.png" width="240" alt="页读书架，显示书籍和阅读进度">
+  <img src="app/test/shots/01-shelf.png" width="260" alt="页读书架，显示书籍和阅读进度">
   &nbsp;
-  <img src="app/test/shots/02-reader.png" width="240" alt="阅读页中可点开的人名">
-  &nbsp;
-  <img src="app/test/shots/05-person.png" width="240" alt="只展示当前页以前信息的人物卡">
+  <img src="app/test/shots/02-reader.png" width="260" alt="阅读页中可点开的人名">
 </p>
 
-<p align="center"><sub>书架 · 阅读 · 截至当前页的人物卡</sub></p>
+<p align="center"><sub>书架 · 书页上可点开的人名</sub></p>
 
 - **遇到人名，点一下。** 看人物身份、别名、出场和关系，并跳回原文核对。
 - **回顾剧情，不越界。** 人物表、关系图、前情提要和问答遵守同一条阅读进度线；问答附有可打开的原文引用。

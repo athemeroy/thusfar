@@ -201,7 +201,11 @@ class _PersonPageState extends State<PersonPage> {
                   ? p.bio
                   : p.manual
                   ? '你还没有为这条补充写说明。'
-                  : '人物小传还没整理到这里，下面是截至这一页的线索。',
+                  : beyond
+                  ? '正文还没整理到这一页；下面先看已有线索。'
+                  : link.c.book.status.isActive
+                  ? '这一页还没有核对通过的人物小传，整理仍在继续。下面先看已有线索。'
+                  : '这位人物暂无核对通过的小传。下面是截至这一页的线索。',
               style: TextStyle(
                 fontFamily: p.bio.isNotEmpty ? serif : null,
                 fontSize: p.bio.isNotEmpty ? 16 : 14,

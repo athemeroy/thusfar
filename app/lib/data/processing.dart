@@ -3,8 +3,10 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
-import 'package:thusfar_core/jobs.dart' show Worker, WorkerSettings;
+import 'package:thusfar_core/jobs.dart'
+    show AlreadyRunning, RunLease, Worker, WorkerSettings;
 import 'package:thusfar_core/llm.dart' as llm;
+import 'package:thusfar_core/run.dart' show recordBookActivity;
 import 'package:thusfar_core/thusfar_core.dart' show environ;
 
 import 'library.dart';
@@ -12,6 +14,7 @@ import 'model_settings.dart';
 
 /// UI contract; tests substitute a worker without making model requests.
 abstract class BookProcessing extends ChangeNotifier {
+  Map<String, Object?> get health => const <String, Object?>{};
   Future<void> initialize();
   Future<void> startBook(BookEntry book);
   Future<void> pauseBook(BookEntry book);
@@ -19,6 +22,35 @@ abstract class BookProcessing extends ChangeNotifier {
   /// Complete only after this book has no in-flight work or another live owner.
   Future<void> prepareRemoval(BookEntry book);
   Future<void> close();
+}
+
+/// A dead worker cannot keep claiming active books. Check the actual book
+/// lease before changing durable state so an independent live owner wins.
+Future<void> reconcileStoppedWorker(Library library, String reason) async {
+  for (final BookEntry book in List<BookEntry>.of(library.books)) {
+    if (!book.status.isActive || !book.dir.existsSync()) continue;
+    final RunLease lease;
+    try {
+      lease = await RunLease.acquire(book.dir);
+    } on AlreadyRunning {
+      continue;
+    }
+    try {
+      final File file = File('${book.dir.path}/status.json');
+      final Object? raw = readJson(file);
+      if (raw is! Json || !ProcessStatus(raw).isActive) continue;
+      raw.addAll(<String, Object?>{
+        'state': 'error',
+        'error': reason,
+        'notice': null,
+        'updated': DateTime.now().microsecondsSinceEpoch / 1e6,
+      });
+      writeJson(file, raw);
+      recordBookActivity(book.dir, 'error', '整理任务意外停止，请重新打开应用后继续');
+    } finally {
+      lease.release();
+    }
+  }
 }
 
 /// A single worker isolate owns model settings, queue and in-flight requests.
@@ -31,6 +63,9 @@ class ProcessingController extends BookProcessing {
   ProcessingController(this.library);
 
   final Library library;
+  Map<String, Object?> _health = const <String, Object?>{};
+  @override
+  Map<String, Object?> get health => _health;
   SendPort? _commands;
   Future<void>? _initializing;
   Timer? _poll;
@@ -60,6 +95,7 @@ class ProcessingController extends BookProcessing {
         } else if (message['health'] is Map<String, Object?>) {
           final Map<String, Object?> health =
               message['health']! as Map<String, Object?>;
+          _health = health;
           final bool active =
               health['current'] != null ||
               ((health['queued'] as List<Object?>?) ?? const []).isNotEmpty;
@@ -112,6 +148,12 @@ class ProcessingController extends BookProcessing {
 
   void _failed(Completer<void> ready, String text) {
     final llm.LLMError error = llm.LLMError(text);
+    _health = <String, Object?>{
+      'alive': false,
+      'current': null,
+      'queued': const <String>[],
+      'last_error': <String, Object?>{'message': text},
+    };
     if (!ready.isCompleted) ready.completeError(error);
     for (final Completer<void> pending in _pending.values) {
       pending.completeError(error);
@@ -120,6 +162,12 @@ class ProcessingController extends BookProcessing {
     _poll?.cancel();
     _poll = null;
     _refresh();
+    unawaited(
+      reconcileStoppedWorker(
+        library,
+        text,
+      ).catchError((Object _) {}).whenComplete(_refresh),
+    );
   }
 
   void _refresh() {

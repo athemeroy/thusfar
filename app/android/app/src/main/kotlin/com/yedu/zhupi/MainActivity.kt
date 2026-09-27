@@ -1,7 +1,11 @@
 package com.yedu.zhupi
 
+import android.Manifest
+import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import io.flutter.embedding.android.FlutterActivity
@@ -12,20 +16,34 @@ import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
     private var paths: MethodChannel? = null
+    private var processingNotifications: MethodChannel? = null
+    private var openedProcessingBookId: String? = null
+    private val pendingNotificationStarts = mutableListOf<PendingNotificationStart>()
     private val pendingImports = mutableListOf<Map<String, String>>()
     private val importExecutor = Executors.newSingleThreadExecutor()
+
+    private data class PendingNotificationStart(
+        val bookId: String,
+        val title: String,
+        val phase: String,
+        val done: Int,
+        val total: Int,
+        val result: MethodChannel.Result,
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // A restored activity may have died before Flutter consumed its copy.
         // Retrying is safe: the library detects duplicate content on import.
         receiveBooks(intent)
+        receiveProcessingTap(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         receiveBooks(intent)
+        receiveProcessingTap(intent)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -52,6 +70,106 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+        processingNotifications = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "thusfar/processing_notifications")
+        ProcessingNotificationService.backgroundLimitListener = { bookIds ->
+            processingNotifications?.invokeMethod("backgroundTimeLimit", bookIds)
+        }
+        processingNotifications!!.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "start" -> {
+                    val start = notificationStart(call, result)
+                    if (start == null) {
+                        result.error("INVALID_TASK", "整理任务无效", null)
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED &&
+                        !getSharedPreferences("processing_notifications", MODE_PRIVATE).getBoolean("permission_asked", false) &&
+                        pendingNotificationStarts.isEmpty()
+                    ) {
+                        pendingNotificationStarts.add(start)
+                        getSharedPreferences("processing_notifications", MODE_PRIVATE)
+                            .edit().putBoolean("permission_asked", true).apply()
+                        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_PERMISSION_REQUEST)
+                    } else if (pendingNotificationStarts.isNotEmpty()) {
+                        pendingNotificationStarts.add(start)
+                    } else {
+                        launchNotification(start)
+                    }
+                }
+                "update" -> {
+                    val bookId = call.argument<String>("bookId")
+                    val title = call.argument<String>("title")
+                    val phase = call.argument<String>("phase")
+                    if (bookId == null || title == null || phase == null) {
+                        result.error("INVALID_TASK", "整理任务无效", null)
+                    } else {
+                        result.success(ProcessingNotificationService.update(
+                            bookId, title, phase,
+                            call.argument<Int>("done") ?: 0,
+                            call.argument<Int>("total") ?: 0,
+                        ))
+                    }
+                }
+                "stop" -> {
+                    val bookId = call.argument<String>("bookId")
+                    try {
+                        result.success(bookId != null && ProcessingNotificationService.stop(this, bookId))
+                    } catch (error: RuntimeException) {
+                        result.error("NOTIFICATION_STOP_FAILED", "无法停止整理通知：${error.message ?: "系统限制"}", null)
+                    }
+                }
+                "takeOpenedBookId" -> {
+                    result.success(openedProcessingBookId)
+                    openedProcessingBookId = null
+                }
+                "takeBackgroundTimeLimitBookIds" -> {
+                    val prefs = getSharedPreferences("processing_notifications", MODE_PRIVATE)
+                    result.success(prefs.getStringSet("background_limit_books", emptySet())?.toList() ?: emptyList<String>())
+                    prefs.edit().remove("background_limit_books").apply()
+                }
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun notificationStart(call: io.flutter.plugin.common.MethodCall, result: MethodChannel.Result): PendingNotificationStart? {
+        val bookId = call.argument<String>("bookId") ?: return null
+        val title = call.argument<String>("title") ?: return null
+        val phase = call.argument<String>("phase") ?: return null
+        if (!ProcessingNotificationService.validBookId(bookId)) return null
+        return PendingNotificationStart(
+            bookId, title, phase,
+            call.argument<Int>("done") ?: 0,
+            call.argument<Int>("total") ?: 0,
+            result,
+        )
+    }
+
+    private fun launchNotification(start: PendingNotificationStart) {
+        try {
+            ProcessingNotificationService.start(
+                this, start.bookId, start.title, start.phase, start.done, start.total,
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            start.result.success(manager.areNotificationsEnabled())
+        } catch (error: RuntimeException) {
+            start.result.error("NOTIFICATION_START_FAILED", "无法显示整理通知：${error.message ?: "系统限制"}", null)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != NOTIFICATION_PERMISSION_REQUEST) return
+        val pending = pendingNotificationStarts.toList()
+        pendingNotificationStarts.clear()
+        pending.forEach(::launchNotification)
+    }
+
+    private fun receiveProcessingTap(incoming: Intent?) {
+        val bookId = incoming?.getStringExtra(ProcessingNotificationService.EXTRA_BOOK_ID)
+        if (bookId == null || !ProcessingNotificationService.validBookId(bookId)) return
+        openedProcessingBookId = bookId
+        processingNotifications?.invokeMethod("openBook", bookId)
+        incoming.removeExtra(ProcessingNotificationService.EXTRA_BOOK_ID)
     }
 
     @Suppress("DEPRECATION")
@@ -135,6 +253,17 @@ class MainActivity : FlutterActivity() {
         pendingImports.clear()
         paths?.setMethodCallHandler(null)
         paths = null
+        pendingNotificationStarts.forEach {
+            it.result.error("ACTIVITY_CLOSED", "整理通知请求已取消", null)
+        }
+        pendingNotificationStarts.clear()
+        processingNotifications?.setMethodCallHandler(null)
+        processingNotifications = null
+        ProcessingNotificationService.backgroundLimitListener = null
         super.onDestroy()
+    }
+
+    companion object {
+        private const val NOTIFICATION_PERMISSION_REQUEST = 64031
     }
 }

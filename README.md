@@ -4,10 +4,10 @@
 
 <h1 align="center">Thusfar · 页读</h1>
 
-<p align="center"><strong>A reader that has only read as far as you.</strong></p>
+<p align="center"><strong>Stay in the story. Never read ahead by accident.</strong></p>
 
 <p align="center">
-  Remember a character, trace a relationship, or ask what happened—without learning what happens next.
+  Open a name, follow a relationship, or ask what happened. Every answer ends at your current page.
 </p>
 
 <p align="center">
@@ -23,14 +23,12 @@ A long novel brings back names you have not seen for hundreds of pages. Looking 
 ## See it in action
 
 <p align="center">
-  <img src="app/test/shots/01-shelf.png" width="240" alt="Bookshelf and reading progress">
+  <img src="app/test/shots/01-shelf.png" width="260" alt="Bookshelf and reading progress">
   &nbsp;
-  <img src="app/test/shots/02-reader.png" width="240" alt="Reading page with tappable names">
-  &nbsp;
-  <img src="app/test/shots/05-person.png" width="240" alt="Character card limited to the current page">
+  <img src="app/test/shots/02-reader.png" width="260" alt="Reading page with tappable names">
 </p>
 
-<p align="center"><sub>Bookshelf · Reading · Character card at your current page</sub></p>
+<p align="center"><sub>Your library · A page with names you can open</sub></p>
 
 - **Tap a name.** See a character's identity, aliases, appearances, and relationships, then check the original passage.
 - **Catch up without looking ahead.** The cast list, relationship graph, recaps, and questions share the same reading cutoff. Answers link back to cited passages.

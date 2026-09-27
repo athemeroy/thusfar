@@ -58,6 +58,51 @@ class _BookSheetState extends State<BookSheet> {
   String? engineNote;
   bool acting = false;
   String? actionLabel;
+  bool showAllActivity = false;
+
+  List<Json> _activity() {
+    final Object? raw = readJson(
+      File('${widget.entry.dir.path}/work/activity.json'),
+    );
+    if (raw is! List<Object?>) return const <Json>[];
+    return <Json>[
+      for (final Object? row in raw)
+        if (row is Json && row['message'] is String) row,
+    ];
+  }
+
+  String _activityTime(Object? value) {
+    if (value is! num) return '';
+    final DateTime time = DateTime.fromMillisecondsSinceEpoch(
+      (value * 1000).round(),
+    );
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _activityAge(Object? value) {
+    if (value is! num) return '';
+    final int seconds = (DateTime.now().millisecondsSinceEpoch / 1000 - value)
+        .floor();
+    if (seconds < 30) return '';
+    if (seconds < 60) return '已等待 $seconds 秒';
+    return '已等待 ${seconds ~/ 60} 分 ${seconds % 60} 秒';
+  }
+
+  String _activityPhase(Object? raw) => switch ('$raw') {
+    'queued' => '排队',
+    'running' ||
+    'detect_kind' ||
+    'classify_chapters' ||
+    'check_titles' ||
+    'resume_final_jobs' => '准备',
+    'waiting_for_model' => '模型',
+    'retry' => '重试',
+    'finalizing' => '汇总',
+    'done' => '完成',
+    'paused' || 'cancelling' => '暂停',
+    'error' => '错误',
+    _ => '进度',
+  };
 
   @override
   void initState() {
@@ -228,9 +273,7 @@ class _BookSheetState extends State<BookSheet> {
               title: Text(
                 queue >= 0 ? '在书单第 ${queue + 1} 位' : '加入接下来读',
                 style: const TextStyle(
-                  fontFeatures: <FontFeature>[
-                    FontFeature.tabularFigures(),
-                  ],
+                  fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
                 ),
               ),
               trailing: Icon(
@@ -333,8 +376,30 @@ class _BookSheetState extends State<BookSheet> {
     final Tokens t = context.tk;
     final BookEntry b = widget.entry;
     final ProcessStatus s = b.status;
+    final List<Json> activity = _activity();
+    final Json? latestActivity = activity.isEmpty ? null : activity.last;
+    final num latestAt = latestActivity?['at'] is num
+        ? latestActivity!['at']! as num
+        : 0;
+    final num statusAt = s.raw['updated'] is num ? s.raw['updated']! as num : 0;
+    final bool activityAfterNotice =
+        latestActivity != null && statusAt > 0 && latestAt > statusAt + 0.5;
+    final Map<String, Object?> health = widget.processing.health;
+    final bool thisBookIsRunning = health['current'] == b.id;
+    final bool workerStopped = health['alive'] == false;
+    final List<Object?> queued = health['queued'] is List<Object?>
+        ? health['queued']! as List<Object?>
+        : const <Object?>[];
+    final int queuedAt = queued.indexOf(b.id);
     final List<Widget> body = <Widget>[];
-    if (missingKey) {
+    if (workerStopped && s.isActive) {
+      body.add(
+        Text(
+          '整理任务意外停止，正在核对书籍状态。请重新打开应用后继续。',
+          style: TextStyle(fontSize: 14, height: 1.5, color: t.amber),
+        ),
+      );
+    } else if (missingKey) {
       body.addAll(<Widget>[
         Text('还没有填写模型 API 密钥', style: TextStyle(color: t.amber, fontSize: 15)),
         const SizedBox(height: 10),
@@ -365,14 +430,62 @@ class _BookSheetState extends State<BookSheet> {
         ),
         const SizedBox(height: 8),
         Text(
-          s.state == 'queued' ? '已加入整理队列' : '已整理 ${s.done} / ${s.total} 段',
+          s.state == 'queued' && !thisBookIsRunning
+              ? queuedAt >= 0
+                    ? '等待整理 · 队列第 ${queuedAt + 1} 位'
+                    : '已加入整理队列'
+              : s.total > 0
+              ? '已整理 ${s.done} / ${s.total} 段'
+              : '正在准备整理',
           style: TextStyle(
             fontSize: 14,
             color: t.ink,
-            fontFeatures: const <FontFeature>[
-              FontFeature.tabularFigures(),
-            ],
+            fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
           ),
+        ),
+        if (s.state != 'queued' &&
+            !activityAfterNotice &&
+            s.notice != null &&
+            s.notice!.isNotEmpty) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            s.notice!,
+            style: TextStyle(fontSize: 13, height: 1.4, color: t.ink2),
+          ),
+        ] else if (thisBookIsRunning && latestActivity != null) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            '${latestActivity['message']}',
+            style: TextStyle(fontSize: 13, height: 1.4, color: t.ink2),
+          ),
+        ],
+        if (thisBookIsRunning && s.done == 0) ...<Widget>[
+          const SizedBox(height: 5),
+          Text(
+            '首段结果尚未返回，段数不会增加；模型可能在单次请求内重试。',
+            style: TextStyle(fontSize: 12, color: t.ink3),
+          ),
+        ],
+        if (thisBookIsRunning &&
+            activity.isNotEmpty &&
+            _activityAge(activity.last['at']).isNotEmpty) ...<Widget>[
+          const SizedBox(height: 5),
+          Text(
+            '${_activityAge(activity.last['at'])}；等待时长不代表已完成新段落。',
+            style: TextStyle(fontSize: 12, color: t.ink3),
+          ),
+        ],
+        if (s.done > 0) ...<Widget>[
+          const SizedBox(height: 5),
+          Text(
+            '段数是正文进度；人物小传还需按章汇总和核对。',
+            style: TextStyle(fontSize: 12, color: t.ink3),
+          ),
+        ],
+        const SizedBox(height: 5),
+        Text(
+          '正文最多 $phoneConcurrency 段并行；多本书依次整理。',
+          style: TextStyle(fontSize: 12, color: t.ink3),
         ),
         const SizedBox(height: 10),
         Pill(
@@ -388,10 +501,31 @@ class _BookSheetState extends State<BookSheet> {
     } else if (s.isDone) {
       body.add(
         Text(
-          '已读完 · ${s.people} 位人物',
+          '整理完成 · 已识别 ${s.people} 位人物',
           style: TextStyle(fontSize: 15, color: t.ink),
         ),
       );
+      if (s.people == 0) {
+        body.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              '这本书尚未识别出人物。',
+              style: TextStyle(fontSize: 13, color: t.ink2),
+            ),
+          ),
+        );
+      } else {
+        body.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              '人物数量不等于小传数量；未核对通过的小传不会展示。',
+              style: TextStyle(fontSize: 13, color: t.ink2),
+            ),
+          ),
+        );
+      }
       if (s.refused.isNotEmpty) {
         body.add(
           Padding(
@@ -460,17 +594,18 @@ class _BookSheetState extends State<BookSheet> {
           spacing: 10,
           runSpacing: 8,
           children: <Widget>[
-            Pill(
-              label: '重试整理',
-              filled: true,
-              color: t.zhu,
-              onTap: acting
-                  ? null
-                  : () {
-                      HapticFeedback.lightImpact();
-                      _start();
-                    },
-            ),
+            if (!workerStopped)
+              Pill(
+                label: '重试整理',
+                filled: true,
+                color: t.zhu,
+                onTap: acting
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        _start();
+                      },
+              ),
             Pill(
               label: '去模型设置',
               onTap: acting
@@ -581,6 +716,42 @@ class _BookSheetState extends State<BookSheet> {
           ),
         ),
       );
+    }
+    if (activity.isNotEmpty) {
+      final List<Json> shown = showAllActivity
+          ? activity.reversed.take(24).toList()
+          : activity.reversed.take(4).toList();
+      body.addAll(<Widget>[
+        const SizedBox(height: 14),
+        Divider(color: t.rule),
+        const SizedBox(height: 4),
+        Text(
+          '整理记录',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: t.ink,
+          ),
+        ),
+        const SizedBox(height: 6),
+        for (final Json row in shown)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 5),
+            child: Text(
+              '${_activityTime(row['at'])}  ${_activityPhase(row['phase'])} · ${row['message']}',
+              style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
+            ),
+          ),
+        if (activity.length > 4)
+          TextButton(
+            onPressed: () => setState(() => showAllActivity = !showAllActivity),
+            child: Text(
+              showAllActivity
+                  ? '收起记录'
+                  : '查看最近 ${activity.length.clamp(0, 24)} 条记录',
+            ),
+          ),
+      ]);
     }
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),

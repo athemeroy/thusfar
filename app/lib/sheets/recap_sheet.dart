@@ -10,9 +10,10 @@ import 'sheet_host.dart';
 
 /// S11 前情: the story so far, this chapter's events, chapter summaries.
 class RecapPage extends StatelessWidget {
-  const RecapPage({super.key, required this.link});
+  const RecapPage({super.key, required this.link, this.onOpenProcessing});
 
   final ReaderLink link;
+  final VoidCallback? onOpenProcessing;
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +22,39 @@ class RecapPage extends StatelessWidget {
     final int cutoff = link.c.cutoff;
     final int page = link.pageNo(cutoff > 0 ? cutoff - 1 : 0);
     final BookData book = link.c.book;
+    final ProcessStatus status = book.status;
     final Chapter ch = book.chapters[link.c.chapter];
     if (w == null || (w.saga == null && w.recaps.isEmpty && w.events.isEmpty)) {
+      final String message;
+      if (status.isActive) {
+        message = status.total > 0
+            ? '正在整理这本书，已完成 ${status.done}/${status.total} 段。前情提要会在章节整理后出现。'
+            : '正在准备这本书。前情提要会在章节整理后出现。';
+      } else if (status.isPaused) {
+        message = '整理已暂停，继续后才能生成后面的前情提要。';
+      } else if (status.isError) {
+        message = '整理停下了，请查看原因。';
+      } else if (!book.hasKnowledge) {
+        message = '这本书还没有整理前情。';
+      } else {
+        message = '截至这一页，还没有可展示的前情提要。';
+      }
       return SheetPage(
         title: '前情 · 截至第 $page 页',
-        slivers: <Widget>[emptyState(context, '读完第一章后，这里会有前情提要')],
+        slivers: <Widget>[
+          emptyState(
+            context,
+            message,
+            action: onOpenProcessing == null || status.isDone
+                ? null
+                : Pill(
+                    label: status.isIdle ? '开始整理' : '查看整理过程',
+                    filled: true,
+                    color: t.zhu,
+                    onTap: onOpenProcessing!,
+                  ),
+          ),
+        ],
       );
     }
     final List<Json> here = <Json>[
@@ -144,7 +173,9 @@ class RecapPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: t.paper,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: t.rule.withValues(alpha: 0.65)),
+                        border: Border.all(
+                          color: t.rule.withValues(alpha: 0.65),
+                        ),
                       ),
                       child: Text(
                         '${r['text']}',

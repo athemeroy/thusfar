@@ -23,6 +23,9 @@ class FixtureProcessing extends BookProcessing {
   Completer<void>? pauseGate;
   Completer<void>? removalGate;
   Object? startError;
+  Map<String, Object?> runtimeHealth = const <String, Object?>{};
+  @override
+  Map<String, Object?> get health => runtimeHealth;
 
   void status(BookEntry book, Json state) {
     writeJson(File('${book.dir.path}/status.json'), state);
@@ -139,7 +142,11 @@ void main() {
     );
   }
 
-  Future<void> open(WidgetTester tester, {VoidCallback? onRemoved}) async {
+  Future<void> open(
+    WidgetTester tester, {
+    VoidCallback? onRemoved,
+    bool settle = true,
+  }) async {
     await tester.binding.setSurfaceSize(const Size(430, 1000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
@@ -170,7 +177,12 @@ void main() {
       ),
     );
     await tester.tap(find.text('Open fixture'));
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+    }
   }
 
   test('AppModel defers worker startup until explicit initialize', () async {
@@ -216,6 +228,50 @@ void main() {
     },
   );
 
+  test(
+    'dead worker marks unowned active work as error without replacing its receipt',
+    () async {
+      final File status = File('${bookRoot.path}/status.json');
+      final File receipt = File('${bookRoot.path}/work/worker-receipt.json');
+      writeJson(status, <String, Object?>{
+        'state': 'running',
+        'done': 3,
+        'total': 603,
+        'frontier': 9042,
+      });
+      writeJson(receipt, <String, Object?>{
+        'request_id': 'original-request',
+        'phase': 'running',
+      });
+      library.refreshStatus(entry);
+      await reconcileStoppedWorker(library, '整理任务意外停止');
+      expect(
+        entry.status.state,
+        'running',
+      ); // disk changes are refreshed by the controller
+      library.refreshStatus(entry);
+      expect(entry.status.state, 'error');
+      expect(entry.status.done, 3);
+      expect(entry.status.frontier, 9042);
+      expect(entry.status.error, '整理任务意外停止');
+      expect((readJson(receipt) as Json)['request_id'], 'original-request');
+      expect(File('${bookRoot.path}/work/activity.json').existsSync(), isTrue);
+    },
+  );
+
+  test('dead worker does not overwrite an active independent lease', () async {
+    final File status = File('${bookRoot.path}/status.json');
+    writeJson(status, <String, Object?>{'state': 'running', 'done': 1});
+    library.refreshStatus(entry);
+    final RunLease lease = await RunLease.acquire(bookRoot);
+    try {
+      await reconcileStoppedWorker(library, 'worker stopped');
+      expect((readJson(status) as Json)['state'], 'running');
+    } finally {
+      lease.release();
+    }
+  });
+
   testWidgets(
     'start is explicit, progress updates, pause settles, and resume works',
     (WidgetTester tester) async {
@@ -252,6 +308,44 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('preflight and model wait remain visible before first segment', (
+    WidgetTester tester,
+  ) async {
+    configure();
+    processing.runtimeHealth = <String, Object?>{
+      'alive': true,
+      'current': entry.id,
+      'queued': const <String>[],
+    };
+    writeJson(File('${bookRoot.path}/work/activity.json'), <Object?>[
+      <String, Object?>{
+        'at': DateTime.now().millisecondsSinceEpoch / 1000 - 70,
+        'phase': 'running',
+        'message': '正在检查书籍和整理缓存',
+      },
+    ]);
+    processing.status(entry, <String, Object?>{
+      'state': 'queued',
+      'done': 0,
+      'total': 0,
+    });
+    await open(tester, settle: false);
+    expect(find.text('正在准备整理'), findsOneWidget);
+    expect(find.textContaining('正在检查书籍和整理缓存'), findsWidgets);
+    expect(find.textContaining('已等待 1 分'), findsOneWidget);
+    expect(find.text('整理记录'), findsOneWidget);
+
+    processing.status(entry, <String, Object?>{
+      'state': 'running',
+      'done': 0,
+      'total': 603,
+      'notice': '已发送 4 段，正在等待模型回复',
+    });
+    await tester.pump();
+    expect(find.text('已整理 0 / 603 段'), findsOneWidget);
+    expect(find.text('已发送 4 段，正在等待模型回复'), findsOneWidget);
+  });
 
   testWidgets('missing key and start failures remain visible and retryable', (
     WidgetTester tester,

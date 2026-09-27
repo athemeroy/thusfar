@@ -19,6 +19,7 @@ class SettingsScreen extends StatelessWidget {
     required this.onModel,
     required this.onExportAll,
     required this.onRestore,
+    required this.onCheckUpdate,
   });
 
   final Library library;
@@ -27,6 +28,7 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback onModel;
   final VoidCallback onExportAll;
   final VoidCallback onRestore;
+  final VoidCallback onCheckUpdate;
 
   int _size(Directory d) {
     int n = 0;
@@ -248,6 +250,12 @@ class SettingsScreen extends StatelessWidget {
                     trailing: _InstalledVersion(),
                   ),
                   ListTile(
+                    title: const Text('检查更新'),
+                    subtitle: const Text('查看 GitHub 最新正式版'),
+                    trailing: Icon(Icons.chevron_right, color: t.ink3),
+                    onTap: onCheckUpdate,
+                  ),
+                  ListTile(
                     title: const Text('开源地址'),
                     subtitle: const Text('github.com/athemeroy/thusfar'),
                     trailing: Tooltip(
@@ -261,9 +269,9 @@ class SettingsScreen extends StatelessWidget {
                           text: 'https://github.com/athemeroy/thusfar',
                         ),
                       );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已复制开源地址')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('已复制开源地址')));
                     },
                   ),
                   ListTile(
@@ -317,9 +325,7 @@ class _InstalledVersionState extends State<_InstalledVersion> {
       style: TextStyle(
         color: context.tk.ink3,
         fontSize: 13,
-        fontFeatures: const <FontFeature>[
-          FontFeature.tabularFigures(),
-        ],
+        fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
       ),
     ),
   );

@@ -6,19 +6,23 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart' show PyException;
+import 'package:url_launcher/url_launcher.dart';
 
 import 'data/backup.dart';
 import 'data/library.dart';
 import 'data/model_settings.dart';
 import 'data/prefs.dart';
 import 'data/processing.dart';
+import 'data/processing_notification_bridge.dart';
 import 'data/seen.dart';
+import 'data/update_checker.dart';
 import 'reader/reader_screen.dart';
 import 'screens/model_settings_screen.dart';
 import 'screens/notes_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/shelf_screen.dart';
 import 'sheets/book_sheet.dart';
+import 'ui/cover.dart';
 import 'ui/theme.dart';
 
 /// Books named on the command line ("打开方式" on Windows and Linux). They
@@ -159,8 +163,16 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void> _importTail = Future<void>.value();
   Future<void>? _resumeRefresh;
   Timer? _importFeedback;
+  Timer? _updatePromptRetry;
+  final Set<String> _notifiedBooks = <String>{};
+  final Map<String, String> _notificationStamps = <String, String>{};
+  bool _notificationSyncBusy = false;
+  bool _notificationSyncPending = false;
+  bool _appResumed = true;
   bool _readingShares = false;
   bool _sharesAgain = false;
+  bool _checkingUpdates = false;
+  ReleaseUpdate? _pendingUpdate;
 
   AppModel get m => widget.model;
 
@@ -168,12 +180,20 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     m.library.addListener(_changed);
+    m.processing.addListener(_changed);
     WidgetsBinding.instance.addObserver(this);
+    ProcessingNotificationBridge.onOpenBook(_openProcessingNotification);
+    ProcessingNotificationBridge.onBackgroundTimeLimit(
+      _handleBackgroundTimeLimit,
+    );
     _paths.setMethodCallHandler((MethodCall call) async {
       if (call.method == 'importsAvailable') await _takeSharedImports();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_takeSharedImports());
+      if (mounted) unawaited(_checkForUpdates());
+      if (mounted) unawaited(_takeProcessingNotification());
+      if (mounted) unawaited(_takeBackgroundTimeLimit());
     });
     if (m.startupError != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -189,19 +209,112 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   void dispose() {
     m.library.removeListener(_changed);
+    m.processing.removeListener(_changed);
     WidgetsBinding.instance.removeObserver(this);
+    ProcessingNotificationBridge.onOpenBook(null);
+    ProcessingNotificationBridge.onBackgroundTimeLimit(null);
     _paths.setMethodCallHandler(null);
     _importFeedback?.cancel();
+    _updatePromptRetry?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _appResumed = state == AppLifecycleState.resumed;
     if (state == AppLifecycleState.resumed) {
       unawaited(_refreshLibraryOnResume());
+      unawaited(_checkForUpdates());
+      _queueNotificationSync();
     }
     if (state == AppLifecycleState.detached) {
       unawaited(m.processing.close().catchError((Object _) {}));
+    }
+  }
+
+  Future<void> _checkForUpdates({bool manual = false}) async {
+    if (_checkingUpdates) return;
+    final int now = DateTime.now().millisecondsSinceEpoch;
+    if (!manual && now - m.prefs.updateCheckedAt < 24 * 60 * 60 * 1000) {
+      return;
+    }
+    _checkingUpdates = true;
+    try {
+      final String? installed = await installedAppVersion();
+      if (!mounted) return;
+      if (installed == null) {
+        if (manual) _updateMessage('无法读取当前安装版本');
+        return;
+      }
+      final ReleaseUpdate? update = await checkForUpdate(installed);
+      if (!mounted) return;
+      m.prefs.update((Prefs p) {
+        p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch;
+      });
+      if (update == null) {
+        if (manual) _updateMessage('当前已经是最新正式版');
+        return;
+      }
+      if (!manual && m.prefs.dismissedUpdateTag == update.tag) return;
+      _pendingUpdate = update;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _presentUpdate());
+    } on Object {
+      if (manual && mounted) _updateMessage('暂时无法检查更新，请稍后再试');
+    } finally {
+      _checkingUpdates = false;
+    }
+  }
+
+  void _updateMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _presentUpdate() {
+    final ReleaseUpdate? update = _pendingUpdate;
+    if (!mounted || update == null) {
+      return;
+    }
+    if (ModalRoute.of(context)?.isCurrent != true) {
+      _updatePromptRetry?.cancel();
+      _updatePromptRetry = Timer(const Duration(seconds: 1), _presentUpdate);
+      return;
+    }
+    _updatePromptRetry?.cancel();
+    _pendingUpdate = null;
+    unawaited(_showUpdate(update));
+  }
+
+  Future<void> _showUpdate(ReleaseUpdate update) async {
+    final bool? open = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('发现新版本'),
+        content: Text('GitHub 已发布页读 ${update.tag}。现在查看更新内容吗？'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('稍后'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('查看发布页'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (open != true) return;
+    m.prefs.update((Prefs p) => p.dismissedUpdateTag = update.tag);
+    try {
+      if (!await launchUrl(update.page, mode: LaunchMode.externalApplication)) {
+        throw const FormatException('No browser available');
+      }
+    } on Object {
+      await Clipboard.setData(ClipboardData(text: update.page.toString()));
+      if (mounted) _updateMessage('无法打开浏览器，发布页地址已复制');
     }
   }
 
@@ -222,7 +335,139 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   })().whenComplete(() => _resumeRefresh = null);
 
   void _changed() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+      _queueNotificationSync();
+    }
+  }
+
+  Future<void> _openProcessingNotification(String bookId) async {
+    if (!mounted) return;
+    final BookEntry? book = m.library.byId(bookId);
+    if (book != null) openDrawer(book, focus: true);
+  }
+
+  Future<void> _takeProcessingNotification() async {
+    try {
+      final String? bookId =
+          await ProcessingNotificationBridge.takeOpenedBookId();
+      if (bookId != null) await _openProcessingNotification(bookId);
+    } on Object {
+      // A notification may arrive while the Android channel is being set up.
+    }
+  }
+
+  Future<void> _takeBackgroundTimeLimit() async {
+    try {
+      final List<String> ids =
+          await ProcessingNotificationBridge.takeBackgroundTimeLimitBookIds();
+      if (ids.isNotEmpty) await _handleBackgroundTimeLimit(ids);
+    } on Object {
+      // The task state remains visible from the library if Android is offline.
+    }
+  }
+
+  Future<void> _handleBackgroundTimeLimit(List<String> bookIds) async {
+    for (final String id in bookIds.toSet()) {
+      final BookEntry? book = m.library.byId(id);
+      if (book == null || !book.status.isActive) continue;
+      try {
+        await m.processing.pauseBook(book);
+      } on Object {
+        // The worker may already have stopped; its durable status is read below.
+      }
+      m.library.refreshStatus(book);
+    }
+    if (mounted) {
+      _queueNotificationSync();
+      _updateMessage('系统后台整理时段已结束。请打开整理任务查看状态后继续。');
+    }
+  }
+
+  void _queueNotificationSync() {
+    _notificationSyncPending = true;
+    if (_notificationSyncBusy) return;
+    unawaited(_syncNotifications());
+  }
+
+  Future<void> _syncNotifications() async {
+    _notificationSyncBusy = true;
+    try {
+      while (_notificationSyncPending && mounted) {
+        _notificationSyncPending = false;
+        final Map<String, Object?> health = m.processing.health;
+        final Set<String> owned = <String>{
+          if (health['current'] is String) health['current']! as String,
+          for (final Object? id
+              in (health['queued'] as List<Object?>?) ?? const [])
+            if (id is String) id,
+        };
+        final Map<String, BookEntry> active = <String, BookEntry>{
+          if (health['alive'] == true)
+            for (final BookEntry book in m.library.books)
+              if (book.status.isActive && owned.contains(book.id))
+                book.id: book,
+        };
+        for (final String id in _notifiedBooks.toList()) {
+          if (active.containsKey(id)) continue;
+          await ProcessingNotificationBridge.stop(id);
+          _notifiedBooks.remove(id);
+          _notificationStamps.remove(id);
+        }
+        for (final BookEntry book in active.values) {
+          final ProcessStatus status = book.status;
+          final String notice = status.notice ?? '';
+          final String phase = status.state == 'queued'
+              ? 'queued'
+              : status.state == 'finalizing'
+              ? 'finalizing'
+              : notice.contains('等待') || notice.contains('模型')
+              ? 'waiting'
+              : status.done == 0
+              ? 'preparing'
+              : 'running';
+          final String stamp =
+              '$phase/${status.done}/${status.total}/${book.title}';
+          if (_notificationStamps[book.id] == stamp) continue;
+          try {
+            if (_notifiedBooks.contains(book.id)) {
+              final bool present = await ProcessingNotificationBridge.update(
+                bookId: book.id,
+                title: book.title,
+                phase: phase,
+                done: status.done,
+                total: status.total,
+              );
+              if (!present) {
+                _notifiedBooks.remove(book.id);
+                _notificationStamps.remove(book.id);
+                continue;
+              }
+            } else if (_appResumed) {
+              await ProcessingNotificationBridge.start(
+                bookId: book.id,
+                title: book.title,
+                phase: phase,
+                done: status.done,
+                total: status.total,
+              );
+              _notifiedBooks.add(book.id);
+              // Permission approval can outlive the task that requested it.
+              // Re-read durable status before leaving any notification up.
+              _notificationSyncPending = true;
+            } else {
+              continue;
+            }
+            _notificationStamps[book.id] = stamp;
+          } on Object {
+            _notifiedBooks.remove(book.id);
+            _notificationStamps.remove(book.id);
+          }
+        }
+      }
+    } finally {
+      _notificationSyncBusy = false;
+    }
   }
 
   static const List<NavigationDestination> _destinations =
@@ -289,50 +534,166 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       (Icons.tune_outlined, '设置'),
     ];
     return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 280),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (int index = 0; index < destinations.length; index++)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Material(
-                  color: index == tab ? t.qingSoft : Colors.transparent,
-                  borderRadius: BorderRadius.circular(18),
-                  child: InkWell(
-                    key: ValueKey<String>('foldable-nav-$index'),
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: () => _selectTab(index),
-                    child: SizedBox(
-                      height: 60,
-                      child: Row(
-                        children: <Widget>[
-                          const SizedBox(width: 20),
-                          Icon(
-                            destinations[index].$1,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (int index = 0; index < destinations.length; index++)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Material(
+                color: index == tab ? t.qingSoft : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  key: ValueKey<String>('foldable-nav-$index'),
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _selectTab(index),
+                  child: SizedBox(
+                    width: 68,
+                    height: 68,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          destinations[index].$1,
+                          color: index == tab ? t.qing : t.ink2,
+                          size: 24,
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          destinations[index].$2,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: index == tab
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: index == tab ? t.qing : t.ink2,
-                            size: 23,
                           ),
-                          const SizedBox(width: 14),
-                          Text(
-                            destinations[index].$2,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: index == tab
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              color: index == tab ? t.qing : t.ink2,
-                            ),
-                          ),
-                          const Spacer(),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-          ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _foldableShelfCompanion(Tokens t) {
+    BookEntry? featured;
+    Progress? progress;
+    double latest = -1;
+    for (final BookEntry book in m.library.books) {
+      final Progress? candidate = m.library.progressOf(book.id);
+      if (candidate != null && candidate.pct < 99.5 && candidate.t > latest) {
+        latest = candidate.t;
+        featured = book;
+        progress = candidate;
+      }
+    }
+    if (featured == null && m.library.books.isNotEmpty) {
+      featured = m.library.books.first;
+    }
+    final BookEntry? book = featured;
+    return ColoredBox(
+      color: t.paper,
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                progress == null ? '从这里开始' : '正在阅读',
+                style: TextStyle(fontSize: 13, color: t.ink3),
+              ),
+              const SizedBox(height: 14),
+              if (book != null)
+                Material(
+                  color: t.sheet,
+                  borderRadius: BorderRadius.circular(20),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    key: const ValueKey<String>('foldable-featured-book'),
+                    onTap: () => openBook(book),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Center(child: BookCover(entry: book, width: 132)),
+                          const SizedBox(height: 18),
+                          Text(
+                            book.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: display,
+                              fontSize: 21,
+                              color: t.ink,
+                            ),
+                          ),
+                          if (book.author.isNotEmpty) ...<Widget>[
+                            const SizedBox(height: 4),
+                            Text(
+                              book.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: 12, color: t.ink3),
+                            ),
+                          ],
+                          if (progress != null) ...<Widget>[
+                            const SizedBox(height: 16),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(3),
+                              child: LinearProgressIndicator(
+                                value: progress.pct / 100,
+                                minHeight: 5,
+                                color: t.zhu,
+                                backgroundColor: t.rule,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '已读 ${progress.pct.round()}%',
+                              style: TextStyle(fontSize: 12, color: t.ink3),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          Row(
+                            children: <Widget>[
+                              Text(
+                                progress == null ? '开始阅读' : '继续阅读',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: t.qing,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(Icons.arrow_forward, size: 18, color: t.qing),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else ...<Widget>[
+                Text(
+                  '选一本书，开始专注阅读。',
+                  style: TextStyle(fontSize: 18, color: t.ink),
+                ),
+                const SizedBox(height: 20),
+                OutlinedButton.icon(
+                  onPressed: pickAndImport,
+                  icon: const Icon(Icons.add),
+                  label: const Text('导入书籍'),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -433,7 +794,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                 ),
       ),
     );
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) => _presentUpdate());
+    }
   }
 
   Future<void> openModelSettings() async {
@@ -623,6 +987,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         onModel: openModelSettings,
         onExportAll: exportAll,
         onRestore: () => pickAndImport(backupsOnly: true),
+        onCheckUpdate: () => unawaited(_checkForUpdates(manual: true)),
       ),
     ];
     final bool dark = Theme.of(context).brightness == Brightness.dark;
@@ -640,22 +1005,22 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     final Widget pageStack = IndexedStack(index: tab, children: pages);
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
-        const SingleActivator(LogicalKeyboardKey.digit1, control: true):
-            () => _selectTab(0),
-        const SingleActivator(LogicalKeyboardKey.digit1, meta: true):
-            () => _selectTab(0),
-        const SingleActivator(LogicalKeyboardKey.digit2, control: true):
-            () => _selectTab(1),
-        const SingleActivator(LogicalKeyboardKey.digit2, meta: true):
-            () => _selectTab(1),
-        const SingleActivator(LogicalKeyboardKey.digit3, control: true):
-            () => _selectTab(2),
-        const SingleActivator(LogicalKeyboardKey.digit3, meta: true):
-            () => _selectTab(2),
-        const SingleActivator(LogicalKeyboardKey.comma, control: true):
-            () => _selectTab(2),
-        const SingleActivator(LogicalKeyboardKey.comma, meta: true):
-            () => _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.digit1, control: true): () =>
+            _selectTab(0),
+        const SingleActivator(LogicalKeyboardKey.digit1, meta: true): () =>
+            _selectTab(0),
+        const SingleActivator(LogicalKeyboardKey.digit2, control: true): () =>
+            _selectTab(1),
+        const SingleActivator(LogicalKeyboardKey.digit2, meta: true): () =>
+            _selectTab(1),
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true): () =>
+            _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.digit3, meta: true): () =>
+            _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
+            _selectTab(2),
+        const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
+            _selectTab(2),
         const SingleActivator(LogicalKeyboardKey.keyO, control: true):
             pickAndImport,
         const SingleActivator(LogicalKeyboardKey.keyO, meta: true):
@@ -663,141 +1028,133 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle(
-        statusBarColor: t.paper,
-        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
-        systemNavigationBarColor: t.sheet,
-        systemNavigationBarIconBrightness: dark
-            ? Brightness.light
-            : Brightness.dark,
-        systemNavigationBarDividerColor: t.rule,
-        systemStatusBarContrastEnforced: false,
-        systemNavigationBarContrastEnforced: false,
-      ),
-      child: Scaffold(
-        body: LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final Size window = Size(
-              constraints.maxWidth,
-              constraints.maxHeight,
-            );
-            final DisplayFeature? verticalHinge = media.displayFeatures
-                .where(
-                  (DisplayFeature feature) =>
-                      feature.bounds.height >= window.height * .85 &&
-                      feature.bounds.width < window.width * .4,
-                )
-                .firstOrNull;
-            final DisplayFeature? horizontalHinge = media.displayFeatures
-                .where(
-                  (DisplayFeature feature) =>
-                      feature.bounds.width >= window.width * .85 &&
-                      feature.bounds.height < window.height * .4,
-                )
-                .firstOrNull;
-            if (verticalHinge != null && window.width >= 600) {
-              final double leftWidth = verticalHinge.bounds.left
-                  .clamp(0, window.width)
-                  .toDouble();
-              final double hingeRight = verticalHinge.bounds.right
-                  .clamp(leftWidth, window.width)
-                  .toDouble();
-              final double rightWidth = window.width - hingeRight;
-              return Row(
-                children: <Widget>[
-                  SizedBox(
-                    width: leftWidth,
-                    height: window.height,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: t.sheet,
-                        border: Border(
-                          right: BorderSide(color: t.rule, width: .5),
+          statusBarColor: t.paper,
+          statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+          systemNavigationBarColor: t.sheet,
+          systemNavigationBarIconBrightness: dark
+              ? Brightness.light
+              : Brightness.dark,
+          systemNavigationBarDividerColor: t.rule,
+          systemStatusBarContrastEnforced: false,
+          systemNavigationBarContrastEnforced: false,
+        ),
+        child: Scaffold(
+          body: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final Size window = Size(
+                constraints.maxWidth,
+                constraints.maxHeight,
+              );
+              final DisplayFeature? verticalHinge = media.displayFeatures
+                  .where(
+                    (DisplayFeature feature) =>
+                        feature.bounds.height >= window.height * .85 &&
+                        feature.bounds.width < window.width * .4,
+                  )
+                  .firstOrNull;
+              final DisplayFeature? horizontalHinge = media.displayFeatures
+                  .where(
+                    (DisplayFeature feature) =>
+                        feature.bounds.width >= window.width * .85 &&
+                        feature.bounds.height < window.height * .4,
+                  )
+                  .firstOrNull;
+              if (verticalHinge != null && window.width >= 600) {
+                final double leftWidth = verticalHinge.bounds.left
+                    .clamp(0, window.width)
+                    .toDouble();
+                final double hingeRight = verticalHinge.bounds.right
+                    .clamp(leftWidth, window.width)
+                    .toDouble();
+                final double rightWidth = window.width - hingeRight;
+                final double railWidth = (leftWidth >= 300 ? 80.0 : 68.0)
+                    .clamp(0, leftWidth)
+                    .toDouble();
+                final double companionWidth = leftWidth - railWidth;
+                return Row(
+                  children: <Widget>[
+                    SizedBox(
+                      width: railWidth,
+                      height: window.height,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: t.sheet,
+                          border: Border(
+                            right: BorderSide(color: t.rule, width: .5),
+                          ),
                         ),
-                      ),
-                      child: SafeArea(
-                        child: Column(
-                          children: <Widget>[
-                            const SizedBox(height: 20),
-                            Text(
-                              '页读',
-                              style: TextStyle(
-                                fontFamily: display,
-                                fontSize: 26,
-                                color: t.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '只读到你这一页',
-                              style: TextStyle(fontSize: 12, color: t.ink3),
-                            ),
-                            Expanded(child: _foldableNavigation(t)),
-                            const SizedBox(height: 20),
-                          ],
+                        child: SafeArea(
+                          child: _foldableNavigation(t),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: verticalHinge.bounds.width),
-                  SizedBox(
-                    width: rightWidth,
-                    height: window.height,
+                    SizedBox(
+                      width: companionWidth,
+                      height: window.height,
+                      child: companionWidth >= 220
+                          ? _foldableShelfCompanion(t)
+                          : ColoredBox(color: t.paper),
+                    ),
+                    SizedBox(width: verticalHinge.bounds.width),
+                    SizedBox(
+                      width: rightWidth,
+                      height: window.height,
+                      child: MediaQuery(
+                        data: media.copyWith(
+                          size: Size(rightWidth, window.height),
+                          displayFeatures: const <DisplayFeature>[],
+                        ),
+                        child: pageStack,
+                      ),
+                    ),
+                  ],
+                );
+              }
+              if (horizontalHinge != null) {
+                // Keep the active page on the upper display. The navigation bar
+                // remains at the bottom, in the lower display, for tabletop use.
+                final double upperHeight = horizontalHinge.bounds.top
+                    .clamp(0, window.height)
+                    .toDouble();
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: window.width,
+                    height: upperHeight,
                     child: MediaQuery(
                       data: media.copyWith(
-                        size: Size(rightWidth, window.height),
+                        size: Size(window.width, upperHeight),
                         displayFeatures: const <DisplayFeature>[],
                       ),
                       child: pageStack,
                     ),
                   ),
-                ],
-              );
-            }
-            if (horizontalHinge != null) {
-              // Keep the active page on the upper display. The navigation bar
-              // remains at the bottom, in the lower display, for tabletop use.
-              final double upperHeight = horizontalHinge.bounds.top
-                  .clamp(0, window.height)
-                  .toDouble();
-              return Align(
-                alignment: Alignment.topCenter,
-                child: SizedBox(
-                  width: window.width,
-                  height: upperHeight,
-                  child: MediaQuery(
-                    data: media.copyWith(
-                      size: Size(window.width, upperHeight),
-                      displayFeatures: const <DisplayFeature>[],
-                    ),
-                    child: pageStack,
-                  ),
+                );
+              }
+              if (window.width >= 720) {
+                return Row(
+                  children: <Widget>[
+                    SafeArea(child: _navigationRail(t)),
+                    VerticalDivider(width: 1, color: t.rule),
+                    Expanded(child: pageStack),
+                  ],
+                );
+              }
+              return pageStack;
+            },
+          ),
+          bottomNavigationBar:
+              verticalSplit || (media.size.width >= 720 && !horizontalSplit)
+              ? null
+              : NavigationBar(
+                  height: 72,
+                  backgroundColor: t.sheet,
+                  selectedIndex: tab,
+                  onDestinationSelected: _selectTab,
+                  destinations: _destinations,
                 ),
-              );
-            }
-            if (window.width >= 720) {
-              return Row(
-                children: <Widget>[
-                  SafeArea(child: _navigationRail(t)),
-                  VerticalDivider(width: 1, color: t.rule),
-                  Expanded(child: pageStack),
-                ],
-              );
-            }
-            return pageStack;
-          },
         ),
-        bottomNavigationBar:
-            verticalSplit || (media.size.width >= 720 && !horizontalSplit)
-            ? null
-            : NavigationBar(
-                height: 72,
-                backgroundColor: t.sheet,
-                selectedIndex: tab,
-                onDestinationSelected: _selectTab,
-                destinations: _destinations,
-              ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

@@ -21,6 +21,8 @@ class Prefs extends ChangeNotifier {
     night = NightMode.values[(j['night'] as num?)?.toInt() ?? 0];
     sort = (j['sort'] as num?)?.toInt() ?? 0;
     listView = j['listView'] as bool? ?? false;
+    updateCheckedAt = (j['updateCheckedAt'] as num?)?.toInt() ?? 0;
+    dismissedUpdateTag = j['dismissedUpdateTag'] as String? ?? '';
   }
 
   final File file;
@@ -39,6 +41,8 @@ class Prefs extends ChangeNotifier {
   /// Shelf sort: 0 最近阅读 · 1 书名 · 2 阅读进度 · 3 最近加入.
   late int sort;
   late bool listView;
+  late int updateCheckedAt;
+  late String dismissedUpdateTag;
 
   double get lineHeight => const <double>[1.6, 1.85, 2.1][spacing];
 
@@ -104,6 +108,8 @@ class Prefs extends ChangeNotifier {
       'night': night.index,
       'sort': sort,
       'listView': listView,
+      'updateCheckedAt': updateCheckedAt,
+      'dismissedUpdateTag': dismissedUpdateTag,
     });
     notifyListeners();
   }

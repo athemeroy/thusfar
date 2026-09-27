@@ -294,6 +294,9 @@ extension RunnerLoops on Runner {
     }
     replaying = false;
     if (limit != 0) {
+      if (activity && pending.isNotEmpty) {
+        recordBookActivity(root, 'resume_final_jobs', '正在恢复未完成的章节资料');
+      }
       resumeFinalJobs();
       for (final Future<Object?> f in pending) {
         await awaitFuture(f);
@@ -345,7 +348,24 @@ extension RunnerLoops on Runner {
       checkpoint();
       submitUpto(i + concurrency - 1, i);
       try {
-        final Json localRec = await awaitFuture(futures[i]!);
+        final Stopwatch waiting = Stopwatch()..start();
+        final Timer heartbeat = Timer.periodic(const Duration(minutes: 1), (_) {
+          if (activity)
+            recordBookActivity(
+              root,
+              'waiting_for_model',
+              '第 ${i + 1} 段仍在等待模型，已 ${waiting.elapsed.inMinutes} 分钟',
+              done: i,
+              total: segs.length,
+              at: backend.now(),
+            );
+        });
+        final Json localRec;
+        try {
+          localRec = await awaitFuture(futures[i]!);
+        } finally {
+          heartbeat.cancel();
+        }
         checkpoint();
         final Json rec = await link(i, localRec);
         checkpoint();
@@ -405,6 +425,7 @@ Future<void> runBook(
       cancellation: cancellation,
       backend: backend,
       onProgress: onProgress,
+      activity: limit != 0,
     );
     final bool useClassic =
         classic ||

@@ -265,6 +265,15 @@ void main() {
       await worker.startBook(a);
       await worker.startBook(b);
       expect(calls, <String>[a.path]);
+      expect(worker.health()['current'], 'a');
+      expect(worker.health()['queued'], <String>['b']);
+      final List<Object?> earlyActivity = jsonDecode(
+        File('${a.path}/work/activity.json').readAsStringSync(),
+      ) as List<Object?>;
+      expect(
+        (earlyActivity.last! as Json)['message'],
+        '正在检查书籍和整理缓存',
+      );
       settings = const WorkerSettings(
         model: 'new-reader-model',
         localModel: 'new-reader-model',
@@ -279,6 +288,13 @@ void main() {
       expect(maximum, 1);
       expect(worker.health()['current'], isNull);
       expect(read(a, 'work/worker-receipt.json')['phase'], 'done');
+      final List<Object?> activity = jsonDecode(
+        File('${b.path}/work/activity.json').readAsStringSync(),
+      ) as List<Object?>;
+      expect(
+        activity.cast<Json>().map((Json row) => row['phase']),
+        containsAllInOrder(<String>['queued', 'running', 'done']),
+      );
     },
   );
 

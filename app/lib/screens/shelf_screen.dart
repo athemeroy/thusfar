@@ -118,6 +118,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
     final List<BookEntry> queue = <BookEntry>[
       for (final String id in lib.readingList) ?lib.byId(id),
     ];
+    final List<BookEntry> processingBooks = <BookEntry>[
+      for (final BookEntry b in lib.books)
+        if (b.status.isActive || b.status.isPaused || b.status.isError) b,
+    ];
     return Scaffold(
       backgroundColor: t.paper,
       floatingActionButton: Padding(
@@ -166,6 +170,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
                   _appBar(context),
                   if (cont != null && query.isEmpty)
                     SliverToBoxAdapter(child: _continueCard(context, cont)),
+                  if (processingBooks.isNotEmpty && query.isEmpty)
+                    SliverToBoxAdapter(
+                      child: _processingBanner(context, processingBooks),
+                    ),
                   if (queue.isNotEmpty && query.isEmpty) ...<Widget>[
                     SliverToBoxAdapter(
                       child: Padding(
@@ -276,7 +284,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                                 ? 12
                                 : 20;
                             final int columns = compact
-                                ? 3
+                                ? (extent < 500 ? 2 : 3)
                                 : (extent / 168).floor().clamp(3, 6);
                             final double tileWidth =
                                 (extent - inset * 2 - gap * (columns - 1)) /
@@ -526,13 +534,215 @@ class _ShelfScreenState extends State<ShelfScreen> {
 
   String _statusLine(BookEntry b) {
     final ProcessStatus s = b.status;
+    if (s.state == 'queued') return '等待或准备整理';
+    if (s.state == 'finalizing') return '正在完成整理';
     if (s.isRunning) {
-      return '整理中 ${s.total == 0 ? 0 : (100 * s.done / s.total).round()}%';
+      return s.total == 0 ? '正在准备整理' : '整理中 · 已完成 ${s.done}/${s.total} 段';
     }
     if (s.isDone) return '人物已整理 · ${s.people} 位';
     if (s.isPaused) return '整理已暂停';
     if (s.isError) return '整理停下了，点开看原因';
     return '人物还没整理';
+  }
+
+  String _processingLabel(ProcessStatus s) {
+    if (s.state == 'queued') return '查看任务';
+    if (s.isCancelling) return '暂停中';
+    if (s.state == 'finalizing') return '收尾中';
+    if (s.isActive) return '整理中';
+    if (s.isPaused) return '继续整理';
+    if (s.isError) return '查看整理';
+    if (s.isDone) return '已整理';
+    return '整理';
+  }
+
+  IconData _processingIcon(ProcessStatus s) {
+    if (s.isActive) return Icons.hourglass_top_rounded;
+    if (s.isPaused) return Icons.play_arrow_rounded;
+    if (s.isError) return Icons.error_outline_rounded;
+    if (s.isDone) return Icons.check_rounded;
+    return Icons.auto_awesome_rounded;
+  }
+
+  Widget _coverProcessingAction(BuildContext context, BookEntry b) {
+    final Tokens t = context.tk;
+    final ProcessStatus s = b.status;
+    final String label = _processingLabel(s);
+    return Semantics(
+      button: true,
+      label: '$label《${b.title}》',
+      excludeSemantics: true,
+      child: Material(
+        color: t.sheet.withValues(alpha: .96),
+        borderRadius: BorderRadius.circular(12),
+        elevation: 2,
+        child: InkWell(
+          key: ValueKey<String>('process-${b.id}'),
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onDrawer(b, focus: true);
+          },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 104, minHeight: 44),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(_processingIcon(s), size: 16, color: t.zhu),
+                  const SizedBox(width: 3),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: t.ink,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _processingBanner(BuildContext context, List<BookEntry> tasks) {
+    final Tokens t = context.tk;
+    final int active = tasks.where((BookEntry b) => b.status.isActive).length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+      child: Material(
+        color: t.sheet,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openProcessingList,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            decoration: BoxDecoration(
+              border: Border.all(color: t.rule),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: <Widget>[
+                Icon(Icons.auto_awesome_rounded, color: t.zhu, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        '整理任务',
+                        style: TextStyle(
+                          color: t.ink,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        active > 0
+                            ? '$active 本待处理或进行中 · 点击查看'
+                            : '${tasks.length} 本等待继续或处理',
+                        style: TextStyle(color: t.ink2, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: t.ink3),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openProcessingList() async {
+    HapticFeedback.lightImpact();
+    final Tokens t = context.tk;
+    final BookEntry? selected = await showModalBottomSheet<BookEntry>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext sheetContext) => SafeArea(
+        child: SizedBox(
+          height: (MediaQuery.sizeOf(sheetContext).height * .58).clamp(
+            300.0,
+            520.0,
+          ),
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Row(
+                  children: <Widget>[
+                    const Expanded(
+                      child: Text(
+                        '整理任务',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: '关闭整理任务',
+                      onPressed: () => Navigator.of(sheetContext).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListenableBuilder(
+                  listenable: widget.library,
+                  builder: (BuildContext context, _) {
+                    final List<BookEntry> tasks =
+                        <BookEntry>[
+                          for (final BookEntry b in widget.library.books)
+                            if (b.status.isActive ||
+                                b.status.isPaused ||
+                                b.status.isError)
+                              b,
+                        ]..sort((BookEntry a, BookEntry b) {
+                          final int aRank = a.status.isActive ? 0 : 1;
+                          final int bRank = b.status.isActive ? 0 : 1;
+                          return aRank.compareTo(bRank);
+                        });
+                    if (tasks.isEmpty) {
+                      return const Center(child: Text('目前没有整理任务'));
+                    }
+                    return ListView.builder(
+                      itemCount: tasks.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final BookEntry b = tasks[index];
+                        return ListTile(
+                          leading: Icon(
+                            _processingIcon(b.status),
+                            color: t.zhu,
+                          ),
+                          title: Text(b.title),
+                          subtitle: Text(_statusLine(b)),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => Navigator.of(sheetContext).pop(b),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (mounted && selected != null) widget.onDrawer(selected, focus: true);
   }
 
   Widget _continueCard(BuildContext context, BookEntry b) {
@@ -603,14 +813,39 @@ class _ShelfScreenState extends State<ShelfScreen> {
                         const SizedBox(height: 8),
                         Row(
                           children: <Widget>[
-                            StatusDot(status: b.status, size: 7),
-                            const SizedBox(width: 6),
                             Expanded(
-                              child: Text(
-                                _statusLine(b),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(fontSize: 12, color: t.ink3),
+                              child: Tooltip(
+                                message: '查看《${b.title}》的整理状态',
+                                child: InkWell(
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    widget.onDrawer(b, focus: true);
+                                  },
+                                  child: SizedBox(
+                                    height: 44,
+                                    child: Row(
+                                      children: <Widget>[
+                                        Icon(
+                                          _processingIcon(b.status),
+                                          size: 16,
+                                          color: t.zhu,
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Expanded(
+                                          child: Text(
+                                            _statusLine(b),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: t.ink2,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                             IconButton(
@@ -680,14 +915,15 @@ class _ShelfScreenState extends State<ShelfScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      BookCover(
-                        entry: b,
-                        width: box.maxWidth - 4,
-                        statusDot: true,
-                        onDot: () {
-                          HapticFeedback.selectionClick();
-                          widget.onDrawer(b, focus: true);
-                        },
+                      Stack(
+                        children: <Widget>[
+                          BookCover(entry: b, width: box.maxWidth - 4),
+                          Positioned(
+                            right: 6,
+                            bottom: 6,
+                            child: _coverProcessingAction(context, b),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 9),
                       SizedBox(
@@ -740,11 +976,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
         b.title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontFamily: display,
-          fontSize: 16,
-          color: t.ink,
-        ),
+        style: TextStyle(fontFamily: display, fontSize: 16, color: t.ink),
       ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -769,11 +1001,11 @@ class _ShelfScreenState extends State<ShelfScreen> {
         ],
       ),
       trailing: IconButton(
-        icon: Icon(Icons.more_horiz, color: t.ink3),
-        tooltip: '更多操作：${b.title}',
+        icon: Icon(_processingIcon(b.status), color: t.zhu),
+        tooltip: '${_processingLabel(b.status)}《${b.title}》',
         onPressed: () {
           HapticFeedback.selectionClick();
-          widget.onDrawer(b);
+          widget.onDrawer(b, focus: true);
         },
       ),
       onTap: () {
@@ -800,8 +1032,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
               : '${i.name} ${(i.progress * 100).round()}%').join(' · ')}';
     final double avg = items.isEmpty
         ? 0.0
-        : items.map((ImportItem i) => i.progress).reduce((double a, double b) => a + b) /
-            items.length;
+        : items
+                  .map((ImportItem i) => i.progress)
+                  .reduce((double a, double b) => a + b) /
+              items.length;
     return Material(
       color: t.ink,
       borderRadius: BorderRadius.circular(14),

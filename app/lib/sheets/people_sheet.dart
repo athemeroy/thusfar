@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
 
+import '../data/library.dart';
 import '../ui/theme.dart';
 import 'common.dart';
 import 'graph_view.dart';
@@ -53,9 +54,7 @@ class _PeoplePageState extends State<PeoplePage> {
     icon: Icons.person_add_alt_1_outlined,
     onTap: () {
       HapticFeedback.lightImpact();
-      SheetScope.of(
-        context,
-      ).state.push(ManualEntityEditor(link: widget.link));
+      SheetScope.of(context).state.push(ManualEntityEditor(link: widget.link));
     },
   );
 
@@ -64,19 +63,41 @@ class _PeoplePageState extends State<PeoplePage> {
     final Tokens t = context.tk;
     final ReaderLink link = widget.link;
     final World? w = link.c.world;
+    final ProcessStatus status = link.c.book.status;
     final int page = link.pageNo(link.c.cutoff > 0 ? link.c.cutoff - 1 : 0);
-    if (w == null || w.people.isEmpty && !link.c.book.hasKnowledge) {
+    if (w == null || w.people.isEmpty) {
+      final String message;
+      final String? actionLabel;
+      if (status.isActive) {
+        final String progress = status.total > 0
+            ? '已完成 ${status.done}/${status.total} 段。'
+            : '正在准备书籍。';
+        message = '这本书正在整理人物，$progress人物小传会在章节整理并核对后逐步出现。';
+        actionLabel = '查看整理过程';
+      } else if (status.isPaused) {
+        message = '人物整理已暂停。已经完成的内容仍会保留。';
+        actionLabel = '继续整理';
+      } else if (status.isError) {
+        message = '人物整理停下了。请查看原因，再决定是否继续。';
+        actionLabel = '查看原因';
+      } else if (!link.c.book.hasKnowledge) {
+        message = link.c.book.manualError ?? '这本书还没有整理人物';
+        actionLabel = '开始整理';
+      } else {
+        message = '截至这一页，还没有可展示的人物资料。';
+        actionLabel = null;
+      }
       return SheetPage(
         title: '人物',
         bottom: _add(context),
         slivers: <Widget>[
           emptyState(
             context,
-            link.c.book.manualError ?? '这本书还没整理人物',
-            action: widget.onStartProcessing == null
+            message,
+            action: widget.onStartProcessing == null || actionLabel == null
                 ? null
                 : Pill(
-                    label: '开始整理',
+                    label: actionLabel,
                     filled: true,
                     color: t.zhu,
                     onTap: () {

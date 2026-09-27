@@ -914,6 +914,7 @@ extension RunnerSupport on Runner {
         chapters.every((c) => c.containsKey('spoil')) &&
             !qualityPending.contains('chapter-titles'))
       return;
+    if (activity) recordBookActivity(root, 'check_titles', '正在核对章节标题');
     final List<bool> spoils = await judge.titleSpoilers([
       for (int i = 0; i < chapters.length; i++) chapterName(i),
     ], _str(book['title']));

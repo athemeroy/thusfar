@@ -89,7 +89,7 @@ void main() {
     root.deleteSync(recursive: true);
   });
 
-  testWidgets('vertical fold keeps reader text and tools on separate panes', (
+  testWidgets('vertical fold shows the book before its bottom tools', (
     tester,
   ) async {
     tester.view
@@ -122,16 +122,17 @@ void main() {
     await tester.pumpAndSettle();
 
     final Rect page = tester.getRect(find.byType(PageBody).first);
-    final Rect tools = tester.getRect(find.text('目录与书签'));
-    expect(page.left, greaterThanOrEqualTo(0));
-    expect(page.right, lessThanOrEqualTo(440));
-    expect(tools.left, greaterThanOrEqualTo(460));
-    expect(find.text('人物与关系'), findsOneWidget);
+    expect(page.left, greaterThan(0));
+    expect(page.right, greaterThan(460));
+    expect(find.text('目录与书签'), findsNothing);
+    await tester.tapAt(const Offset(400, 700));
+    await tester.pumpAndSettle();
+    expect(find.text('人物').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('horizontal fold places reading above hinge and controls below', (
+  testWidgets('horizontal fold uses the full screen for reading', (
     tester,
   ) async {
     tester.view
@@ -157,11 +158,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final Rect page = tester.getRect(find.byType(PageBody).first);
-    final Rect controls = tester.getRect(find.text('工具栏'));
-    expect(page.bottom, lessThanOrEqualTo(430));
-    expect(controls.top, greaterThanOrEqualTo(450));
-    expect(find.text('上一页'), findsWidgets);
-    expect(find.text('下一页'), findsWidgets);
+    expect(page.bottom, greaterThan(450));
+    expect(find.text('工具栏'), findsNothing);
+    await tester.tapAt(const Offset(215, 650));
+    await tester.pumpAndSettle();
+    expect(find.text('目录').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
@@ -628,4 +629,3 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 }
-
