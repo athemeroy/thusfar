@@ -319,7 +319,7 @@ export async function openReader(root, bookId, options = {}) {
     const t = reader.posOfPage(+range.value);
     tip.hidden = false;
     const c = book.chapters[t.ch];
-    tip.replaceChildren(h('b', {}, range.value), c.o0 > maxPos && c.kind === 'body' && !store.get(`toc-reveal:${bookId}`, false) ? maskTitle(c.title) : chapterTitle(t.ch));
+    tip.replaceChildren(h('b', {}, range.value), c.o0 > maxPos && c.kind === 'body' && c.spoil === true && !store.get(`toc-reveal:${bookId}`, false) ? maskTitle(c.title) : chapterTitle(t.ch));
   });
   range.addEventListener('change', async () => {
     tip.hidden = true;

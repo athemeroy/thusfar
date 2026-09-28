@@ -3,7 +3,7 @@ import { scanBook, sourceExcerpt, visibleChapterTitle, SEARCH_LIMITS, abortable 
 
 const chapters = [
   { title: '第一章 已读开头', kind: 'body', o0: 0, o1: 100 },
-  { title: '第二章 秘密身份', kind: 'body', o0: 100, o1: 300 },
+  { title: '第二章 秘密身份', spoil: true, kind: 'body', o0: 100, o1: 300 },
 ];
 const firstText = '😀甲说 Find me，甲又来了。到此为止。SPOILER_SECRET';
 const data = [
@@ -104,3 +104,9 @@ await assert.rejects(scanBook({ chapters, query: 'x'.repeat(161), cutoff: 100, l
 await assert.rejects(abortable(new Promise(() => {}), null, 5), /获取超时/);
 await assert.rejects(scanBook({ chapters, query: 'x', cutoff: 100, loadChapter: async () => ({blocks: [{t: 'wrong', o: -1}]}) }), /位置不一致/);
 console.log('search tests passed: current-page clipping, UTF-16 anchors, literal matches, chunk overlap, bounded resumable scanning, and cancellation');
+
+// 未核对的标题不等于已判定剧透；只隐藏明确判为剧透的标题。
+for (const spoil of [undefined, null, false]) {
+  assert.match(visibleChapterTitle({ ...chapters[1], spoil }, 50), /秘密身份/);
+}
+assert.match(visibleChapterTitle(chapters[1], 101), /秘密身份/);

@@ -21,7 +21,7 @@ function nextCharacter(text, at) {
 }
 export function visibleChapterTitle(chapter, cutoff, reveal = false, index = 0) {
   if (!chapter) return tr("第 {0} 节", [index + 1]);
-  const hidden = !reveal && chapter.o0 >= cutoff && chapter.spoil !== false;
+  const hidden = !reveal && chapter.o0 >= cutoff && chapter.spoil === true;
   return hidden ? tr("{0} · 未读", [maskTitle(chapter.title)]) : chapter.title || tr("第 {0} 节", [index + 1]);
 }
 export function sourceExcerpt(text, start, end, visibleLength, radius = 36) {

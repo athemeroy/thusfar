@@ -126,7 +126,7 @@ export function tocView(ctx, _arg, pane, title) {
     h('button', { type: 'button', class: 'on', 'aria-current': 'page' }, icon('toc'), tr('目录')),
     h('button', { type: 'button', onclick: () => ctx.panes.open('search', undefined, { replace: true, full: true }) }, icon('search'), tr('搜索原文')));
   let reveal = store.get(`toc-reveal:${ctx.book.id}`, false);
-  const unread = (c) => c.o0 >= ctx.info.cutoff && c.spoil !== false;
+  const unread = (c) => c.o0 >= ctx.info.cutoff && c.spoil === true;
   const visibleTitle = (c, n) => !reveal && unread(c) ? tr("{0} · 未读", [maskTitle(c.title)]) : c.title || tr("第 {0} 节", [n + 1]);
   const filter = h('input', { type: 'search', class: 'reader-toc-filter', 'aria-label': tr('筛选目录'), placeholder: tr('按可见章节名查找'), autocomplete: 'off', maxlength: 160 });
   const sections = h('div', { class: 'reader-toc-sections' });
