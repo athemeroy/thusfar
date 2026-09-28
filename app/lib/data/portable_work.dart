@@ -97,7 +97,7 @@ Map<String, Object?> validatedPortableWork(Object? raw) {
         value is! Map<String, Object?> && value is! List<Object?>) {
       throw const FormatException('书籍整理缓存路径或内容无效。');
     }
-    _rejectCredentials(value, 0);
+    _rejectCredentials(value, 0, source: path);
     final int size = utf8.encode(jsonEncode(value)).length;
     total += size;
     if (size > maxPortableWorkFileBytes || total > maxPortableWorkBytes) {
@@ -301,10 +301,50 @@ Map<String, Object?> validatedPortableWork(Object? raw) {
   return result;
 }
 
-void _rejectCredentials(Object? value, int depth) {
+String _safeWorkSource(String? source) {
+  if (source == null) return '数据';
+  if (portableWorkRootFiles.contains(source) ||
+      _judgeFiles.contains(source) ||
+      _job.hasMatch(source) ||
+      _judgeCachePath.hasMatch(source)) {
+    return source;
+  }
+  // Other basenames can come from old work. Never display an untrusted name;
+  // it might itself contain a credential-like token.
+  final String directory = source.split('/').first;
+  return portableWorkDirectories.contains(directory) ? '$directory/…' : '数据';
+}
+
+void _rejectCredentials(
+  Object? value,
+  int depth, {
+  String? source,
+  List<String> parents = const <String>[],
+}) {
   if (depth > 64) throw const FormatException('书籍整理缓存嵌套过深。');
   if (value is Map<String, Object?>) {
+    final bool judgeProbabilities =
+        source != null &&
+        _judgeCachePath.hasMatch(source) &&
+        parents.length == 3 &&
+        parents[0] == 'answers' &&
+        parents[2] == 'probabilities';
     for (final MapEntry<String, Object?> row in value.entries) {
+      if (judgeProbabilities) {
+        // These keys are option IDs, not JSON field names. A legitimate
+        // relation question has an option named "secret". Only finite numeric
+        // probabilities are accepted here, and token-looking IDs still fail.
+        final Object? probability = row.value;
+        if (row.key.length > 200 ||
+            _credentialText.hasMatch(row.key) ||
+            probability is! num ||
+            !probability.isFinite ||
+            probability < 0 ||
+            probability > 1) {
+          throw const FormatException('模型判断缓存概率无效。');
+        }
+        continue;
+      }
       final String normalized = row.key.toLowerCase().replaceAll(
         RegExp(r'[^a-z0-9]'),
         '',
@@ -316,16 +356,23 @@ void _rejectCredentials(Object? value, int depth) {
           normalized.endsWith('credential') ||
           normalized.endsWith('token') ||
           normalized.endsWith('privatekey')) {
-        throw const FormatException('整理缓存疑似包含密钥，未加入备份。');
+        throw FormatException(
+          '整理缓存 ${_safeWorkSource(source)} 的字段名疑似包含密钥，未加入备份。',
+        );
       }
-      _rejectCredentials(row.value, depth + 1);
+      _rejectCredentials(
+        row.value,
+        depth + 1,
+        source: source,
+        parents: <String>[...parents, row.key],
+      );
     }
   } else if (value is List<Object?>) {
     for (final Object? row in value) {
-      _rejectCredentials(row, depth + 1);
+      _rejectCredentials(row, depth + 1, source: source, parents: parents);
     }
   } else if (value is String && _credentialText.hasMatch(value)) {
-    throw const FormatException('整理缓存疑似包含密钥，未加入备份。');
+    throw FormatException('整理缓存 ${_safeWorkSource(source)} 的文本疑似包含密钥，未加入备份。');
   }
 }
 

@@ -413,7 +413,17 @@ void _validateNativeExtras(Json value, int bookLength) {
   if (value.keys.any((String key) => !allowed.contains(key))) {
     throw const FormatException('安装版备份含未知附加字段，未导入。');
   }
-  rejectPortableCredentials(value);
+  // Work checkpoints have their own path and schema validator. Keep its
+  // normalized copy (for example a paused worker receipt) in the transferable
+  // backup; scanning the raw work a second time would reject valid narrative
+  // fields even after they passed the work-specific rules.
+  if (value.containsKey('work_files')) {
+    value['work_files'] = validatedPortableWork(value['work_files']);
+  }
+  rejectPortableCredentials(<String, Object?>{
+    for (final MapEntry<String, Object?> entry in value.entries)
+      if (entry.key != 'work_files') entry.key: entry.value,
+  });
   if (value['format'] != 'yedu-book/2' ||
       value['id'] is! String ||
       value['kg'] is! Json) {
@@ -468,7 +478,6 @@ void _validateNativeExtras(Json value, int bookLength) {
       throw const FormatException('备份中的安装版个人资料无效。');
     }
   }
-  validatedPortableWork(value['work_files']);
 }
 
 ({int chapter, double fraction}) _positionForOffset(Json book, int offset) {
