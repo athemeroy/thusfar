@@ -11,6 +11,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
+import 'package:thusfar_core/thusfar_core.dart' as knowledge;
+import 'package:thusfar_core/title_spoilers.dart';
 
 import '../ui/theme.dart';
 import 'web_ai_engine.dart';
@@ -60,11 +62,20 @@ class WebAiPanel extends StatefulWidget {
     required this.book,
     required this.reading,
     required this.library,
+    this.cutoffOffset,
+    this.focusPersonId,
+    this.focusPersonName,
   });
 
   final WebBook book;
   final WebReadingState reading;
   final WebLibrary library;
+
+  /// Exclusive end of the original text already visible in the reader.
+  /// Null keeps the conservative chapter-level cutoff used from the shelf.
+  final int? cutoffOffset;
+  final String? focusPersonId;
+  final String? focusPersonName;
 
   @override
   State<WebAiPanel> createState() => _WebAiPanelState();
@@ -1200,7 +1211,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Text('浏览器整理草稿'),
+              Text(widget.focusPersonName == null ? '浏览器整理草稿' : '人物详情'),
               Text(
                 widget.book.meta.title,
                 maxLines: 1,
@@ -1236,12 +1247,13 @@ class _WebAiPanelState extends State<WebAiPanel> {
             child: NestedScrollView(
               headerSliverBuilder: (BuildContext context, bool innerScrolled) =>
                   <Widget>[
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
-                      sliver: SliverToBoxAdapter(
-                        child: _overview(t, done, targets.length, otherTab),
+                    if (widget.focusPersonName == null)
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                        sliver: SliverToBoxAdapter(
+                          child: _overview(t, done, targets.length, otherTab),
+                        ),
                       ),
-                    ),
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
                       sliver: SliverToBoxAdapter(child: _visibilityNote(t)),
@@ -1267,7 +1279,9 @@ class _WebAiPanelState extends State<WebAiPanel> {
                   ],
               body: TabBarView(
                 children: <Widget>[
-                  _characterTab(t),
+                  widget.focusPersonName == null
+                      ? _characterTab(t)
+                      : _focusedPersonTab(t),
                   _summaryTab(t),
                   _relationshipTab(t),
                   _logTab(t),
@@ -1466,13 +1480,10 @@ class _WebAiPanelState extends State<WebAiPanel> {
       return chapter > widget.reading.chapter ||
           (chapter == widget.reading.chapter && !_revealCurrentChapter);
     }).length;
-    final Json current = widget.book.chapters[widget.reading.chapter];
-    final int start = (current['o0'] as num?)?.toInt() ?? 0;
-    final int end = (current['o1'] as num?)?.toInt() ?? start;
     final int nativeHidden = _nativeLog.where((Json row) {
       final int? position = (row['p'] as num?)?.toInt();
       return position != null &&
-          position >= (_revealCurrentChapter ? end + 1 : start) &&
+          position > _nativeCutoff &&
           const <String>{'profile', 'recap', 'rel'}.contains(row['t']);
     }).length;
     return Container(
@@ -1488,10 +1499,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
         children: <Widget>[
           Icon(Icons.visibility_off_outlined, size: 18, color: t.qing),
           Text(
-            '阅读保护：当前在第 ${widget.reading.chapter + 1} 章，本章和以后默认隐藏${hidden > 0 ? ' · 已隐藏 $hidden 段网页草稿' : ''}${nativeHidden > 0 ? ' · $nativeHidden 条安装版资料' : ''}',
+            widget.cutoffOffset == null
+                ? '阅读保护：当前在第 ${widget.reading.chapter + 1} 章，本章和以后默认隐藏${hidden > 0 ? ' · 已隐藏 $hidden 段网页草稿' : ''}${nativeHidden > 0 ? ' · $nativeHidden 条安装版资料' : ''}'
+                : '阅读保护：安装版资料截至当前页；网页草稿只显示读完的章节${hidden > 0 ? ' · 已隐藏 $hidden 段网页草稿' : ''}${nativeHidden > 0 ? ' · $nativeHidden 条后续资料' : ''}',
             style: TextStyle(fontSize: 12, color: t.qing, fontFamily: serif),
           ),
-          if (_hasCurrentResults)
+          if (_hasCurrentResults && widget.focusPersonName == null)
             TextButton(
               onPressed: _toggleCurrentChapter,
               child: Text(
@@ -1558,10 +1571,24 @@ class _WebAiPanelState extends State<WebAiPanel> {
     ];
   }
 
+  /// Native graph positions are segment ends, so a record at the reader's
+  /// exclusive text end is already known. The shelf has no page boundary and
+  /// continues to hide every record in the current chapter by default.
+  int get _nativeCutoff {
+    final Json current = widget.book.chapters[widget.reading.chapter];
+    final int start = (current['o0'] as num?)?.toInt() ?? 0;
+    final int end = (current['o1'] as num?)?.toInt() ?? start;
+    final int? precise = widget.cutoffOffset;
+    if (precise != null) return precise.clamp(start, end);
+    return _revealCurrentChapter ? end : start - 1;
+  }
+
   int _nativeChapterAt(int position) {
     int chapter = 0;
-    for (int i = 0; i < widget.book.chapters.length; i++) {
-      if (((widget.book.chapters[i]['o0'] as num?)?.toInt() ?? 0) <= position) {
+    // Native graph positions are segment ends. At a shared chapter boundary,
+    // the record belongs to the chapter that just ended, not the next title.
+    for (int i = 1; i < widget.book.chapters.length; i++) {
+      if (((widget.book.chapters[i]['o0'] as num?)?.toInt() ?? 0) < position) {
         chapter = i;
       } else {
         break;
@@ -1571,15 +1598,11 @@ class _WebAiPanelState extends State<WebAiPanel> {
   }
 
   Iterable<Json> get _visibleNativeRecords sync* {
-    final Json current = widget.book.chapters[widget.reading.chapter];
-    final int start = (current['o0'] as num?)?.toInt() ?? 0;
-    final int end = (current['o1'] as num?)?.toInt() ?? start;
+    final int cutoff = _nativeCutoff;
     for (final Json row in _nativeLog) {
       final int? position = (row['p'] as num?)?.toInt();
       if (position == null || position < 0) continue;
-      if (position < start || (_revealCurrentChapter && position <= end)) {
-        yield row;
-      }
+      if (position <= cutoff) yield row;
     }
   }
 
@@ -1604,10 +1627,33 @@ class _WebAiPanelState extends State<WebAiPanel> {
   Json _asJson(Object? value) =>
       value is Map<String, Object?> ? value : <String, Object?>{};
 
-  String _chapterLabel(int index) =>
-      index >= 0 && index < widget.book.chapters.length
-      ? '${widget.book.chapters[index]['title'] ?? '第 ${index + 1} 章'}'
-      : '第 ${index + 1} 章';
+  String _chapterLabel(int index) {
+    if (index < 0 || index >= widget.book.chapters.length) {
+      return '第 ${index + 1} 章';
+    }
+    final Json chapter = widget.book.chapters[index];
+    final String title = '${chapter['title'] ?? '第 ${index + 1} 章'}';
+    if (index <= widget.reading.chapter) return title;
+    final Object? status = widget.book.nativeBackup?['status'];
+    final Object? quality = status is Json ? status['quality'] : null;
+    final Object? pending = quality is Json ? quality['pending'] : null;
+    final bool checkPending =
+        pending is List<Object?> && pending.contains('chapter-titles');
+    if (!titleSpoils(
+      chapter['spoil'],
+      title,
+      checkPending: checkPending,
+      checkedByModel: chapter['spoilSource'] == 'model',
+    )) {
+      return title;
+    }
+    final RegExp chapterNumber = RegExp(
+      r'^(第\s*[0-9零一二三四五六七八九十百千]+\s*[部章回卷节篇集]|(?:chapter|part|book)\s+[0-9ivxlcdm]+)',
+      caseSensitive: false,
+    );
+    return chapterNumber.firstMatch(title.trim())?.group(0) ??
+        '第 ${index + 1} 节';
+  }
 
   Widget _empty(Tokens t, IconData icon, String title, String subtitle) =>
       Center(
@@ -1660,6 +1706,230 @@ class _WebAiPanelState extends State<WebAiPanel> {
     ),
     child: child,
   );
+
+  /// A tap on a name opens this person first. Fold the imported graph at the
+  /// exact visible text end instead of using the chapter's saved progress:
+  /// reading progress may be ahead of the page currently on screen.
+  Widget _focusedPersonTab(Tokens t) {
+    final String requested = widget.focusPersonName!.trim();
+    knowledge.World? world;
+    try {
+      if (_nativeLog.isNotEmpty) {
+        world = knowledge.fold(_nativeLog, _nativeCutoff);
+      }
+    } on Object {
+      // Optional imported graph data must never prevent opening the reader.
+    }
+    knowledge.Person? person;
+    final String? requestedId = widget.focusPersonId;
+    if (world != null && requestedId != null) {
+      person = world.person(requestedId);
+    }
+    if (world != null && person == null) {
+      for (final Json raw in world.people.values) {
+        final knowledge.Person candidate = knowledge.Person(raw);
+        if (candidate.name == requested ||
+            candidate.aliases.contains(requested)) {
+          person = candidate;
+          break;
+        }
+      }
+    }
+    final String name = person?.name ?? requested;
+    final Set<String> knownNames = <String>{
+      requested,
+      if (person != null) person.name,
+      if (person != null) ...person.aliases,
+    };
+
+    final List<Json> verifiedProfiles = <Json>[
+      if (person != null && world != null)
+        for (final Json row in _visibleNativeRecords)
+          if (row['t'] == 'profile' &&
+              row['kind'] == 'chapter' &&
+              row['id'] is String &&
+              world.canon(row['id'] as String) == person.id &&
+              _asJson(row['chk'])['verdict'] == 'ok' &&
+              '${row['bio'] ?? ''}'.trim().isNotEmpty)
+            row,
+    ];
+    final List<(int, Json)> draftFacts = <(int, Json)>[];
+    for (final (int chapter, int _, Json result) in _visibleResults) {
+      // A browser chunk can span an unread part of the current chapter.
+      // Evidence validation alone cannot make that chunk page-safe.
+      if (chapter >= widget.reading.chapter) continue;
+      final Object? facts = result['character_facts'];
+      if (facts is! List) continue;
+      for (final Object? raw in facts) {
+        final Json fact = _asJson(raw);
+        if (knownNames.contains('${fact['name'] ?? ''}'.trim())) {
+          draftFacts.add((chapter, fact));
+        }
+      }
+    }
+    final List<Json> nativeRelationships = person != null && world != null
+        ? world.relsOf(person.id)
+        : const <Json>[];
+    final List<Json> events = person?.events ?? const <Json>[];
+    final Json? latestProfile = verifiedProfiles.isEmpty
+        ? null
+        : verifiedProfiles.last;
+    final String introduction = '${person?.raw['intro'] ?? ''}'.trim();
+    final List<Widget> cards = <Widget>[
+      _card(
+        t,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              name,
+              style: TextStyle(fontFamily: display, fontSize: 27, color: t.ink),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              '只显示截至当前阅读位置的资料',
+              style: TextStyle(color: t.ink2, fontSize: 13),
+            ),
+            if (person != null && person.aliases.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                '又称 ${person.aliases.join('、')}',
+                style: TextStyle(color: t.ink2),
+              ),
+            ],
+            if (person != null) ...<Widget>[
+              const SizedBox(height: 8),
+              Text(
+                '已读出场 ${person.mentions} 次',
+                style: TextStyle(color: t.ink3, fontSize: 12),
+              ),
+            ],
+          ],
+        ),
+      ),
+      if (latestProfile != null)
+        _card(
+          t,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('已核对人物小传', style: TextStyle(color: t.qing, fontSize: 13)),
+              const SizedBox(height: 10),
+              Text(
+                '${latestProfile['bio']}',
+                style: TextStyle(color: t.ink, height: 1.65, fontFamily: serif),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '截至 ${_chapterLabel(_nativeChapterAt((latestProfile['p'] as num).toInt()))}',
+                style: TextStyle(color: t.ink3, fontSize: 12),
+              ),
+            ],
+          ),
+        )
+      else
+        _card(
+          t,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                '截至这一页暂无核对通过的人物小传',
+                style: TextStyle(color: t.ink, fontSize: 16),
+              ),
+              if (introduction.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 9),
+                Text(
+                  introduction,
+                  style: TextStyle(color: t.ink2, height: 1.55),
+                ),
+                const SizedBox(height: 5),
+                Text('已读人物线索', style: TextStyle(color: t.ink3, fontSize: 12)),
+              ],
+            ],
+          ),
+        ),
+      if (nativeRelationships.isNotEmpty)
+        _card(
+          t,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('已读人物关系', style: TextStyle(color: t.ink, fontSize: 18)),
+              const SizedBox(height: 8),
+              for (final Json relation in nativeRelationships.take(12))
+                if (world?.person('${relation['other'] ?? ''}')
+                    case final other?)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '${other.name} · ${relation['desc'] ?? relation['role'] ?? '有关联'}',
+                      style: TextStyle(color: t.ink2, height: 1.5),
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      if (events.isNotEmpty)
+        _card(
+          t,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('已读经历', style: TextStyle(color: t.ink, fontSize: 18)),
+              const SizedBox(height: 8),
+              for (final Json event in events.reversed.take(12))
+                if ('${event['text'] ?? ''}'.trim().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '${event['text']}',
+                      style: TextStyle(color: t.ink2, height: 1.5),
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      if (draftFacts.isNotEmpty)
+        _card(
+          t,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('网页 AI 草稿 · 尚未核对', style: TextStyle(color: t.ink3)),
+              const SizedBox(height: 8),
+              for (final (int chapter, Json fact) in draftFacts.reversed.take(
+                8,
+              ))
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        '${fact['fact'] ?? ''}',
+                        style: TextStyle(color: t.ink, height: 1.5),
+                      ),
+                      _evidence(t, '${fact['evidence'] ?? ''}'),
+                      const SizedBox(height: 5),
+                      Text(
+                        _chapterLabel(chapter),
+                        style: TextStyle(color: t.ink3, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+    ];
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      itemCount: cards.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (BuildContext context, int index) => cards[index],
+    );
+  }
 
   Widget _characterTab(Tokens t) {
     final Map<String, String> nativeNames = <String, String>{};

@@ -14,11 +14,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart'
     show KeyEvent, KeyUpEvent, LogicalKeyboardKey;
+import 'package:thusfar_core/thusfar_core.dart' as knowledge;
 import 'package:thusfar_core/title_spoilers.dart';
 
 import '../data/library_zip.dart';
 import '../ui/theme.dart';
 import 'web_ai_panel.dart';
+import 'web_ai_engine.dart';
 import 'web_ask_panel.dart';
 import 'web_model_session.dart';
 import 'web_storage.dart';
@@ -733,6 +735,8 @@ class _WebPageFragment {
     required this.lines,
     required this.height,
     this.text = '',
+    this.sourceStart = 0,
+    this.sourceEnd = 0,
   });
 
   final int block;
@@ -741,6 +745,27 @@ class _WebPageFragment {
   final int lines;
   final double height;
   final String text;
+
+  /// Offsets in the original block, excluding the reader's visual indent.
+  final int sourceStart;
+  final int sourceEnd;
+}
+
+class _WebPersonMention {
+  const _WebPersonMention(this.start, this.end, this.id);
+
+  final int start;
+  final int end;
+  final String id;
+}
+
+class _WebPersonLink {
+  const _WebPersonLink(this.start, this.end, this.name, this.id);
+
+  final int start;
+  final int end;
+  final String name;
+  final String? id;
 }
 
 class WebReaderPrefs {
@@ -829,6 +854,7 @@ class _WebReaderState extends State<WebReader> {
     r'^(第\s*[0-9零一二三四五六七八九十百千]+\s*[部章回卷节篇集]|(?:chapter|part|book)\s+[0-9ivxlcdm]+)',
     caseSensitive: false,
   );
+  static final RegExp _asciiWord = RegExp(r'[A-Za-z0-9]');
   final ScrollController _scroll = ScrollController();
   final FocusNode _readerFocus = FocusNode();
   final Map<int, GlobalKey> _blockKeys = <int, GlobalKey>{};
@@ -839,6 +865,7 @@ class _WebReaderState extends State<WebReader> {
   int _turnDirection = 1;
   bool _wheelLocked = false;
   Timer? _wheelTimer;
+  Timer? _pageTapTimer;
   Timer? _selectionTimer;
   Timer? _selectionCaptureTimer;
   Offset? _pointerStart;
@@ -850,6 +877,19 @@ class _WebReaderState extends State<WebReader> {
   bool _restoring = true;
   String? _selectedText;
   String? _selectionActionQuote;
+  Map<String, int> _draftPersonNames = const <String, int>{};
+  int? _draftNamesChapter;
+  List<String> _currentDraftNames = const <String>[];
+  final Map<String, TapGestureRecognizer> _personRecognizers =
+      <String, TapGestureRecognizer>{};
+  bool _personTapConsumed = false;
+  late final List<Json> _nativePersonLog = _readNativePersonLog();
+  // A full graph fold for each page turn becomes expensive in long books.
+  // The reader only needs to know whether an identity exists by this page;
+  // the detail panel folds the graph at the same cutoff after a deliberate tap.
+  late final Map<String, int> _nativePersonFirst = _readNativePersonFirst();
+  late final Map<int, List<_WebPersonMention>> _nativePersonMentions =
+      _readNativePersonMentions();
   ({int chapter, double fraction})? _returnPosition;
   double? _seekPreview;
   late int _chapter;
@@ -885,6 +925,7 @@ class _WebReaderState extends State<WebReader> {
     super.initState();
     _chapter = widget.state.chapter.clamp(0, math.max(0, _chapters.length - 1));
     _scroll.addListener(_scrolled);
+    unawaited(_loadPersonPreparation());
     html.window.addEventListener('keydown', _domKey, true);
     html.window.addEventListener('wheel', _domWheel, true);
     if (!_prefs.pageMode) {
@@ -892,6 +933,188 @@ class _WebReaderState extends State<WebReader> {
         (_) => _restoreFraction(widget.state.fraction),
       );
     }
+  }
+
+  Future<void> _loadPersonPreparation() async {
+    try {
+      final Json? saved = await widget.library.loadPreparation(
+        widget.book.meta.id,
+      );
+      if (!mounted) return;
+      final Object? results = saved?['results'];
+      if (results is! Map || results.isEmpty) {
+        setState(() {
+          _draftPersonNames = const <String, int>{};
+          _draftNamesChapter = null;
+        });
+        return;
+      }
+      final Map<String, WebAiChunk> chunks = <String, WebAiChunk>{
+        for (final WebAiChunk chunk in WebAiEngine.chunks(widget.book))
+          '${chunk.chapterIndex}:${chunk.chunkIndex}': chunk,
+      };
+      final Map<String, int> names = <String, int>{};
+      for (final MapEntry<Object?, Object?> entry in results.entries) {
+        final WebAiChunk? chunk = chunks[entry.key];
+        if (chunk == null || entry.value is! Json) continue;
+        final Json record = entry.value as Json;
+        if (record['chapter_index'] != chunk.chapterIndex ||
+            record['chunk_index'] != chunk.chunkIndex ||
+            record['result'] is! Json) {
+          continue;
+        }
+        final Object? facts = (record['result'] as Json)['character_facts'];
+        if (facts is! List) continue;
+        for (final Object? value in facts) {
+          if (value is! Json) continue;
+          final String name = '${value['name'] ?? ''}'.trim();
+          final String evidence = '${value['evidence'] ?? ''}';
+          if (name.runes.length < 2 ||
+              name.runes.length > 24 ||
+              knowledge.generic.contains(name) ||
+              !evidence.contains(name) ||
+              !chunk.text.contains(evidence)) {
+            continue;
+          }
+          final int? knownAt = names[name];
+          if (knownAt == null || chunk.chapterIndex < knownAt) {
+            names[name] = chunk.chapterIndex;
+          }
+        }
+      }
+      setState(() {
+        _draftPersonNames = names;
+        _draftNamesChapter = null;
+      });
+    } on Object {
+      // Damaged optional AI drafts never interrupt reading or native cards.
+    }
+  }
+
+  List<Json> _readNativePersonLog() {
+    final Object? graph = widget.book.nativeBackup?['kg'];
+    final Object? raw = graph is Json ? graph['log'] : null;
+    if (raw is! List) return const <Json>[];
+    return <Json>[
+      for (final Object? row in raw)
+        if (row is Json) row,
+    ];
+  }
+
+  Map<int, List<_WebPersonMention>> _readNativePersonMentions() {
+    final Json? native = widget.book.nativeBackup;
+    final Object? raw = native?['mentions'];
+    final Object? status = native?['status'];
+    if (raw is! Json || status is! Json) {
+      return const <int, List<_WebPersonMention>>{};
+    }
+    final Object? rawFrontier = status['frontier'];
+    final int frontier = rawFrontier is num ? rawFrontier.toInt() : 0;
+    final Map<int, List<_WebPersonMention>> byChapter =
+        <int, List<_WebPersonMention>>{};
+    for (final MapEntry<String, Object?> chapter in raw.entries) {
+      final int? index = int.tryParse(chapter.key);
+      if (index == null ||
+          index < 0 ||
+          index >= _chapters.length ||
+          chapter.value is! List) {
+        continue;
+      }
+      for (final Object? value in chapter.value as List) {
+        if (value is! List ||
+            value.length < 3 ||
+            value[0] is! num ||
+            value[1] is! num ||
+            value[2] is! String) {
+          continue;
+        }
+        final int start = (value[0] as num).toInt();
+        final int end = (value[1] as num).toInt();
+        if (start < 0 || end <= start || end > frontier) continue;
+        byChapter
+            .putIfAbsent(index, () => <_WebPersonMention>[])
+            .add(_WebPersonMention(start, end, value[2] as String));
+      }
+    }
+    return byChapter;
+  }
+
+  Map<String, int> _readNativePersonFirst() {
+    final Map<String, int> first = <String, int>{};
+    for (final Json row in _nativePersonLog) {
+      if (row['t'] != 'person' || row['id'] is! String || row['p'] is! int) {
+        continue;
+      }
+      final String id = row['id'] as String;
+      final int position = row['p'] as int;
+      final int? known = first[id];
+      if (known == null || position < known) first[id] = position;
+    }
+    return first;
+  }
+
+  List<String> _draftNamesAtCurrentChapter() {
+    if (_draftNamesChapter == _chapter) return _currentDraftNames;
+    _draftNamesChapter = _chapter;
+    _currentDraftNames = <String>[
+      for (final MapEntry<String, int> entry in _draftPersonNames.entries)
+        if (entry.value < _chapter) entry.key,
+    ]..sort((String a, String b) => b.length.compareTo(a.length));
+    return _currentDraftNames;
+  }
+
+  /// The last original character already on the visible page. Scroll mode
+  /// stops before the first paragraph that extends below the visible area.
+  int _visibleCutoffOffset() {
+    final int chapterStart = (_current['o0'] as num?)?.toInt() ?? 0;
+    final int chapterEnd = (_current['o1'] as num?)?.toInt() ?? chapterStart;
+    if (_prefs.pageMode) {
+      if (_pages.isEmpty) return chapterStart;
+      for (int page = _pageIndex; page >= 0; page--) {
+        int cutoff = chapterStart;
+        bool hasText = false;
+        for (final _WebPageFragment fragment in _pages[page]) {
+          if (fragment.block < 0 ||
+              fragment.block >= _blocks.length ||
+              fragment.kind == 'img' ||
+              fragment.kind == 'space') {
+            continue;
+          }
+          hasText = true;
+          final Json block = _blocks[fragment.block];
+          final int origin = (block['o'] as num?)?.toInt() ?? chapterStart;
+          cutoff = math.max(cutoff, origin + fragment.sourceEnd);
+        }
+        if (hasText) return cutoff.clamp(chapterStart, chapterEnd);
+      }
+      return chapterStart;
+    }
+    final int first = (_current['b0'] as num?)?.toInt() ?? 0;
+    final int last = (_current['b1'] as num?)?.toInt() ?? 0;
+    final double visibleBottom =
+        MediaQuery.sizeOf(context).height -
+        MediaQuery.paddingOf(context).bottom -
+        (_controls ? 168 : 70);
+    for (int i = first; i < last && i < _blocks.length; i++) {
+      if (i == first &&
+          _blocks[i]['k'] == 'h' &&
+          _blocks[i]['t'] == _current['title']) {
+        continue;
+      }
+      final RenderObject? render = _blockKeys[i]?.currentContext
+          ?.findRenderObject();
+      if (render is! RenderBox || !render.hasSize) return chapterStart;
+      final double bottom = render
+          .localToGlobal(Offset(0, render.size.height))
+          .dy;
+      if (bottom > visibleBottom) {
+        return ((_blocks[i]['o'] as num?)?.toInt() ?? chapterStart).clamp(
+          chapterStart,
+          chapterEnd,
+        );
+      }
+    }
+    return chapterEnd;
   }
 
   void _scrolled() {
@@ -946,6 +1169,9 @@ class _WebReaderState extends State<WebReader> {
     }
     _jumpBlock = null;
     _restoring = false;
+    // The first layout has no RenderBoxes from which scroll mode can derive
+    // its spoiler cutoff. Refresh links once those boxes have been laid out.
+    if (mounted && !_prefs.pageMode) setState(() {});
   }
 
   void _go(
@@ -960,6 +1186,7 @@ class _WebReaderState extends State<WebReader> {
     }
     _selectionCaptureTimer?.cancel();
     _selectionTimer?.cancel();
+    _pageTapTimer?.cancel();
     html.window.getSelection()?.removeAllRanges();
     _saveTimer?.cancel();
     _restoring = true;
@@ -1068,6 +1295,13 @@ class _WebReaderState extends State<WebReader> {
     }
   }
 
+  void _selectedPerson() {
+    final String? name = (_selectionActionQuote ?? _selectedText)?.trim();
+    if (name == null || name.isEmpty || name.runes.length > 24) return;
+    _clearSelectedText();
+    unawaited(_openPerson(name: name));
+  }
+
   void _seekFraction(double fraction) {
     if (_prefs.pageMode) {
       if (_pages.length < 2) return;
@@ -1118,6 +1352,7 @@ class _WebReaderState extends State<WebReader> {
   }
 
   Future<void> _openAi() async {
+    final int cutoff = _visibleCutoffOffset();
     _saveTimer?.cancel();
     await widget.library.saveState(widget.book.meta.id, widget.state);
     if (!mounted) return;
@@ -1127,9 +1362,31 @@ class _WebReaderState extends State<WebReader> {
           book: widget.book,
           reading: widget.state,
           library: widget.library,
+          cutoffOffset: cutoff,
         ),
       ),
     );
+    if (mounted) unawaited(_loadPersonPreparation());
+  }
+
+  Future<void> _openPerson({String? id, required String name}) async {
+    final int cutoff = _visibleCutoffOffset();
+    _saveTimer?.cancel();
+    await widget.library.saveState(widget.book.meta.id, widget.state);
+    if (!mounted) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => WebAiPanel(
+          book: widget.book,
+          reading: widget.state,
+          library: widget.library,
+          cutoffOffset: cutoff,
+          focusPersonId: id,
+          focusPersonName: name,
+        ),
+      ),
+    );
+    if (mounted) unawaited(_loadPersonPreparation());
   }
 
   int _askCutoffBlockExclusive() {
@@ -1852,8 +2109,12 @@ class _WebReaderState extends State<WebReader> {
     _saveTimer?.cancel();
     _displayTimer?.cancel();
     _wheelTimer?.cancel();
+    _pageTapTimer?.cancel();
     _selectionTimer?.cancel();
     _selectionCaptureTimer?.cancel();
+    for (final TapGestureRecognizer recognizer in _personRecognizers.values) {
+      recognizer.dispose();
+    }
     html.window.removeEventListener('keydown', _domKey, true);
     html.window.removeEventListener('wheel', _domWheel, true);
     unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
@@ -1871,6 +2132,7 @@ class _WebReaderState extends State<WebReader> {
     final Color ink = _prefs.ink;
     final int first = (_current['b0'] as num?)?.toInt() ?? 0;
     final int last = (_current['b1'] as num?)?.toInt() ?? first;
+    final int scrollCutoff = _prefs.pageMode ? 0 : _visibleCutoffOffset();
     final double pct = _progress * 100;
     final TextStyle bodyStyle = TextStyle(
       fontFamily: _prefs.family,
@@ -1902,6 +2164,10 @@ class _WebReaderState extends State<WebReader> {
                   behavior: HitTestBehavior.opaque,
                   onTapUp: (TapUpDetails details) {
                     if (_prefs.pageMode) return;
+                    if (_personTapConsumed) {
+                      _personTapConsumed = false;
+                      return;
+                    }
                     if (_selectedText?.isNotEmpty == true) return;
                     setState(() => _controls = !_controls);
                     _readerFocus.requestFocus();
@@ -1929,6 +2195,20 @@ class _WebReaderState extends State<WebReader> {
                                     anchors: selectable.contextMenuAnchors,
                                     buttonItems: <ContextMenuButtonItem>[
                                       ...selectable.contextMenuButtonItems,
+                                      if (_selectedText?.trim().isNotEmpty ==
+                                              true &&
+                                          _selectedText!.trim().runes.length <=
+                                              24)
+                                        ContextMenuButtonItem(
+                                          label: '这是谁',
+                                          onPressed: () {
+                                            final String name = _selectedText!
+                                                .trim();
+                                            ContextMenuController.removeAny();
+                                            _clearSelectedText();
+                                            unawaited(_openPerson(name: name));
+                                          },
+                                        ),
                                       ContextMenuButtonItem(
                                         label: '问书',
                                         onPressed: () {
@@ -2009,7 +2289,11 @@ class _WebReaderState extends State<WebReader> {
                                             padding: EdgeInsets.only(
                                               bottom: _prefs.fontSize * 0.65,
                                             ),
-                                            child: _paragraph(i, bodyStyle),
+                                            child: _paragraph(
+                                              i,
+                                              bodyStyle,
+                                              scrollCutoff,
+                                            ),
                                           ),
                                       const SizedBox(height: 42),
                                       Row(
@@ -2115,6 +2399,18 @@ class _WebReaderState extends State<WebReader> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
+                          if (_selectedText!.trim().runes.length <= 24)
+                            TextButton.icon(
+                              onPressed: _selectedPerson,
+                              icon: Icon(
+                                Icons.person_search_outlined,
+                                color: paper,
+                              ),
+                              label: Text(
+                                '这是谁',
+                                style: TextStyle(color: paper),
+                              ),
+                            ),
                           TextButton.icon(
                             onPressed: () => _selectedAction(ask: false),
                             icon: Icon(Icons.edit_note, color: paper),
@@ -2228,7 +2524,127 @@ class _WebReaderState extends State<WebReader> {
     );
   }
 
-  Widget _paragraph(int index, TextStyle style) {
+  TapGestureRecognizer _personRecognizer(_WebPersonLink link) {
+    final String key = link.id == null
+        ? 'draft:${link.name}'
+        : 'native:${link.id}';
+    return _personRecognizers.putIfAbsent(
+      key,
+      () => TapGestureRecognizer()
+        ..onTap = () {
+          _personTapConsumed = true;
+          unawaited(_openPerson(id: link.id, name: link.name));
+        },
+    );
+  }
+
+  Widget _personText(
+    String text,
+    TextStyle style, {
+    required int blockIndex,
+    required int sourceStart,
+    required int sourceEnd,
+    required int cutoff,
+    required bool paragraph,
+    StrutStyle? strutStyle,
+  }) {
+    final int origin = (_blocks[blockIndex]['o'] as num?)?.toInt() ?? 0;
+    final int absoluteStart = origin + sourceStart;
+    final int absoluteEnd = origin + sourceEnd;
+    final int indent = paragraph && sourceStart == 0 && text.startsWith('　　')
+        ? 2
+        : 0;
+    final List<_WebPersonLink> candidates = <_WebPersonLink>[];
+    for (final _WebPersonMention mention
+        in _nativePersonMentions[_chapter] ?? const <_WebPersonMention>[]) {
+      // Neither the link label nor its eligibility may rely on a future KG
+      // record. A name split across pages is left as ordinary text.
+      final int? firstPerson = _nativePersonFirst[mention.id];
+      if (firstPerson == null ||
+          firstPerson > cutoff ||
+          mention.end > cutoff ||
+          mention.start < absoluteStart ||
+          mention.end > absoluteEnd) {
+        continue;
+      }
+      final int start = (mention.start - absoluteStart + indent).clamp(
+        0,
+        text.length,
+      );
+      final int end = (mention.end - absoluteStart + indent).clamp(
+        0,
+        text.length,
+      );
+      if (end > start) {
+        candidates.add(
+          _WebPersonLink(start, end, text.substring(start, end), mention.id),
+        );
+      }
+    }
+    for (final String name in _draftNamesAtCurrentChapter()) {
+      int at = 0;
+      while (at < text.length) {
+        final int found = text.indexOf(name, at);
+        if (found < 0) break;
+        final int end = found + name.length;
+        final bool beforeWord =
+            found > 0 && _asciiWord.hasMatch(text[found - 1]);
+        final bool afterWord =
+            end < text.length && _asciiWord.hasMatch(text[end]);
+        if (!beforeWord && !afterWord) {
+          candidates.add(_WebPersonLink(found, end, name, null));
+        }
+        at = end;
+      }
+    }
+    if (candidates.isEmpty) {
+      return Text(
+        text,
+        style: style,
+        textAlign: paragraph ? TextAlign.justify : TextAlign.left,
+        strutStyle: strutStyle,
+      );
+    }
+    candidates.sort((_WebPersonLink a, _WebPersonLink b) {
+      final int at = a.start.compareTo(b.start);
+      if (at != 0) return at;
+      if (a.id != null && b.id == null) return -1;
+      if (a.id == null && b.id != null) return 1;
+      return (b.end - b.start).compareTo(a.end - a.start);
+    });
+    final List<InlineSpan> spans = <InlineSpan>[];
+    int cursor = 0;
+    for (final _WebPersonLink link in candidates) {
+      if (link.start < cursor || link.end > text.length) continue;
+      if (link.start > cursor) {
+        spans.add(TextSpan(text: text.substring(cursor, link.start)));
+      }
+      spans.add(
+        TextSpan(
+          text: text.substring(link.start, link.end),
+          style: TextStyle(
+            decoration: TextDecoration.underline,
+            decorationStyle: link.id == null
+                ? TextDecorationStyle.dotted
+                : TextDecorationStyle.solid,
+            decorationColor: _prefs.dark ? Tokens.night.qing : Tokens.light.zhu,
+            decorationThickness: 1.4,
+          ),
+          recognizer: _personRecognizer(link),
+        ),
+      );
+      cursor = link.end;
+    }
+    if (cursor < text.length) spans.add(TextSpan(text: text.substring(cursor)));
+    return Text.rich(
+      TextSpan(children: spans),
+      style: style,
+      textAlign: paragraph ? TextAlign.justify : TextAlign.left,
+      strutStyle: strutStyle,
+    );
+  }
+
+  Widget _paragraph(int index, TextStyle style, int cutoff) {
     final Json block = _blocks[index];
     final String kind = '${block['k'] ?? 'p'}';
     if (kind == 'img') {
@@ -2239,15 +2655,28 @@ class _WebReaderState extends State<WebReader> {
     }
     final String text = '${block['t'] ?? ''}';
     if (kind == 'h') {
-      return Text(
+      return _personText(
         text,
-        style: style.copyWith(
+        style.copyWith(
           fontWeight: FontWeight.w600,
           fontSize: style.fontSize! * 1.13,
         ),
+        blockIndex: index,
+        sourceStart: 0,
+        sourceEnd: text.length,
+        cutoff: cutoff,
+        paragraph: false,
       );
     }
-    return Text('　　$text', style: style, textAlign: TextAlign.justify);
+    return _personText(
+      '　　$text',
+      style,
+      blockIndex: index,
+      sourceStart: 0,
+      sourceEnd: text.length,
+      cutoff: cutoff,
+      paragraph: true,
+    );
   }
 
   Widget _toolbar() {
@@ -2500,6 +2929,14 @@ class _WebReaderState extends State<WebReader> {
               start.clamp(0, text.length),
               end.clamp(start, text.length),
             ),
+            sourceStart: (start - (kind == 'p' ? 2 : 0)).clamp(
+              0,
+              text.length - (kind == 'p' ? 2 : 0),
+            ),
+            sourceEnd: (end - (kind == 'p' ? 2 : 0)).clamp(
+              0,
+              text.length - (kind == 'p' ? 2 : 0),
+            ),
           ),
         );
         used += take * line;
@@ -2676,6 +3113,8 @@ class _WebReaderState extends State<WebReader> {
 
   void _readerPointerDown(PointerDownEvent event) {
     if (event.buttons != 1) return;
+    _pageTapTimer?.cancel();
+    _personTapConsumed = false;
     _pointerStart = event.localPosition;
     _pointerStarted = DateTime.now();
     _pointerStartedWithSelection = _selectedText?.isNotEmpty == true;
@@ -2698,23 +3137,33 @@ class _WebReaderState extends State<WebReader> {
         (_pointerStartedWithSelection || _selectedText?.isNotEmpty == true)) {
       return;
     }
-    html.window.getSelection()?.removeAllRanges();
-    _selectedText = null;
-    _readerFocus.requestFocus();
-    if (delta.dx.abs() > 55 && delta.dx.abs() > delta.dy.abs() * 1.3) {
-      _turnPage(delta.dx < 0 ? 1 : -1);
-      return;
-    }
-    if (delta.distance > 14 || elapsed > 600) return;
     final double x =
         event.localPosition.dx / math.max(1, MediaQuery.sizeOf(context).width);
-    if (x < 1 / 3) {
-      _turnPage(-1);
-    } else if (x > 2 / 3) {
-      _turnPage(1);
-    } else {
-      setState(() => _controls = !_controls);
-    }
+    // TextSpan.onTap resolves in the gesture arena after the outer Listener's
+    // pointer-up. Defer the page turn until that callback can claim this tap.
+    _pageTapTimer?.cancel();
+    _pageTapTimer = Timer(Duration.zero, () {
+      _pageTapTimer = null;
+      if (!_readerRouteActive || _personTapConsumed) {
+        _personTapConsumed = false;
+        return;
+      }
+      html.window.getSelection()?.removeAllRanges();
+      _selectedText = null;
+      _readerFocus.requestFocus();
+      if (delta.dx.abs() > 55 && delta.dx.abs() > delta.dy.abs() * 1.3) {
+        _turnPage(delta.dx < 0 ? 1 : -1);
+        return;
+      }
+      if (delta.distance > 14 || elapsed > 600) return;
+      if (x < 1 / 3) {
+        _turnPage(-1);
+      } else if (x > 2 / 3) {
+        _turnPage(1);
+      } else {
+        setState(() => _controls = !_controls);
+      }
+    });
   }
 
   KeyEventResult _readerKey(FocusNode _, KeyEvent event) {
@@ -2754,6 +3203,17 @@ class _WebReaderState extends State<WebReader> {
               anchors: selectable.contextMenuAnchors,
               buttonItems: <ContextMenuButtonItem>[
                 ...selectable.contextMenuButtonItems,
+                if (_selectedText?.trim().isNotEmpty == true &&
+                    _selectedText!.trim().runes.length <= 24)
+                  ContextMenuButtonItem(
+                    label: '这是谁',
+                    onPressed: () {
+                      final String name = _selectedText!.trim();
+                      ContextMenuController.removeAny();
+                      _clearSelectedText();
+                      unawaited(_openPerson(name: name));
+                    },
+                  ),
                 ContextMenuButtonItem(
                   label: '问书',
                   onPressed: () {
@@ -2780,6 +3240,7 @@ class _WebReaderState extends State<WebReader> {
     _WebPageFragment fragment,
     double width,
     TextStyle body,
+    int cutoff,
   ) {
     if (fragment.kind == 'space') return SizedBox(height: fragment.height);
     if (fragment.kind == 'img') {
@@ -2799,14 +3260,18 @@ class _WebReaderState extends State<WebReader> {
       child: ClipRect(
         child: SizedBox(
           width: width,
-          child: Text(
-            text,
-            style: style,
-            textAlign: fragment.kind == 'p'
-                ? TextAlign.justify
-                : TextAlign.left,
-            strutStyle: fragment.kind == 'p' ? _bodyStrut() : null,
-          ),
+          child: fragment.block < 0
+              ? Text(text, style: style)
+              : _personText(
+                  text,
+                  style,
+                  blockIndex: fragment.block,
+                  sourceStart: fragment.sourceStart,
+                  sourceEnd: fragment.sourceEnd,
+                  cutoff: cutoff,
+                  paragraph: fragment.kind == 'p',
+                  strutStyle: fragment.kind == 'p' ? _bodyStrut() : null,
+                ),
         ),
       ),
     );
@@ -2822,6 +3287,7 @@ class _WebReaderState extends State<WebReader> {
       final double height = math.max(1, box.maxHeight - top - bottom);
       _ensurePages(textWidth, height, bodyStyle);
       final List<_WebPageFragment> page = _pages[_pageIndex];
+      final int cutoff = _visibleCutoffOffset();
       return Padding(
         padding: EdgeInsets.only(top: top, bottom: bottom),
         child: Align(
@@ -2854,7 +3320,7 @@ class _WebReaderState extends State<WebReader> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         for (final _WebPageFragment fragment in page)
-                          _pageFragment(fragment, textWidth, bodyStyle),
+                          _pageFragment(fragment, textWidth, bodyStyle, cutoff),
                       ],
                     ),
                   ),
