@@ -294,10 +294,10 @@ void main() {
     'legacy custom OpenAI settings retain user endpoint and normalize model',
     () {
       settings.file.writeAsStringSync(
-        'LLM_BASE_URL=https://custom.invalid\nEXTRACT_MODEL=deepseek-test\nLLM_API_KEY=offline-legacy\nJEV_ROUTE=free-only\n',
+        'LLM_BASE_URL=https://custom.invalid\nEXTRACT_MODEL=deepseek-chat\nLLM_API_KEY=offline-legacy\nJEV_ROUTE=free-only\n',
       );
       expect(settings.read()['base_url'], 'https://custom.invalid/v1');
-      expect(settings.read()['model'], 'deepseek-test+nothink');
+      expect(settings.read()['model'], 'deepseek-chat+nothink');
       expect(settings.read()['protocol'], 'openai');
       expect(settings.read()['jev_route'], 'free-only');
       expect(settings.public()['api_key_last4'], 'gacy');
@@ -306,6 +306,13 @@ void main() {
       expect(settings.read()['base_url'], 'https://custom.invalid/v1');
     },
   );
+
+  test('current DeepSeek model name stays exact', () {
+    settings.file.writeAsStringSync(
+      'LLM_BASE_URL=https://api.deepseek.com/v1\nEXTRACT_MODEL=deepseek-flash\nLLM_API_KEY=offline-test-secret\n',
+    );
+    expect(settings.read()['model'], 'deepseek-flash');
+  });
 
   test(
     'configured-model route and separate classifier key are explicit and private',

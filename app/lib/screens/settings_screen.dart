@@ -49,7 +49,11 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final (_, String model, String key) = settings.read();
-    final String provider = settings.protocolLabel;
+    // The first-run model form shows Gemini before anything is saved. Keep
+    // this summary aligned with that visible starting choice.
+    final String provider = settings.file.existsSync()
+        ? settings.protocolLabel
+        : 'Google Gemini';
     Widget group(String title, List<Widget> rows) => Padding(
       padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
       child: Column(
@@ -204,7 +208,8 @@ class SettingsScreen extends StatelessWidget {
                 ]),
                 group('数据', <Widget>[
                   ListTile(
-                    title: const Text('导出全部备份'),
+                    title: const Text('导出整个书库 ZIP'),
+                    subtitle: const Text('一本文件带走书籍、摘记、阅读进度和设置'),
                     trailing: Icon(Icons.chevron_right, color: t.ink3),
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -212,7 +217,8 @@ class SettingsScreen extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    title: const Text('恢复备份'),
+                    title: const Text('导入书库或单书备份'),
+                    subtitle: const Text('同一本书安全合并；独立 API 密钥需在新设备重填'),
                     trailing: Icon(Icons.chevron_right, color: t.ink3),
                     onTap: () {
                       HapticFeedback.lightImpact();
@@ -221,7 +227,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   ListTile(
                     title: const Text('WebDAV 同步'),
-                    subtitle: const Text('把完整备份上传到自己的云端，在其他设备导入'),
+                    subtitle: const Text('将书籍快照上传到自己的云端，在其他设备导入'),
                     trailing: Icon(Icons.chevron_right, color: t.ink3),
                     onTap: onWebDav,
                   ),

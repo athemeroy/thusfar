@@ -20,11 +20,14 @@ books are reported, and corrupt personal data cannot silently become an empty
 export. A single Android task and foreground library refresh keep external imports
 visible when returning from another application.
 
-Installed and browser clients exchange complete JSON book backups. A same-book
-restore merges compatible reading records and refuses conflicting edits; native
-merges save a local rollback snapshot before writing. Both clients also support
-manual, append-only WebDAV snapshots in a user-owned HTTPS collection. Credentials
-stay in the open WebDAV screen. This does not run unattended background sync.
+Installed and browser clients exchange a whole-library ZIP containing full book
+backups and portable settings. A single-book JSON backup remains available.
+Same-book restores merge compatible reading records and report conflicts;
+native merges save a local rollback snapshot before writing. Separately entered
+API keys are excluded from the ZIP and must be entered again at the destination.
+Both clients also support manual, append-only WebDAV snapshots in a user-owned
+HTTPS collection. Credentials stay in the open WebDAV screen. This does not run
+unattended background sync.
 
 ## Data and model configuration
 
@@ -60,12 +63,14 @@ flutter build web --release --target lib/main_web.dart --base-href /thusfar/
 
 GitHub Actions publishes `app/build/web` through `pages.yml` when Pages is set
 to **GitHub Actions** in repository settings. The browser reader supports TXT,
-EPUB, search, notes, bookmarks, reading progress, typography, JSON transfer,
-manual WebDAV snapshots, browser AI preparation and book questions linked to
-exact excerpts from the already-read text.
+EPUB, search, notes, bookmarks, reading progress, typography, whole-library ZIP
+and single-book JSON transfer, manual WebDAV snapshots, browser AI preparation
+and book questions linked to exact excerpts from the already-read text.
 Its browser AI flow produces cited drafts of character facts, relationships,
 and chapter recaps from explicitly chosen chapters using a user-supplied
-browser-accessible chat API. It checkpoints completed passages in IndexedDB;
+browser-accessible OpenAI, Gemini, or Claude-compatible API. Provider presets
+and editable endpoint/model fields match the installed client. It checkpoints
+completed passages in IndexedDB;
 it does not auto-resume billable work after refresh. The key stays in tab memory,
 while the backup includes drafts but no key. The panel also exports a compact
 diagnostic record without book text or credentials. Browser WebDAV requires

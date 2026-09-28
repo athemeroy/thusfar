@@ -14,12 +14,13 @@ import 'package:crypto/crypto.dart';
 
 import '../ui/theme.dart';
 import 'web_ai_engine.dart';
+import 'web_model_provider.dart';
 import 'web_model_session.dart';
 import 'web_storage.dart';
 
 const String _officialEndpoint = WebAiConfig.geminiEndpoint;
 const String _officialModel = WebAiConfig.geminiFlashLiteModel;
-const String _deepSeekEndpoint = 'https://api.deepseek.com';
+const String _deepSeekEndpoint = 'https://api.deepseek.com/v1';
 const String _deepSeekModel = 'deepseek-flash';
 const String _tabOwnerKey = 'thusfar-web-ai-tab-owner-v1';
 
@@ -87,6 +88,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
   WebAiConfig? _activeConfig;
   String _endpoint = _officialEndpoint;
   String _model = _officialModel;
+  WebModelProtocol _protocol = WebModelProtocol.gemini;
   String _scope = 'first';
   String _phase = 'idle';
   String? _lastError;
@@ -326,18 +328,35 @@ class _WebAiPanelState extends State<WebAiPanel> {
         _results.isEmpty &&
         _events.isEmpty &&
         (saved?['phase'] == null || saved?['phase'] == 'idle') &&
-        saved?['endpoint'] == _deepSeekEndpoint &&
+        (saved?['endpoint'] == _deepSeekEndpoint ||
+            saved?['endpoint'] == 'https://api.deepseek.com') &&
         saved?['model'] == _deepSeekModel;
-    _endpoint = oldUnusedDefault
+    final Json? profile =
+        WebModelSession.current.config == null &&
+            _results.isEmpty &&
+            _events.isEmpty &&
+            (saved?['phase'] == null || saved?['phase'] == 'idle')
+        ? WebLibrary.savedModelProfile()
+        : null;
+    _endpoint = profile?['base_url'] is String
+        ? profile!['base_url']! as String
+        : oldUnusedDefault
         ? _officialEndpoint
         : saved?['endpoint'] is String
         ? saved!['endpoint']! as String
         : _officialEndpoint;
-    _model = oldUnusedDefault
+    _model = profile?['model'] is String
+        ? profile!['model']! as String
+        : oldUnusedDefault
         ? _officialModel
         : saved?['model'] is String
         ? saved!['model']! as String
         : _officialModel;
+    _protocol = profile?['protocol'] is String
+        ? WebModelProtocol.fromName(profile!['protocol']! as String, _endpoint)
+        : oldUnusedDefault
+        ? WebModelProtocol.gemini
+        : WebModelProtocol.fromName(saved?['protocol'] as String?, _endpoint);
     _scope = const <String>{'first', 'read', 'all'}.contains(saved?['scope'])
         ? saved!['scope']! as String
         : 'first';
@@ -355,6 +374,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
     'completed_count': _done(_targets(_scope)),
     'endpoint': _endpoint,
     'model': _model,
+    'protocol': _protocol.name,
     'in_flight': _inFlight,
     'last_error': _lastError,
     'updated_at': DateTime.now().millisecondsSinceEpoch,
@@ -472,6 +492,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
     _scope = scope;
     _endpoint = config.endpoint;
     _model = config.model;
+    _protocol = config.protocol;
     _phase = 'running';
     _lastError = null;
     if (_inFlight != null && !_results.containsKey(_inFlight)) {
@@ -572,26 +593,40 @@ class _WebAiPanelState extends State<WebAiPanel> {
   Future<void> _configureAndStart() async {
     if (_running || _starting || _clearing) return;
     final WebAiConfig? shared = WebModelSession.current.config;
+    final Json? profile = shared == null
+        ? WebLibrary.savedModelProfile()
+        : null;
+    final String initialEndpoint =
+        shared?.endpoint ??
+        (profile?['base_url'] is String
+            ? profile!['base_url']! as String
+            : _endpoint);
+    final String initialModel =
+        shared?.model ??
+        (profile?['model'] is String ? profile!['model']! as String : _model);
+    WebModelProtocol protocol =
+        shared?.protocol ??
+        WebModelProtocol.fromName(
+          profile?['protocol'] is String
+              ? profile!['protocol']! as String
+              : _protocol.name,
+          initialEndpoint,
+        );
     // Treat a tab credential as an atomic endpoint/model/key tuple. A book's
     // migrated default must never be paired with another provider's key.
     final TextEditingController endpoint = TextEditingController(
-      text: shared?.endpoint ?? _endpoint,
+      text: initialEndpoint,
     );
     final TextEditingController model = TextEditingController(
-      text: shared?.model ?? _model,
+      text: initialModel,
     );
     final TextEditingController key = TextEditingController(
       text: shared?.apiKey ?? '',
     );
     String keyEndpoint = shared?.endpoint ?? '';
     String provider =
-        endpoint.text.trim() == _officialEndpoint &&
-            model.text.trim() == _officialModel
-        ? 'gemini'
-        : endpoint.text.trim() == _deepSeekEndpoint &&
-              model.text.trim() == _deepSeekModel
-        ? 'deepseek'
-        : 'custom';
+        WebModelPreset.matching(protocol, endpoint.text, model.text)?.id ??
+        'custom';
     String scope = _scope;
     String? error;
     bool showKey = false;
@@ -704,9 +739,10 @@ class _WebAiPanelState extends State<WebAiPanel> {
                             runSpacing: 4,
                             children: <Widget>[
                               for (final (String value, String label)
-                                  in const <(String, String)>[
-                                    ('gemini', 'Gemini'),
-                                    ('deepseek', 'DeepSeek'),
+                                  in <(String, String)>[
+                                    for (final WebModelPreset preset
+                                        in WebModelPreset.all)
+                                      (preset.id, preset.label),
                                     ('custom', '自定义'),
                                   ])
                                 ChoiceChip(
@@ -721,12 +757,15 @@ class _WebAiPanelState extends State<WebAiPanel> {
                                       key.clear();
                                       keyEndpoint = '';
                                       error = null;
-                                      if (value == 'gemini') {
-                                        endpoint.text = _officialEndpoint;
-                                        model.text = _officialModel;
-                                      } else if (value == 'deepseek') {
-                                        endpoint.text = _deepSeekEndpoint;
-                                        model.text = _deepSeekModel;
+                                      if (value != 'custom') {
+                                        final WebModelPreset preset =
+                                            WebModelPreset.all.firstWhere(
+                                              (WebModelPreset item) =>
+                                                  item.id == value,
+                                            );
+                                        protocol = preset.protocol;
+                                        endpoint.text = preset.endpoint;
+                                        model.text = preset.model;
                                       }
                                     });
                                   },
@@ -743,8 +782,53 @@ class _WebAiPanelState extends State<WebAiPanel> {
                             Text(
                               '${model.text} · DeepSeek 按其账户规则收费。',
                               style: TextStyle(color: t.amber, fontSize: 12),
+                            )
+                          else if (provider == 'ollama')
+                            Text(
+                              '本机 Ollama 指当前浏览设备，不是 NAS；可留空密钥，但服务需允许此网页来源。',
+                              style: TextStyle(color: t.ink2, fontSize: 12),
+                            )
+                          else if (provider != 'custom')
+                            Text(
+                              '请求会直接发往 ${Uri.parse(endpoint.text).host}，服务商可能收费。',
+                              style: TextStyle(color: t.ink2, fontSize: 12),
                             ),
                           if (provider == 'custom') ...<Widget>[
+                            const SizedBox(height: 12),
+                            Text('接口协议', style: TextStyle(color: t.ink)),
+                            const SizedBox(height: 6),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: <Widget>[
+                                for (final (
+                                      WebModelProtocol value,
+                                      String label,
+                                    )
+                                    in const <(WebModelProtocol, String)>[
+                                      (WebModelProtocol.openai, 'OpenAI 兼容'),
+                                      (WebModelProtocol.gemini, 'Gemini 原生'),
+                                      (WebModelProtocol.anthropic, 'Claude 兼容'),
+                                    ])
+                                  ChoiceChip(
+                                    label: Text(label),
+                                    selected: protocol == value,
+                                    showCheckmark: false,
+                                    visualDensity: VisualDensity.compact,
+                                    onSelected: (bool selected) {
+                                      if (!selected || protocol == value) {
+                                        return;
+                                      }
+                                      redraw(() {
+                                        protocol = value;
+                                        key.clear();
+                                        keyEndpoint = '';
+                                        error = null;
+                                      });
+                                    },
+                                  ),
+                              ],
+                            ),
                             const SizedBox(height: 12),
                             TextField(
                               controller: endpoint,
@@ -783,7 +867,13 @@ class _WebAiPanelState extends State<WebAiPanel> {
                             textInputAction: TextInputAction.done,
                             scrollPadding: const EdgeInsets.only(bottom: 120),
                             decoration: InputDecoration(
-                              labelText: '你的 API 密钥',
+                              labelText:
+                                  WebModelProvider.allowsEmptyKey(
+                                    protocol,
+                                    endpoint.text,
+                                  )
+                                  ? '你的 API 密钥（本机可留空）'
+                                  : '你的 API 密钥',
                               suffixIcon: IconButton(
                                 tooltip: showKey ? '隐藏密钥' : '显示密钥',
                                 onPressed: () =>
@@ -820,7 +910,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '自定义兼容接口需要允许网页跨域访问。密钥不会写入备份、浏览器存储或 GitHub；地址和模型名称会保存在本机。关闭网页会暂停，重开后不会自动发起请求。',
+                                '接口需要允许当前网页来源跨域访问；Claude 浏览器直连会发送官方要求的直连头。本机 Ollama 可能需配置允许来源。密钥不会写入备份或浏览器存储；协议、地址和模型名称会保存在本机。关闭网页会暂停，重开后不会自动发起请求。',
                                 style: TextStyle(color: t.ink2, fontSize: 12),
                               ),
                             ],
@@ -839,32 +929,20 @@ class _WebAiPanelState extends State<WebAiPanel> {
                     onPressed: _targets(scope).isEmpty
                         ? null
                         : () {
-                            final Uri? address = Uri.tryParse(
-                              endpoint.text.trim(),
-                            );
-                            final bool local =
-                                address != null &&
-                                <String>{
-                                  'localhost',
-                                  '127.0.0.1',
-                                  '::1',
-                                }.contains(address.host.toLowerCase());
-                            if (address == null ||
-                                (address.scheme != 'https' &&
-                                    !(local && address.scheme == 'http')) ||
-                                address.host.isEmpty ||
-                                address.userInfo.isNotEmpty ||
-                                address.hasQuery ||
-                                address.hasFragment) {
-                              redraw(
-                                () => error =
-                                    '请填写不含账号、参数和片段的 HTTPS 模型 API 地址；本机 localhost 可用 HTTP。',
-                              );
-                              return;
-                            }
-                            if (model.text.trim().isEmpty ||
-                                key.text.trim().isEmpty) {
-                              redraw(() => error = '请填写模型名称和你自己的 API 密钥。');
+                            try {
+                              WebModelProvider.validateBase(endpoint.text);
+                              WebModelProvider.validateModel(model.text);
+                              if (key.text.trim().isEmpty &&
+                                  !WebModelProvider.allowsEmptyKey(
+                                    protocol,
+                                    endpoint.text,
+                                  )) {
+                                throw const WebModelException(
+                                  '请填写你自己的 API 密钥。',
+                                );
+                              }
+                            } on WebModelException catch (failure) {
+                              redraw(() => error = failure.message);
                               return;
                             }
                             Navigator.pop(
@@ -874,6 +952,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                                   endpoint: endpoint.text.trim(),
                                   model: model.text.trim(),
                                   apiKey: key.text.trim(),
+                                  protocol: protocol,
                                 ),
                                 scope,
                               ),
@@ -923,6 +1002,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
       if (confirmed != true || !mounted) return;
     }
     WebModelSession.current.set(selected.config);
+    WebLibrary.saveModelProfile(<String, Object?>{
+      ...?WebLibrary.savedModelProfile(),
+      'protocol': selected.config.protocol.name,
+      'base_url': selected.config.endpoint,
+      'model': selected.config.model,
+    });
     await _run(selected.config, selected.scope);
   }
 

@@ -275,7 +275,10 @@ void main() {
         {'url': url, 'model': model},
       );
       expect(normalize('https://open.example.com/', 'deepseek-flash'), {
-        '\$tuple': ['https://open.example.com/v1', 'deepseek-flash+nothink'],
+        '\$tuple': ['https://open.example.com/v1', 'deepseek-flash'],
+      });
+      expect(normalize('https://open.example.com/', 'deepseek-chat'), {
+        '\$tuple': ['https://open.example.com/v1', 'deepseek-chat+nothink'],
       });
       expect(normalize('https://api.example.com/v1beta/openai', 'gpt-6-luna'), {
         '\$tuple': ['https://api.example.com/v1beta/openai', 'gpt-6-luna'],

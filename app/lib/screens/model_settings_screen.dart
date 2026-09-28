@@ -26,8 +26,8 @@ const List<_ProviderPreset> _presets = <_ProviderPreset>[
   _ProviderPreset(
     name: 'DeepSeek',
     protocol: 'openai',
-    url: 'https://api.deepseek.com',
-    defaultModel: 'deepseek-chat',
+    url: 'https://api.deepseek.com/v1',
+    defaultModel: 'deepseek-flash',
   ),
   _ProviderPreset(
     name: 'SiliconFlow 硅基',
@@ -45,13 +45,13 @@ const List<_ProviderPreset> _presets = <_ProviderPreset>[
     name: 'Claude',
     protocol: 'anthropic',
     url: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-3-5-sonnet-latest',
+    defaultModel: 'claude-haiku-4-5-20251001',
   ),
   _ProviderPreset(
     name: 'Google Gemini',
     protocol: 'gemini',
     url: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-1.5-flash',
+    defaultModel: 'gemini-3.5-flash-lite',
   ),
   _ProviderPreset(
     name: 'Ollama 本地',
@@ -106,10 +106,15 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   void initState() {
     super.initState();
     final (String u, String m, _) = widget.settings.read();
-    protocol = widget.settings.protocol;
+    // Show the same initial choice as the browser on a fresh install. Merely
+    // opening this screen never saves a model or starts a provider request.
+    final _ProviderPreset? firstRunPreset = widget.settings.file.existsSync()
+        ? null
+        : _presets.firstWhere((_ProviderPreset item) => item.protocol == 'gemini');
+    protocol = firstRunPreset?.protocol ?? widget.settings.protocol;
     judgeFallback = widget.settings.judgeFallbackEnabled;
-    url = TextEditingController(text: u);
-    model = TextEditingController(text: m);
+    url = TextEditingController(text: firstRunPreset?.url ?? u);
+    model = TextEditingController(text: firstRunPreset?.defaultModel ?? m);
   }
 
   @override

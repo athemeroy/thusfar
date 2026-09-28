@@ -53,7 +53,7 @@ jobs:
           stage=$(mktemp -d)
           cp -R build/macos/Build/Products/Release/Thusfar.app "$stage/"
           ln -s /Applications "$stage/Applications"
-          hdiutil create -volname "Thusfar $VERSION" -srcfolder "$stage" -ov -format UDZO "../dist/Thusfar-$VERSION-macos.dmg"
+          hdiutil create -volname "页读" -srcfolder "$stage" -ov -format UDZO "../dist/Thusfar-$VERSION-macos.dmg"
 
       - name: iOS unsigned ipa
         if: matrix.target == 'ios'

@@ -16,9 +16,11 @@ import 'package:flutter/services.dart'
     show KeyEvent, KeyUpEvent, LogicalKeyboardKey;
 import 'package:thusfar_core/title_spoilers.dart';
 
+import '../data/library_zip.dart';
 import '../ui/theme.dart';
 import 'web_ai_panel.dart';
 import 'web_ask_panel.dart';
+import 'web_model_session.dart';
 import 'web_storage.dart';
 import 'webdav_sync.dart';
 
@@ -104,7 +106,7 @@ class _WebShelfState extends State<WebShelf> {
     unawaited(WebLibrary.requestPersistence());
     final FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: <String>['txt', 'epub', 'json'],
+      allowedExtensions: <String>['txt', 'epub', 'json', 'zip'],
       withData: true,
     );
     if (result == null || result.files.isEmpty) return;
@@ -115,8 +117,56 @@ class _WebShelfState extends State<WebShelf> {
       return;
     }
     setState(() => _busy = true);
+    bool zipRestoreStarted = false;
     try {
-      if (file.name.toLowerCase().endsWith('.json')) {
+      if (file.name.toLowerCase().endsWith('.zip')) {
+        final LibraryZipData archive = LibraryZipCodec.decode(bytes);
+        if (!mounted) return;
+        final bool? applySettings = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext dialogContext) => AlertDialog(
+            title: const Text('恢复整个书库'),
+            content: Text(
+              '这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
+              '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
+              '已有书籍保留此浏览器的逐书整理和付费路由，继续前请核对。'
+              '是否同时使用备份里的阅读清单、排版和模型设置？',
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('保留当前设置'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('使用备份设置'),
+              ),
+            ],
+          ),
+        );
+        if (applySettings == null) return;
+        zipRestoreStarted = true;
+        final WebLibraryZipRestoreResult restored = await library
+            .importLibraryZipData(archive, applySettings: applySettings);
+        if (restored.complete && applySettings) {
+          WebModelSession.current.clear();
+        }
+        await _refresh();
+        _message(
+          restored.settingsError != null
+              ? '已导入 ${restored.imported} 本、合并 ${restored.existing} 本；${restored.settingsError}'
+              : restored.complete
+              ? '已恢复 ${restored.total} 本书；'
+                    '${applySettings ? '设置已导入，模型密钥需重填' : '保留了当前设置'}'
+              : '已导入 ${restored.imported} 本、合并 ${restored.existing} 本；'
+                    '${restored.failures.length} 本有冲突。${restored.failures.first}',
+        );
+        return;
+      } else if (file.name.toLowerCase().endsWith('.json')) {
         await library.importBackup(bytes);
       } else {
         await library.importFile(file.name, bytes);
@@ -124,7 +174,28 @@ class _WebShelfState extends State<WebShelf> {
       await _refresh();
       _message('已导入到此浏览器的本地书库');
     } on Object catch (error) {
+      if (zipRestoreStarted) {
+        try {
+          await _refresh();
+        } on Object {
+          // The original restore error remains the actionable message.
+        }
+      }
       _message('导入失败：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _exportLibrary() async {
+    final WebLibrary? library = _library;
+    if (library == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      await library.exportLibraryZip();
+      _message('已下载整个书库 ZIP；含书籍、摘记与设置，独立 API 密钥未包含，请妥善保管。');
+    } on Object catch (error) {
+      _message('导出书库失败：$error');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -270,6 +341,7 @@ class _WebShelfState extends State<WebShelf> {
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
+    final bool compactShelf = MediaQuery.sizeOf(context).width < 600;
     final List<WebBookMeta> books = List<WebBookMeta>.of(_books)
       ..sort((WebBookMeta a, WebBookMeta b) {
         final int aTime = _states[a.id]?.lastOpened ?? a.added;
@@ -287,39 +359,68 @@ class _WebShelfState extends State<WebShelf> {
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
                   sliver: SliverToBoxAdapter(
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
                           children: <Widget>[
-                            Text(
-                              '正在阅读',
-                              style: TextStyle(color: t.ink2, letterSpacing: 2),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  '正在阅读',
+                                  style: TextStyle(
+                                    color: t.ink2,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                                Text(
+                                  '页读',
+                                  style: TextStyle(
+                                    fontFamily: display,
+                                    color: t.ink,
+                                    fontSize: 38,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              '页读',
-                              style: TextStyle(
-                                fontFamily: display,
-                                color: t.ink,
-                                fontSize: 38,
+                            const Spacer(),
+                            IconButton(
+                              onPressed: _busy || _library == null
+                                  ? null
+                                  : _openWebDav,
+                              tooltip: 'WebDAV 快照',
+                              icon: const Icon(Icons.cloud_sync_outlined),
+                            ),
+                            if (!compactShelf)
+                              IconButton(
+                                onPressed: _busy || _library == null
+                                    ? null
+                                    : _exportLibrary,
+                                tooltip: '下载整个书库 ZIP',
+                                icon: const Icon(Icons.archive_outlined),
                               ),
+                            const SizedBox(width: 6),
+                            FilledButton.icon(
+                              onPressed: _busy || _library == null
+                                  ? null
+                                  : _import,
+                              icon: const Icon(Icons.add),
+                              label: Text(_busy ? '处理中…' : '导入书籍'),
                             ),
                           ],
                         ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: _busy || _library == null
-                              ? null
-                              : _openWebDav,
-                          tooltip: 'WebDAV 快照',
-                          icon: const Icon(Icons.cloud_sync_outlined),
-                        ),
-                        const SizedBox(width: 6),
-                        FilledButton.icon(
-                          onPressed: _busy || _library == null ? null : _import,
-                          icon: const Icon(Icons.add),
-                          label: Text(_busy ? '处理中…' : '导入书籍'),
-                        ),
+                        if (compactShelf)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: _busy || _library == null
+                                  ? null
+                                  : _exportLibrary,
+                              icon: const Icon(Icons.archive_outlined),
+                              label: const Text('整库备份'),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -369,7 +470,7 @@ class _WebShelfState extends State<WebShelf> {
                               OutlinedButton.icon(
                                 onPressed: _import,
                                 icon: const Icon(Icons.upload_file_outlined),
-                                label: const Text('选择书籍或页读网页备份'),
+                                label: const Text('选择书籍或页读备份'),
                               ),
                             ],
                           ),
@@ -738,6 +839,8 @@ class _WebReaderState extends State<WebReader> {
   int _turnDirection = 1;
   bool _wheelLocked = false;
   Timer? _wheelTimer;
+  Timer? _selectionTimer;
+  Timer? _selectionCaptureTimer;
   Offset? _pointerStart;
   DateTime? _pointerStarted;
   bool _pointerStartedWithSelection = false;
@@ -746,6 +849,9 @@ class _WebReaderState extends State<WebReader> {
   bool _controls = false;
   bool _restoring = true;
   String? _selectedText;
+  String? _selectionActionQuote;
+  ({int chapter, double fraction})? _returnPosition;
+  double? _seekPreview;
   late int _chapter;
   int? _jumpBlock;
 
@@ -842,11 +948,23 @@ class _WebReaderState extends State<WebReader> {
     _restoring = false;
   }
 
-  void _go(int chapter, {double fraction = 0, int? block}) {
+  void _go(
+    int chapter, {
+    double fraction = 0,
+    int? block,
+    bool remember = false,
+  }) {
     if (chapter < 0 || chapter >= _chapters.length) return;
+    if (remember && _returnPosition == null) {
+      _returnPosition = (chapter: _chapter, fraction: _fraction);
+    }
+    _selectionCaptureTimer?.cancel();
+    _selectionTimer?.cancel();
+    html.window.getSelection()?.removeAllRanges();
     _saveTimer?.cancel();
     _restoring = true;
     _jumpBlock = block;
+    _seekPreview = null;
     _blockKeys.clear();
     _pageLayoutKey = null;
     _pages = const <List<_WebPageFragment>>[];
@@ -857,6 +975,7 @@ class _WebReaderState extends State<WebReader> {
       widget.state.fraction = fraction;
       widget.state.lastOpened = DateTime.now().millisecondsSinceEpoch;
       _controls = false;
+      _selectedText = null;
     });
     unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
     if (!_prefs.pageMode) {
@@ -864,6 +983,116 @@ class _WebReaderState extends State<WebReader> {
         (_) => _restoreFraction(fraction),
       );
     }
+  }
+
+  void _returnToReadingPosition() {
+    final ({int chapter, double fraction})? target = _returnPosition;
+    if (target == null) return;
+    _returnPosition = null;
+    _go(target.chapter, fraction: target.fraction);
+  }
+
+  void _selectionChanged(SelectedContent? content) {
+    final String? next = content?.plainText.trim();
+    final String? selected = next == null || next.isEmpty
+        ? null
+        : _boundedSelection(next);
+    _selectionTimer?.cancel();
+    if (selected == null) {
+      if (_selectedText == null) return;
+      if (_selectionActionQuote != null) return;
+      // Clicking a selection action clears browser selection on pointer-down.
+      // Keep the quote long enough for the button's pointer-up to activate.
+      _selectionTimer = Timer(const Duration(milliseconds: 350), () {
+        _selectionTimer = null;
+        if (mounted) setState(() => _selectedText = null);
+      });
+      return;
+    }
+    if (_selectedText == selected) return;
+    _selectedText = selected;
+    _selectionTimer = Timer(const Duration(milliseconds: 60), () {
+      _selectionTimer = null;
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _captureBrowserSelection() {
+    _selectionCaptureTimer?.cancel();
+    _selectionCaptureTimer = Timer(const Duration(milliseconds: 40), () {
+      _selectionCaptureTimer = null;
+      if (!mounted || _selectedText?.isNotEmpty == true) return;
+      final String? selected = _browserSelectionText();
+      if (selected != null) setState(() => _selectedText = selected);
+    });
+  }
+
+  String _boundedSelection(String text) =>
+      text.length > 1500 ? text.substring(0, 1500) : text;
+
+  String? _browserSelectionText() {
+    final html.Selection? selection = html.window.getSelection();
+    if (selection == null || selection.rangeCount == 0) return null;
+    final String text =
+        selection.getRangeAt(0).cloneContents().text?.trim() ?? '';
+    if (text.isEmpty || text.startsWith("Instance of '")) return null;
+    return _boundedSelection(text);
+  }
+
+  void _clearSelectedText() {
+    _selectionCaptureTimer?.cancel();
+    _selectionTimer?.cancel();
+    _selectionActionQuote = null;
+    html.window.getSelection()?.removeAllRanges();
+    setState(() => _selectedText = null);
+  }
+
+  void _selectionActionPointerEnd() {
+    if (_selectionActionQuote == null) return;
+    _selectionTimer?.cancel();
+    _selectionTimer = Timer(const Duration(milliseconds: 350), () {
+      _selectionTimer = null;
+      _selectionActionQuote = null;
+      if (mounted) setState(() => _selectedText = null);
+    });
+  }
+
+  void _selectedAction({required bool ask}) {
+    final String? quote = _selectionActionQuote ?? _selectedText;
+    if (quote == null || quote.isEmpty) return;
+    _clearSelectedText();
+    if (ask) {
+      unawaited(_openAsk(selectedText: quote));
+    } else {
+      unawaited(_addNote(selectedText: quote));
+    }
+  }
+
+  void _seekFraction(double fraction) {
+    if (_prefs.pageMode) {
+      if (_pages.length < 2) return;
+      final int next = (fraction * (_pages.length - 1)).round().clamp(
+        0,
+        _pages.length - 1,
+      );
+      if (next == _pageIndex) return;
+      final int direction = next > _pageIndex ? 1 : -1;
+      setState(() {
+        _returnPosition ??= (chapter: _chapter, fraction: _fraction);
+        _pageIndex = next;
+        _turnDirection = direction;
+        widget.state.fraction = _fraction;
+        widget.state.lastOpened = DateTime.now().millisecondsSinceEpoch;
+      });
+      _queueSave();
+      return;
+    }
+    if ((fraction - _fraction).abs() < 0.001) return;
+    if (!_scroll.hasClients || _scroll.position.maxScrollExtent <= 0) return;
+    setState(() {
+      _returnPosition ??= (chapter: _chapter, fraction: _fraction);
+    });
+    _scroll.jumpTo(_scroll.position.maxScrollExtent * fraction);
   }
 
   void _bookmark() {
@@ -957,7 +1186,9 @@ class _WebReaderState extends State<WebReader> {
             if (targetChapter < 0) return;
             Navigator.of(context).pop();
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) _go(targetChapter, block: blockIndex);
+              if (mounted) {
+                _go(targetChapter, block: blockIndex, remember: true);
+              }
             });
           },
         ),
@@ -993,7 +1224,7 @@ class _WebReaderState extends State<WebReader> {
                       leading: SizedBox(width: 40, child: Text('${index + 1}')),
                       onTap: () {
                         Navigator.pop(context);
-                        _go(index);
+                        _go(index, remember: true);
                       },
                     );
                   },
@@ -1031,7 +1262,11 @@ class _WebReaderState extends State<WebReader> {
                             ),
                             onTap: () {
                               Navigator.pop(context);
-                              _go(mark.chapter, fraction: mark.fraction);
+                              _go(
+                                mark.chapter,
+                                fraction: mark.fraction,
+                                remember: true,
+                              );
                             },
                             trailing: IconButton(
                               tooltip: '删除书签',
@@ -1097,7 +1332,11 @@ class _WebReaderState extends State<WebReader> {
                             ),
                             onTap: () {
                               Navigator.pop(context);
-                              _go(note.chapter, fraction: note.fraction);
+                              _go(
+                                note.chapter,
+                                fraction: note.fraction,
+                                remember: true,
+                              );
                             },
                             trailing: IconButton(
                               tooltip: '删除摘记',
@@ -1125,19 +1364,164 @@ class _WebReaderState extends State<WebReader> {
     );
   }
 
-  Future<void> _addNote() async {
+  bool get _chapterHasFootnotes {
+    final int first = (_current['b0'] as num?)?.toInt() ?? 0;
+    final int last = (_current['b1'] as num?)?.toInt() ?? first;
+    for (int i = first; i < last && i < _blocks.length; i++) {
+      if ((_blocks[i]['fn'] as List<Object?>?)?.isNotEmpty == true) return true;
+    }
+    return false;
+  }
+
+  List<String> _visibleFootnoteIds() {
+    final Object? rawNotes = widget.book.data['notes'];
+    if (rawNotes is! Json || rawNotes.isEmpty) return const <String>[];
+    final List<String> result = <String>[];
+
+    void collect(int blockIndex, int start, int end) {
+      final Object? raw = _blocks[blockIndex]['fn'];
+      if (raw is! List<Object?>) return;
+      for (final Object? item in raw) {
+        if (item is! List<Object?> || item.length != 2) continue;
+        final int offset = item[0] as int;
+        final String id = item[1] as String;
+        if ((offset > start || (start == 0 && offset == 0)) &&
+            offset <= end &&
+            rawNotes[id] is String) {
+          result.add(id);
+        }
+      }
+    }
+
+    if (_prefs.pageMode) {
+      final Map<int, int> consumed = <int, int>{};
+      for (
+        int pageIndex = 0;
+        pageIndex <= _pageIndex && pageIndex < _pages.length;
+        pageIndex++
+      ) {
+        for (final _WebPageFragment fragment in _pages[pageIndex]) {
+          if (fragment.block < 0 ||
+              fragment.kind == 'space' ||
+              fragment.kind == 'img') {
+            continue;
+          }
+          final int displayedStart = consumed[fragment.block] ?? 0;
+          final int displayedEnd = displayedStart + fragment.text.length;
+          consumed[fragment.block] = displayedEnd;
+          if (pageIndex != _pageIndex) continue;
+          final int indent = fragment.kind == 'p' ? 2 : 0;
+          final int textLength = '${_blocks[fragment.block]['t'] ?? ''}'.length;
+          final int sourceStart = (displayedStart - indent).clamp(
+            0,
+            textLength,
+          );
+          final int sourceEnd = (displayedEnd - indent).clamp(0, textLength);
+          collect(fragment.block, sourceStart, sourceEnd);
+        }
+      }
+      return result;
+    }
+
+    // Only expose notes from complete paragraphs above the visible bottom edge.
+    final double visibleBottom =
+        MediaQuery.sizeOf(context).height -
+        MediaQuery.paddingOf(context).bottom -
+        64;
+    final int first = (_current['b0'] as num?)?.toInt() ?? 0;
+    final int last = (_current['b1'] as num?)?.toInt() ?? first;
+    for (int i = first; i < last && i < _blocks.length; i++) {
+      if (i == first &&
+          _blocks[i]['k'] == 'h' &&
+          _blocks[i]['t'] == _current['title']) {
+        continue;
+      }
+      final RenderObject? render = _blockKeys[i]?.currentContext
+          ?.findRenderObject();
+      if (render is! RenderBox || !render.hasSize) break;
+      if (render.localToGlobal(Offset(0, render.size.height)).dy >
+          visibleBottom) {
+        break;
+      }
+      collect(i, 0, '${_blocks[i]['t'] ?? ''}'.length);
+    }
+    return result;
+  }
+
+  void _footnotesSheet() {
+    final List<String> ids = _visibleFootnoteIds();
+    final Json notes = widget.book.data['notes'] is Json
+        ? widget.book.data['notes'] as Json
+        : <String, Object?>{};
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) => SafeArea(
+        child: SizedBox(
+          height: math.min(MediaQuery.sizeOf(context).height * 0.72, 620),
+          child: Column(
+            children: <Widget>[
+              ListTile(
+                title: Text(_prefs.pageMode ? '本页注释' : '已读注释'),
+                subtitle: Text('共 ${ids.length} 条'),
+              ),
+              Expanded(
+                child: ids.isEmpty
+                    ? const Center(child: Text('这里还没有可查看的注释'))
+                    : ListView.builder(
+                        itemCount: ids.length,
+                        itemBuilder: (BuildContext context, int index) =>
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: <Widget>[
+                                      Text('注 ${index + 1}'),
+                                      const SizedBox(height: 8),
+                                      SelectableText('${notes[ids[index]]}'),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addNote({String? selectedText}) async {
     final TextEditingController controller = TextEditingController();
+    final String quote = selectedText?.trim() ?? '';
+    if (quote.isNotEmpty) {
+      final String excerpt = quote.length > 1500
+          ? '${quote.substring(0, 1500)}…'
+          : quote;
+      controller.text = '「$excerpt」\n\n';
+      controller.selection = TextSelection.collapsed(
+        offset: controller.text.length,
+      );
+    }
     final String? note = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('添加摘记'),
+        title: Text(quote.isEmpty ? '添加摘记' : '引用原文并摘记'),
         content: TextField(
           controller: controller,
           autofocus: true,
           minLines: 3,
           maxLines: 7,
           maxLength: 2000,
-          decoration: const InputDecoration(hintText: '这一页让你想到了什么？'),
+          decoration: InputDecoration(
+            hintText: quote.isEmpty ? '这一页让你想到了什么？' : '在引文后写下想法',
+          ),
         ),
         actions: <Widget>[
           TextButton(
@@ -1160,6 +1544,8 @@ class _WebReaderState extends State<WebReader> {
 
   void _searchSheet() {
     final TextEditingController search = TextEditingController();
+    final int readBlockExclusive = _askCutoffBlockExclusive();
+    bool wholeBook = false;
     List<({int chapter, int block, String snippet})> results = const [];
     showModalBottomSheet<void>(
       context: context,
@@ -1173,11 +1559,14 @@ class _WebReaderState extends State<WebReader> {
               return;
             }
             final List<({int chapter, int block, String snippet})> found = [];
+            final int limit = wholeBook ? _blocks.length : readBlockExclusive;
             for (int ci = 0; ci < _chapters.length && found.length < 80; ci++) {
               final Json chapter = _chapters[ci];
               for (
                 int bi = (chapter['b0'] as num).toInt();
-                bi < (chapter['b1'] as num).toInt() && found.length < 80;
+                bi < (chapter['b1'] as num).toInt() &&
+                    bi < limit &&
+                    found.length < 80;
                 bi++
               ) {
                 final String body = '${_blocks[bi]['t'] ?? ''}';
@@ -1212,15 +1601,55 @@ class _WebReaderState extends State<WebReader> {
                         onChanged: run,
                         decoration: const InputDecoration(
                           prefixIcon: Icon(Icons.search),
-                          hintText: '在这本书里搜索',
+                          hintText: '搜索读到这里的正文',
                         ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Wrap(
+                            spacing: 8,
+                            children: <Widget>[
+                              ChoiceChip(
+                                label: const Text('读到这里'),
+                                selected: !wholeBook,
+                                onSelected: (_) {
+                                  if (!wholeBook) return;
+                                  update(() => wholeBook = false);
+                                  run(search.text);
+                                },
+                              ),
+                              ChoiceChip(
+                                label: const Text('全书'),
+                                selected: wholeBook,
+                                onSelected: (_) {
+                                  if (wholeBook) return;
+                                  update(() => wholeBook = true);
+                                  run(search.text);
+                                },
+                              ),
+                            ],
+                          ),
+                          if (wholeBook)
+                            const Padding(
+                              padding: EdgeInsets.only(top: 6),
+                              child: Text('会搜到还没读的内容'),
+                            ),
+                        ],
                       ),
                     ),
                     Expanded(
                       child: search.text.trim().isEmpty
                           ? const Center(child: Text('输入人物、地点或一句话'))
                           : results.isEmpty
-                          ? const Center(child: Text('没有找到'))
+                          ? Center(
+                              child: Text(
+                                wholeBook ? '全书没有找到' : '读到这里没有找到。可以选择全书搜索。',
+                              ),
+                            )
                           : ListView.builder(
                               itemCount: results.length,
                               itemBuilder: (BuildContext context, int index) {
@@ -1236,7 +1665,11 @@ class _WebReaderState extends State<WebReader> {
                                   ),
                                   onTap: () {
                                     Navigator.pop(context);
-                                    _go(row.chapter, block: row.block);
+                                    _go(
+                                      row.chapter,
+                                      block: row.block,
+                                      remember: true,
+                                    );
                                   },
                                 );
                               },
@@ -1419,6 +1852,8 @@ class _WebReaderState extends State<WebReader> {
     _saveTimer?.cancel();
     _displayTimer?.cancel();
     _wheelTimer?.cancel();
+    _selectionTimer?.cancel();
+    _selectionCaptureTimer?.cancel();
     html.window.removeEventListener('keydown', _domKey, true);
     html.window.removeEventListener('wheel', _domWheel, true);
     unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
@@ -1485,8 +1920,7 @@ class _WebReaderState extends State<WebReader> {
                               maxWidth: _prefs.columnWidth,
                             ),
                             child: SelectionArea(
-                              onSelectionChanged: (SelectedContent? content) =>
-                                  _selectedText = content?.plainText,
+                              onSelectionChanged: _selectionChanged,
                               contextMenuBuilder:
                                   (
                                     BuildContext context,
@@ -1506,6 +1940,19 @@ class _WebReaderState extends State<WebReader> {
                                           );
                                         },
                                       ),
+                                      if (_selectedText?.trim().isNotEmpty ==
+                                          true)
+                                        ContextMenuButtonItem(
+                                          label: '摘记',
+                                          onPressed: () {
+                                            final String? selected =
+                                                _selectedText;
+                                            ContextMenuController.removeAny();
+                                            unawaited(
+                                              _addNote(selectedText: selected),
+                                            );
+                                          },
+                                        ),
                                     ],
                                   ),
                               child: NotificationListener<ScrollEndNotification>(
@@ -1646,7 +2093,97 @@ class _WebReaderState extends State<WebReader> {
               ),
             ),
           ),
-          if (!_controls)
+          if (!_controls && _selectedText?.isNotEmpty == true)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: Listener(
+                    onPointerDown: (_) {
+                      _selectionActionQuote = _selectedText;
+                      _selectionTimer?.cancel();
+                    },
+                    onPointerUp: (_) => _selectionActionPointerEnd(),
+                    onPointerCancel: (_) => _selectionActionPointerEnd(),
+                    child: Material(
+                      color: ink,
+                      shape: const StadiumBorder(),
+                      elevation: 4,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          TextButton.icon(
+                            onPressed: () => _selectedAction(ask: false),
+                            icon: Icon(Icons.edit_note, color: paper),
+                            label: Text('摘记', style: TextStyle(color: paper)),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => _selectedAction(ask: true),
+                            icon: Icon(Icons.auto_awesome, color: paper),
+                            label: Text('问书', style: TextStyle(color: paper)),
+                          ),
+                          IconButton(
+                            tooltip: '取消选择',
+                            onPressed: _clearSelectedText,
+                            icon: Icon(Icons.close, color: paper),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (!_controls &&
+              _selectedText?.isNotEmpty != true &&
+              _returnPosition != null)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  children: <Widget>[
+                    const SizedBox(width: 48),
+                    Expanded(
+                      child: Center(
+                        child: Material(
+                          color: ink,
+                          shape: const StadiumBorder(),
+                          elevation: 3,
+                          child: InkWell(
+                            customBorder: const StadiumBorder(),
+                            onTap: _returnToReadingPosition,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                              child: Text(
+                                '↩ 回到跳转前的位置',
+                                style: TextStyle(color: paper),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: '打开阅读工具',
+                      onPressed: () => setState(() => _controls = true),
+                      icon: Icon(Icons.keyboard_arrow_up, color: ink),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (!_controls &&
+              _selectedText?.isNotEmpty != true &&
+              _returnPosition == null)
             Positioned(
               bottom: 0,
               left: 0,
@@ -1753,6 +2290,12 @@ class _WebReaderState extends State<WebReader> {
                     onPressed: _searchSheet,
                     icon: const Icon(Icons.search),
                   ),
+                  if (_chapterHasFootnotes)
+                    IconButton(
+                      tooltip: '查看注释',
+                      onPressed: _footnotesSheet,
+                      icon: const Icon(Icons.notes_outlined),
+                    ),
                   IconButton(
                     tooltip: '收起工具',
                     onPressed: () => setState(() => _controls = false),
@@ -1767,18 +2310,33 @@ class _WebReaderState extends State<WebReader> {
                     child: const Text('上一章'),
                   ),
                   Expanded(
-                    child: Slider(
-                      value: _chapter.toDouble().clamp(
-                        0.0,
-                        math.max(0, _chapters.length - 1).toDouble(),
-                      ),
-                      min: 0,
-                      max: math.max(1, _chapters.length - 1).toDouble(),
-                      divisions: _chapters.length > 1 && _chapters.length < 1000
-                          ? _chapters.length - 1
-                          : null,
-                      onChanged: (double value) =>
-                          _go(value.round().clamp(0, _chapters.length - 1)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          _prefs.pageMode
+                              ? '本章第 ${((_seekPreview ?? _fraction) * math.max(0, _pages.length - 1)).round() + 1} / ${math.max(1, _pages.length)} 页'
+                              : '本章 ${((_seekPreview ?? _fraction) * 100).round()}%',
+                          style: TextStyle(fontSize: 11, color: t.ink2),
+                        ),
+                        Slider(
+                          value: (_seekPreview ?? _fraction).clamp(0.0, 1.0),
+                          min: 0,
+                          max: 1,
+                          onChanged:
+                              (_prefs.pageMode
+                                  ? _pages.length > 1
+                                  : _scroll.hasClients &&
+                                        _scroll.position.maxScrollExtent > 0)
+                              ? (double value) =>
+                                    setState(() => _seekPreview = value)
+                              : null,
+                          onChangeEnd: (double value) {
+                            setState(() => _seekPreview = null);
+                            _seekFraction(value);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   TextButton(
@@ -2044,6 +2602,8 @@ class _WebReaderState extends State<WebReader> {
 
   void _turnPage(int delta) {
     if (!_prefs.pageMode || _pages.isEmpty) return;
+    _selectionCaptureTimer?.cancel();
+    html.window.getSelection()?.removeAllRanges();
     final int next = _pageIndex + delta;
     if (next < 0) {
       _go(_chapter - 1, fraction: 1);
@@ -2115,7 +2675,7 @@ class _WebReaderState extends State<WebReader> {
   }
 
   void _readerPointerDown(PointerDownEvent event) {
-    if (!_prefs.pageMode || event.buttons != 1) return;
+    if (event.buttons != 1) return;
     _pointerStart = event.localPosition;
     _pointerStarted = DateTime.now();
     _pointerStartedWithSelection = _selectedText?.isNotEmpty == true;
@@ -2126,9 +2686,11 @@ class _WebReaderState extends State<WebReader> {
     final DateTime? started = _pointerStarted;
     _pointerStart = null;
     _pointerStarted = null;
-    if (!_prefs.pageMode || start == null || started == null) return;
+    if (start == null || started == null) return;
     final Offset delta = event.localPosition - start;
     final int elapsed = DateTime.now().difference(started).inMilliseconds;
+    if (delta.distance > 14 || elapsed > 600) _captureBrowserSelection();
+    if (!_prefs.pageMode) return;
     if (elapsed > 900) return;
     // A normal short tap can dismiss a prior selection and turn the page.
     // Keep a dragged selection intact for copy or 问书.
@@ -2136,6 +2698,7 @@ class _WebReaderState extends State<WebReader> {
         (_pointerStartedWithSelection || _selectedText?.isNotEmpty == true)) {
       return;
     }
+    html.window.getSelection()?.removeAllRanges();
     _selectedText = null;
     _readerFocus.requestFocus();
     if (delta.dx.abs() > 55 && delta.dx.abs() > delta.dy.abs() * 1.3) {
@@ -2184,8 +2747,7 @@ class _WebReaderState extends State<WebReader> {
   }
 
   Widget _selectionArea(Widget child) => SelectionArea(
-    onSelectionChanged: (SelectedContent? content) =>
-        _selectedText = content?.plainText,
+    onSelectionChanged: _selectionChanged,
     contextMenuBuilder:
         (BuildContext context, SelectableRegionState selectable) =>
             AdaptiveTextSelectionToolbar.buttonItems(
@@ -2200,6 +2762,15 @@ class _WebReaderState extends State<WebReader> {
                     unawaited(_openAsk(selectedText: selected));
                   },
                 ),
+                if (_selectedText?.trim().isNotEmpty == true)
+                  ContextMenuButtonItem(
+                    label: '摘记',
+                    onPressed: () {
+                      final String? selected = _selectedText;
+                      ContextMenuController.removeAny();
+                      unawaited(_addNote(selectedText: selected));
+                    },
+                  ),
               ],
             ),
     child: child,

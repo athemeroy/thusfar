@@ -9,6 +9,7 @@ import 'package:thusfar_core/thusfar_core.dart' show PyException;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/backup.dart';
+import 'data/library_zip.dart';
 import 'data/library.dart';
 import 'data/model_settings.dart';
 import 'data/prefs.dart';
@@ -923,10 +924,169 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   Uint8List exportBook0(BookEntry b) => exportBookBytes(m.library, b);
 
-  Future<void> exportAll() async {
-    for (final BookEntry b in m.library.books) {
-      await exportBook(b);
+  Map<String, Object?> _libraryArchiveSettings() {
+    final Prefs p = m.prefs;
+    Map<String, Object?> transfer = <String, Object?>{};
+    try {
+      transfer = LibraryZipCodec.validatedSettings(
+        readJson(File('${m.root.path}/library-settings-transfer.json')),
+      );
+    } on Object {
+      // Optional cross-platform preferences never block the book archive.
     }
+    final Map<String, Object?> oldReader =
+        transfer['reader'] as Map<String, Object?>? ?? <String, Object?>{};
+    final Map<String, Object?> settings = <String, Object?>{
+      'reader': <String, Object?>{
+        'fontSize': p.fontSize,
+        'lineHeight': p.lineHeight,
+        'letterSpacing': p.letterSpacing,
+        'margin': p.pageHorizontalMargin,
+        'paper': p.paper,
+        'font': p.font,
+        'pageMode': oldReader['pageMode'] ?? true,
+        'columnWidth': oldReader['columnWidth'] ?? 960,
+      },
+      'native': <String, Object?>{
+        'spacing': p.spacing,
+        'pageHorizontalMargin': p.pageHorizontalMargin,
+        'pageVerticalMargin': p.pageVerticalMargin,
+        'anim': p.anim.index,
+        'volumeKeys': p.volumeKeys,
+        'night': p.night.index,
+        'sort': p.sort,
+        'listView': p.listView,
+      },
+      if (transfer['web'] is Map<String, Object?>) 'web': transfer['web'],
+      'shelf': <String, Object?>{
+        'readingQueue': <int>[
+          ...<int>{
+            for (final String id in m.library.readingList)
+              if (m.library.books.indexWhere(
+                    (BookEntry book) => book.id == id,
+                  ) >=
+                  0)
+                m.library.books.indexWhere((BookEntry book) => book.id == id),
+          },
+        ],
+      },
+    };
+    try {
+      final (String url, String model, _) = m.settings.read();
+      if (model.isNotEmpty) {
+        settings['model'] =
+            LibraryZipCodec.validatedModelProfile(<String, Object?>{
+              'protocol': m.settings.protocol,
+              'base_url': url,
+              'model': model,
+              'jev_route': m.settings.judgeFallbackEnabled
+                  ? 'free-then-model'
+                  : 'free-only',
+            });
+      }
+    } on Object {
+      // A private or invalid endpoint never prevents exporting the books.
+    }
+    return settings;
+  }
+
+  String? _applyLibraryArchiveSettings(Map<String, Object?> settings) {
+    final Object? model = settings['model'];
+    if (model is Map<String, Object?> && model.isNotEmpty) {
+      final String? error = m.settings.save(
+        url: model['base_url']! as String,
+        model: model['model']! as String,
+        key: '',
+        clearKey: true,
+        protocol: model['protocol']! as String,
+        judgeFallback: model['jev_route'] == null
+            ? null
+            : model['jev_route'] == 'free-then-model',
+      );
+      if (error != null) return error;
+      applyModelEnvironment(m.settings);
+    }
+    final Map<String, Object?> reader =
+        settings['reader'] as Map<String, Object?>? ?? <String, Object?>{};
+    final Map<String, Object?> native =
+        settings['native'] as Map<String, Object?>? ?? <String, Object?>{};
+    m.prefs.update((Prefs p) {
+      if (reader['fontSize'] is num) {
+        p.fontSize = (reader['fontSize']! as num).toDouble().clamp(14, 32);
+      }
+      if (reader['lineHeight'] is num) {
+        p.lineHeightOverride = (reader['lineHeight']! as num).toDouble();
+      }
+      if (reader['letterSpacing'] is num) {
+        p.letterSpacing = (reader['letterSpacing']! as num).toDouble();
+      }
+      if (reader['font'] is num) p.font = (reader['font']! as num).toInt();
+      if (reader['paper'] is num) p.paper = (reader['paper']! as num).toInt();
+      if (native['spacing'] is num) {
+        p.spacing = (native['spacing']! as num).toInt();
+      }
+      if (native['pageHorizontalMargin'] is num) {
+        p.pageHorizontalMargin = (native['pageHorizontalMargin']! as num)
+            .toDouble();
+      } else if (reader['margin'] is num) {
+        p.pageHorizontalMargin = (reader['margin']! as num).toDouble();
+      }
+      if (native['pageVerticalMargin'] is num) {
+        p.pageVerticalMargin = (native['pageVerticalMargin']! as num)
+            .toDouble();
+      }
+      if (native['anim'] is num) {
+        p.anim = PageAnim.values[(native['anim']! as num).toInt()];
+      }
+      if (native['volumeKeys'] is bool) {
+        p.volumeKeys = native['volumeKeys']! as bool;
+      }
+      if (native['night'] is num) {
+        p.night = NightMode.values[(native['night']! as num).toInt()];
+      }
+      if (native['sort'] is num) p.sort = (native['sort']! as num).toInt();
+      if (native['listView'] is bool) {
+        p.listView = native['listView']! as bool;
+      }
+    });
+    try {
+      writeJson(
+        File('${m.root.path}/library-settings-transfer.json'),
+        LibraryZipCodec.validatedSettings(settings),
+      );
+    } on Object {
+      return '书籍与本机排版已恢复，跨端设置未能保存；请检查存储空间';
+    }
+    return null;
+  }
+
+  Future<void> exportAll() async {
+    String message;
+    try {
+      final Uint8List bytes = exportLibraryZipBytes(
+        m.library,
+        _libraryArchiveSettings(),
+      );
+      final String date = DateTime.now().toIso8601String().substring(0, 10);
+      final String? path = await FilePicker.platform.saveFile(
+        dialogTitle: '导出整个书库 ZIP',
+        fileName: '页读书库-$date.zip',
+        bytes: bytes,
+      );
+      message = path == null
+          ? '没有导出'
+          : '已导出 ${m.library.books.length} 本书及设置；独立 API 密钥未包含，请妥善保管 ZIP';
+    } on PyException catch (error) {
+      message = error.message;
+    } on Object catch (error) {
+      message = error is FormatException
+          ? error.message
+          : '书库 ZIP 未能导出，请检查书籍文件和可用存储空间。';
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> pickAndImport({bool backupsOnly = false}) async {
@@ -970,6 +1130,94 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             (f.path == null ? null : File(f.path!).readAsBytesSync());
         if (bytes == null || bytes.isEmpty) {
           item.error = '文件是空的';
+        } else if (lower.endsWith('.zip')) {
+          final LibraryZipData archive = LibraryZipCodec.decode(bytes);
+          final bool? applySettings = await showDialog<bool>(
+            context: context,
+            builder: (BuildContext dialogContext) => AlertDialog(
+              title: const Text('恢复整个书库'),
+              content: Text(
+                '这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
+                '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
+                '已有书籍保留本机逐书整理和付费路由，继续前请核对。'
+                '是否同时使用备份里的阅读清单、排版和模型设置？',
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('取消'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('保留当前设置'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('使用备份设置'),
+                ),
+              ],
+            ),
+          );
+          if (applySettings == null) {
+            item.error = '已取消恢复';
+          } else {
+            final LibraryZipRestoreResult restored = restoreLibraryZipData(
+              m.library,
+              archive,
+            );
+            item
+              ..bookId = restored.firstNewId
+              ..existed = restored.imported == 0
+              ..progress = 1;
+            if (restored.failures.isNotEmpty) {
+              item.error =
+                  '已导入 ${restored.imported} 本，合并 ${restored.existing} 本；'
+                  '${restored.failures.length} 本有冲突。${restored.failures.first}';
+            } else {
+              String? settingError;
+              if (applySettings) {
+                try {
+                  settingError = _applyLibraryArchiveSettings(
+                    restored.settings,
+                  );
+                  if (settingError == null) {
+                    final Map<String, Object?> shelf =
+                        restored.settings['shelf'] as Map<String, Object?>? ??
+                        <String, Object?>{};
+                    final List<int> queue =
+                        (shelf['readingQueue'] as List<int>?) ?? <int>[];
+                    if (queue.isNotEmpty) {
+                      final List<String> incoming = <String>[
+                        for (final int index in queue)
+                          if (restored.ids[index] != null) restored.ids[index]!,
+                      ];
+                      m.library.setReadingList(
+                        <String>{
+                          ...incoming,
+                          ...m.library.readingList,
+                        }.toList(),
+                      );
+                    }
+                  }
+                } on Object {
+                  settingError = '部分设置未能保存；请检查可用存储空间后重试';
+                }
+              }
+              if (settingError != null) {
+                item.error = '书籍已恢复 ${restored.total} 本，但设置未恢复：$settingError';
+              } else {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      '已恢复 ${restored.total} 本书；'
+                      '${applySettings ? '设置已导入，模型密钥需重填' : '保留了当前设置'}',
+                    ),
+                  ),
+                );
+              }
+            }
+          }
         } else if (lower.endsWith('.json')) {
           final ImportResult r = restoreBackup(m.library, f.name, bytes);
           item
@@ -982,7 +1230,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             lower.endsWith('.azw')) {
           item.error = 'MOBI 请先转成 EPUB';
         } else if (backupsOnly) {
-          item.error = '这不是页读的 JSON 备份文件';
+          item.error = '请选择页读 ZIP 书库或 JSON 单书备份';
         } else if (lower.endsWith('.txt') || lower.endsWith('.epub')) {
           item.progress = 0.3;
           if (mounted) setState(() {});
@@ -993,7 +1241,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             ..existed = r.existed
             ..progress = 1;
         } else {
-          item.error = '支持 TXT、EPUB';
+          item.error = '支持 TXT、EPUB、ZIP 或 JSON 备份';
         }
       } on PyException catch (error) {
         item.error = error.message;

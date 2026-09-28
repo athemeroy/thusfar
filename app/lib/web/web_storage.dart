@@ -15,6 +15,9 @@ import 'package:crypto/crypto.dart';
 import 'package:thusfar_core/chapter_verdicts.dart' as verdicts;
 import 'package:thusfar_core/parse.dart' as parser;
 
+import '../data/library_zip.dart';
+import '../data/portable_work.dart';
+
 typedef Json = Map<String, Object?>;
 
 /// Fixed messages from our merge checks. Safe to show without copying input
@@ -28,6 +31,27 @@ class WebBackupConflict implements Exception {
 
 const int _maxPreparationBytes = 32 * 1024 * 1024;
 const int _preparationLeaseMs = 5 * 60 * 1000;
+const String _modelProfileStorageKey = 'thusfar-web-model-profile-v1';
+const String _librarySettingsStorageKey =
+    'thusfar-web-library-settings-transfer-v1';
+const String _readingQueueStorageKey = 'thusfar-web-reading-queue-v1';
+
+class WebLibraryZipRestoreResult {
+  const WebLibraryZipRestoreResult({
+    required this.total,
+    required this.imported,
+    required this.existing,
+    required this.failures,
+    this.settingsError,
+  });
+
+  final int total;
+  final int imported;
+  final int existing;
+  final List<String> failures;
+  final String? settingsError;
+  bool get complete => failures.isEmpty && settingsError == null;
+}
 
 /// A small shelf record, stored separately so opening the shelf never reads
 /// the full text of every book.
@@ -373,6 +397,23 @@ void _validateImportedBook(Json book) {
 }
 
 void _validateNativeExtras(Json value, int bookLength) {
+  const Set<String> allowed = <String>{
+    'format',
+    'exported',
+    'id',
+    'kg',
+    'meta',
+    'status',
+    'mentions',
+    'progress',
+    'notebook',
+    'manual_entities',
+    'work_files',
+  };
+  if (value.keys.any((String key) => !allowed.contains(key))) {
+    throw const FormatException('安装版备份含未知附加字段，未导入。');
+  }
+  rejectPortableCredentials(value);
   if (value['format'] != 'yedu-book/2' ||
       value['id'] is! String ||
       value['kg'] is! Json) {
@@ -427,6 +468,7 @@ void _validateNativeExtras(Json value, int bookLength) {
       throw const FormatException('备份中的安装版个人资料无效。');
     }
   }
+  validatedPortableWork(value['work_files']);
 }
 
 ({int chapter, double fraction}) _positionForOffset(Json book, int offset) {
@@ -496,14 +538,43 @@ Json _webWrapperFromNative(Json native) {
   }
   final Json nativeExtras = <String, Object?>{
     for (final MapEntry<String, Object?> entry in native.entries)
-      if (!const <String>{
-        'book',
-        'assets',
-        'web_state',
-        'web_preparation',
+      if (const <String>{
+        'format',
+        'exported',
+        'id',
+        'kg',
+        'meta',
+        'status',
+        'mentions',
+        'progress',
+        'notebook',
+        'manual_entities',
+        'work_files',
       }.contains(entry.key))
         entry.key: entry.value,
   };
+  if (native.keys.any(
+    (String key) => !const <String>{
+      'book',
+      'assets',
+      'web_state',
+      'web_preparation',
+      'format',
+      'exported',
+      'id',
+      'kg',
+      'meta',
+      'status',
+      'mentions',
+      'progress',
+      'notebook',
+      'manual_entities',
+      'work_files',
+    }.contains(key),
+  )) {
+    throw const FormatException('安装版备份含未知附加字段，未导入。');
+  }
+  _validateNativeExtras(nativeExtras, book['len'] as int);
   final Json state;
   if (native['web_state'] is Json) {
     state = native['web_state'] as Json;
@@ -739,6 +810,20 @@ List<Object?> _mergeNativeManual(Object? local, Object? incoming) {
 Json? _mergeNativeBackups(Json? local, Json? incoming) {
   if (local == null) return incoming;
   if (incoming == null) return local;
+  final Json? localMeta = local['meta'] is Json ? local['meta'] as Json : null;
+  final Json? incomingMeta = incoming['meta'] is Json
+      ? incoming['meta'] as Json
+      : null;
+  final Json? incomingStatusForIntent = incoming['status'] is Json
+      ? incoming['status'] as Json
+      : null;
+  if (localMeta?['retry_quality'] == true &&
+      incomingMeta?['retry_quality'] != true &&
+      incomingStatusForIntent?['state'] == 'done') {
+    throw const WebBackupConflict('本地仍有待执行的质量重试请求，来源已完成整理；请先处理本地重试意图。');
+  }
+  final Json localWork = validatedPortableWork(local['work_files']);
+  final Json incomingWork = validatedPortableWork(incoming['work_files']);
   for (final String field in <String>['id']) {
     if (!_sameJson(local[field], incoming[field])) {
       throw const WebBackupConflict('本地与远端安装版人物资料不同，未覆盖；请另存快照并手动处理。');
@@ -763,6 +848,21 @@ Json? _mergeNativeBackups(Json? local, Json? incoming) {
       localFrontier >= incomingFrontier;
   if (!incomingExtends && !localExtends) {
     throw const WebBackupConflict('本地与远端安装版人物资料分叉，未覆盖；请另存快照。');
+  }
+  final Json mergedWork;
+  try {
+    mergedWork = mergePortableWork(
+      localWork,
+      incomingWork,
+      incomingWins:
+          incoming.containsKey('work_files') &&
+          incomingExtends &&
+          !localExtends,
+      localWins:
+          local.containsKey('work_files') && localExtends && !incomingExtends,
+    );
+  } on FormatException catch (error) {
+    throw WebBackupConflict('${error.message} 请分别导出备份。');
   }
   final Json mergedGraph = incomingExtends ? incomingGraph : localGraph;
   final Json mergedMentions = incomingExtends
@@ -808,6 +908,7 @@ Json? _mergeNativeBackups(Json? local, Json? incoming) {
           'status',
           'progress',
           'exported',
+          'work_files',
         }.contains(entry.key) &&
         !_sameJson(merged[entry.key], entry.value)) {
       throw const WebBackupConflict('安装版扩展资料在本地与远端不同，未覆盖；请另存快照。');
@@ -817,6 +918,9 @@ Json? _mergeNativeBackups(Json? local, Json? incoming) {
   merged['kg'] = mergedGraph;
   merged['mentions'] = mergedMentions;
   merged['manual_entities'] = mergedManual;
+  if (local.containsKey('work_files') || incoming.containsKey('work_files')) {
+    merged['work_files'] = mergedWork;
+  }
   final Json? localProgress = local['progress'] is Json
       ? local['progress'] as Json
       : null;
@@ -862,6 +966,46 @@ Json? _mergeNativeBackups(Json? local, Json? incoming) {
 /// network request is made while importing, reading, or exporting a book.
 class WebLibrary {
   WebLibrary._(this._database);
+
+  /// Non-sensitive default model profile shared by preparation and Ask.
+  /// API keys remain in WebModelSession's current-tab memory only.
+  static Json? savedModelProfile() {
+    try {
+      final String? raw = html.window.localStorage[_modelProfileStorageKey];
+      if (raw == null) return null;
+      return LibraryZipCodec.validatedModelProfile(jsonDecode(raw));
+    } on Object {
+      return null;
+    }
+  }
+
+  static void saveModelProfile(Json profile) {
+    final Json merged = <String, Object?>{
+      ...profile,
+      if (!profile.containsKey('jev_route') &&
+          savedModelProfile()?['jev_route'] is String)
+        'jev_route': savedModelProfile()!['jev_route'],
+    };
+    html.window.localStorage[_modelProfileStorageKey] = jsonEncode(
+      LibraryZipCodec.validatedModelProfile(merged),
+    );
+  }
+
+  static List<String> _readingQueueIds() {
+    try {
+      final String? raw = html.window.localStorage[_readingQueueStorageKey];
+      final Object? decoded = raw == null ? null : jsonDecode(raw);
+      if (decoded is List<Object?> && decoded.length <= 2000) {
+        return <String>[
+          for (final Object? id in decoded)
+            if (id is String && RegExp(r'^[0-9a-f]{24}$').hasMatch(id)) id,
+        ];
+      }
+    } on Object {
+      // Optional order metadata cannot hide books.
+    }
+    return <String>[];
+  }
 
   /// Ask the browser to reduce automatic storage eviction. Browsers may
   /// decline; a portable backup remains necessary even when this succeeds.
@@ -1180,7 +1324,7 @@ class WebLibrary {
     return meta;
   }
 
-  Future<void> importBackup(Uint8List bytes) async {
+  Future<String> importBackup(Uint8List bytes) async {
     if (bytes.length > 144 * 1024 * 1024) {
       throw const FormatException('网页版单个备份最多导入 144 MB。');
     }
@@ -1205,6 +1349,16 @@ class WebLibrary {
         ? wrapper['native_backup'] as Json
         : null;
     _validateImportedBook(book);
+    final Set<String> requiredImages = <String>{
+      if (book['cover'] is String && (book['cover'] as String).isNotEmpty)
+        book['cover'] as String,
+      for (final Object? block in book['blocks'] as List<Object?>)
+        if (block is Json && block['k'] == 'img') block['src'] as String,
+    };
+    if (!rawImages.keys.toSet().containsAll(requiredImages) ||
+        requiredImages.any((String name) => rawImages[name] is! String)) {
+      throw const FormatException('备份缺少正文引用的图片或封面，未导入。');
+    }
     if (nativeBackup != null) {
       _validateNativeExtras(nativeBackup, book['len'] as int);
     }
@@ -1415,25 +1569,56 @@ class WebLibrary {
       }
     }
     await completed;
+    return targetId;
   }
 
   Future<Uint8List> exportBackupBytes(String id) async {
-    final WebBook? book = await load(id);
-    if (book == null) throw StateError('书籍已不存在。');
-    final WebReadingState reading = await state(id);
-    final Json? preparation = await loadPreparation(id);
-    final Json backup = <String, Object?>{
-      'format': 'thusfar-web-backup-v1',
-      'meta': book.meta.toJson(),
-      'book': book.data,
-      'images': book.images,
-      'state': reading.toJson(),
-    };
-    if (preparation != null) backup['preparation'] = preparation;
-    if (book.nativeBackup != null) {
-      backup['native_backup'] = <String, Object?>{...book.nativeBackup!};
+    final String owner = 'backup:$id:${DateTime.now().microsecondsSinceEpoch}';
+    if (!await acquirePreparationLease(id, owner)) {
+      throw StateError('这本书正在整理；请先暂停并等待当前模型请求结束，再导出完整备份。');
     }
-    return Uint8List.fromList(utf8.encode(jsonEncode(backup)));
+    try {
+      final WebBook? book = await load(id);
+      if (book == null) throw StateError('书籍已不存在。');
+      final WebReadingState reading = await state(id);
+      final Json? savedPreparation = await loadPreparation(id);
+      // An active worker owns the lease and was rejected above. An expired
+      // lease may leave a running checkpoint after a browser crash. Export a
+      // paused copy without changing the source or erasing its in-flight ID.
+      final Json? preparation;
+      if (savedPreparation != null &&
+          (savedPreparation['phase'] == 'running' ||
+              savedPreparation['in_flight'] != null)) {
+        final String prior = savedPreparation['last_error'] is String
+            ? savedPreparation['last_error'] as String
+            : '';
+        const String notice = '备份时上一轮模型请求尚未确认；继续可能重复计费。';
+        final String detail = prior.isEmpty ? notice : '$prior\n$notice';
+        preparation = <String, Object?>{
+          ...savedPreparation,
+          'phase': 'paused',
+          'last_error': detail.length > 4096
+              ? detail.substring(0, 4096)
+              : detail,
+        };
+      } else {
+        preparation = savedPreparation;
+      }
+      final Json backup = <String, Object?>{
+        'format': 'thusfar-web-backup-v1',
+        'meta': book.meta.toJson(),
+        'book': book.data,
+        'images': book.images,
+        'state': reading.toJson(),
+      };
+      if (preparation != null) backup['preparation'] = preparation;
+      if (book.nativeBackup != null) {
+        backup['native_backup'] = <String, Object?>{...book.nativeBackup!};
+      }
+      return Uint8List.fromList(utf8.encode(jsonEncode(backup)));
+    } finally {
+      await releasePreparationLease(id, owner);
+    }
   }
 
   Future<void> exportBackup(String id) async {
@@ -1451,6 +1636,200 @@ class WebLibrary {
       const Duration(seconds: 2),
       () => html.Url.revokeObjectUrl(url),
     );
+  }
+
+  Future<Uint8List> exportLibraryZipBytes() async {
+    final List<WebBookMeta> books = await list();
+    final List<Uint8List> backups = <Uint8List>[];
+    Json? newestModel = savedModelProfile();
+    final bool hasSavedModel = newestModel != null;
+    int newestAt = -1;
+    for (final WebBookMeta book in books) {
+      backups.add(await exportBackupBytes(book.id));
+      final Json? preparation = await loadPreparation(book.id);
+      final int updated = (preparation?['updated_at'] as num?)?.toInt() ?? -1;
+      if (!hasSavedModel && preparation != null && updated > newestAt) {
+        final Json candidate = <String, Object?>{
+          'protocol':
+              preparation['protocol'] ??
+              _preparationProtocol('${preparation['endpoint'] ?? ''}'),
+          'base_url': preparation['endpoint'],
+          'model': preparation['model'],
+        };
+        try {
+          newestModel = LibraryZipCodec.validatedModelProfile(candidate);
+          newestAt = updated;
+        } on FormatException {
+          // An unusable old model profile does not block book export.
+        }
+      }
+    }
+    Json source = <String, Object?>{};
+    try {
+      final String? raw = html.window.localStorage[_librarySettingsStorageKey];
+      if (raw != null) {
+        source = LibraryZipCodec.validatedSettings(jsonDecode(raw));
+      }
+    } on Object {
+      // Corrupt optional transfer metadata cannot block exporting books.
+    }
+    final Json prefs = _webReaderSettings();
+    final Map<String, int> bookIndexes = <String, int>{
+      for (int i = 0; i < books.length; i++) books[i].id: i,
+    };
+    final Json settings = <String, Object?>{
+      if (source['native'] is Json) 'native': source['native'],
+      'reader': prefs,
+      'web': <String, Object?>{
+        'pageMode': prefs['pageMode'],
+        'columnWidth': prefs['columnWidth'],
+        'fontSize': prefs['fontSize'],
+      },
+      'model': ?newestModel,
+      'shelf': <String, Object?>{
+        'readingQueue': <int>[
+          ...<int>{
+            for (final String id in _readingQueueIds())
+              if (bookIndexes.containsKey(id)) bookIndexes[id]!,
+          },
+        ],
+      },
+    };
+    return LibraryZipCodec.encode(books: backups, settings: settings);
+  }
+
+  Future<void> exportLibraryZip() async {
+    final Uint8List bytes = await exportLibraryZipBytes();
+    final html.Blob blob = html.Blob(<Object>[bytes], 'application/zip');
+    final String url = html.Url.createObjectUrlFromBlob(blob);
+    final String date = DateTime.now().toIso8601String().substring(0, 10);
+    final html.AnchorElement anchor = html.AnchorElement(href: url)
+      ..download = '页读书库-$date.zip';
+    html.document.body?.append(anchor);
+    anchor.click();
+    anchor.remove();
+    Future<void>.delayed(
+      const Duration(seconds: 2),
+      () => html.Url.revokeObjectUrl(url),
+    );
+  }
+
+  Future<WebLibraryZipRestoreResult> importLibraryZipData(
+    LibraryZipData archive, {
+    required bool applySettings,
+  }) async {
+    final int before = (await list()).length;
+    final List<String> failures = <String>[];
+    final List<String?> ids = <String?>[];
+    for (int i = 0; i < archive.books.length; i++) {
+      try {
+        ids.add(await importBackup(archive.books[i]));
+      } on WebBackupConflict catch (error) {
+        ids.add(null);
+        failures.add('第 ${i + 1} 本：${error.message}');
+      } on FormatException catch (error) {
+        ids.add(null);
+        failures.add('第 ${i + 1} 本：${error.message}');
+      } on Object {
+        ids.add(null);
+        failures.add('第 ${i + 1} 本无法导入，请检查浏览器存储空间。');
+      }
+    }
+    final int imported = ((await list()).length - before).clamp(
+      0,
+      archive.books.length,
+    );
+    String? settingsError;
+    if (failures.isEmpty && applySettings) {
+      try {
+        final Json shelf =
+            archive.settings['shelf'] as Json? ?? <String, Object?>{};
+        final List<int> queue = shelf['readingQueue'] as List<int>? ?? <int>[];
+        if (queue.isNotEmpty) {
+          html.window.localStorage[_readingQueueStorageKey] = jsonEncode(
+            <String>[
+              ...<String>{
+                for (final int index in queue)
+                  if (ids[index] != null) ids[index]!,
+                ..._readingQueueIds(),
+              },
+            ],
+          );
+        }
+        _applyWebReaderSettings(archive.settings);
+      } on Object {
+        settingsError = '书籍已恢复，设置未完全保存；请检查浏览器可用空间。';
+      }
+    }
+    return WebLibraryZipRestoreResult(
+      total: archive.books.length,
+      imported: imported,
+      existing: archive.books.length - imported - failures.length,
+      failures: failures,
+      settingsError: settingsError,
+    );
+  }
+
+  static Json _webReaderSettings() {
+    Json stored = <String, Object?>{};
+    try {
+      final String? raw = html.window.localStorage['thusfar-web-prefs'];
+      final Object? decoded = raw == null ? null : jsonDecode(raw);
+      if (decoded is Json) stored = decoded;
+    } on Object {
+      // A malformed reading preference falls back to the app defaults.
+    }
+    double metric(String key, double fallback, double min, double max) {
+      final Object? value = stored[key];
+      return value is num && value.isFinite
+          ? value.toDouble().clamp(min, max)
+          : fallback;
+    }
+
+    int choice(String key, int fallback, int max) {
+      final Object? value = stored[key];
+      return value is num && value.isFinite
+          ? value.toInt().clamp(0, max)
+          : fallback;
+    }
+
+    return <String, Object?>{
+      'fontSize': metric('fontSize', 21, 14, 34),
+      'lineHeight': metric('lineHeight', 1.75, 1.2, 2.4),
+      'letterSpacing': metric('letterSpacing', 0, -0.5, 2.5),
+      'margin': metric('margin', 24, 8, 90),
+      'columnWidth': metric('columnWidth', 960, 520, 1400),
+      'paper': choice('paper', 0, 4),
+      'font': choice('font', 0, 2),
+      'pageMode': stored['pageMode'] is bool ? stored['pageMode'] : true,
+    };
+  }
+
+  static void _applyWebReaderSettings(Json settings) {
+    final Json reader = settings['reader'] as Json? ?? <String, Object?>{};
+    final Json web = settings['web'] as Json? ?? <String, Object?>{};
+    final Json current = _webReaderSettings();
+    final Json applied = <String, Object?>{
+      ...current,
+      for (final String key in const <String>[
+        'fontSize',
+        'lineHeight',
+        'letterSpacing',
+        'margin',
+        'paper',
+        'font',
+        'pageMode',
+        'columnWidth',
+      ])
+        if (reader.containsKey(key)) key: reader[key],
+      if (web['fontSize'] is num) 'fontSize': web['fontSize'],
+      if (web['pageMode'] is bool) 'pageMode': web['pageMode'],
+      if (web['columnWidth'] is num) 'columnWidth': web['columnWidth'],
+    };
+    html.window.localStorage['thusfar-web-prefs'] = jsonEncode(applied);
+    html.window.localStorage[_librarySettingsStorageKey] = jsonEncode(settings);
+    final Object? model = settings['model'];
+    if (model is Json) saveModelProfile(model);
   }
 
   Future<void> remove(String id) async {
@@ -1500,6 +1879,7 @@ const Set<String> _preparationFields = <String>{
   'scope',
   'phase',
   'endpoint',
+  'protocol',
   'model',
   'in_flight',
   'last_error',
@@ -1612,6 +1992,16 @@ Json _validatedPreparation(Json state) {
       uri.hasFragment) {
     throw const FormatException('书籍准备端点含有无效或敏感信息。');
   }
+  final Object? protocol = result['protocol'];
+  if (protocol == null) {
+    result['protocol'] = _preparationProtocol(endpoint);
+  } else if (!const <String>{
+    'openai',
+    'gemini',
+    'anthropic',
+  }.contains(protocol)) {
+    throw const FormatException('书籍准备模型协议无效。');
+  }
   final Object? model = result['model'];
   if (model is! String || model.isEmpty || model.length > 200) {
     throw const FormatException('书籍准备模型名称无效。');
@@ -1683,6 +2073,20 @@ Json _validatedPreparation(Json state) {
     throw const FormatException('书籍准备分段进度无效。');
   }
   return result;
+}
+
+String _preparationProtocol(String endpoint) {
+  final Uri? uri = Uri.tryParse(endpoint);
+  if (uri == null) return 'openai';
+  final String host = uri.host.toLowerCase();
+  final String path = uri.path.toLowerCase();
+  // Old Gemini checkpoints used its OpenAI-compatible /openai/ endpoint.
+  if (host == 'generativelanguage.googleapis.com' &&
+      !path.contains('/openai')) {
+    return 'gemini';
+  }
+  if (host == 'api.anthropic.com') return 'anthropic';
+  return 'openai';
 }
 
 String _encodePreparation(Json state) {

@@ -13,6 +13,8 @@ import 'package:thusfar_core/notebook.dart' as notebook;
 import 'package:thusfar_core/manual_entities.dart' as manual_entities;
 
 import 'library.dart';
+import 'library_zip.dart';
+import 'portable_work.dart';
 
 const String exportFormat = 'yedu-book/2';
 const String webExportFormat = 'thusfar-web-backup-v1';
@@ -66,11 +68,91 @@ Map<String, String> _snapshot(Directory root) {
       files.addAll(dir.listSync(followLinks: false).whereType<File>());
     }
   }
+  files.addAll(<File>[
+    for (final (_, File file) in _portableWorkFiles(root)) file,
+  ]);
   return <String, String>{
     for (final File file in files)
       if (file.existsSync())
         file.path: crypto.sha256.convert(file.readAsBytesSync()).toString(),
   };
+}
+
+List<(String, File)> _portableWorkFiles(Directory bookRoot) {
+  final Directory work = Directory('${bookRoot.path}/work');
+  if (!work.existsSync()) return <(String, File)>[];
+  if (FileSystemEntity.isLinkSync(work.path)) {
+    throw const ValueError('书籍整理缓存目录是链接，未导出');
+  }
+  final List<(String, File)> files = <(String, File)>[];
+  for (final String name in portableWorkRootFiles) {
+    final File file = File('${work.path}/$name');
+    if (!file.existsSync()) continue;
+    if (FileSystemEntity.isLinkSync(file.path)) {
+      throw const ValueError('书籍整理缓存文件是链接，未导出');
+    }
+    files.add((name, file));
+  }
+  for (final String dirName in portableWorkDirectories) {
+    final Directory folder = Directory('${work.path}/$dirName');
+    if (!folder.existsSync()) continue;
+    if (FileSystemEntity.isLinkSync(folder.path)) {
+      throw const ValueError('书籍整理缓存目录是链接，未导出');
+    }
+    for (final FileSystemEntity entry in folder.listSync(followLinks: false)) {
+      final String name = entry.uri.pathSegments.last;
+      final String relative = '$dirName/$name';
+      if (!name.endsWith('.json')) continue;
+      if (!isPortableWorkPath(relative) ||
+          entry is! File ||
+          FileSystemEntity.isLinkSync(entry.path)) {
+        throw const ValueError('书籍整理缓存存在不安全的 JSON 文件，未导出');
+      }
+      files.add((relative, entry));
+    }
+  }
+  final Directory judgeCache = Directory('${work.path}/judge/cache');
+  if (judgeCache.existsSync()) {
+    if (FileSystemEntity.isLinkSync(judgeCache.path)) {
+      throw const ValueError('模型判断缓存目录是链接，未导出');
+    }
+    for (final FileSystemEntity entry in judgeCache.listSync(
+      followLinks: false,
+    )) {
+      final String name = entry.uri.pathSegments.last;
+      if (!name.endsWith('.json')) continue;
+      final String relative = 'judge/cache/$name';
+      if (!isPortableWorkPath(relative) ||
+          entry is! File ||
+          FileSystemEntity.isLinkSync(entry.path)) {
+        throw const ValueError('模型判断缓存存在不安全的 JSON 文件，未导出');
+      }
+      files.add((relative, entry));
+    }
+  }
+  if (files.length > maxPortableWorkFiles) {
+    throw const ValueError('书籍整理缓存文件过多，未导出');
+  }
+  files.sort((a, b) => a.$1.compareTo(b.$1));
+  return files;
+}
+
+Json _portableWork(Directory bookRoot) {
+  final Json values = <String, Object?>{};
+  int total = 0;
+  for (final (String name, File file) in _portableWorkFiles(bookRoot)) {
+    final int size = file.lengthSync();
+    total += size;
+    if (size > maxPortableWorkFileBytes || total > maxPortableWorkBytes) {
+      throw const ValueError('书籍整理缓存超过备份上限，未导出');
+    }
+    values[name] = _strictRead(file);
+  }
+  try {
+    return validatedPortableWork(values);
+  } on FormatException catch (error) {
+    throw ValueError(error.message);
+  }
 }
 
 Json _mentions(Directory root) {
@@ -986,6 +1068,13 @@ Uint8List exportBookBytes(Library lib, BookEntry b) {
       part,
     );
   }
+  if (ProcessStatus(out['status']! as Json).isActive) {
+    throw const ValueError('这本书正在整理；请先暂停并等待当前请求结束，再导出完整备份');
+  }
+  if ((out['meta']! as Json)['auto'] == true &&
+      (out['status']! as Json)['state'] != 'done') {
+    throw const ValueError('这本书仍设置为自动继续整理；请先暂停，再导出完整备份');
+  }
   final Json book = storage.validateBook(out['book']);
   storage.validateGraph(out['kg'], book['len']! as int);
   out['mentions'] = _mentions(b.dir);
@@ -999,6 +1088,7 @@ Uint8List exportBookBytes(Library lib, BookEntry b) {
     File('${b.dir.path}/manual-entities.json'),
     missing: <Object?>[],
   );
+  out['work_files'] = _portableWork(b.dir);
   notebook.restore(out['notebook'], book);
   manual_entities.manualRestore(out['manual_entities'], book);
   final Json? transfer = _webTransfer(b.dir);
@@ -1015,6 +1105,86 @@ Uint8List exportBookBytes(Library lib, BookEntry b) {
     throw const ValueError('这本书正在更新，请稍后重新导出');
   }
   return utf8.encode(PyJson.encode(out, ensureAscii: false));
+}
+
+/// A single portable ZIP containing every complete book backup plus
+/// credential-free settings. Per-book JSON remains supported independently.
+Uint8List exportLibraryZipBytes(Library lib, Map<String, Object?> settings) =>
+    LibraryZipCodec.encode(
+      books: <Uint8List>[
+        for (final BookEntry book in lib.books) exportBookBytes(lib, book),
+      ],
+      settings: settings,
+    );
+
+class LibraryZipRestoreResult {
+  const LibraryZipRestoreResult({
+    required this.total,
+    required this.imported,
+    required this.existing,
+    required this.failures,
+    required this.settings,
+    required this.ids,
+    this.firstNewId,
+  });
+
+  final int total;
+  final int imported;
+  final int existing;
+  final List<String> failures;
+  final Map<String, Object?> settings;
+
+  /// One restored local book ID per archive position, null on conflict.
+  final List<String?> ids;
+  final String? firstNewId;
+
+  bool get complete => failures.isEmpty;
+}
+
+/// Validate the ZIP structure and all member hashes before any write. Each
+/// book then uses the existing semantic checks and conflict-aware merge with
+/// its own rollback snapshot. A later conflict leaves earlier successful
+/// books in place and is reported explicitly for a safe retry.
+LibraryZipRestoreResult restoreLibraryZip(Library lib, Uint8List zip) {
+  return restoreLibraryZipData(lib, LibraryZipCodec.decode(zip));
+}
+
+LibraryZipRestoreResult restoreLibraryZipData(
+  Library lib,
+  LibraryZipData archive,
+) {
+  int imported = 0;
+  int existing = 0;
+  String? firstNewId;
+  final List<String> failures = <String>[];
+  final List<String?> ids = <String?>[];
+  for (int i = 0; i < archive.books.length; i++) {
+    final ImportResult result = restoreBackup(
+      lib,
+      '第 ${i + 1} 本书',
+      archive.books[i],
+    );
+    if (result.error != null) {
+      ids.add(null);
+      failures.add('第 ${i + 1} 本：${result.error}');
+    } else if (result.existed) {
+      ids.add(result.id);
+      existing++;
+    } else {
+      ids.add(result.id);
+      imported++;
+      firstNewId ??= result.id;
+    }
+  }
+  return LibraryZipRestoreResult(
+    total: archive.books.length,
+    imported: imported,
+    existing: existing,
+    failures: failures,
+    settings: archive.settings,
+    ids: ids,
+    firstNewId: firstNewId,
+  );
 }
 
 /// Restore the files from an interrupted same-book merge before the shelf scan.
@@ -1034,6 +1204,34 @@ int recoverPendingBackupMerges(Directory root) {
         .where((String p) => p.isNotEmpty)
         .last;
     if (raw['id'] != id) throw const ValueError('跨端合并恢复记录编号不符，请手动恢复');
+    final Object? addedRaw = raw['work_added'];
+    if (addedRaw != null &&
+        (addedRaw is! List<Object?> ||
+            addedRaw.length > maxPortableWorkFiles ||
+            addedRaw.any(
+              (Object? path) => path is! String || !isPortableWorkPath(path),
+            ))) {
+      throw const ValueError('跨端合并恢复记录的整理缓存路径无效，请手动恢复');
+    }
+    final Object? workPreviousRaw = raw['work_previous'];
+    if (workPreviousRaw != null &&
+        (workPreviousRaw is! Json ||
+            workPreviousRaw.length > maxPortableWorkFiles ||
+            workPreviousRaw.keys.any(
+              (String path) => !isPortableWorkPath(path),
+            ))) {
+      throw const ValueError('跨端合并恢复记录的整理缓存无效，请手动恢复');
+    }
+    if (workPreviousRaw is Json) {
+      try {
+        validatedPortableWork(<String, Object?>{
+          for (final MapEntry<String, Object?> row in workPreviousRaw.entries)
+            if (row.value != null) row.key: row.value,
+        });
+      } on FormatException {
+        throw const ValueError('跨端合并恢复记录的整理缓存无效，请手动恢复');
+      }
+    }
     final Json book = storage.validateBook(
       raw['book'] ?? _strictRead(File('${entity.path}/book.json')),
     );
@@ -1111,6 +1309,28 @@ int recoverPendingBackupMerges(Directory root) {
       all[id] = progress;
     }
     writeJson(progressFile, all);
+    if (addedRaw != null) {
+      for (final Object? relative in addedRaw as List<Object?>) {
+        final File file = File('${entity.path}/work/$relative');
+        if (FileSystemEntity.isLinkSync(file.path)) {
+          throw const ValueError('整理缓存是链接，未自动删除，请手动恢复');
+        }
+        if (file.existsSync()) file.deleteSync();
+      }
+    }
+    if (workPreviousRaw is Json) {
+      for (final MapEntry<String, Object?> row in workPreviousRaw.entries) {
+        final File file = File('${entity.path}/work/${row.key}');
+        if (FileSystemEntity.isLinkSync(file.path)) {
+          throw const ValueError('整理缓存是链接，未自动恢复，请手动恢复');
+        }
+        if (row.value == null) {
+          if (file.existsSync()) file.deleteSync();
+        } else {
+          writeJson(file, row.value);
+        }
+      }
+    }
     marker.deleteSync();
     recovered++;
   }
@@ -1138,6 +1358,12 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
       throw const ValueError('网页版备份超过 144 MB，未导入');
     }
     final Json data = fromWeb ? _webAsNative(decoded) : decoded;
+    final Json incomingWork;
+    try {
+      incomingWork = validatedPortableWork(data['work_files']);
+    } on FormatException catch (error) {
+      throw ValueError(error.message);
+    }
     final Json book = storage.validateBook(data['book']);
     final Json graph = storage.validateGraph(
       data['kg'] ?? <String, Object?>{'log': <Object?>[]},
@@ -1275,6 +1501,24 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
         'cancelling',
       }.contains(liveStatus['state'])) {
         return ImportResult(name: name, error: '这本书正在整理。请先暂停整理，再导入另一台设备的备份。');
+      }
+      final Json liveMeta = _object(
+        _strictRead(File('${dest.path}/meta.json')),
+        '本地书籍设置',
+      );
+      if (liveMeta['auto'] == true && liveStatus['state'] != 'done') {
+        return ImportResult(
+          name: name,
+          error: '这本书仍设置为自动继续整理。请先暂停，再导入另一台设备的备份。',
+        );
+      }
+      if (liveMeta['retry_quality'] == true &&
+          sourceStatus['state'] == 'done' &&
+          sourceMeta['retry_quality'] != true) {
+        return ImportResult(
+          name: name,
+          error: '本机仍有待执行的质量重试请求，备份已完成整理；请先处理本机重试意图后再合并',
+        );
       }
       final Json currentBook = storage.validateBook(
         _strictRead(File('${dest.path}/book.json')),
@@ -1422,6 +1666,41 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
         manual,
         currentBook,
       );
+      final Json currentWork = _portableWork(dest);
+      final Json mergedWork;
+      try {
+        mergedWork = mergePortableWork(
+          currentWork,
+          incomingWork,
+          incomingWins:
+              data.containsKey('work_files') &&
+              !webWithoutNative &&
+              (graphForward ||
+                  mentionsForward ||
+                  incomingFrontier > currentFrontier) &&
+              !graphStale &&
+              !mentionsStale,
+          localWins:
+              !webWithoutNative &&
+              (graphStale ||
+                  mentionsStale ||
+                  currentFrontier > incomingFrontier) &&
+              !graphForward &&
+              !mentionsForward,
+        );
+      } on FormatException catch (error) {
+        return ImportResult(name: name, error: '${error.message} 请分别导出备份后处理');
+      }
+      final Json workPrevious = <String, Object?>{};
+      for (final String path in <String>{
+        ...currentWork.keys,
+        ...mergedWork.keys,
+      }) {
+        if (!_same(currentWork[path], mergedWork[path]) ||
+            currentWork.containsKey(path) != mergedWork.containsKey(path)) {
+          workPrevious[path] = currentWork[path];
+        }
+      }
       final Json? oldTransfer = _webTransfer(dest);
       final Json? mergedPreparation = _mergePreparation(
         _validatedWebPreparation(oldTransfer?['preparation']),
@@ -1482,7 +1761,12 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
           transferChanged ||
           graphChanged ||
           mentionsChanged ||
-          statusChanged) {
+          statusChanged ||
+          workPrevious.isNotEmpty) {
+        if (!_same(liveStatus, _strictRead(File('${dest.path}/status.json'))) ||
+            !_same(liveMeta, _strictRead(File('${dest.path}/meta.json')))) {
+          return ImportResult(name: name, error: '本地书籍正在变化，请稍后重新导入');
+        }
         _backupBeforeMerge(lib, dest, id);
         final File marker = File('${dest.path}/$_mergeMarkerName');
         if (marker.existsSync()) {
@@ -1498,6 +1782,7 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
           'kg': currentGraph,
           'status': liveStatus,
           'mentions': currentMentions,
+          'work_previous': workPrevious,
         });
         try {
           if (bookChanged) {
@@ -1520,6 +1805,17 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
           }
           if (transferChanged) {
             writeJson(File('${dest.path}/$_webTransferName'), nextTransfer);
+          }
+          for (final String relative in workPrevious.keys) {
+            final File file = File('${dest.path}/work/$relative');
+            if (FileSystemEntity.isLinkSync(file.path)) {
+              throw const ValueError('整理缓存是链接，未覆盖本地');
+            }
+            if (mergedWork.containsKey(relative)) {
+              writeJson(file, mergedWork[relative]);
+            } else if (file.existsSync()) {
+              file.deleteSync();
+            }
           }
           if (progressChanged) {
             lib.saveProgress(
@@ -1584,6 +1880,9 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
       };
       for (final MapEntry<String, Object?> p in parts.entries) {
         writeJson(File('${tmp.path}/${p.key}.json'), p.value);
+      }
+      for (final MapEntry<String, Object?> row in incomingWork.entries) {
+        writeJson(File('${tmp.path}/work/${row.key}'), row.value);
       }
       for (final MapEntry<String, Object?> e in mentions.entries) {
         writeJson(

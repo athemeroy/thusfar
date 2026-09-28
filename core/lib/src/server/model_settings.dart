@@ -107,9 +107,12 @@ class ModelSettings {
       address += protocol == 'gemini' ? '/v1beta' : '/v1';
     }
     String name = PyCompat.strip(model);
-    // Preserve existing 1.7.x OpenAI-compatible DeepSeek settings on read.
+    // Preserve legacy 1.7.x DeepSeek names on read. Current model names must
+    // remain exact; the LLM request layer applies any explicit +variant.
     if (protocol == 'openai' &&
-        name.toLowerCase().startsWith('deepseek-') &&
+        const <String>{'deepseek-chat', 'deepseek-reasoner'}.contains(
+          name.toLowerCase(),
+        ) &&
         !name.contains('+'))
       name += '+nothink';
     return (address, name);
@@ -172,13 +175,20 @@ class ModelSettings {
       throw const ValueError('模型接口地址无效');
     }
     final Uri? parsed = Uri.tryParse(url);
+    final bool loopbackHttp =
+        parsed?.scheme == 'http' &&
+        const <String>{
+          'localhost',
+          '127.0.0.1',
+          '::1',
+        }.contains(parsed!.host.toLowerCase());
     if (parsed == null ||
-        parsed.scheme != 'https' ||
+        (parsed.scheme != 'https' && !loopbackHttp) ||
         parsed.host.isEmpty ||
         parsed.userInfo.isNotEmpty ||
         parsed.hasQuery ||
         parsed.hasFragment) {
-      throw const ValueError('模型接口请填写 HTTPS 地址，不要包含账号、参数或片段');
+      throw const ValueError('模型接口请填写 HTTPS 地址；本机 localhost 可用 HTTP。不要包含账号、参数或片段');
     }
     if (model is! String || pyFullmatch(_model, model) == null) {
       throw const ValueError('模型名称无效');

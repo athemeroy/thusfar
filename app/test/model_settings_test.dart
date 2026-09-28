@@ -251,7 +251,7 @@ void main() {
           home: ModelSettingsScreen(settings: settings),
         ),
       );
-      expect(find.text('OpenAI Compatible'), findsOneWidget);
+      expect(find.text('Gemini'), findsOneWidget);
       expect(find.text('小鲸'), findsNothing);
       await tester.tap(find.byType(DropdownButtonFormField<String>));
       await tester.pumpAndSettle();
