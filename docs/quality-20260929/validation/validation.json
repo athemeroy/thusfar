@@ -1,0 +1,273 @@
+{
+  "format": "yedu-validation/1",
+  "source_sha256": "f2acac2103e90529e8bcac6debd82f20e51eb4b7f93abd957199d0d99875483a",
+  "shell": "yedu-shell-efb6a7b4eeb52910f383",
+  "source_unchanged": true,
+  "checks": [
+    {
+      "check": "python",
+      "exit_code": 1,
+      "seconds": 4.693,
+      "log": "python.log"
+    },
+    {
+      "check": "syntax-api",
+      "exit_code": 0,
+      "seconds": 0.246,
+      "log": "syntax-api.log"
+    },
+    {
+      "check": "syntax-companion",
+      "exit_code": 0,
+      "seconds": 0.193,
+      "log": "syntax-companion.log"
+    },
+    {
+      "check": "syntax-graph",
+      "exit_code": 0,
+      "seconds": 0.188,
+      "log": "syntax-graph.log"
+    },
+    {
+      "check": "syntax-kg",
+      "exit_code": 0,
+      "seconds": 0.202,
+      "log": "syntax-kg.log"
+    },
+    {
+      "check": "syntax-library",
+      "exit_code": 0,
+      "seconds": 0.195,
+      "log": "syntax-library.log"
+    },
+    {
+      "check": "syntax-main",
+      "exit_code": 0,
+      "seconds": 0.204,
+      "log": "syntax-main.log"
+    },
+    {
+      "check": "syntax-manual",
+      "exit_code": 0,
+      "seconds": 0.195,
+      "log": "syntax-manual.log"
+    },
+    {
+      "check": "syntax-marginalia",
+      "exit_code": 0,
+      "seconds": 0.186,
+      "log": "syntax-marginalia.log"
+    },
+    {
+      "check": "syntax-notebook-hub",
+      "exit_code": 0,
+      "seconds": 0.158,
+      "log": "syntax-notebook-hub.log"
+    },
+    {
+      "check": "syntax-notebook",
+      "exit_code": 0,
+      "seconds": 0.184,
+      "log": "syntax-notebook.log"
+    },
+    {
+      "check": "syntax-offline-library",
+      "exit_code": 0,
+      "seconds": 0.164,
+      "log": "syntax-offline-library.log"
+    },
+    {
+      "check": "syntax-offline",
+      "exit_code": 0,
+      "seconds": 0.184,
+      "log": "syntax-offline.log"
+    },
+    {
+      "check": "syntax-panes",
+      "exit_code": 0,
+      "seconds": 0.186,
+      "log": "syntax-panes.log"
+    },
+    {
+      "check": "syntax-person",
+      "exit_code": 0,
+      "seconds": 0.197,
+      "log": "syntax-person.log"
+    },
+    {
+      "check": "syntax-progress",
+      "exit_code": 0,
+      "seconds": 0.194,
+      "log": "syntax-progress.log"
+    },
+    {
+      "check": "syntax-reader",
+      "exit_code": 0,
+      "seconds": 0.155,
+      "log": "syntax-reader.log"
+    },
+    {
+      "check": "syntax-readerview",
+      "exit_code": 0,
+      "seconds": 0.161,
+      "log": "syntax-readerview.log"
+    },
+    {
+      "check": "syntax-reading-list",
+      "exit_code": 0,
+      "seconds": 0.169,
+      "log": "syntax-reading-list.log"
+    },
+    {
+      "check": "syntax-search",
+      "exit_code": 0,
+      "seconds": 0.18,
+      "log": "syntax-search.log"
+    },
+    {
+      "check": "syntax-shelf",
+      "exit_code": 0,
+      "seconds": 0.153,
+      "log": "syntax-shelf.log"
+    },
+    {
+      "check": "syntax-source-preview",
+      "exit_code": 0,
+      "seconds": 0.198,
+      "log": "syntax-source-preview.log"
+    },
+    {
+      "check": "syntax-text",
+      "exit_code": 0,
+      "seconds": 0.198,
+      "log": "syntax-text.log"
+    },
+    {
+      "check": "syntax-util",
+      "exit_code": 0,
+      "seconds": 0.203,
+      "log": "syntax-util.log"
+    },
+    {
+      "check": "syntax-views",
+      "exit_code": 0,
+      "seconds": 0.154,
+      "log": "syntax-views.log"
+    },
+    {
+      "check": "syntax-workspace-nav",
+      "exit_code": 0,
+      "seconds": 0.195,
+      "log": "syntax-workspace-nav.log"
+    },
+    {
+      "check": "syntax-worker",
+      "exit_code": 0,
+      "seconds": 0.193,
+      "log": "syntax-worker.log"
+    },
+    {
+      "check": "fold.test",
+      "exit_code": 0,
+      "seconds": 0.185,
+      "log": "fold.test.log"
+    },
+    {
+      "check": "frontend.test",
+      "exit_code": 0,
+      "seconds": 0.237,
+      "log": "frontend.test.log"
+    },
+    {
+      "check": "library.test",
+      "exit_code": 0,
+      "seconds": 0.184,
+      "log": "library.test.log"
+    },
+    {
+      "check": "notebook.test",
+      "exit_code": 0,
+      "seconds": 0.179,
+      "log": "notebook.test.log"
+    },
+    {
+      "check": "notebook_hub.test",
+      "exit_code": 0,
+      "seconds": 0.187,
+      "log": "notebook_hub.test.log"
+    },
+    {
+      "check": "offline_worker.test",
+      "exit_code": 0,
+      "seconds": 0.239,
+      "log": "offline_worker.test.log"
+    },
+    {
+      "check": "reading_list.test",
+      "exit_code": 0,
+      "seconds": 0.186,
+      "log": "reading_list.test.log"
+    },
+    {
+      "check": "search.test",
+      "exit_code": 0,
+      "seconds": 0.305,
+      "log": "search.test.log"
+    },
+    {
+      "check": "source_preview.test",
+      "exit_code": 0,
+      "seconds": 0.181,
+      "log": "source_preview.test.log"
+    },
+    {
+      "check": "browser",
+      "exit_code": 1,
+      "seconds": 0.311,
+      "log": "browser.log"
+    },
+    {
+      "check": "library-browser",
+      "exit_code": 1,
+      "seconds": 0.308,
+      "log": "library-browser.log"
+    },
+    {
+      "check": "source_preview-browser",
+      "exit_code": 1,
+      "seconds": 0.302,
+      "log": "source_preview-browser.log"
+    },
+    {
+      "check": "workspace-browser",
+      "exit_code": 1,
+      "seconds": 0.31,
+      "log": "workspace-browser.log"
+    },
+    {
+      "check": "notebook_hub-browser",
+      "exit_code": 1,
+      "seconds": 0.313,
+      "log": "notebook_hub-browser.log"
+    },
+    {
+      "check": "offline_library-browser",
+      "exit_code": 1,
+      "seconds": 0.295,
+      "log": "offline_library-browser.log"
+    },
+    {
+      "check": "library_workspace-browser",
+      "exit_code": 1,
+      "seconds": 0.244,
+      "log": "library_workspace-browser.log"
+    },
+    {
+      "check": "marginalia-browser",
+      "exit_code": 1,
+      "seconds": 0.352,
+      "log": "marginalia-browser.log"
+    }
+  ],
+  "ok": false
+}

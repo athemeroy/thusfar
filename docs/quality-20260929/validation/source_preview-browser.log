@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/Users/athemeroy/projects/bookapp/tests/source_preview_browser.py", line 9, in <module>
+    from playwright.sync_api import sync_playwright
+ModuleNotFoundError: No module named 'playwright'
