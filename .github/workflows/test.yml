@@ -30,6 +30,7 @@ jobs:
             test/jobs/jobs_test.dart test/pipeline/llm_timeout_test.dart \
             test/run_lifecycle/bio_reliability_test.dart \
             test/run_lifecycle/title_spoiler_test.dart \
+            test/title_spoilers_test.dart \
             test/services/model_settings_test.dart
       - name: Analyze Flutter app
         working-directory: app
@@ -56,4 +57,5 @@ jobs:
             test/screens_test.dart test/shared_import_test.dart \
             test/shelf_processing_action_test.dart \
             test/typography_prefs_test.dart test/typography_sheet_test.dart \
-            test/update_checker_test.dart
+            test/update_checker_test.dart \
+            test/web_reading_boundary_test.dart

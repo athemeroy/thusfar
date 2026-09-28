@@ -15,10 +15,11 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart'
     show KeyEvent, KeyUpEvent, LogicalKeyboardKey;
 import 'package:thusfar_core/thusfar_core.dart' as knowledge;
-import 'package:thusfar_core/title_spoilers.dart';
+import 'package:thusfar_core/chapter_verdicts.dart' show titleCheckPending;
 
 import '../data/library_zip.dart';
 import '../ui/theme.dart';
+import 'reading_boundary.dart';
 import 'web_ai_panel.dart';
 import 'web_ai_engine.dart';
 import 'web_ask_panel.dart';
@@ -850,10 +851,6 @@ class WebReader extends StatefulWidget {
 }
 
 class _WebReaderState extends State<WebReader> {
-  static final RegExp _chapterNumber = RegExp(
-    r'^(第\s*[0-9零一二三四五六七八九十百千]+\s*[部章回卷节篇集]|(?:chapter|part|book)\s+[0-9ivxlcdm]+)',
-    caseSensitive: false,
-  );
   static final RegExp _asciiWord = RegExp(r'[A-Za-z0-9]');
   final ScrollController _scroll = ScrollController();
   final FocusNode _readerFocus = FocusNode();
@@ -899,26 +896,12 @@ class _WebReaderState extends State<WebReader> {
   List<Json> get _blocks => widget.book.blocks;
   Json get _current => _chapters[_chapter];
 
-  String _safeChapterTitle(int index) {
-    final Json chapter = _chapters[index];
-    final String title = '${chapter['title'] ?? '第 ${index + 1} 章'}';
-    final Object? status = widget.book.nativeBackup?['status'];
-    final Object? quality = status is Json ? status['quality'] : null;
-    final Object? pending = quality is Json ? quality['pending'] : null;
-    final bool checkPending =
-        pending is List<Object?> && pending.contains('chapter-titles');
-    if (index <= _chapter ||
-        !titleSpoils(
-          chapter['spoil'],
-          title,
-          checkPending: checkPending,
-          checkedByModel: chapter['spoilSource'] == 'model',
-        )) {
-      return title;
-    }
-    return _chapterNumber.firstMatch(title.trim())?.group(0) ??
-        '第 ${index + 1} 节';
-  }
+  String _safeChapterTitle(int index) => webChapterTitle(
+    _chapters,
+    index,
+    _chapter,
+    checkPending: titleCheckPending(widget.book.nativeBackup?['status']),
+  );
 
   @override
   void initState() {

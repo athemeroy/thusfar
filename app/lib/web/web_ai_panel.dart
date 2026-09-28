@@ -12,9 +12,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:crypto/crypto.dart';
 import 'package:thusfar_core/thusfar_core.dart' as knowledge;
-import 'package:thusfar_core/title_spoilers.dart';
+import 'package:thusfar_core/chapter_verdicts.dart' show titleCheckPending;
 
 import '../ui/theme.dart';
+import 'reading_boundary.dart';
 import 'web_ai_engine.dart';
 import 'web_model_provider.dart';
 import 'web_model_session.dart';
@@ -1571,40 +1572,17 @@ class _WebAiPanelState extends State<WebAiPanel> {
     ];
   }
 
-  /// Native graph positions are segment ends, so a record at the reader's
-  /// exclusive text end is already known. The shelf has no page boundary and
-  /// continues to hide every record in the current chapter by default.
-  int get _nativeCutoff {
-    final Json current = widget.book.chapters[widget.reading.chapter];
-    final int start = (current['o0'] as num?)?.toInt() ?? 0;
-    final int end = (current['o1'] as num?)?.toInt() ?? start;
-    final int? precise = widget.cutoffOffset;
-    if (precise != null) return precise.clamp(start, end);
-    return _revealCurrentChapter ? end : start - 1;
-  }
+  int get _nativeCutoff => nativeCutoff(
+    widget.book.chapters[widget.reading.chapter],
+    pageEnd: widget.cutoffOffset,
+    revealCurrentChapter: _revealCurrentChapter,
+  );
 
-  int _nativeChapterAt(int position) {
-    int chapter = 0;
-    // Native graph positions are segment ends. At a shared chapter boundary,
-    // the record belongs to the chapter that just ended, not the next title.
-    for (int i = 1; i < widget.book.chapters.length; i++) {
-      if (((widget.book.chapters[i]['o0'] as num?)?.toInt() ?? 0) < position) {
-        chapter = i;
-      } else {
-        break;
-      }
-    }
-    return chapter;
-  }
+  int _nativeChapterAt(int position) =>
+      nativeChapterAt(widget.book.chapters, position);
 
-  Iterable<Json> get _visibleNativeRecords sync* {
-    final int cutoff = _nativeCutoff;
-    for (final Json row in _nativeLog) {
-      final int? position = (row['p'] as num?)?.toInt();
-      if (position == null || position < 0) continue;
-      if (position <= cutoff) yield row;
-    }
-  }
+  Iterable<Json> get _visibleNativeRecords =>
+      visibleNativeRecords(_nativeLog, _nativeCutoff);
 
   Iterable<(int, int, Json)> get _visibleResults sync* {
     final List<(int, int, Json)> sorted = <(int, int, Json)>[];
@@ -1627,33 +1605,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
   Json _asJson(Object? value) =>
       value is Map<String, Object?> ? value : <String, Object?>{};
 
-  String _chapterLabel(int index) {
-    if (index < 0 || index >= widget.book.chapters.length) {
-      return '第 ${index + 1} 章';
-    }
-    final Json chapter = widget.book.chapters[index];
-    final String title = '${chapter['title'] ?? '第 ${index + 1} 章'}';
-    if (index <= widget.reading.chapter) return title;
-    final Object? status = widget.book.nativeBackup?['status'];
-    final Object? quality = status is Json ? status['quality'] : null;
-    final Object? pending = quality is Json ? quality['pending'] : null;
-    final bool checkPending =
-        pending is List<Object?> && pending.contains('chapter-titles');
-    if (!titleSpoils(
-      chapter['spoil'],
-      title,
-      checkPending: checkPending,
-      checkedByModel: chapter['spoilSource'] == 'model',
-    )) {
-      return title;
-    }
-    final RegExp chapterNumber = RegExp(
-      r'^(第\s*[0-9零一二三四五六七八九十百千]+\s*[部章回卷节篇集]|(?:chapter|part|book)\s+[0-9ivxlcdm]+)',
-      caseSensitive: false,
-    );
-    return chapterNumber.firstMatch(title.trim())?.group(0) ??
-        '第 ${index + 1} 节';
-  }
+  String _chapterLabel(int index) => webChapterTitle(
+    widget.book.chapters,
+    index,
+    widget.reading.chapter,
+    checkPending: titleCheckPending(widget.book.nativeBackup?['status']),
+  );
 
   Widget _empty(Tokens t, IconData icon, String title, String subtitle) =>
       Center(
