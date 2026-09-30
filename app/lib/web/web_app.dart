@@ -3766,6 +3766,9 @@ class _WebReaderState extends State<WebReader> {
             height: height,
             child: ClipRect(
               child: AnimatedSwitcher(
+                // Reflow replaces page geometry rather than turning a page.
+                // Do not lay out an outgoing tall page in the new short box.
+                key: ValueKey<int?>(_pageLayoutKey),
                 duration: MediaQuery.disableAnimationsOf(context)
                     ? Duration.zero
                     : const Duration(milliseconds: 180),
