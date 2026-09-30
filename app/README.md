@@ -96,17 +96,32 @@ CJK fonts. It accepts `FLUTTER_ROOT` and `THUSFAR_TEST_SANS_FONT` for local test
 `--update-goldens` produces review images and is not evidence that an old visual
 baseline remained unchanged. Inspect the resulting images.
 
-CI compares the reviewed screenshot baselines on **macOS 15 / arm64** with
-Flutter **3.47.5**. Keep baseline review and normal comparison on that renderer;
-a floating `macos-latest` label can upgrade the OS and change text rasterization
-even when Flutter and the font files are unchanged. Renderer upgrades require
-an explicit visual review rather than a looser pixel threshold.
+CI runs the same functional tests and all 31 exact screenshot comparisons on
+**macOS 15 / arm64** and **macOS 26 / arm64**, with Flutter **3.47.5**. macOS 15
+uses the original `test/shots/*.png`; macOS 26 uses the independently reviewed
+`test/shots/macos-26/*.png`. Its `manifest.json` records source-run provenance,
+image hashes and the measured differences from the macOS 15 baseline. These
+measurements are review evidence, never an allowed error threshold.
 
-After a failed client-check run, download the `flutter-golden-diagnostics`
-artifact. It retains the expected image, actual image, isolated/masked diffs,
-and a rendering-environment receipt (OS, architecture, Flutter version and font
-hashes) for 14 days. Inspect those images before deciding whether a baseline
-change is warranted. A green browser job does not replace the native goldens.
+The comparator reads the actual macOS product version and CPU architecture.
+`THUSFAR_GOLDEN_PLATFORM=macos-15` or `macos-26`, when supplied, must match that
+host; an unknown or mismatched renderer fails instead of selecting a fallback.
+Non-golden tests can still run on other development hosts. Both variants retain
+Flutter's exact `LocalFileComparator`, including failure-image output.
+
+After a failed client-check run, download `flutter-golden-diagnostics-macos-15`
+or `flutter-golden-diagnostics-macos-26`. Each keeps expected/actual/diff images
+and an OS, architecture, Flutter and font-hash receipt for 14 days. Compare the
+images before changing a baseline. Browser success does not replace these tests.
+
+For an intentional screenshot change, on the matching arm64 macOS host and the
+pinned Flutter SDK, set `THUSFAR_GOLDEN_PLATFORM` to that host's label and run
+`flutter test test/<affected_suite>_test.dart --update-goldens` from `app/`.
+Review only the affected images against the prior baseline, refresh their
+provenance/hashes in the macOS 26 manifest when applicable, then run the same
+suite normally without `--update-goldens`. Repeat on the other supported OS and
+require the full CI matrix. Never generate baselines in CI or use an OS upgrade
+as permission to accept changed layout, text, wrapping or controls.
 
 Core comparisons, widget checks, successful builds, actual device interaction,
 and full 2.0 acceptance are separate milestones. Historical operational notes have been retired from the current tree. The retained

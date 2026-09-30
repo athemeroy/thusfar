@@ -56,3 +56,7 @@ test/shots/**
 !test/shots/graph-*.png
 !test/shots/typography-sheet-phone.png
 !test/shots/title-pending-toc.png
+# Reviewed, exact macOS 26 counterparts; never accept arbitrary generated shots.
+!test/shots/macos-26/
+!test/shots/macos-26/*.png
+!test/shots/macos-26/manifest.json

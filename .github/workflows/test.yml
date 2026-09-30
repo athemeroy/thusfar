@@ -6,9 +6,14 @@ permissions:
 
 jobs:
   flutter:
-    # Reviewed widget goldens use the Mini's macOS 15 / arm64 renderer.
-    # Do not use macos-latest: OS upgrades can change exact glyph pixels.
-    runs-on: macos-15
+    # Both OS generations run the same functional tests and exact goldens.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-26]
+    runs-on: ${{ matrix.os }}
+    env:
+      THUSFAR_GOLDEN_PLATFORM: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -20,6 +25,7 @@ jobs:
         run: |
           mkdir -p app/build/golden-diagnostics
           {
+            echo "golden-platform=$THUSFAR_GOLDEN_PLATFORM"
             sw_vers
             uname -m
             flutter --version
@@ -55,6 +61,7 @@ jobs:
         working-directory: app
         run: |
           flutter test --no-pub \
+            test/golden_platform_test.dart \
             test/adaptive_sheet_test.dart test/native_workspace_test.dart \
             test/ask_sheet_test.dart test/backup_test.dart \
             test/chapter_titles_test.dart \
@@ -76,7 +83,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: flutter-golden-diagnostics
+          name: flutter-golden-diagnostics-${{ matrix.os }}
           path: |
             app/test/failures/
             app/build/golden-diagnostics/

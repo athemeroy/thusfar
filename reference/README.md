@@ -61,3 +61,14 @@ record mode as part of routine regression checks.
 Current client tests still run from `app/` and `core/` as described in the client
 and contributor guides. Existing skips in the historical Dart port ledger remain
 skips, not passing assertions. See [`docs/port/TEST-PORT-SCOPE.md`](docs/port/TEST-PORT-SCOPE.md).
+
+## Historical audit status
+
+The optional full Dart audit preserves every existing assertion and reports its
+raw outcome and complete log. It is separate from the required client/recovery
+and browser checks: the original source tree already fails six expectations
+(three historical model-name suffix expectations and three replays whose newer
+biography request has no recorded cassette). No model requests are made to fill
+those gaps during cleanup. The full Python baseline likewise already has eight
+failures and seven errors across 351 tests. Neither audit is described as green
+merely because its existing failures are non-blocking.

@@ -1,0 +1,261 @@
+{
+  "source_commit": "1eea7259296ac955e5bdf2fd72c352b718774858",
+  "source_run": "https://github.com/athemeroy/thusfar/actions/runs/36681920154",
+  "source_artifact_id": 11082341806,
+  "source_artifact_sha256": "6ee35f35cb3eb3920ed98892ccf01152a93a61556b547a86d56032320b7993d9",
+  "platform": "macOS 26.6.2 arm64",
+  "flutter": "3.47.5",
+  "framework_revision": "6a19cca56475dbfba1478ee68d7bd0c2ef891da1",
+  "review_date": "2026-09-30",
+  "review": "All 31 full images and maximum-difference crops reviewed against the unchanged macOS 15 baselines. Differences are confined to small antialiasing/color changes on text and icon edges; no changed layout, line wrapping, text, or control geometry observed. These measurements document this review; they are not test tolerances.",
+  "images": [
+    {
+      "file": "01-shelf.png",
+      "width": 393,
+      "height": 851,
+      "different_pixels": 24,
+      "max_channel_delta": 2,
+      "sha256": "835b6db713e545d377a1ac7eae2c7a611c72b6e8f46338484b90d585b8fe0aeb"
+    },
+    {
+      "file": "02-reader.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 295,
+      "max_channel_delta": 11,
+      "sha256": "882e16ad12d6432ba464f76b581988b2c7f3596a80107279bb97d052c06fb080"
+    },
+    {
+      "file": "03-toolbar.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 258,
+      "max_channel_delta": 11,
+      "sha256": "5cac058d6fbde995e8ec4d617f24b057f63b3bb9ccf3829e3ac9f3130a4c3860"
+    },
+    {
+      "file": "04-people.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 186,
+      "max_channel_delta": 8,
+      "sha256": "a002ada8a6a546991320b0e8c65caf92ba3d45580b748e39934a292d547eee71"
+    },
+    {
+      "file": "05-person.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 193,
+      "max_channel_delta": 8,
+      "sha256": "11f0795a379d9cd0847422548db7ccf7c89166eb6e3b350d7bfc0590256741c4"
+    },
+    {
+      "file": "06-person-full.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 96,
+      "max_channel_delta": 11,
+      "sha256": "0e73a5f3a6ae10f8accbdcf756387feb6e2baa155e01e509137edf89dac495c8"
+    },
+    {
+      "file": "07-toc.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 39,
+      "max_channel_delta": 8,
+      "sha256": "f41ba8442e0994c2329044e5c44dddb87cc217b2556922a49d17c665ef140fbf"
+    },
+    {
+      "file": "08-recap.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 170,
+      "max_channel_delta": 8,
+      "sha256": "93897193163ec1b46df3302e06ef3c104924ca8a93fc61c1864d67f6100ccbae"
+    },
+    {
+      "file": "09-select.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 294,
+      "max_channel_delta": 11,
+      "sha256": "30fe2bc785fb64b4e5f251e84d1a64f7140a610e3f8f570b1c6d31b5e601b09a"
+    },
+    {
+      "file": "10-ask.png",
+      "width": 1080,
+      "height": 2340,
+      "different_pixels": 59,
+      "max_channel_delta": 4,
+      "sha256": "53444050dcd39ce60cf64b28bef5bcb3c68f7d8e33bb8eeb421ab5762464fef4"
+    },
+    {
+      "file": "11-search-empty.png",
+      "width": 393,
+      "height": 851,
+      "different_pixels": 11,
+      "max_channel_delta": 2,
+      "sha256": "e2dca72878d91b5c8bfa97f33f1708be3eb487151c53735cc37c65e9975d3cd3"
+    },
+    {
+      "file": "foldable-tabletop-home.png",
+      "width": 430,
+      "height": 900,
+      "different_pixels": 6,
+      "max_channel_delta": 2,
+      "sha256": "5078db9888a9a6e2daa43b6328160ba4125ac88f1c78539e074b1be508c425a4"
+    },
+    {
+      "file": "foldable-tabletop-reader.png",
+      "width": 430,
+      "height": 900,
+      "different_pixels": 26,
+      "max_channel_delta": 2,
+      "sha256": "547acec752fc619c432a62e528c0b84288b7dbcbe9d86eb71bdb0701e894de9a"
+    },
+    {
+      "file": "foldable-vertical-home.png",
+      "width": 840,
+      "height": 900,
+      "different_pixels": 12,
+      "max_channel_delta": 2,
+      "sha256": "077773414ed2b5d02969dd299225a80bdc4dc4ec542dda6db605465ff2b56a77"
+    },
+    {
+      "file": "foldable-vertical-reader-tools.png",
+      "width": 840,
+      "height": 900,
+      "different_pixels": 77,
+      "max_channel_delta": 5,
+      "sha256": "7dae8075e43e9c34d5df0c43c4e3bd33d48c58f32a26631b200274e7a869068a"
+    },
+    {
+      "file": "foldable-vertical-reader.png",
+      "width": 840,
+      "height": 900,
+      "different_pixels": 79,
+      "max_channel_delta": 5,
+      "sha256": "fa7d2b7b66b23a15a321d2626a7f2057733a21bb09a5e6a2d7d5447dd723b916"
+    },
+    {
+      "file": "graph-aq-current-people-collapsed.png",
+      "width": 393,
+      "height": 851,
+      "different_pixels": 13,
+      "max_channel_delta": 2,
+      "sha256": "a79b1d118bdc699f1d00539452fb90452ebad9ee3b67f66bb552093e70d3ab94"
+    },
+    {
+      "file": "graph-aq-current.png",
+      "width": 393,
+      "height": 851,
+      "different_pixels": 9,
+      "max_channel_delta": 2,
+      "sha256": "73165dbddea5966ccb76bf809a184208a3c9d2ae3fc59e13e7d4fa5347f236a8"
+    },
+    {
+      "file": "graph-aq-overview.png",
+      "width": 393,
+      "height": 851,
+      "different_pixels": 15,
+      "max_channel_delta": 2,
+      "sha256": "63e4ae7da9b57b8ff3b5a0b3da9a3c987d4b868384501c57741cb2f485e16e84"
+    },
+    {
+      "file": "graph-aq-whole-people-collapsed.png",
+      "width": 393,
+      "height": 851,
+      "different_pixels": 7,
+      "max_channel_delta": 1,
+      "sha256": "e3303abc0f61dad4b6545620bfb2eba8142c1608d0ddf2dffd85bc629bb7b98a"
+    },
+    {
+      "file": "graph-aq-whole.png",
+      "width": 393,
+      "height": 851,
+      "different_pixels": 18,
+      "max_channel_delta": 3,
+      "sha256": "090eb674a8b2a9e220974280ce42fde2a3de375131eb832773d3573f3c187bff"
+    },
+    {
+      "file": "graph-default.png",
+      "width": 1290,
+      "height": 3000,
+      "different_pixels": 34,
+      "max_channel_delta": 11,
+      "sha256": "127dfb1e5faef3abe724334089bea11fcdff29d9aceb4492f776f9346f3b4695"
+    },
+    {
+      "file": "graph-detail.png",
+      "width": 1290,
+      "height": 3000,
+      "different_pixels": 48,
+      "max_channel_delta": 11,
+      "sha256": "1b7b3ecee35069bc8ea01009e96fa49f844a92b2d7ace876a530ef9990a67abb"
+    },
+    {
+      "file": "graph-narrow-people-collapsed.png",
+      "width": 320,
+      "height": 740,
+      "different_pixels": 9,
+      "max_channel_delta": 2,
+      "sha256": "f71c42ce95ca8d71392e8469e5e4287fe44ca3480248c8e4f55ec46b4d9dff81"
+    },
+    {
+      "file": "graph-narrow.png",
+      "width": 320,
+      "height": 740,
+      "different_pixels": 26,
+      "max_channel_delta": 11,
+      "sha256": "32c750f39968be8962887aa7a65b7c472fba26055e520d290a670ca881242b31"
+    },
+    {
+      "file": "graph-replay.png",
+      "width": 1290,
+      "height": 3000,
+      "different_pixels": 38,
+      "max_channel_delta": 11,
+      "sha256": "f3e5e47cedf3a72495389d2a2589802c061ca1d04d4c5ca08c5cc7c10789dc53"
+    },
+    {
+      "file": "graph-selected.png",
+      "width": 1290,
+      "height": 3000,
+      "different_pixels": 38,
+      "max_channel_delta": 11,
+      "sha256": "c77ed940993c81127d63f665cba689381cd639fbd93fdb14f2447288becd6885"
+    },
+    {
+      "file": "phone-reader-tools.png",
+      "width": 390,
+      "height": 844,
+      "different_pixels": 77,
+      "max_channel_delta": 5,
+      "sha256": "f8ad69900c923ca5ac77d15a37ab26f25e86d3454627f6ce4332a32c04f24d07"
+    },
+    {
+      "file": "phone-reader.png",
+      "width": 390,
+      "height": 844,
+      "different_pixels": 79,
+      "max_channel_delta": 5,
+      "sha256": "8c9f9c42d811e30564e3299c832a411e09d91043f7b346bcf42eab91da2196b3"
+    },
+    {
+      "file": "title-pending-toc.png",
+      "width": 430,
+      "height": 1000,
+      "different_pixels": 8,
+      "max_channel_delta": 5,
+      "sha256": "02e512f431668ac009aeb95f5240b7e492ddc0026894ecc75af8fb7f8d9fc5e3"
+    },
+    {
+      "file": "typography-sheet-phone.png",
+      "width": 1080,
+      "height": 2220,
+      "different_pixels": 32,
+      "max_channel_delta": 3,
+      "sha256": "52a5472388dd156e0c272829b327dafed35cdcc45f182943b6ef42890d157118"
+    }
+  ]
+}
