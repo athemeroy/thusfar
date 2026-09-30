@@ -81,6 +81,28 @@ String _visibleText(WidgetTester tester) => tester
     .map((RichText widget) => widget.text.toPlainText())
     .join('\n');
 
+List<({int block, int start, int end})> _visibleRanges(WidgetTester tester) =>
+    tester
+        .widgetList<SizedBox>(
+          find.byWidgetPredicate((Widget widget) {
+            final Key? key = widget.key;
+            return widget is SizedBox &&
+                key is ValueKey<String> &&
+                key.value.startsWith('web-page-fragment:');
+          }),
+        )
+        .map((SizedBox widget) {
+          final List<String> parts = (widget.key! as ValueKey<String>).value
+              .split(':');
+          return (
+            block: int.parse(parts[1]),
+            start: int.parse(parts[2]),
+            end: int.parse(parts[3]),
+          );
+        })
+        .where((range) => range.block >= 0 && range.start < range.end)
+        .toList();
+
 void main() {
   setUp(() => html.window.localStorage.remove('thusfar-web-prefs'));
 
@@ -132,7 +154,21 @@ void main() {
       await open(tester, _Library());
       final String before = _visibleText(tester);
       expect(before, isNotEmpty);
-      final String anchor = before.trimLeft().substring(0, 12);
+      final anchor = _visibleRanges(tester).first;
+      void expectAnchor(String stage) {
+        final ranges = _visibleRanges(tester);
+        expect(
+          ranges.any(
+            (range) =>
+                range.block == anchor.block &&
+                range.start <= anchor.start &&
+                anchor.start < range.end,
+          ),
+          isTrue,
+          reason: '$stage must retain source $anchor; visible ranges: $ranges',
+        );
+      }
+
       for (final Size size in <Size>[
         const Size(768, 1024),
         const Size(320, 568),
@@ -141,7 +177,7 @@ void main() {
       ]) {
         tester.view.physicalSize = size;
         await tester.pumpAndSettle();
-        expect(_visibleText(tester), contains(anchor));
+        expectAnchor('resize to $size');
       }
       expect(_visibleText(tester), before);
       await tester.tap(find.byTooltip('打开阅读工具'));
@@ -158,10 +194,24 @@ void main() {
       );
       fontSize.onChanged!(30);
       await tester.pumpAndSettle();
-      expect(_visibleText(tester), contains(anchor));
+      expectAnchor('font size 30');
       fontSize.onChanged!(21);
       await tester.pumpAndSettle();
       expect(_visibleText(tester), before);
+      final WebBook book = _book();
+      final int expectedCutoff = _visibleRanges(tester)
+          .map((range) => (book.blocks[range.block]['o']! as int) + range.end)
+          .fold(0, (int largest, int end) => end > largest ? end : largest);
+      await tester.tap(find.byTooltip('关闭阅读排版'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, '人物'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<WebAiPanel>(find.byType(WebAiPanel)).cutoffOffset,
+        expectedCutoff,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pumpAndSettle();
     },
   );
 
@@ -194,6 +244,8 @@ void main() {
       expect(reading.bookmarks, hasLength(2));
       expect(reading.bookmarks.first.id, first.id);
       expect(reading.bookmarks.every((mark) => !mark.deleted), isTrue);
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, '书签'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('删除书签'), findsNWidgets(2));

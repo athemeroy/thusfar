@@ -3722,6 +3722,9 @@ class _WebReaderState extends State<WebReader> {
     final TextStyle style = _fragmentStyle(fragment, body);
     final String text = _fragmentText(fragment);
     return SizedBox(
+      key: ValueKey<String>(
+        'web-page-fragment:${fragment.block}:${fragment.sourceStart}:${fragment.sourceEnd}',
+      ),
       height: fragment.height,
       child: ClipRect(
         child: SizedBox(

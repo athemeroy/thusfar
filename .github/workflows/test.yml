@@ -114,7 +114,7 @@ jobs:
         working-directory: app
         run: |
           export CHROME_EXECUTABLE="$(python3 -c 'from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
-          flutter test --no-pub --platform chrome \
+          flutter test --no-pub --platform chrome --reporter expanded \
             test/browser/web_reader_flows_test.dart \
             test/browser/web_ai_cancellation_test.dart
       - name: Build offline browser client at a static subpath
