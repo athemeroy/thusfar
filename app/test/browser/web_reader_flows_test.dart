@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
+// ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter, avoid_print
 
 @TestOn('browser')
 library;
@@ -151,67 +151,82 @@ void main() {
   testWidgets(
     'reflow keeps the same source through repeated resize and type changes',
     (WidgetTester tester) async {
-      await open(tester, _Library());
-      final String before = _visibleText(tester);
-      expect(before, isNotEmpty);
-      final anchor = _visibleRanges(tester).first;
-      void expectAnchor(String stage) {
-        final ranges = _visibleRanges(tester);
-        expect(
-          ranges.any(
-            (range) =>
-                range.block == anchor.block &&
-                range.start <= anchor.start &&
-                anchor.start < range.end,
-          ),
-          isTrue,
-          reason: '$stage must retain source $anchor; visible ranges: $ranges',
-        );
-      }
+      final void Function(FlutterErrorDetails)? previous = FlutterError.onError;
+      FlutterError.onError = (FlutterErrorDetails details) {
+        print('REFLOW FRAMEWORK ERROR: ${details.exceptionAsString()}');
+        print(details.stack);
+        previous?.call(details);
+      };
+      try {
+        await open(tester, _Library());
+        final String before = _visibleText(tester);
+        expect(before, isNotEmpty);
+        final anchor = _visibleRanges(tester).first;
+        void expectAnchor(String stage) {
+          final ranges = _visibleRanges(tester);
+          expect(
+            ranges.any(
+              (range) =>
+                  range.block == anchor.block &&
+                  range.start <= anchor.start &&
+                  anchor.start < range.end,
+            ),
+            isTrue,
+            reason:
+                '$stage must retain source $anchor; visible ranges: $ranges',
+          );
+        }
 
-      for (final Size size in <Size>[
-        const Size(768, 1024),
-        const Size(320, 568),
-        const Size(640, 360),
-        const Size(390, 844),
-      ]) {
-        tester.view.physicalSize = size;
+        for (final Size size in <Size>[
+          const Size(768, 1024),
+          const Size(320, 568),
+          const Size(640, 360),
+          const Size(390, 844),
+        ]) {
+          tester.view.physicalSize = size;
+          await tester.pumpAndSettle();
+          expectAnchor('resize to $size');
+        }
+        expect(_visibleText(tester), before);
+        await tester.tap(find.byTooltip('打开阅读工具'));
         await tester.pumpAndSettle();
-        expectAnchor('resize to $size');
+        await tester.tap(find.widgetWithText(TextButton, '排版'));
+        await tester.pumpAndSettle();
+        final Slider fontSize = tester.widget<Slider>(
+          find.descendant(
+            of: find
+                .ancestor(of: find.text('字号'), matching: find.byType(Row))
+                .first,
+            matching: find.byType(Slider),
+          ),
+        );
+        fontSize.onChanged!(30);
+        await tester.pumpAndSettle();
+        expectAnchor('font size 30');
+        fontSize.onChanged!(21);
+        await tester.pumpAndSettle();
+        expect(_visibleText(tester), before);
+        final WebBook book = _book();
+        final int expectedCutoff = _visibleRanges(tester)
+            .map((range) => (book.blocks[range.block]['o']! as int) + range.end)
+            .fold(0, (int largest, int end) => end > largest ? end : largest);
+        await tester.tap(find.byTooltip('关闭阅读排版'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, '人物'));
+        await tester.pumpAndSettle();
+        expect(
+          tester.widget<WebAiPanel>(find.byType(WebAiPanel)).cutoffOffset,
+          expectedCutoff,
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+      } on Object catch (error, trace) {
+        print('REFLOW ASSERTION: $error');
+        print(trace);
+        rethrow;
+      } finally {
+        FlutterError.onError = previous;
       }
-      expect(_visibleText(tester), before);
-      await tester.tap(find.byTooltip('打开阅读工具'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, '排版'));
-      await tester.pumpAndSettle();
-      final Slider fontSize = tester.widget<Slider>(
-        find.descendant(
-          of: find
-              .ancestor(of: find.text('字号'), matching: find.byType(Row))
-              .first,
-          matching: find.byType(Slider),
-        ),
-      );
-      fontSize.onChanged!(30);
-      await tester.pumpAndSettle();
-      expectAnchor('font size 30');
-      fontSize.onChanged!(21);
-      await tester.pumpAndSettle();
-      expect(_visibleText(tester), before);
-      final WebBook book = _book();
-      final int expectedCutoff = _visibleRanges(tester)
-          .map((range) => (book.blocks[range.block]['o']! as int) + range.end)
-          .fold(0, (int largest, int end) => end > largest ? end : largest);
-      await tester.tap(find.byTooltip('关闭阅读排版'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, '人物'));
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<WebAiPanel>(find.byType(WebAiPanel)).cutoffOffset,
-        expectedCutoff,
-      );
-      await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pumpAndSettle();
     },
   );
 
