@@ -1203,6 +1203,7 @@ class _WebReaderState extends State<WebReader> {
   final WebReaderPrefs _prefs = WebReaderPrefs();
   List<List<_WebPageFragment>> _pages = const <List<_WebPageFragment>>[];
   int? _pageLayoutKey;
+  int? _pageGeometryKey;
   // Keep the same source character through repeated viewport/font changes.
   // A percentage is only a fallback for an initial load or a deliberate jump.
   ({int block, int offset})? _reflowAnchor;
@@ -3406,8 +3407,7 @@ class _WebReaderState extends State<WebReader> {
   }
 
   void _ensurePages(double width, double height, TextStyle bodyStyle) {
-    final int key = Object.hash(
-      _chapter,
+    final int geometry = Object.hash(
       width.round(),
       height.round(),
       _prefs.fontSize,
@@ -3417,7 +3417,9 @@ class _WebReaderState extends State<WebReader> {
       _prefs.margin,
       MediaQuery.textScalerOf(context).scale(10).toStringAsFixed(2),
     );
+    final int key = Object.hash(_chapter, geometry);
     if (_pageLayoutKey == key) return;
+    _pageGeometryKey = geometry;
     final anchor = _reflowAnchor ?? _pageSourceAnchor();
     _pages = _paginate(width, height, bodyStyle);
     int target = -1;
@@ -3768,7 +3770,7 @@ class _WebReaderState extends State<WebReader> {
               child: AnimatedSwitcher(
                 // Reflow replaces page geometry rather than turning a page.
                 // Do not lay out an outgoing tall page in the new short box.
-                key: ValueKey<int?>(_pageLayoutKey),
+                key: ValueKey<int?>(_pageGeometryKey),
                 duration: MediaQuery.disableAnimationsOf(context)
                     ? Duration.zero
                     : const Duration(milliseconds: 180),
