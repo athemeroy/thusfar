@@ -101,6 +101,18 @@ the home Mini. Generated screenshot receipts belong in the dated run report;
 `--update-goldens` produces review images and is not evidence that an old visual
 baseline remained unchanged. Inspect the resulting images.
 
+CI compares the reviewed screenshot baselines on **macOS 15 / arm64** with
+Flutter **3.47.5**. Keep baseline review and normal comparison on that renderer;
+a floating `macos-latest` label can upgrade the OS and change text rasterization
+even when Flutter and the font files are unchanged. Renderer upgrades require
+an explicit visual review rather than a looser pixel threshold.
+
+After a failed client-check run, download the `flutter-golden-diagnostics`
+artifact. It retains the expected image, actual image, isolated/masked diffs,
+and a rendering-environment receipt (OS, architecture, Flutter version and font
+hashes) for 14 days. Inspect those images before deciding whether a baseline
+change is warranted. A green browser job does not replace the native goldens.
+
 Core comparisons, widget checks, successful builds, actual device interaction,
 and full 2.0 acceptance are separate milestones. Development evidence is recorded
 in `../STATUS.md` and `../docs/port/runs/`.
