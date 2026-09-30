@@ -67,7 +67,7 @@ class Prefs extends ChangeNotifier {
       case 1:
         return 'LXGWWenKaiScreen';
       case 2:
-        return 'sans-serif';
+        return 'NotoSansSC';
       default:
         return 'NotoSerifSC';
     }
@@ -85,7 +85,7 @@ class Prefs extends ChangeNotifier {
         ];
       case 1: // 楷：固定使用随应用打包的屏幕阅读版，避免设备映射成黑体。
         return const <String>['NotoSerifSC', 'serif'];
-      case 2: // 黑 (优先系统无衬线黑体，在小米设备上匹配 MiSans，在安卓上匹配 Noto Sans CJK SC)
+      case 2: // 黑：打包中文无衬线字体，各平台和离线阅读保持一致。
         return const <String>[
           'MiSans',
           'MiSans Normal',
@@ -96,6 +96,7 @@ class Prefs extends ChangeNotifier {
           'Microsoft YaHei',
           'SimHei',
           'sans-serif',
+          'NotoSerifSC',
         ];
       default:
         return const <String>['NotoSerifSC', 'serif'];

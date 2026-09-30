@@ -55,3 +55,4 @@ test/shots/**
 !test/shots/phone-reader*.png
 !test/shots/graph-*.png
 !test/shots/typography-sheet-phone.png
+!test/shots/title-pending-toc.png

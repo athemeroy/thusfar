@@ -503,6 +503,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
               ),
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 value: _selectedBook,
                 decoration: const InputDecoration(labelText: '本地要上传的书'),
                 items: <DropdownMenuItem<String>>[

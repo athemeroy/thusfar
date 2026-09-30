@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show DisplayFeature;
+import 'dart:ui' show DisplayFeature, DisplayFeatureType, DisplayFeatureState;
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -550,6 +550,14 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (tab != index) HapticFeedback.selectionClick();
     setState(() => tab = index);
   }
+
+  Widget _bottomNavigation(Tokens t) => NavigationBar(
+    height: 72,
+    backgroundColor: t.sheet,
+    selectedIndex: tab,
+    onDestinationSelected: _selectTab,
+    destinations: _destinations,
+  );
 
   Widget _navigationRail(Tokens t) => NavigationRail(
     backgroundColor: t.sheet,
@@ -1308,13 +1316,19 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     ];
     final bool dark = Theme.of(context).brightness == Brightness.dark;
     final MediaQueryData media = MediaQuery.of(context);
+    bool separates(DisplayFeature feature) =>
+        feature.type == DisplayFeatureType.hinge ||
+        (feature.type == DisplayFeatureType.fold &&
+            feature.state == DisplayFeatureState.postureHalfOpened);
     final bool verticalSplit = media.displayFeatures.any(
       (DisplayFeature feature) =>
+          separates(feature) &&
           feature.bounds.height >= media.size.height * .85 &&
           feature.bounds.width < media.size.width * .4,
     );
     final bool horizontalSplit = media.displayFeatures.any(
       (DisplayFeature feature) =>
+          separates(feature) &&
           feature.bounds.width >= media.size.width * .85 &&
           feature.bounds.height < media.size.height * .4,
     );
@@ -1364,6 +1378,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               final DisplayFeature? verticalHinge = media.displayFeatures
                   .where(
                     (DisplayFeature feature) =>
+                        separates(feature) &&
                         feature.bounds.height >= window.height * .85 &&
                         feature.bounds.width < window.width * .4,
                   )
@@ -1371,11 +1386,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               final DisplayFeature? horizontalHinge = media.displayFeatures
                   .where(
                     (DisplayFeature feature) =>
+                        separates(feature) &&
                         feature.bounds.width >= window.width * .85 &&
                         feature.bounds.height < window.height * .4,
                   )
                   .firstOrNull;
-              if (verticalHinge != null && window.width >= 600) {
+              if (verticalHinge != null) {
                 final double leftWidth = verticalHinge.bounds.left
                     .clamp(0, window.width)
                     .toDouble();
@@ -1383,6 +1399,44 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     .clamp(leftWidth, window.width)
                     .toDouble();
                 final double rightWidth = window.width - hingeRight;
+                if (window.width < 600 || leftWidth < 80 || rightWidth < 240) {
+                  // A narrow window or edge hinge cannot fit a separate rail.
+                  // Keep the active page and all destinations in the larger pane.
+                  final bool useRight = rightWidth >= leftWidth;
+                  final double paneWidth = useRight ? rightWidth : leftWidth;
+                  return Align(
+                    alignment: useRight
+                        ? Alignment.topRight
+                        : Alignment.topLeft,
+                    child: SizedBox(
+                      key: const ValueKey<String>('foldable-compact-pane'),
+                      width: paneWidth,
+                      height: window.height,
+                      child: ClipRect(
+                        child: MediaQuery(
+                          data: media.copyWith(
+                            size: Size(paneWidth, window.height),
+                            displayFeatures: const <DisplayFeature>[],
+                            padding: media.padding.copyWith(
+                              left: useRight ? 0 : media.padding.left,
+                              right: useRight ? media.padding.right : 0,
+                            ),
+                            viewPadding: media.viewPadding.copyWith(
+                              left: useRight ? 0 : media.viewPadding.left,
+                              right: useRight ? media.viewPadding.right : 0,
+                            ),
+                          ),
+                          child: Column(
+                            children: <Widget>[
+                              Expanded(child: pageStack),
+                              _bottomNavigation(t),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
                 final double railWidth = (leftWidth >= 300 ? 80.0 : 68.0)
                     .clamp(0, leftWidth)
                     .toDouble();
@@ -1460,13 +1514,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           bottomNavigationBar:
               verticalSplit || (media.size.width >= 720 && !horizontalSplit)
               ? null
-              : NavigationBar(
-                  height: 72,
-                  backgroundColor: t.sheet,
-                  selectedIndex: tab,
-                  onDestinationSelected: _selectTab,
-                  destinations: _destinations,
-                ),
+              : _bottomNavigation(t),
         ),
       ),
     );

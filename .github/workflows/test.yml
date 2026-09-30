@@ -6,7 +6,8 @@ permissions:
 
 jobs:
   flutter:
-    runs-on: ubuntu-latest
+    # Reviewed widget goldens are rendered on macOS; Linux raster output differs.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -34,28 +35,84 @@ jobs:
             test/services/model_settings_test.dart
       - name: Analyze Flutter app
         working-directory: app
-        run: flutter analyze --no-fatal-infos
+        run: flutter analyze --fatal-infos --fatal-warnings
       - name: Install pinned font for screenshot tests
         run: |
           mkdir -p "$HOME/.local/share/fonts"
-          curl --fail --location --retry 3 \
-            --output "$HOME/.local/share/fonts/NotoSansSC.ttf" \
-            'https://raw.githubusercontent.com/google/fonts/2894aab31764f10f29c421bdfd2340d3b382d384/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf'
-          echo 'a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da  '"$HOME/.local/share/fonts/NotoSansSC.ttf" | sha256sum --check
+          cp app/assets/fonts/NotoSansSC.ttf "$HOME/.local/share/fonts/NotoSansSC.ttf"
+          echo 'a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da  '"$HOME/.local/share/fonts/NotoSansSC.ttf" | shasum -a 256 --check
       - name: Client functional tests
         working-directory: app
         run: |
           flutter test --no-pub \
+            test/adaptive_sheet_test.dart test/native_workspace_test.dart \
             test/ask_sheet_test.dart test/backup_test.dart \
             test/chapter_titles_test.dart \
-            test/foldable_screens_test.dart test/graph_view_test.dart test/import_test.dart \
+            test/foldable_screens_test.dart test/graph_view_test.dart test/graph_screens_test.dart test/import_test.dart \
             test/manual_entities_test.dart test/marginalia_sheet_test.dart \
             test/model_settings_test.dart test/notes_test.dart \
+            test/portable_work_test.dart test/webdav_test.dart \
             test/people_search_test.dart test/processing_test.dart \
             test/processing_diagnostics_test.dart \
             test/reader_regression_test.dart test/selection_bounds_test.dart \
+            test/reader_cover_transition_test.dart \
             test/screens_test.dart test/shared_import_test.dart \
             test/shelf_processing_action_test.dart \
             test/typography_prefs_test.dart test/typography_sheet_test.dart \
             test/update_checker_test.dart \
             test/web_reading_boundary_test.dart
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser test runner
+        run: |
+          python -m pip install playwright==1.63.0
+          python -m playwright install --with-deps chromium
+      - name: Build offline browser client at a static subpath
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter build web --release --target lib/main_web.dart --base-href /ux-review/ --no-pub
+          python3 web/prepare_offline.py build/web
+          mkdir -p build/smoke-root
+          mv build/web build/smoke-root/ux-review
+      - name: Phone, landscape, tablet and desktop browser flows
+        run: |
+          python3 -m http.server 18894 --bind 127.0.0.1 --directory app/build/smoke-root > app/build/browser-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          python3 - <<'PY'
+          import time
+          import urllib.request
+          for attempt in range(40):
+              try:
+                  urllib.request.urlopen('http://127.0.0.1:18894/ux-review/', timeout=1).close()
+                  break
+              except OSError:
+                  time.sleep(0.25)
+          else:
+              raise SystemExit('Browser test server did not start')
+          PY
+          python3 app/test/browser/web_reader_smoke.py \
+            --url http://127.0.0.1:18894/ux-review/ \
+            --out-dir app/build/browser-smoke
+      - name: Keep browser receipts and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-smoke
+          path: |
+            app/build/browser-smoke/
+            app/build/browser-http.log
+          if-no-files-found: ignore

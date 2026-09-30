@@ -7,15 +7,20 @@ import 'package:thusfar_app/data/prefs.dart';
 import 'package:thusfar_app/sheets/typography_sheet.dart';
 import 'package:thusfar_app/ui/theme.dart';
 
+import 'support/viewport.dart';
+
 void main() {
-  test('bundled Kai license remains readable from the app asset bundle', () async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    final String license = await rootBundle.loadString(
-      'assets/fonts/OFL-LXGWWenKaiScreen.txt',
-    );
-    expect(license, contains('SIL OPEN FONT LICENSE Version 1.1'));
-    expect(license, contains('Copyright 2021-2026 LXGW'));
-  });
+  test(
+    'bundled Kai license remains readable from the app asset bundle',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final String license = await rootBundle.loadString(
+        'assets/fonts/OFL-LXGWWenKaiScreen.txt',
+      );
+      expect(license, contains('SIL OPEN FONT LICENSE Version 1.1'));
+      expect(license, contains('Copyright 2021-2026 LXGW'));
+    },
+  );
 
   Future<void> loadFont(String family, String path) async {
     await (FontLoader(family)..addFont(
@@ -40,14 +45,15 @@ void main() {
           '${Platform.environment['HOME']}/.local/share/fonts/NotoSansSC.ttf',
     );
     await loadFont('NotoSerifSC', 'assets/fonts/NotoSerifSC-Regular.otf');
+    await loadFont('NotoSansSC', 'assets/fonts/NotoSansSC.ttf');
     await loadFont('LXGWWenKaiScreen', 'assets/fonts/LXGWWenKaiScreen.ttf');
   });
 
   testWidgets('narrow phone can adjust margins and choose bundled Kai font', (
     WidgetTester tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(360, 740));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await setTestViewport(tester, const Size(360, 740));
+    addTearDown(() => setTestViewport(tester, null));
     final Directory temp = Directory.systemTemp.createTempSync('type-sheet-');
     addTearDown(() => temp.deleteSync(recursive: true));
     final Prefs prefs = Prefs(File('${temp.path}/app-prefs.json'));
@@ -97,6 +103,9 @@ void main() {
     await tester.tap(find.text('楷'));
     await tester.pumpAndSettle();
     expect(prefs.fontFamily, 'LXGWWenKaiScreen');
+    await tester.tap(find.text('黑'));
+    await tester.pumpAndSettle();
+    expect(prefs.fontFamily, 'NotoSansSC');
     prefs.update((Prefs p) => p.spacing = 2);
     await tester.tap(find.text('恢复文字默认值'));
     await tester.pumpAndSettle();

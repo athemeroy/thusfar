@@ -7,16 +7,35 @@ import '../data/prefs.dart';
 import '../ui/theme.dart';
 
 /// Keep part of the book visible while changing reading layout.
-Future<void> openTypography(BuildContext context, Prefs prefs) {
+Future<void> openTypography(
+  BuildContext context,
+  Prefs prefs, {
+  Offset? anchorPoint,
+}) {
+  final Widget panel = ListenableBuilder(
+    listenable: prefs,
+    builder: (BuildContext context, _) => _TypographyPanel(prefs: prefs),
+  );
+  if (MediaQuery.sizeOf(context).width >= 720) {
+    return showDialog<void>(
+      context: context,
+      anchorPoint: anchorPoint,
+      barrierColor: Colors.black.withValues(alpha: .18),
+      builder: (_) => Dialog(
+        insetPadding: const EdgeInsets.all(24),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(width: 560, child: panel),
+      ),
+    );
+  }
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
+    anchorPoint: anchorPoint,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.transparent,
-    builder: (BuildContext _) => ListenableBuilder(
-      listenable: prefs,
-      builder: (BuildContext context, _) => _TypographyPanel(prefs: prefs),
-    ),
+    builder: (BuildContext _) => panel,
   );
 }
 
@@ -89,8 +108,8 @@ class _MetricControlState extends State<_MetricControl> {
           ),
           IconButton(
             tooltip: '${widget.label}减少',
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 32, height: 36),
+            visualDensity: VisualDensity.standard,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
             padding: EdgeInsets.zero,
             onPressed: value <= widget.minimum
                 ? null
@@ -117,8 +136,8 @@ class _MetricControlState extends State<_MetricControl> {
           ),
           IconButton(
             tooltip: '${widget.label}增加',
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 32, height: 36),
+            visualDensity: VisualDensity.standard,
+            constraints: const BoxConstraints.tightFor(width: 44, height: 44),
             padding: EdgeInsets.zero,
             onPressed: value >= widget.maximum
                 ? null
@@ -184,7 +203,9 @@ class _TypographyPanel extends StatelessWidget {
       ValueChanged<int> on, {
       List<String?>? fontFamilies,
       List<List<String>?>? fontFallbacks,
-    }) => Row(
+    }) => Wrap(
+      spacing: 8,
+      runSpacing: 4,
       children: <Widget>[
         for (int i = 0; i < labels.length; i++)
           Padding(
@@ -274,19 +295,27 @@ class _TypographyPanel extends StatelessWidget {
                           ),
                         ),
                       ),
-                      TextButton(
-                        onPressed: () => prefs.update((Prefs p) {
-                          p.fontSize = 19;
-                          p.spacing = 1;
-                          p.lineHeightOverride = null;
-                          p.letterSpacing = 0;
-                          p.pageHorizontalMargin = 20;
-                          p.pageVerticalMargin = 16;
-                          p.font = 0;
-                        }),
-                        child: const Text('恢复文字默认值'),
+                      IconButton(
+                        tooltip: '关闭排版',
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => prefs.update((Prefs p) {
+                      p.fontSize = 19;
+                      p.spacing = 1;
+                      p.lineHeightOverride = null;
+                      p.letterSpacing = 0;
+                      p.pageHorizontalMargin = 20;
+                      p.pageVerticalMargin = 16;
+                      p.font = 0;
+                    }),
+                    child: const Text('恢复文字默认值'),
                   ),
                 ),
                 Expanded(
@@ -351,7 +380,7 @@ class _TypographyPanel extends StatelessWidget {
                           fontFamilies: const <String?>[
                             'NotoSerifSC',
                             'LXGWWenKaiScreen',
-                            'sans-serif',
+                            'NotoSansSC',
                           ],
                           fontFallbacks: const <List<String>?>[
                             <String>[
@@ -370,13 +399,16 @@ class _TypographyPanel extends StatelessWidget {
                               'PingFang SC',
                               'Heiti SC',
                               'sans-serif',
+                              'NotoSerifSC',
                             ],
                           ],
                         ),
                       ),
                       row(
                         '纸色',
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: <Widget>[
                             for (int i = 0; i < Tokens.paperColors.length; i++)
                               Semantics(
@@ -390,17 +422,15 @@ class _TypographyPanel extends StatelessWidget {
                                 child: ExcludeSemantics(
                                   child: Tooltip(
                                     message: '纸色：${Tokens.paperColors[i].$1}',
-                                    child: GestureDetector(
+                                    child: InkWell(
+                                      customBorder: const CircleBorder(),
                                       onTap: () {
                                         HapticFeedback.selectionClick();
                                         prefs.update((Prefs p) => p.paper = i);
                                       },
                                       child: Container(
-                                        margin: const EdgeInsets.only(
-                                          right: 12,
-                                        ),
-                                        width: 34,
-                                        height: 34,
+                                        width: 44,
+                                        height: 44,
                                         decoration: BoxDecoration(
                                           color: Tokens.paperColors[i].$2,
                                           shape: BoxShape.circle,

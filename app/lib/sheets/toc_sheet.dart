@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/title_spoilers.dart';
@@ -51,7 +53,19 @@ class _TocPageState extends State<TocPage> {
       listenable: Listenable.merge(<Listenable>[link.c, link.c.book.notes]),
       builder: (BuildContext context, _) => SheetPage(
         title: link.c.book.entry.title,
-        headerExtraHeight: tab == 0 ? 96 : 44,
+        headerExtraHeight:
+            Segmented(
+              labels: const <String>['目录', '书签', '摘记'],
+              index: tab,
+              onChanged: (_) {},
+            ).heightForWidth(context, MediaQuery.sizeOf(context).width) +
+            (tab == 0
+                ? 10 +
+                      math.max(
+                        44,
+                        MediaQuery.textScalerOf(context).scale(16) * 1.5 + 10,
+                      )
+                : 0),
         headerExtra: Column(
           children: <Widget>[
             Segmented(
@@ -89,7 +103,10 @@ class _TocPageState extends State<TocPage> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: SizedBox(
-        height: 40,
+        height: math.max(
+          44,
+          MediaQuery.textScalerOf(context).scale(16) * 1.5 + 10,
+        ),
         child: ListenableBuilder(
           listenable: pageInput,
           builder: (BuildContext context, _) {

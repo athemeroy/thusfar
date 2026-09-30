@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/screens/notes_screen.dart';
@@ -13,6 +14,8 @@ import 'package:thusfar_core/thusfar_core.dart' show ValueError;
 
 import 'support/graph_fixture.dart';
 
+import 'support/viewport.dart';
+
 void main() {
   late GraphFixture fixture;
   late NoteStore notes;
@@ -21,6 +24,23 @@ void main() {
     notes = fixture.data.notes;
   });
   tearDown(() => fixture.dispose());
+
+  Future<void> settleNotes(WidgetTester tester, {Finder? until}) async {
+    for (int i = 0; i < 200; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+      if (find
+              .byKey(const ValueKey<String>('notes-loading'))
+              .evaluate()
+              .isEmpty &&
+          (until == null || until.evaluate().isNotEmpty)) {
+        return;
+      }
+    }
+    fail('Notebook projection did not finish loading');
+  }
 
   Json add({
     int start = 0,
@@ -168,8 +188,8 @@ void main() {
   Future<void> openToc(WidgetTester tester) async {
     final ScrollController scroll = ScrollController();
     addTearDown(scroll.dispose);
-    await tester.binding.setSurfaceSize(const Size(430, 1000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await setTestViewport(tester, const Size(430, 1000));
+    addTearDown(() => setTestViewport(tester, null));
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(Brightness.light),
@@ -284,11 +304,13 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await settleNotes(tester);
     await tester.tap(find.byTooltip('编辑笔记'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '全局编辑');
     await tester.tap(find.text('保存'));
     await tester.pumpAndSettle();
+    await settleNotes(tester, until: find.text('全局编辑'));
     expect(find.text('全局编辑'), findsOneWidget);
     expect(find.text('旧想法'), findsNothing);
     notes.refresh();
@@ -311,8 +333,51 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await settleNotes(tester);
       expect(find.textContaining('摘记读取失败'), findsOneWidget);
       expect(file.readAsStringSync(), '{broken');
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets(
+    'notes search clears its field and cached records refresh on library change',
+    (WidgetTester tester) async {
+      add(text: 'Find MY Thought');
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.light),
+          home: NotesScreen(library: fixture.library, onOpenAt: (_, _) {}),
+        ),
+      );
+      await settleNotes(tester);
+      await tester.tap(find.byTooltip('搜索摘记'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'my thought');
+      await tester.pumpAndSettle();
+      expect(find.text('Find MY Thought'), findsOneWidget);
+      await tester.tap(find.byTooltip('清空搜索'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+        isEmpty,
+      );
+
+      // Searching must use the loaded projection rather than reread large files
+      // on the UI thread. A library refresh then checks the changed file stamp.
+      notes.file.writeAsStringSync('{broken');
+      await tester.enterText(find.byType(TextField), 'thought');
+      await tester.pumpAndSettle();
+      expect(find.text('Find MY Thought'), findsOneWidget);
+      expect(find.textContaining('摘记读取失败'), findsNothing);
+      await tester.runAsync(fixture.library.scan);
+      await settleNotes(tester, until: find.textContaining('摘记读取失败'));
+      expect(notes.file.readAsStringSync(), '{broken');
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byTooltip('搜索摘记'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );

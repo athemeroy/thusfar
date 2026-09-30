@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,6 +14,14 @@ Future<T?> openSheet<T>(
   bool full = false,
   Offset? anchorPoint,
 }) {
+  if (MediaQuery.sizeOf(context).width >= 720) {
+    return showDialog<T>(
+      context: context,
+      anchorPoint: anchorPoint,
+      barrierColor: Colors.black.withValues(alpha: 0.28),
+      builder: (BuildContext _) => _ReaderDialog(root: root),
+    );
+  }
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -19,9 +29,56 @@ Future<T?> openSheet<T>(
     anchorPoint: anchorPoint,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.28),
-    builder: (BuildContext _) =>
-        _ReaderDrawer(initial: full ? 0.92 : initial, root: root),
+    builder: (BuildContext context) => AnimatedPadding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : Motion.toolbar,
+      child: _ReaderDrawer(initial: full ? 0.92 : initial, root: root),
+    ),
   );
+}
+
+class _ReaderDialog extends StatefulWidget {
+  const _ReaderDialog({required this.root});
+  final Widget root;
+
+  @override
+  State<_ReaderDialog> createState() => _ReaderDialogState();
+}
+
+class _ReaderDialogState extends State<_ReaderDialog> {
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final MediaQueryData media = MediaQuery.of(context);
+    final double height = math.max(
+      100,
+      math.min(
+        820,
+        media.size.height -
+            media.viewInsets.vertical -
+            media.padding.vertical -
+            48,
+      ),
+    );
+    return Dialog(
+      insetPadding: const EdgeInsets.all(24),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        width: 600,
+        height: height,
+        child: SheetFrame(scroll: _scroll, root: widget.root, dialog: true),
+      ),
+    );
+  }
 }
 
 class _ReaderDrawer extends StatefulWidget {
@@ -36,6 +93,27 @@ class _ReaderDrawer extends StatefulWidget {
 
 class _ReaderDrawerState extends State<_ReaderDrawer> {
   final DraggableScrollableController _extent = DraggableScrollableController();
+  bool _keyboardVisible = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final bool visible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    if (visible && !_keyboardVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _extent.isAttached) {
+          _extent.animateTo(
+            .92,
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : Motion.push,
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
+    }
+    _keyboardVisible = visible;
+  }
 
   @override
   void dispose() {
@@ -53,7 +131,11 @@ class _ReaderDrawerState extends State<_ReaderDrawer> {
     snapSizes: const <double>[0.45, 0.92],
     expand: false,
     builder: (BuildContext context, ScrollController scroll) =>
-        SheetFrame(scroll: scroll, root: widget.root, extent: _extent),
+        MediaQuery.removeViewInsets(
+          context: context,
+          removeBottom: true,
+          child: SheetFrame(scroll: scroll, root: widget.root, extent: _extent),
+        ),
   );
 }
 
@@ -64,11 +146,13 @@ class SheetFrame extends StatefulWidget {
     required this.scroll,
     required this.root,
     this.extent,
+    this.dialog = false,
   });
 
   final ScrollController scroll;
   final Widget root;
   final DraggableScrollableController? extent;
+  final bool dialog;
 
   @override
   State<SheetFrame> createState() => SheetFrameState();
@@ -94,7 +178,13 @@ class SheetFrameState extends State<SheetFrame> {
       }
       _expandPending = false;
       widget.scroll.jumpTo(0);
-      extent.animateTo(.92, duration: Motion.push, curve: Curves.easeOutCubic);
+      extent.animateTo(
+        .92,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : Motion.push,
+        curve: Curves.easeOutCubic,
+      );
     }
 
     attempt(Duration.zero);
@@ -138,34 +228,49 @@ class SheetFrameState extends State<SheetFrame> {
       onPopInvokedWithResult: (bool didPop, Object? _) {
         if (!didPop) pop();
       },
-      child: Material(
-        color: t.sheet,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        clipBehavior: Clip.antiAlias,
-        child: SheetScope(
-          state: this,
-          scroll: widget.scroll,
-          child: AnimatedSwitcher(
-            duration: MediaQuery.of(context).disableAnimations
-                ? const Duration(milliseconds: 120)
-                : Motion.push,
-            transitionBuilder: (Widget child, Animation<double> a) {
-              final bool incoming = child.key == ValueKey<int>(_stack.length);
-              final double from = (_forward == incoming) ? 1 : -1;
-              return SlideTransition(
-                position:
-                    Tween<Offset>(
-                      begin: Offset(from * 0.35, 0),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(parent: a, curve: Curves.easeOutCubic),
-                    ),
-                child: FadeTransition(opacity: a, child: child),
-              );
-            },
-            child: KeyedSubtree(
-              key: ValueKey<int>(_stack.length),
-              child: _stack.last,
+      child: CallbackShortcuts(
+        bindings: <ShortcutActivator, VoidCallback>{
+          const SingleActivator(LogicalKeyboardKey.escape): pop,
+        },
+        child: Focus(
+          autofocus: true,
+          skipTraversal: true,
+          child: Material(
+            color: t.sheet,
+            borderRadius: widget.dialog
+                ? BorderRadius.circular(20)
+                : const BorderRadius.vertical(top: Radius.circular(20)),
+            clipBehavior: Clip.antiAlias,
+            child: SheetScope(
+              state: this,
+              scroll: widget.scroll,
+              child: AnimatedSwitcher(
+                duration: MediaQuery.of(context).disableAnimations
+                    ? Duration.zero
+                    : Motion.push,
+                transitionBuilder: (Widget child, Animation<double> a) {
+                  final bool incoming =
+                      child.key == ValueKey<int>(_stack.length);
+                  final double from = (_forward == incoming) ? 1 : -1;
+                  return SlideTransition(
+                    position:
+                        Tween<Offset>(
+                          begin: Offset(from * 0.35, 0),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: a,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
+                    child: FadeTransition(opacity: a, child: child),
+                  );
+                },
+                child: KeyedSubtree(
+                  key: ValueKey<int>(_stack.length),
+                  child: _stack.last,
+                ),
+              ),
             ),
           ),
         ),
@@ -220,112 +325,176 @@ class SheetPage extends StatelessWidget {
     final SheetScope scope = SheetScope.of(context);
     final Tokens t = context.tk;
     final bool back = scope.state.depth > 1;
-    return Column(
-      children: <Widget>[
-        Expanded(
-          child: CustomScrollView(
-            controller: scope.scroll,
-            slivers: <Widget>[
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _Header(
-                  height: 76 + headerExtraHeight,
-                  builder: (BuildContext context) => Container(
-                    color: t.sheet,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Center(
-                          child: Container(
-                            margin: const EdgeInsets.only(top: 8, bottom: 6),
-                            width: 36,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              color: t.rule,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          height: 50,
-                          child: Row(
-                            children: <Widget>[
-                              if (back)
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_back),
-                                  tooltip: '返回上一层',
-                                  color: t.ink,
-                                  onPressed: scope.state.pop,
-                                )
-                              else
-                                const SizedBox(width: 20),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    if (path != null)
-                                      Text(
-                                        path!,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: t.ink3,
-                                        ),
-                                      ),
-                                    titleWidget ??
-                                        Text(
-                                          title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 17,
-                                            color: t.ink,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                  ],
+    final bool dialog = scope.state.widget.dialog;
+    final TextScaler scaler = MediaQuery.textScalerOf(context);
+    final double headingHeight = math.max(
+      50,
+      scaler.scale(17) * 1.5 + (path == null ? 0 : scaler.scale(11) * 1.3) + 8,
+    );
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) {
+        final bool stackedTag =
+            tag != null && (box.maxWidth < 360 || scaler.scale(17) > 24);
+        double tagHeight = 0;
+        if (stackedTag) {
+          final TextPainter painter = TextPainter(
+            text: TextSpan(
+              text: tag,
+              style: DefaultTextStyle.of(
+                context,
+              ).style.copyWith(fontSize: 11, letterSpacing: .66),
+            ),
+            textDirection: Directionality.of(context),
+            textScaler: scaler,
+          )..layout(maxWidth: math.max(1, box.maxWidth - 56));
+          tagHeight = painter.height + 12;
+          painter.dispose();
+        }
+        return Column(
+          children: <Widget>[
+            Expanded(
+              child: CustomScrollView(
+                controller: scope.scroll,
+                slivers: <Widget>[
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _Header(
+                      height:
+                          headingHeight +
+                          (dialog ? 12 : 26) +
+                          tagHeight +
+                          headerExtraHeight,
+                      builder: (BuildContext context) => Container(
+                        color: t.sheet,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            if (dialog)
+                              const SizedBox(height: 12)
+                            else
+                              Center(
+                                child: Container(
+                                  margin: const EdgeInsets.only(
+                                    top: 8,
+                                    bottom: 6,
+                                  ),
+                                  width: 36,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: t.rule,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
                                 ),
                               ),
-                              if (tag != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 20),
-                                  child: Tag(tag!, color: t.zhu),
+                            SizedBox(
+                              height: headingHeight,
+                              child: Row(
+                                children: <Widget>[
+                                  if (back)
+                                    IconButton(
+                                      icon: const Icon(Icons.arrow_back),
+                                      tooltip: '返回上一层',
+                                      color: t.ink,
+                                      onPressed: scope.state.pop,
+                                    )
+                                  else
+                                    const SizedBox(width: 20),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        if (path != null)
+                                          Text(
+                                            path!,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: t.ink3,
+                                            ),
+                                          ),
+                                        titleWidget ??
+                                            Text(
+                                              title,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 17,
+                                                color: t.ink,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (tag != null && !stackedTag)
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8),
+                                      child: Tag(tag!, color: t.zhu),
+                                    ),
+                                  IconButton(
+                                    key: const ValueKey<String>(
+                                      'reader-sheet-close',
+                                    ),
+                                    tooltip: '关闭阅读工具',
+                                    icon: const Icon(Icons.close, size: 20),
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (stackedTag)
+                              SizedBox(
+                                height: tagHeight,
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    0,
+                                    20,
+                                    8,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Tag(tag!, color: t.zhu),
+                                  ),
                                 ),
-                            ],
-                          ),
+                              ),
+                            if (headerExtra != null)
+                              SizedBox(
+                                height: headerExtraHeight,
+                                child: headerExtra,
+                              ),
+                          ],
                         ),
-                        if (headerExtra != null)
-                          SizedBox(
-                            height: headerExtraHeight,
-                            child: headerExtra,
-                          ),
-                      ],
+                      ),
                     ),
+                  ),
+                  ...slivers,
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                ],
+              ),
+            ),
+            if (bottom != null)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: t.sheet,
+                  border: Border(top: BorderSide(color: t.rule)),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                    child: bottom,
                   ),
                 ),
               ),
-              ...slivers,
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            ],
-          ),
-        ),
-        if (bottom != null)
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: t.sheet,
-              border: Border(top: BorderSide(color: t.rule)),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                child: bottom,
-              ),
-            ),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
@@ -354,7 +523,7 @@ class _Header extends SliverPersistentHeaderDelegate {
 }
 
 /// Segmented control used in drawer headers.
-class Segmented extends StatelessWidget {
+class Segmented extends StatefulWidget {
   const Segmented({
     super.key,
     required this.labels,
@@ -373,7 +542,7 @@ class Segmented extends StatelessWidget {
       1,
       double.infinity,
     );
-    double height = 44;
+    double height = 50;
     for (int i = 0; i < labels.length; i++) {
       final TextPainter painter = TextPainter(
         text: TextSpan(
@@ -386,7 +555,8 @@ class Segmented extends StatelessWidget {
         textDirection: Directionality.of(context),
         textScaler: MediaQuery.textScalerOf(context),
       )..layout(maxWidth: cell);
-      final double measured = (painter.height + 20).ceilToDouble();
+      final double measured = (math.max(44, painter.height + 14) + 6)
+          .ceilToDouble();
       if (measured > height) height = measured;
       painter.dispose();
     }
@@ -394,55 +564,116 @@ class Segmented extends StatelessWidget {
   }
 
   @override
+  State<Segmented> createState() => _SegmentedState();
+}
+
+class _SegmentedState extends State<Segmented> {
+  final List<FocusNode> _nodes = <FocusNode>[];
+  List<String> get labels => widget.labels;
+  int get index => widget.index;
+
+  @override
+  void initState() {
+    super.initState();
+    _resizeNodes();
+  }
+
+  void _resizeNodes() {
+    while (_nodes.length > labels.length) {
+      _nodes.removeLast().dispose();
+    }
+    while (_nodes.length < labels.length) {
+      _nodes.add(FocusNode());
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant Segmented oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _resizeNodes();
+  }
+
+  @override
+  void dispose() {
+    for (final FocusNode node in _nodes) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  void _choose(int next) {
+    _nodes[next].requestFocus();
+    widget.onChanged(next);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: t.paper,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: <Widget>[
-          for (int i = 0; i < labels.length; i++)
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  onChanged(i);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 160),
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == index ? t.raised : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: i == index
-                        ? <BoxShadow>[
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.06),
-                              blurRadius: 4,
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Text(
-                    labels[i],
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: i == index ? t.ink : t.ink2,
-                      fontWeight: i == index
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+            _choose((index + 1) % labels.length),
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+            _choose((index - 1 + labels.length) % labels.length),
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          color: t.paper,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: <Widget>[
+            for (int i = 0; i < labels.length; i++)
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  selected: i == index,
+                  inMutuallyExclusiveGroup: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      focusNode: _nodes[i],
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        _choose(i);
+                      },
+                      child: AnimatedContainer(
+                        constraints: const BoxConstraints(minHeight: 44),
+                        duration: const Duration(milliseconds: 160),
+                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: i == index ? t.raised : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: i == index
+                              ? <BoxShadow>[
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.06),
+                                    blurRadius: 4,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          labels[i],
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: i == index ? t.ink : t.ink2,
+                            fontWeight: i == index
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

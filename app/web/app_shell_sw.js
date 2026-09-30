@@ -9,7 +9,8 @@ const CACHE_PREFIX = `thusfar-app-shell:${encodeURIComponent(SCOPE.pathname)}:`;
 const CACHE_NAME = `${CACHE_PREFIX}${BUILD_ID}`;
 
 // The reader can start with these files when the server is unreachable.
-// Other bundled fonts and assets are cached as they are used while online.
+// Reading fonts are included so a first font change also works offline.
+// Other assets are cached as they are used while online.
 const CORE_PATHS = [
   'index.html',
   'flutter_bootstrap.js',
@@ -24,7 +25,11 @@ const CORE_PATHS = [
   'assets/FontManifest.json',
   'assets/fonts/MaterialIcons-Regular.otf',
   'assets/assets/fonts/NotoSerifSC-Regular.otf',
+  'assets/assets/fonts/NotoSansSC.ttf',
+  'assets/assets/fonts/OFL-NotoSansSC.txt',
   'assets/assets/fonts/ZCOOLXiaoWei-Regular.ttf',
+  'assets/assets/fonts/LXGWWenKaiScreen.ttf',
+  'assets/assets/fonts/OFL-LXGWWenKaiScreen.txt',
   'assets/shaders/stretch_effect.frag',
   'assets/shaders/ink_sparkle.frag',
   'canvaskit/canvaskit.js',

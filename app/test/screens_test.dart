@@ -35,6 +35,9 @@ void _copy(Directory from, Directory to) {
 
 Future<void> settle(WidgetTester tester) async {
   for (int i = 0; i < 12; i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
     await tester.pump(const Duration(milliseconds: 100));
   }
 }
@@ -60,6 +63,7 @@ void main() {
       Platform.environment['THUSFAR_TEST_SANS_FONT'] ??
           '${Platform.environment['HOME']}/.local/share/fonts/NotoSansSC.ttf',
     );
+    await _font('NotoSansSC', 'assets/fonts/NotoSansSC.ttf');
     await _font('NotoSerifSC', 'assets/fonts/NotoSerifSC-Regular.otf');
     await _font('ZCOOLXiaoWei', 'assets/fonts/ZCOOLXiaoWei-Regular.ttf');
     await _font('LXGWWenKaiScreen', 'assets/fonts/LXGWWenKaiScreen.ttf');
@@ -224,12 +228,16 @@ void main() {
 
     await tester.tap(find.byTooltip('清空搜索'));
     await settle(tester);
+    expect(
+      tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+      isEmpty,
+    );
     expect(find.text('没有找到匹配的书'), findsNothing);
     expect(find.text('阿Q正传'), findsWidgets);
 
     await tester.enterText(find.byType(TextField).first, '不存在的书名');
     await settle(tester);
-    await tester.tap(find.text('取消'));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester);
     expect(find.byTooltip('搜索'), findsOneWidget);
     expect(find.text('没有找到匹配的书'), findsNothing);

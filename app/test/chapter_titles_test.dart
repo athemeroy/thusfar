@@ -199,6 +199,7 @@ void main() {
       Platform.environment['THUSFAR_TEST_SANS_FONT'] ??
           '${Platform.environment['HOME']}/.local/share/fonts/NotoSansSC.ttf',
     );
+    await loadFont('NotoSansSC', 'assets/fonts/NotoSansSC.ttf');
     book.entry.status = const ProcessStatus(<String, Object?>{
       'state': 'paused',
       'quality': <String, Object?>{

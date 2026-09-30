@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/main.dart';
@@ -21,6 +22,8 @@ import 'package:thusfar_app/sheets/sheet_host.dart';
 import 'package:thusfar_app/sheets/search_sheet.dart';
 import 'package:thusfar_app/sheets/toc_sheet.dart';
 import 'package:thusfar_app/ui/theme.dart';
+
+import 'support/viewport.dart';
 
 void main() {
   late Directory root;
@@ -89,78 +92,79 @@ void main() {
     root.deleteSync(recursive: true);
   });
 
-  testWidgets('vertical fold shows the book before its bottom tools', (
-    tester,
-  ) async {
-    tester.view
-      ..physicalSize = const Size(900, 1000)
-      ..devicePixelRatio = 1
-      ..displayFeatures = <ui.DisplayFeature>[
-        const ui.DisplayFeature(
-          bounds: Rect.fromLTWH(440, 0, 20, 1000),
-          type: ui.DisplayFeatureType.hinge,
-          state: ui.DisplayFeatureState.postureHalfOpened,
-        ),
-      ];
-    addTearDown(() {
+  testWidgets(
+    'vertical fold keeps text and tools on opposite sides of the hinge',
+    (tester) async {
       tester.view
-        ..resetDisplayFeatures()
-        ..resetPhysicalSize()
-        ..resetDevicePixelRatio();
-    });
+        ..physicalSize = const Size(900, 1000)
+        ..devicePixelRatio = 1
+        ..displayFeatures = <ui.DisplayFeature>[
+          const ui.DisplayFeature(
+            bounds: Rect.fromLTWH(440, 0, 20, 1000),
+            type: ui.DisplayFeatureType.hinge,
+            state: ui.DisplayFeatureState.postureHalfOpened,
+          ),
+        ];
+      addTearDown(() {
+        tester.view
+          ..resetDisplayFeatures()
+          ..resetPhysicalSize()
+          ..resetDevicePixelRatio();
+      });
 
-    await tester.pumpWidget(ThusfarApp(model: model));
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey<String>('foldable-nav-0')),
-      findsOneWidget,
-    );
-    expect(find.text('书架'), findsOneWidget);
-    expect(find.byType(NavigationRail), findsNothing);
-    expect(find.byType(NavigationBar), findsNothing);
-    await tester.tap(find.text('Regression book').first);
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('foldable-nav-0')),
+        findsOneWidget,
+      );
+      expect(find.text('书架'), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      expect(find.byType(NavigationBar), findsNothing);
+      await tester.tap(find.text('Regression book').first);
+      await tester.pumpAndSettle();
 
-    final Rect page = tester.getRect(find.byType(PageBody).first);
-    final Rect viewport = tester.getRect(
-      find.byKey(const ValueKey<String>('reader-page-viewport')),
-    );
-    expect(viewport.left, 0);
-    expect(viewport.right, 900);
-    expect(page.left, 20);
-    expect(page.right, 880);
-    expect(find.text('目录与书签'), findsNothing);
-    final PageController controller = tester
-        .widget<PageView>(find.byType(PageView))
-        .controller!;
-    await tester.tapAt(const Offset(888, 700));
-    await tester.pumpAndSettle();
-    expect(controller.page, closeTo(ReaderController.base + 1, 0.001));
-    await tester.tapAt(const Offset(12, 700));
-    await tester.pumpAndSettle();
-    expect(controller.page, closeTo(ReaderController.base, 0.001));
-    model.prefs.update((prefs) => prefs.pageHorizontalMargin = 96);
-    await tester.pumpAndSettle();
-    final Rect insetPage = tester.getRect(find.byType(PageBody).first);
-    expect(insetPage.left, 96);
-    expect(insetPage.right, 804);
-    final PageController insetController = tester
-        .widget<PageView>(find.byType(PageView))
-        .controller!;
-    await tester.tapAt(const Offset(888, 700));
-    await tester.pumpAndSettle();
-    expect(insetController.page, closeTo(ReaderController.base + 1, 0.001));
-    await tester.tapAt(const Offset(12, 700));
-    await tester.pumpAndSettle();
-    expect(insetController.page, closeTo(ReaderController.base, 0.001));
-    await tester.tapAt(const Offset(400, 700));
-    await tester.pumpAndSettle();
-    expect(find.text('人物').hitTestable(), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
-  });
+      final Rect page = tester.getRect(find.byType(PageBody).first);
+      final Rect viewport = tester.getRect(
+        find.byKey(const ValueKey<String>('reader-page-viewport')),
+      );
+      expect(viewport.left, 0);
+      expect(viewport.right, 440);
+      expect(page.left, 20);
+      expect(page.right, 420);
+      expect(find.text('目录与书签'), findsNothing);
+      final PageController controller = tester
+          .widget<PageView>(find.byType(PageView))
+          .controller!;
+      await tester.tapAt(const Offset(420, 700));
+      await tester.pumpAndSettle();
+      expect(controller.page, closeTo(ReaderController.base + 1, 0.001));
+      await tester.tapAt(const Offset(12, 700));
+      await tester.pumpAndSettle();
+      expect(controller.page, closeTo(ReaderController.base, 0.001));
+      model.prefs.update((prefs) => prefs.pageHorizontalMargin = 96);
+      await tester.pumpAndSettle();
+      final Rect insetPage = tester.getRect(find.byType(PageBody).first);
+      expect(insetPage.left, 96);
+      expect(insetPage.right, 344);
+      final PageController insetController = tester
+          .widget<PageView>(find.byType(PageView))
+          .controller!;
+      await tester.tapAt(const Offset(420, 700));
+      await tester.pumpAndSettle();
+      expect(insetController.page, closeTo(ReaderController.base + 1, 0.001));
+      await tester.tapAt(const Offset(12, 700));
+      await tester.pumpAndSettle();
+      expect(insetController.page, closeTo(ReaderController.base, 0.001));
+      await tester.tapAt(const Offset(220, 700));
+      await tester.pumpAndSettle();
+      expect(find.text('人物').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
-  testWidgets('horizontal fold uses the full screen for reading', (
+  testWidgets('horizontal fold keeps text above the hinge and tools below it', (
     tester,
   ) async {
     tester.view
@@ -186,14 +190,85 @@ void main() {
     await tester.pumpAndSettle();
 
     final Rect page = tester.getRect(find.byType(PageBody).first);
-    expect(page.bottom, greaterThan(450));
+    expect(page.bottom, lessThanOrEqualTo(430));
     expect(find.text('工具栏'), findsNothing);
-    await tester.tapAt(const Offset(215, 650));
+    await tester.tap(find.text('阅读工具'));
     await tester.pumpAndSettle();
     expect(find.text('目录').hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets(
+    'flat folds stay continuous and selection follows a right reading pane',
+    (WidgetTester tester) async {
+      tester.view
+        ..physicalSize = const Size(840, 900)
+        ..devicePixelRatio = 1;
+      addTearDown(() {
+        tester.view
+          ..resetDisplayFeatures()
+          ..resetPhysicalSize()
+          ..resetDevicePixelRatio();
+      });
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Regression book').first);
+      await tester.pumpAndSettle();
+      tester.view.displayFeatures = const <ui.DisplayFeature>[
+        ui.DisplayFeature(
+          bounds: Rect.fromLTWH(410, 0, 0, 900),
+          type: ui.DisplayFeatureType.fold,
+          state: ui.DisplayFeatureState.postureFlat,
+        ),
+      ];
+      await tester.pumpAndSettle();
+      final Finder viewport = find.byKey(
+        const ValueKey<String>('reader-page-viewport'),
+      );
+      expect(tester.getRect(viewport).width, 840);
+      expect(tester.getRect(find.byType(PageBody).first).center.dx, 420);
+      expect(find.text('阅读工具'), findsNothing);
+
+      tester.view.displayFeatures = const <ui.DisplayFeature>[
+        ui.DisplayFeature(
+          bounds: Rect.fromLTWH(80, 0, 20, 900),
+          type: ui.DisplayFeatureType.hinge,
+          state: ui.DisplayFeatureState.postureHalfOpened,
+        ),
+      ];
+      await tester.pumpAndSettle();
+      expect(tester.getRect(viewport).left, 100);
+      final Finder visible = find.byType(PageBody).first;
+      final PageBody body = tester.widget<PageBody>(visible);
+      final Frag fragment = body.page.frags.first;
+      final Block block = body.pager.book.blocks[fragment.block];
+      final TextPainter painter = body.pager.painterFor(block);
+      final Offset caret = painter.getOffsetForCaret(
+        TextPosition(offset: fragment.start + 3 + indentShift),
+        Rect.zero,
+      );
+      painter.dispose();
+      await tester.longPressAt(
+        tester.getTopLeft(visible) +
+            Offset(
+              caret.dx + body.pager.spec.fontSize / 4,
+              caret.dy - fragment.top + body.pager.spec.line / 2,
+            ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('摘录'));
+      await tester.pumpAndSettle();
+      expect(body.pager.book.notes.notes, hasLength(1));
+      final Json note = body.pager.book.notes.notes.single;
+      expect(
+        note['quote'],
+        body.pager.book.textBetween(note['start']! as int, note['end']! as int),
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
 
   test('footnote at next block start does not leak across page boundary', () {
     final BookData book = BookData.open(model.library.books.single);
@@ -213,8 +288,8 @@ void main() {
   testWidgets('arrow keys and the mouse wheel turn pages on a computer', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(430, 1000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await setTestViewport(tester, const Size(430, 1000));
+    addTearDown(() => setTestViewport(tester, null));
     await tester.pumpWidget(ThusfarApp(model: model));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Regression book').first);
@@ -222,6 +297,26 @@ void main() {
     expect(find.byType(ReaderScreen), findsOneWidget);
     Finder page(int n) => find.textContaining(RegExp('^$n / '));
     expect(page(1), findsOneWidget);
+    // Standard application shortcuts must not trigger single-letter reading
+    // actions or accidentally change the current page.
+    for (final LogicalKeyboardKey modifier in <LogicalKeyboardKey>[
+      LogicalKeyboardKey.control,
+      LogicalKeyboardKey.meta,
+      LogicalKeyboardKey.alt,
+    ]) {
+      await tester.sendKeyDownEvent(modifier);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyB);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyT);
+      await tester.sendKeyUpEvent(modifier);
+      await tester.pumpAndSettle();
+      expect(page(1), findsOneWidget);
+      expect(find.byType(TocPage), findsNothing);
+      final PageBody body = tester.widget<PageBody>(
+        find.byType(PageBody).first,
+      );
+      expect(body.pager.book.notes.bookmarks, isEmpty);
+    }
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
     expect(page(2), findsOneWidget);
@@ -259,10 +354,381 @@ void main() {
   });
 
   testWidgets(
+    'book illustrations retain original alt and explain missing files',
+    (WidgetTester tester) async {
+      const String originalAlt = '本地插图的原始说明';
+      final BookEntry entry = model.library.books.single;
+      final File metaFile = File('${entry.dir.path}/book.json');
+      final Json meta = readJson(metaFile)! as Json;
+      meta
+        ..['len'] = 3
+        ..['blocks'] = <Json>[
+          <String, Object?>{
+            'k': 'img',
+            't': '\uFFFC',
+            'o': 0,
+            'src': 'illustration.png',
+            'alt': originalAlt,
+          },
+          <String, Object?>{
+            'k': 'img',
+            't': '\uFFFC',
+            'o': 1,
+            'src': 'illustration.png',
+            'alt': '',
+          },
+          <String, Object?>{
+            'k': 'img',
+            't': '\uFFFC',
+            'o': 2,
+            'src': 'missing.png',
+            'alt': originalAlt,
+          },
+        ]
+        ..['chapters'] = <Json>[
+          for (int index = 0; index < 3; index++)
+            <String, Object?>{
+              'title': 'Illustration $index',
+              'b0': index,
+              'b1': index + 1,
+              'o0': index,
+              'o1': index + 1,
+              'kind': 'body',
+            },
+        ];
+      writeJson(metaFile, meta);
+      final Directory images = Directory('${entry.dir.path}/img')..createSync();
+      final File illustration = File('${images.path}/illustration.png')
+        ..writeAsBytesSync(
+          base64Decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAEUlEQVR4nGPQjSrHihiGlgQAvbA/gQjEHksAAAAASUVORK5CYII=',
+          ),
+        );
+      final BookData book = BookData.open(entry);
+      addTearDown(() {
+        book.notes.dispose();
+        book.dispose();
+      });
+      final Paginator pager = Paginator(
+        book,
+        const PageSpec(
+          width: 300,
+          height: 400,
+          fontSize: 16,
+          lineHeight: 1.6,
+          fontFamily: null,
+          color: Colors.black,
+          textScaler: TextScaler.noScaling,
+        ),
+      );
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      try {
+        // Start file IO and decoding outside FakeAsync before Image.file uses
+        // the cache entry; awaiting an already pending fake-zone stream stalls.
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildTheme(Brightness.light),
+            home: const Scaffold(body: SizedBox()),
+          ),
+        );
+        await tester.runAsync(
+          () => precacheImage(
+            FileImage(illustration),
+            tester.element(find.byType(Scaffold)),
+          ),
+        );
+        Future<void> showChapter(int chapter) async {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: buildTheme(Brightness.light),
+              home: Scaffold(
+                body: PageBody(
+                  page: pager.pages(chapter).single,
+                  pager: pager,
+                  layers: const PageLayers(
+                    world: null,
+                    cutoff: 3,
+                    notes: <Json>[],
+                  ),
+                  onName: (_) {},
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        await showChapter(0);
+        expect(find.byType(Image), findsOneWidget);
+        expect(find.bySemanticsLabel(originalAlt), findsOneWidget);
+        await showChapter(1);
+        expect(find.byType(Image), findsOneWidget);
+        expect(
+          tester.getSemantics(find.byType(Image)).getSemanticsData().label,
+          isEmpty,
+        );
+        await showChapter(2);
+        expect(find.byType(Image), findsNothing);
+        expect(find.bySemanticsLabel('图片未保存。$originalAlt'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
+  testWidgets('screen reader receives only the visible paragraph slice', (
+    WidgetTester tester,
+  ) async {
+    final BookEntry entry = model.library.books.single;
+    final String text =
+        '${List<String>.filled(80, 'Visible words. ').join()}'
+        'UNREAD_SECRET_ENDING';
+    writeJson(File('${entry.dir.path}/book.json'), <String, Object?>{
+      'title': 'Accessible reading',
+      'author': '',
+      'lang': 'en',
+      'len': text.length,
+      'blocks': <Json>[
+        <String, Object?>{'k': 'p', 't': text, 'o': 0},
+      ],
+      'chapters': <Json>[
+        <String, Object?>{
+          'title': 'First',
+          'b0': 0,
+          'b1': 1,
+          'o0': 0,
+          'o1': text.length,
+          'kind': 'body',
+        },
+      ],
+    });
+    final BookData book = BookData.open(entry);
+    addTearDown(() {
+      book.notes.dispose();
+      book.dispose();
+    });
+    final Paginator pager = Paginator(
+      book,
+      const PageSpec(
+        width: 180,
+        height: 100,
+        fontSize: 18,
+        lineHeight: 1.6,
+        fontFamily: null,
+        color: Colors.black,
+        textScaler: TextScaler.noScaling,
+      ),
+    );
+    final PageData page = pager.pages(0).first;
+    expect(page.end, lessThan(text.indexOf('UNREAD_SECRET')));
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.light),
+          home: Scaffold(
+            body: PageBody(
+              page: page,
+              pager: pager,
+              layers: PageLayers(
+                world: null,
+                cutoff: page.end,
+                notes: const <Json>[],
+              ),
+              onName: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final RichText paragraph = tester.widget<RichText>(
+        find.byType(RichText).first,
+      );
+      expect(
+        paragraph.text.toPlainText(includeSemanticsLabels: false),
+        contains('UNREAD_SECRET_ENDING'),
+      );
+      expect(
+        paragraph.text.toPlainText(includeSemanticsLabels: true),
+        isNot(contains('UNREAD_SECRET_ENDING')),
+      );
+      expect(find.bySemanticsLabel(RegExp('UNREAD_SECRET')), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets(
+    'screen reader page actions turn available pages and expose reading tools',
+    (WidgetTester tester) async {
+      await setTestViewport(tester, const Size(430, 1000));
+      addTearDown(() => setTestViewport(tester, null));
+      final SemanticsHandle semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(ThusfarApp(model: model));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Regression book').first);
+        await tester.pumpAndSettle();
+        final Finder actions = find.byKey(
+          const ValueKey<String>('reader-page-actions'),
+        );
+        Map<CustomSemanticsAction, VoidCallback> available() => tester
+            .widget<Semantics>(actions)
+            .properties
+            .customSemanticsActions!;
+        Future<void> activate(String label) async {
+          final CustomSemanticsAction action = available().keys.singleWhere(
+            (CustomSemanticsAction action) => action.label == label,
+          );
+          final node = tester.getSemantics(actions);
+          node.owner!.performAction(
+            node.id,
+            ui.SemanticsAction.customAction,
+            CustomSemanticsAction.getIdentifier(action),
+          );
+          await tester.pumpAndSettle();
+        }
+
+        expect(
+          available().keys.map((CustomSemanticsAction action) => action.label),
+          unorderedEquals(<String>['下一页', '阅读工具']),
+        );
+        await activate('下一页');
+        expect(
+          model.library.progressOf(model.library.books.single.id)!.pos,
+          first.length,
+        );
+        expect(
+          available().keys.map((CustomSemanticsAction action) => action.label),
+          unorderedEquals(<String>['上一页', '阅读工具']),
+        );
+        await activate('上一页');
+        expect(model.library.progressOf(model.library.books.single.id)!.pos, 0);
+        await activate('阅读工具');
+        expect(find.byTooltip('回书架').hitTestable(), findsOneWidget);
+        expect(model.library.progressOf(model.library.books.single.id)!.pos, 0);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      } finally {
+        semantics.dispose();
+      }
+    },
+  );
+
+  testWidgets('folding and desktop resizing preserve the source anchor', (
+    WidgetTester tester,
+  ) async {
+    final BookEntry entry = model.library.books.single;
+    File(
+      '../oracle/goldens/books/aq_deepseek/book.json',
+    ).copySync('${entry.dir.path}/book.json');
+    await model.library.scan();
+    model.library.saveProgress(entry.id, 5799, 6086, 21734);
+    tester.view
+      ..physicalSize = const Size(390, 844)
+      ..devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view
+        ..resetDisplayFeatures()
+        ..resetPhysicalSize()
+        ..resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(model.library.books.single.title).first);
+    await tester.pumpAndSettle();
+    final Progress saved = model.library.progressOf(entry.id)!;
+    final int anchor = saved.pos;
+    final List<(Size, List<ui.DisplayFeature>)> profiles =
+        <(Size, List<ui.DisplayFeature>)>[
+          (
+            const Size(840, 900),
+            const <ui.DisplayFeature>[
+              ui.DisplayFeature(
+                bounds: Rect.fromLTWH(410, 0, 20, 900),
+                type: ui.DisplayFeatureType.hinge,
+                state: ui.DisplayFeatureState.postureHalfOpened,
+              ),
+            ],
+          ),
+          (
+            const Size(430, 900),
+            const <ui.DisplayFeature>[
+              ui.DisplayFeature(
+                bounds: Rect.fromLTWH(0, 430, 430, 20),
+                type: ui.DisplayFeatureType.hinge,
+                state: ui.DisplayFeatureState.postureHalfOpened,
+              ),
+            ],
+          ),
+          (const Size(1440, 960), const <ui.DisplayFeature>[]),
+          (const Size(390, 844), const <ui.DisplayFeature>[]),
+        ];
+    for (final (Size size, List<ui.DisplayFeature> features) in profiles) {
+      tester.view
+        ..physicalSize = size
+        ..displayFeatures = features;
+      await tester.pumpAndSettle();
+      final Finder visible = find.byType(PageBody).first;
+      final PageBody body = tester.widget<PageBody>(visible);
+      final Rect rect = tester.getRect(visible);
+      expect(body.page.start, lessThanOrEqualTo(anchor));
+      expect(body.page.end, greaterThan(anchor));
+      expect(rect.width, lessThanOrEqualTo(560));
+      for (final ui.DisplayFeature feature in features) {
+        expect(rect.overlaps(feature.bounds), isFalse);
+      }
+      expect(model.library.progressOf(entry.id)!.pos, saved.pos);
+      expect(model.library.progressOf(entry.id)!.cutoff, saved.cutoff);
+      if (size.width == 1440) {
+        expect(rect.center.dx, 720);
+        // Selection hit testing must use the same centered content origin.
+        final Frag fragment = body.page.frags.firstWhere(
+          (Frag frag) => !frag.image,
+        );
+        final Block block = body.pager.book.blocks[fragment.block];
+        final TextPainter painter = body.pager.painterFor(block);
+        final Offset caret = painter.getOffsetForCaret(
+          TextPosition(offset: fragment.start + 3 + indentShift),
+          Rect.zero,
+        );
+        painter.dispose();
+        await tester.longPressAt(
+          tester.getTopLeft(visible) +
+              Offset(
+                caret.dx + body.pager.spec.fontSize / 4,
+                caret.dy - fragment.top + body.pager.spec.line / 2,
+              ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('摘录'));
+        await tester.pumpAndSettle();
+        expect(body.pager.book.notes.notes, hasLength(1));
+        final Json note = body.pager.book.notes.notes.single;
+        expect(note['start']! as int, greaterThanOrEqualTo(body.page.start));
+        expect(note['end']! as int, lessThanOrEqualTo(body.page.end));
+        expect(
+          note['quote'],
+          body.pager.book.textBetween(
+            note['start']! as int,
+            note['end']! as int,
+          ),
+        );
+      }
+      expect(tester.takeException(), isNull);
+    }
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets(
     'book drawer notes opens notes and reader back returns in one tap',
     (tester) async {
-      await tester.binding.setSurfaceSize(const Size(430, 1000));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await setTestViewport(tester, const Size(430, 1000));
+      addTearDown(() => setTestViewport(tester, null));
       await tester.pumpWidget(ThusfarApp(model: model));
       await tester.pumpAndSettle();
       await tester.longPress(find.text('Regression book').first);
@@ -290,8 +756,8 @@ void main() {
   testWidgets(
     'closing a sheet restores the reader toolbar before the next Back leaves reading',
     (tester) async {
-      await tester.binding.setSurfaceSize(const Size(430, 1000));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await setTestViewport(tester, const Size(430, 1000));
+      addTearDown(() => setTestViewport(tester, null));
       await tester.pumpWidget(ThusfarApp(model: model));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Regression book').first);
@@ -331,8 +797,8 @@ void main() {
   testWidgets(
     'page footnotes open through reader without exposing later notes',
     (tester) async {
-      await tester.binding.setSurfaceSize(const Size(430, 1000));
-      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await setTestViewport(tester, const Size(430, 1000));
+      addTearDown(() => setTestViewport(tester, null));
       await tester.pumpWidget(ThusfarApp(model: model));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Regression book').first);
@@ -425,14 +891,14 @@ void main() {
       ).copySync('${entry.dir.path}/book.json');
       await model.library.scan();
       model.library.saveProgress(entry.id, 5799, 6086, 21734);
-      await tester.binding.setSurfaceSize(const Size(430, 1000));
+      await setTestViewport(tester, const Size(430, 1000));
       tester.view.viewPadding = const FakeViewPadding(bottom: 24);
       tester.view.padding = const FakeViewPadding(bottom: 24);
       addTearDown(() async {
         tester.view.resetViewInsets();
         tester.view.resetViewPadding();
         tester.view.resetPadding();
-        await tester.binding.setSurfaceSize(null);
+        await setTestViewport(tester, null);
       });
       await tester.pumpWidget(ThusfarApp(model: model));
       await tester.pumpAndSettle();
@@ -608,8 +1074,8 @@ void main() {
   testWidgets('typography sheet switches font and propagates to reader spec', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(430, 1000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await setTestViewport(tester, const Size(430, 1000));
+    addTearDown(() => setTestViewport(tester, null));
     await tester.pumpWidget(ThusfarApp(model: model));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Regression book').first);
@@ -641,9 +1107,9 @@ void main() {
     await tester.tap(find.text('黑'));
     await tester.pumpAndSettle();
     expect(model.prefs.font, 2);
-    expect(model.prefs.fontFamily, 'sans-serif');
+    expect(model.prefs.fontFamily, 'NotoSansSC');
     expect(model.prefs.fontFallback.contains('MiSans'), isTrue);
-    expect(model.prefs.fontFallback.contains('NotoSerifSC'), isFalse);
+    expect(model.prefs.fontFallback.last, 'NotoSerifSC');
 
     // Reset back to 0 (宋)
     await tester.tap(find.text('宋'));

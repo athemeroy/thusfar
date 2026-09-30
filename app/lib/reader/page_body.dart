@@ -82,15 +82,25 @@ class PageBody extends StatelessWidget {
   }
 
   Widget _image(BookData book, Block b, Tokens t) {
+    final Object? rawAlt = b.raw['alt'];
+    final String? alt = rawAlt is String && rawAlt.trim().isNotEmpty
+        ? rawAlt
+        : null;
     final File f = File('${book.entry.dir.path}/img/${b.src}');
     if (!f.existsSync()) {
-      return Center(
-        child: Icon(Icons.image_not_supported_outlined, color: t.ink3),
+      return Semantics(
+        image: true,
+        label: alt == null ? '图片未保存' : '图片未保存。$alt',
+        child: ExcludeSemantics(
+          child: Center(
+            child: Icon(Icons.image_not_supported_outlined, color: t.ink3),
+          ),
+        ),
       );
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Image.file(f, fit: BoxFit.contain),
+      child: Image.file(f, fit: BoxFit.contain, semanticLabel: alt),
     );
   }
 }
@@ -146,7 +156,7 @@ class _Fragment extends StatelessWidget {
     final String text = b.text;
     final int o = b.o;
     // Boundaries where any styling changes.
-    final Set<int> cuts = <int>{0, text.length};
+    final Set<int> cuts = <int>{0, frag.start, frag.end, text.length};
     final List<Mention> mentions = <Mention>[];
     final World? w = layers.world;
     if (w != null) {
@@ -235,11 +245,15 @@ class _Fragment extends StatelessWidget {
         );
       }
       final String id = m?.id ?? '';
+      final bool visible = a >= frag.start && z <= frag.end;
       children.add(
         TextSpan(
           text: text.substring(a, z),
+          // The visual paragraph is clipped to its page lines. Screen readers
+          // must receive the same range, rather than the rest of the paragraph.
+          semanticsLabel: visible ? null : '',
           style: style,
-          recognizer: m == null
+          recognizer: m == null || !visible
               ? null
               : (TapGestureRecognizer()..onTap = () => onName(id)),
         ),

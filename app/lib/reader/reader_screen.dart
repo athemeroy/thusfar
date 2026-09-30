@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show DisplayFeatureState, DisplayFeatureType;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart'
     show PointerScrollEvent, PointerSignalEvent;
 import 'package:flutter/services.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:thusfar_core/thusfar_core.dart';
 import 'package:thusfar_core/ask.dart' as ask;
 
@@ -72,8 +74,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final GlobalKey<CoverPageTurnState> _coverTurnKey =
       GlobalKey<CoverPageTurnState>();
   PageSpec? spec;
+  int? _layoutAnchor;
   double _contentLeft = 0;
   double _contentWidth = 0;
+  Rect _readingBounds = Rect.zero;
+  Rect _toolsBounds = Rect.zero;
   bool _sheetOpen = false;
   Offset? _pressAt;
   int? _anchor;
@@ -149,7 +154,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
     if (spec == next && c.pager != null) return;
     final bool first = c.pager == null;
-    final int keep = first ? (widget.openAt ?? _initialOffset) : c.start;
+    final int keep = first
+        ? (widget.openAt ?? _initialOffset)
+        : (_layoutAnchor ?? c.start);
+    _layoutAnchor = keep;
     spec = next;
     c.layout(Paginator(book, next), keep);
     if (first && widget.openAt != null) {
@@ -185,6 +193,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _jump(int offset, {(int, int)? highlight, bool remember = true}) {
+    _layoutAnchor = offset;
     final int index = c.jump(
       offset,
       remember: remember,
@@ -212,7 +221,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         page,
         initial: initial,
         full: full,
-        anchorPoint: anchorPoint,
+        anchorPoint: anchorPoint ?? _toolsBounds.center,
       );
     } finally {
       _sheetOpen = false;
@@ -330,8 +339,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _onPageChanged(int index) {
+    if (index == c.currentIndex) return;
     final int before = c.chapter;
     c.onPage(index);
+    _layoutAnchor = c.start;
     SeenStore.instance.maxRead(book.id, c.cutoff);
     if (c.chapter != before) HapticFeedback.lightImpact();
   }
@@ -544,7 +555,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   /// A mouse wheel or trackpad scroll turns one page per gesture; the
   /// short pause stops one flick from skipping a whole chapter.
   void _wheel(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent || _sheetOpen || _wheelLocked) return;
+    if (event is! PointerScrollEvent ||
+        _sheetOpen ||
+        c.toolbar ||
+        _wheelLocked) {
+      return;
+    }
+    if (!_readingBounds.contains(event.localPosition)) return;
     final double dy = event.scrollDelta.dy;
     if (dy.abs() < 4) return;
     _wheelLocked = true;
@@ -562,12 +579,66 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
+  /// Keep text and controls on usable displays when a hinge separates them.
+  (Rect, Rect) _paneBounds(Size size, MediaQueryData media) {
+    final Rect window = Offset.zero & size;
+    for (final feature in media.displayFeatures) {
+      final bool separates =
+          feature.type == DisplayFeatureType.hinge ||
+          (feature.type == DisplayFeatureType.fold &&
+              feature.state == DisplayFeatureState.postureHalfOpened);
+      if (!separates) continue;
+      final Rect hinge = feature.bounds;
+      if (hinge.height >= size.height * .85 &&
+          hinge.width < size.width * .4 &&
+          hinge.left > 0 &&
+          hinge.right < size.width) {
+        final Rect left = Rect.fromLTRB(0, 0, hinge.left, size.height);
+        final Rect right = Rect.fromLTRB(
+          hinge.right,
+          0,
+          size.width,
+          size.height,
+        );
+        final Rect reading = left.width >= 180 ? left : right;
+        final Rect tools = right.width >= 180 && reading == left
+            ? right
+            : reading;
+        return (reading, tools);
+      }
+      if (hinge.width >= size.width * .85 &&
+          hinge.height < size.height * .4 &&
+          hinge.top > 0 &&
+          hinge.bottom < size.height) {
+        final Rect upper = Rect.fromLTRB(0, 0, size.width, hinge.top);
+        final Rect lower = Rect.fromLTRB(
+          0,
+          hinge.bottom,
+          size.width,
+          size.height,
+        );
+        final Rect reading = upper.height >= 160 ? upper : lower;
+        final Rect tools = lower.height >= 160 && reading == upper
+            ? lower
+            : reading;
+        return (reading, tools);
+      }
+    }
+    return (window, window);
+  }
+
   Widget _readerFocus(BuildContext context, Color paper) {
     return Focus(
       focusNode: _focus,
       autofocus: true,
       onKeyEvent: (FocusNode _, KeyEvent e) {
         if (_sheetOpen || e is KeyUpEvent) return KeyEventResult.ignored;
+        final HardwareKeyboard keyboard = HardwareKeyboard.instance;
+        if (keyboard.isControlPressed ||
+            keyboard.isMetaPressed ||
+            keyboard.isAltPressed) {
+          return KeyEventResult.ignored;
+        }
         if (e.logicalKey == LogicalKeyboardKey.escape) {
           if (c.selection != null || _whoIsActive) {
             _clearSelection();
@@ -581,6 +652,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
           return KeyEventResult.handled;
         }
         // Computers: arrows, space, Vim keys (j/k/h/l) and page keys turn pages.
+        if (e.logicalKey == LogicalKeyboardKey.space &&
+            keyboard.isShiftPressed) {
+          _turn(-1);
+          return KeyEventResult.handled;
+        }
         if (_nextKeys.contains(e.logicalKey)) {
           _turn(1);
           return KeyEventResult.handled;
@@ -649,35 +725,53 @@ class _ReaderScreenState extends State<ReaderScreen> {
           // Modal editors handle their own keyboard insets. Keep the book's
           // geometry fixed while the IME animates or the device changes posture.
           final EdgeInsets pagePadding = MediaQuery.viewPaddingOf(context);
+          final (Rect reading, Rect tools) = _paneBounds(
+            box.biggest,
+            MediaQuery.of(context),
+          );
+          _readingBounds = reading;
+          _toolsBounds = tools;
           final double verticalMargin = widget.prefs.pageVerticalMargin;
-          final double top = pagePadding.top + 32 + verticalMargin;
-          final double bottom = pagePadding.bottom + 40 + verticalMargin;
-          final double maxInset = math.max(0, (box.maxWidth - 1) / 2);
-          final double pageLeft = math.min(
+          final double safeTop = reading.top == 0 ? pagePadding.top : 0;
+          final double safeBottom = reading.bottom == box.maxHeight
+              ? pagePadding.bottom
+              : 0;
+          final double top = reading.top + safeTop + 32 + verticalMargin;
+          final double bottom = safeBottom + 40 + verticalMargin;
+          final double columnWidth = math.min(600, reading.width);
+          final double outerInset = (reading.width - columnWidth) / 2;
+          final double maxInset = math.max(0, (columnWidth - 1) / 2);
+          final double leftInset = math.min(
             maxInset,
-            pagePadding.left + widget.prefs.pageHorizontalMargin,
+            (reading.left == 0 ? pagePadding.left : 0) +
+                widget.prefs.pageHorizontalMargin,
           );
-          final double pageRight = math.min(
-            math.max(0, box.maxWidth - pageLeft - 1),
-            pagePadding.right + widget.prefs.pageHorizontalMargin,
+          final double rightInset = math.min(
+            math.max(0, columnWidth - leftInset - 1),
+            (reading.right == box.maxWidth ? pagePadding.right : 0) +
+                widget.prefs.pageHorizontalMargin,
           );
-          final double pageWidth = math.max(
+          final double availableWidth = math.max(
             1,
-            box.maxWidth - pageLeft - pageRight,
+            columnWidth - leftInset - rightInset,
           );
+          final double pageWidth = math.max(1, math.min(560, availableWidth));
+          final double centering = (availableWidth - pageWidth) / 2;
+          final double pageLeft = outerInset + leftInset + centering;
+          final double pageRight = outerInset + rightInset + centering;
           _contentLeft = pageLeft;
           _contentWidth = pageWidth;
           final Size area = Size(
             pageWidth,
-            math.max(1, box.maxHeight - top - bottom),
+            math.max(1, reading.bottom - top - bottom),
           );
           _ensureLayout(area, context.tk);
           // Controls animate over the page without changing its geometry.
           return Stack(
             children: <Widget>[
               Positioned(
-                left: 0,
-                right: 0,
+                left: reading.left,
+                width: reading.width,
                 top: top,
                 height: area.height,
                 child: SizedBox(
@@ -685,7 +779,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: _pages(
                     context,
                     paper,
-                    viewportWidth: box.maxWidth,
+                    viewportWidth: reading.width,
                     contentInsets: EdgeInsets.only(
                       left: pageLeft,
                       right: pageRight,
@@ -694,39 +788,101 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 ),
               ),
               Positioned(
-                left: pageLeft,
+                left: reading.left + pageLeft,
                 width: pageWidth,
-                top: pagePadding.top + 10,
+                top: reading.top + safeTop + 10,
                 height: 28,
                 child: _header(context),
               ),
               Positioned(
-                left: pageLeft,
+                left: reading.left + pageLeft,
                 width: pageWidth,
-                bottom: pagePadding.bottom + 6,
+                bottom: box.maxHeight - reading.bottom + safeBottom + 6,
                 height: 44,
                 child: _footer(context),
               ),
               if (book.notes.bookmarkIn(c.start, c.cutoff) != null)
                 Positioned(
-                  left: pageLeft + pageWidth - 16,
-                  top: 0,
+                  left: reading.left + pageLeft + pageWidth - 16,
+                  top: reading.top,
                   child: _ribbon(context),
                 ),
               if (c.returnTo != null)
                 Positioned(
-                  left: pageLeft,
-                  right: pageLeft,
-                  bottom: pagePadding.bottom + 48,
+                  left: reading.left + pageLeft,
+                  width: pageWidth,
+                  bottom: box.maxHeight - reading.bottom + safeBottom + 48,
                   child: Center(child: _returnPill(context)),
                 ),
               if (c.selection != null) _selectionBar(context, top),
+              if (tools != reading && !c.toolbar)
+                Positioned.fromRect(
+                  rect: tools,
+                  child: SafeArea(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              Text(
+                                widget.entry.title,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: context.tk.ink,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 12,
+                                children: <Widget>[
+                                  TextButton.icon(
+                                    onPressed:
+                                        c.pageAt(c.currentIndex - 1) == null
+                                        ? null
+                                        : () => _turn(-1),
+                                    icon: const Icon(Icons.chevron_left),
+                                    label: const Text('上一页'),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed:
+                                        c.pageAt(c.currentIndex + 1) == null
+                                        ? null
+                                        : () => _turn(1),
+                                    icon: const Icon(Icons.chevron_right),
+                                    label: const Text('下一页'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton.icon(
+                                onPressed: () => c.setToolbar(true),
+                                icon: const Icon(Icons.menu_book_outlined),
+                                label: const Text('阅读工具'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
-                child: _toolbar(context),
+                left: tools.left,
+                width: tools.width,
+                top: tools.top,
+                height: tools.height,
+                child: MediaQuery(
+                  data: MediaQuery.of(
+                    context,
+                  ).copyWith(size: tools.size, displayFeatures: const []),
+                  child: _toolbar(context),
+                ),
               ),
             ],
           );
@@ -775,49 +931,64 @@ class _ReaderScreenState extends State<ReaderScreen> {
       );
     }
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapUp: (TapUpDetails d) {
-        if (c.selection != null) {
-          _clearSelection();
-          return;
-        }
-        final double x = d.localPosition.dx / math.max(1, viewportWidth);
-        if (x < 1 / 3) {
-          _turn(-1);
-        } else if (x > 2 / 3) {
-          _turn(1);
-        } else {
-          c.setToolbar(!c.toolbar);
-        }
+    return Semantics(
+      key: const ValueKey<String>('reader-page-actions'),
+      container: true,
+      explicitChildNodes: true,
+      label: '阅读正文',
+      customSemanticsActions: <CustomSemanticsAction, VoidCallback>{
+        if (c.pageAt(c.currentIndex - 1) != null)
+          const CustomSemanticsAction(label: '上一页'): () => _turn(-1),
+        if (c.pageAt(c.currentIndex + 1) != null)
+          const CustomSemanticsAction(label: '下一页'): () => _turn(1),
+        const CustomSemanticsAction(label: '阅读工具'): () => c.setToolbar(true),
       },
-      onLongPressStart: _longPress,
-      onLongPressMoveUpdate: _longPressMove,
-      onHorizontalDragEnd: none
-          ? (DragEndDetails d) {
-              if ((d.primaryVelocity ?? 0) < -100) _turn(1);
-              if ((d.primaryVelocity ?? 0) > 100) _turn(-1);
-            }
-          : null,
-      child: cover
-          ? CoverPageTurn(
-              key: _coverTurnKey,
-              currentIndex: c.currentIndex,
-              generation: c.generation,
-              canShow: (int index) => c.pageAt(index) != null,
-              pageBuilder: (BuildContext _, int index) => pageBody(index)!,
-              onPageChanged: _onPageChanged,
-              swipingEnabled: c.selection == null,
-            )
-          : PageView.builder(
-              key: ValueKey<int>(c.generation),
-              controller: p,
-              physics: none || c.selection != null
-                  ? const NeverScrollableScrollPhysics()
-                  : const PageScrollPhysics(),
-              onPageChanged: _onPageChanged,
-              itemBuilder: (BuildContext context, int index) => pageBody(index),
-            ),
+      child: GestureDetector(
+        excludeFromSemantics: true,
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (TapUpDetails d) {
+          if (c.selection != null) {
+            _clearSelection();
+            return;
+          }
+          final double x = d.localPosition.dx / math.max(1, viewportWidth);
+          if (x < 1 / 3) {
+            _turn(-1);
+          } else if (x > 2 / 3) {
+            _turn(1);
+          } else {
+            c.setToolbar(!c.toolbar);
+          }
+        },
+        onLongPressStart: _longPress,
+        onLongPressMoveUpdate: _longPressMove,
+        onHorizontalDragEnd: none
+            ? (DragEndDetails d) {
+                if ((d.primaryVelocity ?? 0) < -100) _turn(1);
+                if ((d.primaryVelocity ?? 0) > 100) _turn(-1);
+              }
+            : null,
+        child: cover
+            ? CoverPageTurn(
+                key: _coverTurnKey,
+                currentIndex: c.currentIndex,
+                generation: c.generation,
+                canShow: (int index) => c.pageAt(index) != null,
+                pageBuilder: (BuildContext _, int index) => pageBody(index)!,
+                onPageChanged: _onPageChanged,
+                swipingEnabled: c.selection == null,
+              )
+            : PageView.builder(
+                key: ValueKey<int>(c.generation),
+                controller: p,
+                physics: none || c.selection != null
+                    ? const NeverScrollableScrollPhysics()
+                    : const PageScrollPhysics(),
+                onPageChanged: _onPageChanged,
+                itemBuilder: (BuildContext context, int index) =>
+                    pageBody(index),
+              ),
+      ),
     );
   }
 
@@ -894,9 +1065,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
         if (w != null && cast.isNotEmpty)
           Tooltip(
             message: '本页人物 (${cast.length})',
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(44, 44),
+              ),
+              onPressed: () {
                 HapticFeedback.lightImpact();
                 _sheet(
                   PeoplePage(link: link, onStartProcessing: _startProcessing),
@@ -1047,8 +1221,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       ),
     );
     return Positioned(
-      left: 16,
-      right: 16,
+      left: _readingBounds.left + 16,
+      width: math.max(1, _readingBounds.width - 32),
       top: above ? math.max(top + 8, y - (_whoIsActive ? 120 : 64)) : y + 34,
       child: Center(
         child: Column(
@@ -1058,8 +1232,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
               color: t.ink,
               shape: const StadiumBorder(),
               elevation: 4,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Wrap(
+                alignment: WrapAlignment.center,
                 children: <Widget>[
                   action('摘录', _excerpt),
                   action('批注', () {
@@ -1120,8 +1294,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       shadowColor: Colors.black.withValues(alpha: 0.15),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
             if (_whoIsLoading) ...<Widget>[
               SizedBox(
@@ -1196,29 +1370,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final bool marked = book.notes.bookmarkIn(c.start, c.cutoff) != null;
     final bool reduceMotion = mq.disableAnimations;
     final Duration duration = reduceMotion ? Duration.zero : Motion.toolbar;
-    return IgnorePointer(
-      ignoring: !on,
-      child: AnimatedOpacity(
-        opacity: on ? 1 : 0,
-        duration: duration,
-        curve: Curves.easeInOut,
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: KeyedSubtree(
-            key: const ValueKey<String>('reader-toolbar-panel'),
-            child: Material(
-              color: t.sheet,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    _toolbarActions(context, marked),
-                    if (p != null) ...<Widget>[
-                      _progressRow(context, p),
-                      _toolsRow(context, ai),
+    return ExcludeSemantics(
+      excluding: !on,
+      child: IgnorePointer(
+        ignoring: !on,
+        child: AnimatedOpacity(
+          opacity: on ? 1 : 0,
+          duration: duration,
+          curve: Curves.easeInOut,
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: KeyedSubtree(
+              key: const ValueKey<String>('reader-toolbar-panel'),
+              child: Material(
+                color: t.sheet,
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _toolbarActions(context, marked),
+                      if (p != null) ...<Widget>[
+                        _progressRow(context, p),
+                        _toolsRow(context, ai),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -1231,7 +1408,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget _toolbarActions(BuildContext context, bool marked) {
     final Tokens t = context.tk;
     return SizedBox(
-      height: 52,
+      height: math.max(
+        52,
+        MediaQuery.textScalerOf(context).scale(15) * 2.2 + 14,
+      ),
       child: Row(
         children: <Widget>[
           IconButton(
@@ -1295,7 +1475,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   );
                 case 2:
                   c.setToolbar(false);
-                  openTypography(context, widget.prefs);
+                  openTypography(
+                    context,
+                    widget.prefs,
+                    anchorPoint: _toolsBounds.center,
+                  );
                 case 3:
                   if (c.page != null) {
                     _sheet(
@@ -1502,7 +1686,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         tool(Icons.chat_bubble_outline, '问书', true, () => _openAsk()),
         tool(Icons.text_fields, '排版', false, () {
           c.setToolbar(false);
-          openTypography(context, widget.prefs);
+          openTypography(
+            context,
+            widget.prefs,
+            anchorPoint: _toolsBounds.center,
+          );
         }),
       ],
     );

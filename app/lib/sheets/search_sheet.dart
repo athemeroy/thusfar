@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -32,14 +35,73 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> {
   String query = '';
   bool whole = false;
+  final TextEditingController _input = TextEditingController();
+  final FocusNode _focus = FocusNode();
+  Timer? _debounce;
+  int _epoch = 0;
+  int _lastLimit = 0;
+  bool _searching = false;
+  List<_Hit> _hits = const <_Hit>[];
 
-  List<_Hit> _search() {
-    final BookData book = widget.link.c.book;
+  @override
+  void initState() {
+    super.initState();
+    _lastLimit = widget.link.c.cutoff;
+    widget.link.c.addListener(_positionChanged);
+  }
+
+  void _positionChanged() {
+    final int limit = whole ? widget.link.c.book.length : widget.link.c.cutoff;
+    if (limit != _lastLimit) _scheduleSearch();
+  }
+
+  @override
+  void dispose() {
+    _epoch++;
+    _debounce?.cancel();
+    widget.link.c.removeListener(_positionChanged);
+    _input.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  void _clear() {
+    _input.clear();
+    query = '';
+    _scheduleSearch();
+    _focus.requestFocus();
+  }
+
+  void _scheduleSearch() {
+    final int epoch = ++_epoch;
+    _debounce?.cancel();
     final String q = query.toLowerCase();
-    if (q.isEmpty) return const <_Hit>[];
-    final int limit = whole ? book.length : widget.link.c.cutoff;
+    final int limit = whole ? widget.link.c.book.length : widget.link.c.cutoff;
+    _lastLimit = limit;
+    setState(() {
+      _hits = const <_Hit>[];
+      _searching = q.isNotEmpty;
+    });
+    if (q.isEmpty) return;
+    _debounce = Timer(const Duration(milliseconds: 160), () async {
+      final List<_Hit> hits = await _search(epoch, q, limit);
+      if (!mounted || epoch != _epoch) return;
+      setState(() {
+        _hits = hits;
+        _searching = false;
+      });
+    });
+  }
+
+  Future<List<_Hit>> _search(int epoch, String q, int limit) async {
+    final BookData book = widget.link.c.book;
     final List<_Hit> out = <_Hit>[];
+    int scanned = 0;
     for (final Block b in book.blocks) {
+      if (++scanned % 64 == 0) {
+        await Future<void>.delayed(Duration.zero);
+        if (!mounted || epoch != _epoch) return const <_Hit>[];
+      }
       if (b.o >= limit) break;
       if (b.kind == 'img') continue;
       final String lower = b.text.toLowerCase();
@@ -71,8 +133,18 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    final List<_Hit> hits = _search();
+    final List<_Hit> hits = _hits;
     final BookData book = widget.link.c.book;
+    final TextScaler scaler = MediaQuery.textScalerOf(context);
+    final double inputHeight = math.max(44, scaler.scale(16) * 1.6 + 10);
+    final Segmented tabs = Segmented(
+      labels: const <String>['读到这里', '全书'],
+      index: whole ? 1 : 0,
+      onChanged: (int i) {
+        whole = i == 1;
+        _scheduleSearch();
+      },
+    );
     final int read = SeenStore.instance.maxRead(book.id, widget.link.c.cutoff);
     final List<Widget> rows = <Widget>[];
     int? lastChapter;
@@ -156,10 +228,12 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
     return SheetPage(
-      title: query.isEmpty
+      title: _searching
+          ? '正在搜索…'
+          : query.isEmpty
           ? '搜索原文'
           : '找到 ${hits.length}${hits.length >= 500 ? '+' : ''} 处',
-      titleWidget: query.isEmpty
+      titleWidget: query.isEmpty || _searching
           ? null
           : Text.rich(
               TextSpan(
@@ -184,49 +258,63 @@ class _SearchPageState extends State<SearchPage> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-      headerExtraHeight: whole ? 126 : 104,
+      headerExtraHeight:
+          inputHeight +
+          8 +
+          tabs.heightForWidth(context, MediaQuery.sizeOf(context).width) +
+          (whole ? (scaler.scale(12) * 1.5 + 8).ceilToDouble() : 0),
       headerExtra: Column(
         children: <Widget>[
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
             child: SizedBox(
-              height: 44,
-              child: TextField(
-                autofocus: true,
-                textInputAction: TextInputAction.search,
-                onChanged: (String v) => setState(() => query = v.trim()),
-                decoration: InputDecoration(
-                  hintText: '搜索书里的一句话',
-                  prefixIcon: const Icon(Icons.search, size: 20),
-                  suffixIcon: query.isEmpty
-                      ? null
-                      : IconButton(
-                          tooltip: '清空搜索',
-                          icon: const Icon(Icons.close, size: 18),
-                          onPressed: () {
-                            HapticFeedback.selectionClick();
-                            setState(() => query = '');
-                          },
-                        ),
-                  filled: true,
-                  fillColor: t.paper,
-                  contentPadding: EdgeInsets.zero,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none,
+              height: inputHeight,
+              child: Focus(
+                onKeyEvent: (_, KeyEvent event) {
+                  if (event is KeyDownEvent &&
+                      event.logicalKey == LogicalKeyboardKey.escape &&
+                      query.isNotEmpty) {
+                    _clear();
+                    return KeyEventResult.handled;
+                  }
+                  return KeyEventResult.ignored;
+                },
+                child: TextField(
+                  key: const ValueKey<String>('reader-search-input'),
+                  controller: _input,
+                  focusNode: _focus,
+                  autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (String v) {
+                    query = v.trim();
+                    _scheduleSearch();
+                  },
+                  decoration: InputDecoration(
+                    hintText: '搜索书里的一句话',
+                    prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: query.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: '清空搜索',
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              _clear();
+                            },
+                          ),
+                    filled: true,
+                    fillColor: t.paper,
+                    contentPadding: EdgeInsets.zero,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          Segmented(
-            labels: const <String>['读到这里', '全书'],
-            index: whole ? 1 : 0,
-            onChanged: (int i) {
-              HapticFeedback.selectionClick();
-              setState(() => whole = i == 1);
-            },
-          ),
+          tabs,
           if (whole)
             Padding(
               padding: const EdgeInsets.only(top: 6),
@@ -237,7 +325,7 @@ class _SearchPageState extends State<SearchPage> {
                   const SizedBox(width: 4),
                   Text(
                     '会搜到还没读的内容',
-                    style: TextStyle(color: t.amber, fontSize: 12),
+                    style: TextStyle(color: t.amber, fontSize: 12, height: 1.4),
                   ),
                 ],
               ),
@@ -247,6 +335,8 @@ class _SearchPageState extends State<SearchPage> {
       slivers: <Widget>[
         if (query.isEmpty)
           emptyState(context, '输入关键词搜索正文内容')
+        else if (_searching)
+          emptyState(context, '正在搜索…')
         else if (hits.isEmpty)
           emptyState(
             context,
@@ -257,7 +347,8 @@ class _SearchPageState extends State<SearchPage> {
                     label: '搜全书',
                     onTap: () {
                       HapticFeedback.lightImpact();
-                      setState(() => whole = true);
+                      whole = true;
+                      _scheduleSearch();
                     },
                   ),
           )

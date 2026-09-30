@@ -12,8 +12,45 @@
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.json">
   <title>页读 · Thusfar</title>
+  <style>
+    body { margin: 0; background: #f2ede2; color: #292720; }
+    #thusfar-startup { position: fixed; inset: 0; display: grid; place-items: center;
+      padding: max(24px, env(safe-area-inset-top, 0px)) 24px;
+      font: 16px/1.6 system-ui, sans-serif; }
+    #thusfar-startup > div { max-width: 360px; text-align: center; }
+    #thusfar-startup h1 { margin: 0 0 12px; font: 32px/1.4 Georgia, serif; }
+    #thusfar-startup p { color: #625d52; }
+    #thusfar-startup button { min-height: 44px; padding: 10px 20px; border: 0;
+      border-radius: 10px; background: #823920; color: #fff; font: inherit; cursor: pointer; }
+    #thusfar-startup button:focus-visible { outline: 2px solid #823920; outline-offset: 4px; }
+    .startup-spinner { width: 28px; height: 28px; margin: 24px auto;
+      border: 2px solid #d5cbbc; border-top-color: #823920; border-radius: 50%;
+      animation: startup-turn 1s linear infinite; }
+    @keyframes startup-turn { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .startup-spinner { animation: none; } }
+  </style>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <div id="thusfar-startup" role="status" aria-live="polite">
+    <div>
+      <h1>页读 · Thusfar</h1>
+      <div class="startup-spinner" aria-hidden="true"></div>
+      <p id="thusfar-startup-message">正在打开本地书库…</p>
+      <p>书籍与阅读进度保存在此浏览器。</p>
+      <button id="thusfar-startup-retry" hidden onclick="location.reload()">重新打开</button>
+    </div>
+  </div>
+  <noscript>请启用 JavaScript 以打开本地阅读器。</noscript>
+  <script>
+    window.thusfarStartupFailed = () => {
+      const startup = document.getElementById('thusfar-startup');
+      if (!startup) return;
+      startup.querySelector('.startup-spinner').hidden = true;
+      document.getElementById('thusfar-startup-message').textContent =
+        '阅读器暂时未能打开。请检查连接后重试；已有书库仍保存在此浏览器。';
+      document.getElementById('thusfar-startup-retry').hidden = false;
+    };
+  </script>
+  <script src="flutter_bootstrap.js" async onerror="window.thusfarStartupFailed()"></script>
 </body>
 </html>

@@ -4,9 +4,22 @@
 // Flutter 3.47 emits an unregister-only service worker. Our own worker caches
 // the public app shell; books and reading state stay in IndexedDB.
 const appBase = new URL('.', document.baseURI);
-_flutter.loader.load({
-  config: {canvasKitBaseUrl: new URL('canvaskit/', appBase).href},
-});
+try {
+  Promise.resolve(_flutter.loader.load({
+    config: {canvasKitBaseUrl: new URL('canvaskit/', appBase).href},
+    onEntrypointLoaded: async (engineInitializer) => {
+      try {
+        const appRunner = await engineInitializer.initializeEngine();
+        await appRunner.runApp();
+        document.getElementById('thusfar-startup')?.remove();
+      } catch (_) {
+        window.thusfarStartupFailed?.();
+      }
+    },
+  })).catch(() => window.thusfarStartupFailed?.());
+} catch (_) {
+  window.thusfarStartupFailed?.();
+}
 
 if ('serviceWorker' in navigator) {
   const hadController = Boolean(navigator.serviceWorker.controller);

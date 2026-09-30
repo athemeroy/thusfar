@@ -660,12 +660,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
                 .length;
             return Theme(
               data: Theme.of(context).copyWith(
-                // CanvasKit rendered missing-glyph boxes for some Chinese
-                // characters in the previous serif form on Android Chrome.
-                // System sans matches the working TextField and button glyphs.
-                textTheme: Theme.of(
-                  context,
-                ).textTheme.apply(fontFamily: 'sans-serif'),
+                // Bundle Chinese glyphs for model forms and offline settings.
+                textTheme: Theme.of(context).textTheme.apply(fontFamily: sans),
               ),
               child: AlertDialog(
                 backgroundColor: t.sheet,
@@ -1342,7 +1338,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                     color: t.zhu,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'sans-serif',
+                    fontFamily: sans,
                   ),
                 ),
               ),
@@ -1442,7 +1438,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                     textStyle: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      fontFamily: 'sans-serif',
+                      fontFamily: sans,
                     ),
                   ),
                   onPressed: _loading || _starting || _clearing || otherTab
@@ -1454,7 +1450,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                   ),
                   label: Text(
                     done == 0 ? '开始整理' : '继续或调整范围',
-                    style: TextStyle(color: t.sheet, fontFamily: 'sans-serif'),
+                    style: TextStyle(color: t.sheet, fontFamily: sans),
                   ),
                 ),
             ],

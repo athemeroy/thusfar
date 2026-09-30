@@ -40,7 +40,8 @@ class RecapPage extends StatelessWidget {
         message = '截至这一页，还没有可展示的前情提要。';
       }
       return SheetPage(
-        title: '前情 · 截至第 $page 页',
+        title: '前情',
+        tag: '截至第 $page 页',
         slivers: <Widget>[
           emptyState(
             context,
@@ -63,7 +64,8 @@ class RecapPage extends StatelessWidget {
     ];
     final String? saga = w.saga == null ? null : '${w.saga!['text']}';
     return SheetPage(
-      title: '前情 · 截至第 $page 页',
+      title: '前情',
+      tag: '截至第 $page 页',
       slivers: <Widget>[
         if (saga != null) ...<Widget>[
           const SliverToBoxAdapter(child: SectionTitle('到上一章为止')),

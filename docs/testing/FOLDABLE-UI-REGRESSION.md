@@ -74,3 +74,93 @@ between macOS and Linux are the likely cause, but this remains an inference. Do
 not replace the Mini goldens with NAS output. A new Mini stage was refused
 because its free space was 20.0 GiB, under the strict 20 GiB reserve. No
 existing task or project data was removed.
+
+## Multi-device UX regression checks
+
+The current Flutter client keeps reader text within a 560 dp column, splits
+reading and tools at a separating hinge, and retains the source position when
+the window or posture changes. A flat fold and a display cutout do not create a
+separate reading pane. `reader_regression_test.dart` covers these transitions,
+an asymmetric hinge, body-only wheel handling, modifier keys, selection
+coordinates, visible-page semantics, and accessible page/tool actions.
+
+The home screen keeps its pages and bottom navigation in the larger usable
+pane when a vertical hinge leaves a narrow window or an unusably small side.
+The compact-fold checks switch among shelf, notes and settings and verify that
+each page and its navigation stay within that pane. Native and browser book
+images preserve the original nonempty alternative text; missing native images
+also announce that the image was not saved.
+
+`adaptive_sheet_test.dart` covers compact drawers, bounded desktop dialogs,
+nested Back/Escape, keyboard insets, large-text cutoff labels, 44 dp controls,
+keyboard tab selection, and search cancellation. `native_workspace_test.dart`
+covers narrow and large-text shelf/notes/settings layouts, import receipts,
+and background library statistics. These supplement the physical-device
+matrix; they do not mark its device rows as passed.
+
+Screenshot tests load all bundled reading fonts, including `NotoSansSC`, rather
+than relying on a system font for missing glyphs. Reviewed screenshot baselines
+are generated and compared on macOS with Flutter 3.47.5. The client CI job uses
+macOS to avoid the documented Linux/macOS rasterization drift. The Mini helper
+compares screenshots by default; use `UPDATE_GOLDENS=1` only to produce new
+candidates for visual review.
+
+The released browser client has a separate Chromium check:
+
+```sh
+cd app
+flutter pub get
+flutter build web --release --target lib/main_web.dart --base-href / --no-pub
+python3 web/prepare_offline.py build/web
+python3 -m http.server 18894 --bind 127.0.0.1 --directory build/web
+# In a second terminal with Playwright 1.63.0 and Chromium installed:
+python3 test/browser/web_reader_smoke.py \
+  --url http://127.0.0.1:18894/ --out-dir build/browser-smoke
+```
+
+Its fresh contexts use 320 × 568, 390 × 844, 640 × 360, 768 × 1024 and
+1440 × 900 viewports. Fixtures are original TXT and illustrated EPUB books
+imported through the actual file picker. Checks cover shelf search/filters,
+reading controls, hash URLs, browser Back/Forward, reload, scroll-progress
+flush, offline reopening, and first use of Kai/Sans fonts while offline. All
+external requests are blocked; renderer font attempts are recorded separately
+from model requests. No credentials or personal library are used. Receipts and
+screenshots are written to the output directory.
+
+The browser CI job builds under `/ux-review/` to exercise a static deployment
+subpath, runs the five viewport profiles, and retains its receipts as an
+artifact. A simulated Chromium viewport does not cover a mobile soft keyboard,
+Safari/WebKit, TalkBack/VoiceOver, or physical folding. Native iOS, macOS and
+Windows builds need their respective build tools and platform runners.
+
+## 2026-09-30 isolated Mini evidence
+
+The ordinary full Flutter test run passed 191 tests with zero failures. The
+31 visually reviewed screenshot baselines passed normal comparison; this run
+did not use `--update-goldens`. App and Core analysis both passed with fatal
+warnings and infos enabled. Hidden framework loading, setup and teardown
+events are excluded from the test count.
+
+The final JavaScript release browser build passed all five root-path viewport
+profiles. A separate build using the CI flags `--base-href /ux-review/` passed
+the complete 390 × 844 flow, including hash routes, Back/Forward, reload and
+offline reopening. The illustrated EPUB retained its actual local PNG and
+original alternative text on initial reading, reload and offline reading.
+First use of Kai and Sans fonts while offline passed in all five profiles.
+The tested reader tools and mode/font choices measured 48 px high; continuous
+scroll Back checks restored the position after 190–193 ms, before the former
+500 ms debounce. Local-reading model requests were zero. Renderer fallback
+font attempts were blocked and recorded separately. Mini source hashes for
+both browser builds match the NMB workspace.
+
+The final Android `probe` release build targets arm64-v8a and packages the
+same native source used by the 191-test gate. The locally signed test APK is
+Thusfar 2.0.12 (54), application ID `com.yedu.zhupi.v2probe`, minSdk 26 and
+targetSdk 36. Its bundled Sans font and license hashes and its Android Debug
+certificate signature were verified. No device installation or publication
+was performed.
+
+The local [review page](../../../../reports/20260930-multi-device-ux/index.html)
+links representative screenshots, the complete Flutter receipts and the probe
+APK. Physical foldable posture/IME/accessibility rows remain `NOT_RUN`.
+GitHub Actions was configured but was not executed during this local session.

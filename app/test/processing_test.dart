@@ -10,6 +10,8 @@ import 'package:thusfar_app/data/processing.dart';
 import 'package:thusfar_app/main.dart';
 import 'package:thusfar_app/sheets/book_sheet.dart';
 import 'package:thusfar_app/ui/theme.dart';
+
+import 'support/viewport.dart';
 import 'package:thusfar_core/jobs.dart' show AlreadyRunning, RunLease;
 
 class FixtureProcessing extends BookProcessing {
@@ -150,8 +152,8 @@ void main() {
     VoidCallback? onRemoved,
     bool settle = true,
   }) async {
-    await tester.binding.setSurfaceSize(const Size(430, 1000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await setTestViewport(tester, const Size(430, 1000));
+    addTearDown(() => setTestViewport(tester, null));
     await tester.pumpWidget(
       MaterialApp(
         theme: buildTheme(Brightness.light),

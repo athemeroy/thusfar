@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 
 /// Design tokens from docs/flutter-rewrite/design/spec.json.
@@ -33,7 +34,7 @@ class Tokens extends ThemeExtension<Tokens> {
     raised: Color(0xFFFFFFFF),
     ink: Color(0xFF231F1A),
     ink2: Color(0xFF5F574C),
-    ink3: Color(0xFF958B7D),
+    ink3: Color(0xFF74695B),
     rule: Color(0xFFE2D9C8),
     zhu: Color(0xFFB23A1F),
     zhuSoft: Color(0xFFF3DDD4),
@@ -50,7 +51,7 @@ class Tokens extends ThemeExtension<Tokens> {
     raised: Color(0xFF26221C),
     ink: Color(0xFFDDD4C4),
     ink2: Color(0xFFA99E8C),
-    ink3: Color(0xFF766D60),
+    ink3: Color(0xFF9A8E7C),
     rule: Color(0xFF332E26),
     zhu: Color(0xFFE0694B),
     zhuSoft: Color(0xFF3A231B),
@@ -83,6 +84,7 @@ extension TokensContext on BuildContext {
 }
 
 const String serif = 'NotoSerifSC';
+const String sans = 'NotoSansSC';
 const String display = 'ZCOOLXiaoWei';
 
 /// Motion from the spec.
@@ -97,6 +99,7 @@ abstract final class Motion {
 
 ThemeData buildTheme(Brightness brightness) {
   final Tokens t = brightness == Brightness.dark ? Tokens.night : Tokens.light;
+  final String? uiFont = kIsWeb ? sans : null;
   final ColorScheme scheme = ColorScheme(
     brightness: brightness,
     primary: t.ink,
@@ -110,6 +113,11 @@ ThemeData buildTheme(Brightness brightness) {
   );
   final ThemeData base = ThemeData(
     useMaterial3: true,
+    visualDensity: kIsWeb ? VisualDensity.standard : null,
+    materialTapTargetSize: kIsWeb ? MaterialTapTargetSize.padded : null,
+    fontFamily: uiFont,
+    // Browser UI must render Chinese offline without fetching fallback fonts.
+    fontFamilyFallback: const <String>[sans, serif],
     colorScheme: scheme,
     brightness: brightness,
     scaffoldBackgroundColor: t.paper,
@@ -130,6 +138,7 @@ ThemeData buildTheme(Brightness brightness) {
       centerTitle: false,
       titleTextStyle: TextStyle(
         fontFamily: display,
+        fontFamilyFallback: const <String>[sans, serif],
         color: t.ink,
         fontSize: 24,
         height: 1.1,
@@ -151,6 +160,8 @@ ThemeData buildTheme(Brightness brightness) {
       labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>((states) {
         final bool selected = states.contains(WidgetState.selected);
         return TextStyle(
+          fontFamily: uiFont,
+          fontFamilyFallback: const <String>[sans, serif],
           color: selected ? t.qing : t.ink3,
           fontSize: selected ? 12 : 11,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
@@ -162,8 +173,17 @@ ThemeData buildTheme(Brightness brightness) {
       filled: true,
       fillColor: t.raised,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      hintStyle: TextStyle(color: t.ink3, fontSize: 14),
-      labelStyle: TextStyle(color: t.ink2),
+      hintStyle: TextStyle(
+        fontFamily: uiFont,
+        fontFamilyFallback: const <String>[sans, serif],
+        color: t.ink3,
+        fontSize: 14,
+      ),
+      labelStyle: TextStyle(
+        fontFamily: uiFont,
+        fontFamilyFallback: const <String>[sans, serif],
+        color: t.ink2,
+      ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(15),
         borderSide: BorderSide(color: t.rule),
@@ -204,7 +224,12 @@ ThemeData buildTheme(Brightness brightness) {
         backgroundColor: t.ink,
         foregroundColor: t.sheet,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        textStyle: TextStyle(
+          fontFamily: uiFont,
+          fontFamilyFallback: const <String>[sans, serif],
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -220,7 +245,12 @@ ThemeData buildTheme(Brightness brightness) {
     ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: t.ink,
-      contentTextStyle: TextStyle(color: t.sheet, fontSize: 14.5),
+      contentTextStyle: TextStyle(
+        fontFamily: uiFont,
+        fontFamilyFallback: const <String>[sans, serif],
+        color: t.sheet,
+        fontSize: 14.5,
+      ),
       actionTextColor: t.zhuSoft,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
@@ -239,10 +269,13 @@ ThemeData buildTheme(Brightness brightness) {
       titleTextStyle: TextStyle(
         fontFamily: display,
         fontSize: 20,
+        fontFamilyFallback: const <String>[sans, serif],
         color: t.ink,
         fontWeight: FontWeight.w600,
       ),
       contentTextStyle: TextStyle(
+        fontFamily: uiFont,
+        fontFamilyFallback: const <String>[sans, serif],
         fontSize: 14.5,
         height: 1.5,
         color: t.ink2,
@@ -261,6 +294,8 @@ ThemeData buildTheme(Brightness brightness) {
         ],
       ),
       textStyle: TextStyle(
+        fontFamily: uiFont,
+        fontFamilyFallback: const <String>[sans, serif],
         fontSize: 12,
         color: t.sheet,
         fontWeight: FontWeight.w500,
@@ -283,6 +318,7 @@ class Pill extends StatelessWidget {
     this.color,
     this.icon,
     this.dense = false,
+    this.selected,
   });
 
   final String label;
@@ -291,45 +327,60 @@ class Pill extends StatelessWidget {
   final Color? color;
   final IconData? icon;
   final bool dense;
+  final bool? selected;
 
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final Color c = color ?? t.ink;
-    return Material(
-      color: filled ? c : Colors.transparent,
-      shape: StadiumBorder(side: BorderSide(color: filled ? c : t.rule)),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: onTap == null
-            ? null
-            : () {
-                HapticFeedback.lightImpact();
-                onTap!();
-              },
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: dense ? 10 : 16,
-            vertical: dense ? 4 : 10,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              if (icon != null) ...<Widget>[
-                Icon(icon, size: dense ? 14 : 18, color: filled ? t.sheet : c),
-                const SizedBox(width: 6),
-              ],
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: dense ? 12 : 15,
-                  color: filled ? t.sheet : c,
-                  fontFeatures: const <FontFeature>[
-                    FontFeature.tabularFigures(),
-                  ],
-                ),
+    return Semantics(
+      button: onTap != null,
+      selected: selected,
+      child: Material(
+        color: filled ? c : Colors.transparent,
+        shape: StadiumBorder(side: BorderSide(color: filled ? c : t.rule)),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap == null
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onTap!();
+                },
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: onTap == null ? 0 : 44,
+              minHeight: onTap == null ? 0 : 44,
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: dense ? 10 : 16,
+                vertical: dense ? 4 : 10,
               ),
-            ],
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  if (icon != null) ...<Widget>[
+                    Icon(
+                      icon,
+                      size: dense ? 14 : 18,
+                      color: filled ? t.sheet : c,
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: dense ? 12 : 15,
+                      color: filled ? t.sheet : c,
+                      fontFeatures: const <FontFeature>[
+                        FontFeature.tabularFigures(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -365,13 +416,25 @@ class Tag extends StatelessWidget {
     );
     return onTap == null
         ? body
-        : GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              onTap!();
-            },
-            behavior: HitTestBehavior.opaque,
-            child: body,
+        : Semantics(
+            button: true,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                customBorder: const StadiumBorder(),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onTap!();
+                },
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: 44,
+                    minHeight: 44,
+                  ),
+                  child: Center(widthFactor: 1, heightFactor: 1, child: body),
+                ),
+              ),
+            ),
           );
   }
 }

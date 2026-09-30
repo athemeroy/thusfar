@@ -53,6 +53,32 @@ class _ShelfScreenState extends State<ShelfScreen> {
   int filter = 0;
   bool searching = false;
   String query = '';
+  final TextEditingController _search = TextEditingController();
+  final Set<ImportItem> _dismissedImports = <ImportItem>{};
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _clearSearch() {
+    _search.clear();
+    setState(() => query = '');
+  }
+
+  void _closeSearch() {
+    _search.clear();
+    FocusScope.of(context).unfocus();
+    setState(() {
+      searching = false;
+      query = '';
+    });
+  }
+
+  bool get _showImports => widget.imports.any(
+    (ImportItem item) => !item.done || !_dismissedImports.contains(item),
+  );
 
   static const List<String> sorts = <String>['最近阅读', '书名', '阅读进度', '最近加入'];
 
@@ -109,7 +135,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final Library lib = widget.library;
-    if (lib.loaded && lib.books.isEmpty && widget.imports.isEmpty) {
+    _dismissedImports.removeWhere(
+      (ImportItem item) => !widget.imports.contains(item),
+    );
+    if (lib.loaded && lib.books.isEmpty && !_showImports) {
       return _empty(context);
     }
     final List<BookEntry> books = _visible();
@@ -121,166 +150,184 @@ class _ShelfScreenState extends State<ShelfScreen> {
       for (final BookEntry b in lib.books)
         if (b.status.isActive || b.status.isPaused || b.status.isError) b,
     ];
-    return Scaffold(
-      backgroundColor: t.paper,
-      body: Stack(
-        children: <Widget>[
-          RefreshIndicator(
-            color: t.zhu,
-            onRefresh: lib.scan,
-            child: CustomScrollView(
-              slivers: <Widget>[
-                _appBar(context),
-                if (cont != null && query.isEmpty)
-                  SliverToBoxAdapter(child: _continueCard(context, cont)),
-                if (processingBooks.isNotEmpty && query.isEmpty)
-                  SliverToBoxAdapter(
-                    child: _processingBanner(context, processingBooks),
-                  ),
-                if (queue.isNotEmpty && query.isEmpty) ...<Widget>[
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (searching) _closeSearch();
+        },
+      },
+      child: Scaffold(
+        backgroundColor: t.paper,
+        body: Stack(
+          children: <Widget>[
+            RefreshIndicator(
+              color: t.zhu,
+              onRefresh: lib.scan,
+              child: CustomScrollView(
+                slivers: <Widget>[
+                  _appBar(context),
+                  if (_showImports)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                        child: _importBar(context),
+                      ),
+                    ),
+                  if (cont != null && query.isEmpty)
+                    SliverToBoxAdapter(child: _continueCard(context, cont)),
+                  if (processingBooks.isNotEmpty && query.isEmpty)
+                    SliverToBoxAdapter(
+                      child: _processingBanner(context, processingBooks),
+                    ),
+                  if (queue.isNotEmpty && query.isEmpty) ...<Widget>[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
+                        child: Row(
+                          children: <Widget>[
+                            Text(
+                              '接下来读',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: t.ink,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            Tooltip(
+                              message: '编辑接下来读',
+                              child: TextButton(
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  _editQueue(context);
+                                },
+                                child: Text(
+                                  '编辑',
+                                  style: TextStyle(color: t.ink2),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: 124,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: queue.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 12),
+                          itemBuilder: (BuildContext context, int i) =>
+                              GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  widget.onOpen(queue[i]);
+                                },
+                                child: BookCover(entry: queue[i], width: 82),
+                              ),
+                        ),
+                      ),
+                    ),
+                  ],
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 12, 8),
+                      padding: const EdgeInsets.fromLTRB(20, 22, 8, 4),
                       child: Row(
                         children: <Widget>[
-                          Text(
-                            '接下来读',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: t.ink,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const Spacer(),
-                          Tooltip(
-                            message: '编辑接下来读',
-                            child: TextButton(
-                              onPressed: () {
-                                HapticFeedback.lightImpact();
-                                _editQueue(context);
-                              },
-                              child: Text(
-                                '编辑',
-                                style: TextStyle(color: t.ink2),
+                          Expanded(
+                            child: Text(
+                              '全部书籍 ',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: t.ink,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
+                          Text(
+                            '${lib.books.length}',
+                            style: TextStyle(fontSize: 15, color: t.ink3),
+                          ),
+                          const SizedBox(width: 8),
+                          _sortMenu(context),
                         ],
                       ),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 124,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: queue.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 12),
-                        itemBuilder: (BuildContext context, int i) =>
-                            GestureDetector(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                widget.onOpen(queue[i]);
-                              },
-                              child: BookCover(entry: queue[i], width: 82),
-                            ),
-                      ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _FilterBar(
+                      filter: filter,
+                      onChanged: (int i) => setState(() => filter = i),
+                      color: t.paper,
+                      height:
+                          60 +
+                          (MediaQuery.textScalerOf(context).scale(12) - 12)
+                              .clamp(0, double.infinity),
                     ),
                   ),
+                  if (books.isEmpty && (query.isNotEmpty || filter != 0))
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _emptyResults(context),
+                    )
+                  else if (widget.prefs.listView)
+                    SliverList.builder(
+                      itemCount: books.length,
+                      itemBuilder: (BuildContext context, int i) =>
+                          _listRow(context, books[i]),
+                    )
+                  else
+                    SliverLayoutBuilder(
+                      builder:
+                          (
+                            BuildContext context,
+                            SliverConstraints constraints,
+                          ) {
+                            final double extent = constraints.crossAxisExtent;
+                            final bool compact = extent < 600;
+                            final double inset = extent < 360 ? 12 : 20;
+                            final double gap = extent < 360
+                                ? 8
+                                : compact
+                                ? 12
+                                : 20;
+                            final int columns = compact
+                                ? (extent < 500 ? 2 : 3)
+                                : (extent / 168).floor().clamp(3, 6);
+                            final double tileWidth =
+                                (extent - inset * 2 - gap * (columns - 1)) /
+                                columns;
+                            final double textScale =
+                                MediaQuery.textScalerOf(context).scale(16) / 16;
+                            final double tileHeight =
+                                (tileWidth - 4) * 4 / 3 + 32 + 56 * textScale;
+                            return SliverPadding(
+                              padding: EdgeInsets.fromLTRB(inset, 8, inset, 32),
+                              sliver: SliverGrid.builder(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columns,
+                                      crossAxisSpacing: gap,
+                                      mainAxisSpacing: compact ? 18 : 22,
+                                      mainAxisExtent: tileHeight,
+                                    ),
+                                itemCount: books.length,
+                                itemBuilder: (BuildContext context, int i) =>
+                                    _gridCell(context, books[i]),
+                              ),
+                            );
+                          },
+                    ),
                 ],
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 22, 8, 4),
-                    child: Row(
-                      children: <Widget>[
-                        Text(
-                          '全部书籍 ',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: t.ink,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          '${lib.books.length}',
-                          style: TextStyle(fontSize: 15, color: t.ink3),
-                        ),
-                        const Spacer(),
-                        _sortMenu(context),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _FilterBar(
-                    filter: filter,
-                    onChanged: (int i) => setState(() => filter = i),
-                    color: t.paper,
-                  ),
-                ),
-                if (books.isEmpty && (query.isNotEmpty || filter != 0))
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _emptyResults(context),
-                  )
-                else if (widget.prefs.listView)
-                  SliverList.builder(
-                    itemCount: books.length,
-                    itemBuilder: (BuildContext context, int i) =>
-                        _listRow(context, books[i]),
-                  )
-                else
-                  SliverLayoutBuilder(
-                    builder:
-                        (BuildContext context, SliverConstraints constraints) {
-                          final double extent = constraints.crossAxisExtent;
-                          final bool compact = extent < 600;
-                          final double inset = extent < 360 ? 12 : 20;
-                          final double gap = extent < 360
-                              ? 8
-                              : compact
-                              ? 12
-                              : 20;
-                          final int columns = compact
-                              ? (extent < 500 ? 2 : 3)
-                              : (extent / 168).floor().clamp(3, 6);
-                          final double tileWidth =
-                              (extent - inset * 2 - gap * (columns - 1)) /
-                              columns;
-                          final double textScale =
-                              MediaQuery.textScalerOf(context).scale(16) / 16;
-                          final double tileHeight =
-                              (tileWidth - 4) * 4 / 3 + 32 + 56 * textScale;
-                          return SliverPadding(
-                            padding: EdgeInsets.fromLTRB(inset, 8, inset, 32),
-                            sliver: SliverGrid.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: columns,
-                                    crossAxisSpacing: gap,
-                                    mainAxisSpacing: compact ? 18 : 22,
-                                    mainAxisExtent: tileHeight,
-                                  ),
-                              itemCount: books.length,
-                              itemBuilder: (BuildContext context, int i) =>
-                                  _gridCell(context, books[i]),
-                            ),
-                          );
-                        },
-                  ),
-              ],
+              ),
             ),
-          ),
-          if (widget.imports.isNotEmpty)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 12,
-              child: _importBar(context),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -294,6 +341,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
         surfaceTintColor: Colors.transparent,
         automaticallyImplyLeading: false,
         title: TextField(
+          controller: _search,
           autofocus: true,
           onChanged: (String v) => setState(() => query = v.trim()),
           decoration: InputDecoration(
@@ -306,7 +354,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                     icon: const Icon(Icons.close),
                     onPressed: () {
                       HapticFeedback.selectionClick();
-                      setState(() => query = '');
+                      _clearSearch();
                     },
                   ),
           ),
@@ -315,10 +363,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
           TextButton(
             onPressed: () {
               HapticFeedback.lightImpact();
-              setState(() {
-                searching = false;
-                query = '';
-              });
+              _closeSearch();
             },
             child: Text('取消', style: TextStyle(color: t.ink2)),
           ),
@@ -327,7 +372,13 @@ class _ShelfScreenState extends State<ShelfScreen> {
     }
     return SliverAppBar(
       pinned: true,
-      expandedHeight: 112,
+      expandedHeight:
+          112 +
+          (MediaQuery.textScalerOf(context).scale(16) / 16 - 1).clamp(
+                0,
+                double.infinity,
+              ) *
+              64,
       collapsedHeight: 56,
       backgroundColor: t.paper,
       surfaceTintColor: Colors.transparent,
@@ -436,6 +487,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                 HapticFeedback.lightImpact();
                 setState(() {
                   if (hasQuery) {
+                    _search.clear();
                     query = '';
                   } else {
                     filter = 0;
@@ -990,7 +1042,11 @@ class _ShelfScreenState extends State<ShelfScreen> {
 
   Widget _importBar(BuildContext context) {
     final Tokens t = context.tk;
-    final List<ImportItem> items = widget.imports;
+    final List<ImportItem> items = widget.imports
+        .where(
+          (ImportItem item) => !item.done || !_dismissedImports.contains(item),
+        )
+        .toList();
     final bool allDone = items.every((ImportItem i) => i.done);
     final String text = allDone
         ? '已导入 ${items.where((ImportItem i) => i.error == null).length} 本'
@@ -1005,65 +1061,82 @@ class _ShelfScreenState extends State<ShelfScreen> {
                   .map((ImportItem i) => i.progress)
                   .reduce((double a, double b) => a + b) /
               items.length;
-    return Material(
-      color: t.ink,
-      borderRadius: BorderRadius.circular(14),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: t.sheet, fontSize: 14),
-            ),
-            if (!allDone) ...<Widget>[
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: avg > 0 ? avg : null,
-                  minHeight: 3,
-                  color: t.zhu,
-                  backgroundColor: t.sheet.withValues(alpha: 0.22),
-                ),
+    return Semantics(
+      liveRegion: true,
+      child: Material(
+        color: t.ink,
+        borderRadius: BorderRadius.circular(14),
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: t.sheet, fontSize: 14),
+                    ),
+                  ),
+                  if (allDone)
+                    IconButton(
+                      tooltip: '关闭导入结果',
+                      color: t.sheet,
+                      onPressed: () =>
+                          setState(() => _dismissedImports.addAll(items)),
+                      icon: const Icon(Icons.close),
+                    ),
+                ],
               ),
-            ],
-            for (final ImportItem i in items.where(
-              (ImportItem i) => i.error != null || i.existed,
-            ))
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        '${i.name}：${i.error ?? '已在书架上'}',
-                        style: TextStyle(
-                          color: i.error != null
-                              ? const Color(0xFFF2B8A8)
-                              : t.sheet.withValues(alpha: 0.8),
-                          fontSize: 13,
+              if (!allDone) ...<Widget>[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: avg > 0 ? avg : null,
+                    minHeight: 3,
+                    color: t.zhu,
+                    backgroundColor: t.sheet.withValues(alpha: 0.22),
+                  ),
+                ),
+              ],
+              for (final ImportItem i in items.where(
+                (ImportItem i) => i.error != null || i.existed,
+              ))
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          '${i.name}：${i.error ?? '已在书架上'}',
+                          style: TextStyle(
+                            color: i.error != null
+                                ? const Color(0xFFF2B8A8)
+                                : t.sheet.withValues(alpha: 0.8),
+                            fontSize: 13,
+                          ),
                         ),
                       ),
-                    ),
-                    if (i.existed && i.bookId != null)
-                      TextButton(
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          final BookEntry? b = widget.library.byId(i.bookId!);
-                          if (b != null) widget.onOpen(b);
-                        },
-                        child: Text('打开', style: TextStyle(color: t.zhuSoft)),
-                      ),
-                  ],
+                      if (i.existed && i.bookId != null)
+                        TextButton(
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            final BookEntry? b = widget.library.byId(i.bookId!);
+                            if (b != null) widget.onOpen(b);
+                          },
+                          child: Text('打开', style: TextStyle(color: t.zhuSoft)),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1155,119 +1228,121 @@ class _ShelfScreenState extends State<ShelfScreen> {
     return Scaffold(
       backgroundColor: t.paper,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                '页读',
-                style: TextStyle(
-                  fontFamily: display,
-                  fontSize: 28,
-                  color: t.ink,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  '页读',
+                  style: TextStyle(
+                    fontFamily: display,
+                    fontSize: 28,
+                    color: t.ink,
+                  ),
                 ),
-              ),
-              Text('只读到你这一页', style: TextStyle(fontSize: 13, color: t.ink3)),
-              const SizedBox(height: 28),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: t.raised,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: t.rule),
+                Text('只读到你这一页', style: TextStyle(fontSize: 13, color: t.ink3)),
+                const SizedBox(height: 28),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: t.raised,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: t.rule),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        '把第一本书放进来',
+                        style: TextStyle(
+                          fontFamily: display,
+                          fontSize: 22,
+                          color: t.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        isPhone
+                            ? '支持 TXT、EPUB。也可以在文件管理器或微信里选「用页读打开」'
+                            : '支持 TXT、EPUB。',
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.6,
+                          color: t.ink2,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Pill(
+                          label: '从$deviceWord选择书',
+                          filled: true,
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            widget.onImport();
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Pill(
+                          label: '恢复备份',
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            widget.onRestore();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 28),
+                line(
+                  '：读到哪，人物资料就只到哪',
+                  TextSpan(
+                    text: '阿Q',
+                    style: TextStyle(
+                      color: t.ink,
+                      decoration: TextDecoration.underline,
+                      decorationColor: t.zhu,
+                      decorationThickness: 1.6,
+                    ),
+                  ),
+                ),
+                line('往回翻，资料也会回退', const TextSpan(text: '')),
+                line(
+                  '：你的摘录和笔记用石青色，永远只存在这台$deviceWord',
+                  TextSpan(
+                    text: '一句摘录',
+                    style: TextStyle(
+                      color: t.ink,
+                      backgroundColor: t.qing.withValues(alpha: 0.18),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Row(
                   children: <Widget>[
-                    Text(
-                      '把第一本书放进来',
-                      style: TextStyle(
-                        fontFamily: display,
-                        fontSize: 22,
-                        color: t.ink,
+                    Expanded(
+                      child: Text(
+                        '整理人物需要一个模型 API 密钥，导入以后再填也可以。',
+                        style: TextStyle(fontSize: 12, color: t.ink3),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      isPhone
-                          ? '支持 TXT、EPUB。也可以在文件管理器或微信里选「用页读打开」'
-                          : '支持 TXT、EPUB。',
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.6,
-                        color: t.ink2,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Pill(
-                        label: '从$deviceWord选择书',
-                        filled: true,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          widget.onImport();
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Pill(
-                        label: '恢复备份',
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          widget.onRestore();
-                        },
-                      ),
+                    TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        widget.onModelSettings();
+                      },
+                      child: Text('去填写', style: TextStyle(color: t.ink)),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 28),
-              line(
-                '：读到哪，人物资料就只到哪',
-                TextSpan(
-                  text: '阿Q',
-                  style: TextStyle(
-                    color: t.ink,
-                    decoration: TextDecoration.underline,
-                    decorationColor: t.zhu,
-                    decorationThickness: 1.6,
-                  ),
-                ),
-              ),
-              line('往回翻，资料也会回退', const TextSpan(text: '')),
-              line(
-                '：你的摘录和笔记用石青色，永远只存在这台$deviceWord',
-                TextSpan(
-                  text: '一句摘录',
-                  style: TextStyle(
-                    color: t.ink,
-                    backgroundColor: t.qing.withValues(alpha: 0.18),
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      '整理人物需要一个模型 API 密钥，导入以后再填也可以。',
-                      style: TextStyle(fontSize: 12, color: t.ink3),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      widget.onModelSettings();
-                    },
-                    child: Text('去填写', style: TextStyle(color: t.ink)),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1280,17 +1355,19 @@ class _FilterBar extends SliverPersistentHeaderDelegate {
     required this.filter,
     required this.onChanged,
     required this.color,
+    required this.height,
   });
 
   final int filter;
   final ValueChanged<int> onChanged;
   final Color color;
+  final double height;
 
   @override
-  double get minExtent => 52;
+  double get minExtent => height;
 
   @override
-  double get maxExtent => 52;
+  double get maxExtent => height;
 
   @override
   Widget build(
@@ -1313,6 +1390,7 @@ class _FilterBar extends SliverPersistentHeaderDelegate {
                 label: labels[i],
                 dense: true,
                 filled: i == filter,
+                selected: i == filter,
                 onTap: () {
                   HapticFeedback.selectionClick();
                   onChanged(i);
@@ -1326,5 +1404,5 @@ class _FilterBar extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_FilterBar old) =>
-      old.filter != filter || old.color != color;
+      old.filter != filter || old.color != color || old.height != height;
 }

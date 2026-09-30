@@ -14,6 +14,8 @@ import 'package:thusfar_app/sheets/people_sheet.dart';
 import 'package:thusfar_app/sheets/sheet_host.dart';
 import 'package:thusfar_app/ui/theme.dart';
 
+import 'support/viewport.dart';
+
 import 'support/graph_fixture.dart';
 
 Future<void> _font(String family, String path) async {
@@ -39,6 +41,7 @@ void main() {
       Platform.environment['THUSFAR_TEST_SANS_FONT'] ??
           '${Platform.environment['HOME']}/.local/share/fonts/NotoSansSC.ttf',
     );
+    await _font('NotoSansSC', 'assets/fonts/NotoSansSC.ttf');
     await _font('NotoSerifSC', 'assets/fonts/NotoSerifSC-Regular.otf');
     await _font('ZCOOLXiaoWei', 'assets/fonts/ZCOOLXiaoWei-Regular.ttf');
     await _font('LXGWWenKaiScreen', 'assets/fonts/LXGWWenKaiScreen.ttf');
@@ -64,13 +67,14 @@ void main() {
         fixture.refresh();
       }
       if (narrow) tester.view.devicePixelRatio = 1;
-      await tester.binding.setSurfaceSize(
+      await setTestViewport(
+        tester,
         narrow ? const Size(320, 740) : const Size(430, 1000),
       );
       tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());
-        await tester.binding.setSurfaceSize(null);
+        await setTestViewport(tester, null);
         tester.view
           ..resetPhysicalSize()
           ..resetDevicePixelRatio()
@@ -213,7 +217,7 @@ void main() {
       );
       const Size phone = Size(393, 851);
       tester.view.devicePixelRatio = 1;
-      await tester.binding.setSurfaceSize(phone);
+      await setTestViewport(tester, phone);
       tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
       try {
         await tester.pumpWidget(
@@ -344,7 +348,7 @@ void main() {
         expect(tester.takeException(), isNull);
       } finally {
         await tester.pumpWidget(const SizedBox.shrink());
-        await tester.binding.setSurfaceSize(null);
+        await setTestViewport(tester, null);
         tester.view
           ..resetPhysicalSize()
           ..resetDevicePixelRatio()
@@ -385,7 +389,7 @@ void main() {
 
     const Size phone = Size(393, 851);
     tester.view.devicePixelRatio = 1;
-    await tester.binding.setSurfaceSize(phone);
+    await setTestViewport(tester, phone);
     tester.view.padding = const FakeViewPadding(top: 24, bottom: 24);
     try {
       await tester.pumpWidget(
@@ -453,7 +457,7 @@ void main() {
       expect(tester.takeException(), isNull);
     } finally {
       await tester.pumpWidget(const SizedBox.shrink());
-      await tester.binding.setSurfaceSize(null);
+      await setTestViewport(tester, null);
       tester.view
         ..resetPhysicalSize()
         ..resetDevicePixelRatio()

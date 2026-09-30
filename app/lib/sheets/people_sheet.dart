@@ -113,6 +113,7 @@ class _PeoplePageState extends State<PeoplePage> {
       }
       return SheetPage(
         title: '人物',
+        tag: '截至第 $page 页',
         bottom: _add(context),
         slivers: <Widget>[
           emptyState(
@@ -169,7 +170,8 @@ class _PeoplePageState extends State<PeoplePage> {
           },
         );
         return SheetPage(
-          title: '人物 · 截至第 $page 页',
+          title: '人物',
+          tag: '截至第 $page 页',
           bottom: _add(context),
           headerExtraHeight:
               tabs.heightForWidth(context, box.maxWidth) + (tab == 2 ? 56 : 0),
