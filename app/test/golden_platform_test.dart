@@ -104,7 +104,7 @@ void main() {
     final Uri mac26Key = mac26.getTestUri(key, null);
     await mac15.update(mac15Key, original);
     expect(await mac15.compare(original, mac15Key), isTrue);
-    expect(File.fromUri(root.uri.resolve(mac26Key)).existsSync(), isFalse);
+    expect(File.fromUri(root.uri.resolveUri(mac26Key)).existsSync(), isFalse);
     await expectLater(
       mac26.compare(original, mac26Key),
       throwsA(isA<TestFailure>()),
@@ -120,7 +120,7 @@ void main() {
     );
     final Uri key = comparator.getTestUri(Uri.parse('shots/pixel.png'), null);
     await comparator.update(key, original);
-    expect(File.fromUri(root.uri.resolve(key)).existsSync(), isTrue);
+    expect(File.fromUri(root.uri.resolveUri(key)).existsSync(), isTrue);
     expect(await comparator.compare(original, key), isTrue);
     await expectLater(
       comparator.compare(changed, key),
