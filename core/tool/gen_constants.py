@@ -5,8 +5,9 @@ python core/tool/gen_constants.py pipeline.judge FAMILIES LEAVES ... > core/lib/
 import importlib
 import json
 import sys
+from pathlib import Path
 
-sys.path.insert(0, '.')
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'reference'))
 
 
 def dart(v, indent=0):

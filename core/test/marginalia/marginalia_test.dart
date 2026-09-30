@@ -209,7 +209,7 @@ void main() {
     test('historical ${entry.key}', () {
       for (final String line
           in File(
-            '../oracle/goldens/server/marginalia/${entry.key}.jsonl',
+            '../reference/oracle/goldens/server/marginalia/${entry.key}.jsonl',
           ).readAsLinesSync()) {
         final Json row = jsonDecode(line) as Json;
         expect(entry.value(decodeInput(row['input'])! as Json), row['output']);
@@ -219,7 +219,7 @@ void main() {
   test('historical key version and Python graph revision tuple', () {
     for (final String line
         in File(
-          '../oracle/goldens/special/marginalia_key.jsonl',
+          '../reference/oracle/goldens/special/marginalia_key.jsonl',
         ).readAsLinesSync()) {
       final Json row = jsonDecode(line) as Json;
       expect(

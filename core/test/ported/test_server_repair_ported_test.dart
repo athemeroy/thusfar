@@ -758,7 +758,7 @@ void main() {
     "tests.test_server_repair.QualityRepair.test_shared_temporal_contract",
     () {
       final fixture =
-          jsonDecode(File('../tests/temporal-fixtures.json').readAsStringSync())
+          jsonDecode(File('../reference/tests/temporal-fixtures.json').readAsStringSync())
               as Map<String, Object?>;
       for (final rawCase in fixture['cases']! as List<Object?>) {
         final caseData = rawCase! as Map<String, Object?>;

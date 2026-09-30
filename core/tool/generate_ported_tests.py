@@ -17,7 +17,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-INVENTORY = ROOT / "docs/port/inventory.json"
+REFERENCE = ROOT / "reference"
+INVENTORY = REFERENCE / "docs/port/inventory.json"
 OUT = ROOT / "core/test/ported"
 MANIFEST = OUT / "manifest.json"
 PYTHON_ONLY = {"scripts.export_judge_data", "scripts.build_release"}
@@ -104,7 +105,7 @@ def contract_owner_module(owner: str, row: dict, inventory: list[dict]) -> str |
         parts = owner.split(".")
         if len(parts) != 3:
             raise ValueError(f"Script-tool owner must name a function: {owner}")
-        path = ROOT / "scripts" / f"{parts[1]}.py"
+        path = REFERENCE / "scripts" / f"{parts[1]}.py"
         if not path.is_file() or parts[2] not in {
             node.name for node in ast.parse(path.read_text(encoding="utf-8")).body
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
@@ -247,7 +248,7 @@ def expected_manifest() -> dict:
     ast_found = {
         test_id
         for source in sources
-        for test_id in ast_ids(ROOT / source)
+        for test_id in ast_ids(REFERENCE / source)
     }
     if ast_found != set(ids):
         raise ValueError(f"Python AST differs: missing={sorted(ast_found-set(ids))}, extra={sorted(set(ids)-ast_found)}")
@@ -269,7 +270,7 @@ def expected_manifest() -> dict:
         "schema": 1,
         "baseline": "Python 1.7.5: the 15 original tests/test_*.py files, excluding new A0 semantics tests",
         "test_catalog_sha256": catalog_sha256,
-        "python_source_sha256": {source: sha256(ROOT / source) for source in sorted(sources)},
+        "python_source_sha256": {source: sha256(REFERENCE / source) for source in sorted(sources)},
         "counts": counts,
         "tests": entries,
     }
@@ -277,7 +278,7 @@ def expected_manifest() -> dict:
 
 def render_dart(entries: list[dict]) -> str:
     lines = [
-        "// Generated from docs/port/inventory.json by core/tool/generate_ported_tests.py.",
+        "// Generated from reference/docs/port/inventory.json by core/tool/generate_ported_tests.py.",
         "// Skipped failing callbacks are unported assertions, not translations.",
         "import 'package:test/test.dart';",
         "",

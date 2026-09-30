@@ -8,7 +8,7 @@ Map<String, Object?> _map(Object? value) => value as Map<String, Object?>;
 void main() {
   final List<Map<String, Object?>> cases =
       File(
-        '../oracle/semantics/surface_regex.jsonl',
+        '../reference/oracle/semantics/surface_regex.jsonl',
       ).readAsLinesSync().map((String line) => _map(jsonDecode(line))).toList();
 
   test('six production KG surface pattern cases are recorded', () {

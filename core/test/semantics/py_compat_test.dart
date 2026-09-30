@@ -67,7 +67,7 @@ void main() {
   test('5,726 Python general semantic cases match Dart', () {
     int count = 0;
     for (final String line
-        in File('../oracle/semantics/general.jsonl').readAsLinesSync()) {
+        in File('../reference/oracle/semantics/general.jsonl').readAsLinesSync()) {
       final Map<String, Object?> caseData =
           jsonDecode(line) as Map<String, Object?>;
       final String op = caseData['op']! as String;

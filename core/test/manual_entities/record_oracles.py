@@ -6,7 +6,7 @@ import sys
 from unittest.mock import patch
 
 assert sys.version_info[:2] == (3, 11), 'Use the frozen Python 3.11 oracle'
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[3] / "reference"
 sys.path.insert(0, str(ROOT))
 from server import manual_entities as m
 

@@ -67,7 +67,7 @@ void main() {
     int count = 0;
     for (final String line
         in File(
-          '../oracle/semantics/numeric_boundaries.jsonl',
+          '../reference/oracle/semantics/numeric_boundaries.jsonl',
         ).readAsLinesSync()) {
       final Map<String, Object?> item =
           jsonDecode(line) as Map<String, Object?>;

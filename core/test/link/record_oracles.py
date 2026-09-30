@@ -12,7 +12,7 @@ from pathlib import Path
 import sys
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[3] / "reference"
 sys.path.insert(0, str(ROOT))
 from pipeline import link
 from pipeline.kg import KG

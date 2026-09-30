@@ -66,7 +66,7 @@ void main() {
   test('worker reference was recorded from the current Python 3.11 source', () {
     expect(fixtures['python'], '3.11');
     expect(
-      sha256.convert(File('../server/jobs.py').readAsBytesSync()).toString(),
+      sha256.convert(File('../reference/server/jobs.py').readAsBytesSync()).toString(),
       fixtures['source_sha256'],
     );
   });

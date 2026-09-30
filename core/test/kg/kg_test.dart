@@ -9,7 +9,7 @@ typedef Json = Map<String, Object?>;
 Json _read(String path) =>
     decodeInput(jsonDecode(File(path).readAsStringSync()))! as Json;
 List<Json> _goldens(String method) =>
-    File('../oracle/goldens/pipeline/kg/$method.jsonl')
+    File('../reference/oracle/goldens/pipeline/kg/$method.jsonl')
         .readAsLinesSync()
         .where((x) => x.isNotEmpty)
         .map((line) => jsonDecode(line)! as Json)

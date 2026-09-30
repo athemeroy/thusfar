@@ -156,7 +156,7 @@ Map<String, Object?> _run(Map<String, Object?> row) {
 void main() {
   final List<Map<String, Object?>> cases =
       File(
-        '../oracle/semantics/regex_operations.jsonl',
+        '../reference/oracle/semantics/regex_operations.jsonl',
       ).readAsLinesSync().map((line) => _map(jsonDecode(line))).toList();
   for (final Map<String, Object?> row in cases) {
     test('Python 3.11 regex operation: ${row['id']}', () {

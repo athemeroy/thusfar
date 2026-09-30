@@ -1,6 +1,6 @@
 # Contributing to Thusfar
 
-The released product is the Flutter client in app/ and its Dart engine in core/. The Python and browser implementation is retained as a behavior reference for the port.
+The released product is the Flutter client in app/ and its Dart engine in core/. The retired Python/browser implementation and its frozen fixtures live in [reference/](reference/README.md) only for regression tests. It is not a supported app or deployment target. Docker and the old Java/Chaquopy Android packaging have been removed.
 
 ## What to preserve
 

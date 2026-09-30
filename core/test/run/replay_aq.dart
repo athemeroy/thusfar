@@ -20,7 +20,7 @@ Future<void> main(List<String> args) async {
   root.createSync(recursive: true);
   if (!File('${root.path}/book.json').existsSync())
     File(
-      '../oracle/corpus/snapshots/aq_complete/book.json',
+      '../reference/oracle/corpus/snapshots/aq_complete/book.json',
     ).copySync('${root.path}/book.json');
   environ
     ..clear()
@@ -44,7 +44,7 @@ Future<void> main(List<String> args) async {
       'CLASSIFY_MODEL': 'deepseek-flash+nothink',
     });
   final CassetteTransport tape = CassetteTransport(
-    Directory('../oracle/cassettes/live'),
+    Directory('../reference/oracle/cassettes/live'),
     diagnostics: Directory('${root.path}/diagnostics'),
   );
   llm.resetEnvCache();

@@ -8,7 +8,7 @@ import 'package:thusfar_core/src/pipeline/provenance.dart';
 import 'cassette_transport.dart';
 
 void main() {
-  final Directory directory = Directory('../oracle/cassettes/live');
+  final Directory directory = Directory('../reference/oracle/cassettes/live');
   late CassetteTransport tape;
   late List<Json> candidates;
   setUpAll(() {

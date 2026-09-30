@@ -3712,7 +3712,7 @@
   ],
   "web_files": [
     {
-      "path": "web/js/main.js",
+      "path": "reference/web/js/main.js",
       "sha256": "172b6c0d911b7bd38a04596f2b8507ada2fe8ffd863b747012ba77d7e43c499a",
       "coverage_groups": [
         "W"
@@ -3721,22 +3721,22 @@
         {
           "line": 26,
           "source": "const input = h('input', { type: 'password', placeholder: t('口令'), 'aria-label': t('书房口令'), autocomplete: 'current-password', required: true });",
-          "source_link": "../../web/js/main.js#L26"
+          "source_link": "../../reference/web/js/main.js#L26"
         },
         {
           "line": 29,
           "source": "input, h('button', { class: 'btn primary', style: { justifyContent: 'center' } }, t('进入书房')),",
-          "source_link": "../../web/js/main.js#L29"
+          "source_link": "../../reference/web/js/main.js#L29"
         },
         {
           "line": 31,
           "source": "form.addEventListener('submit', async (e) => {",
-          "source_link": "../../web/js/main.js#L31"
+          "source_link": "../../reference/web/js/main.js#L31"
         }
       ]
     },
     {
-      "path": "web/js/shelf.js",
+      "path": "reference/web/js/shelf.js",
       "sha256": "1abfdb4898715cf1e410d043c971286ad93f2054c1c53b66a71a9c6b56bcb8a5",
       "coverage_groups": [
         "W"
@@ -3745,112 +3745,112 @@
         {
           "line": 68,
           "source": "const file = h('input', { type: 'file', accept: standalone ? '.txt,.epub,.json' : '.txt,.epub,.mobi,.azw3,.azw,.json', multiple: true, hidden: true, 'aria-label': tr('选择书籍文件') });",
-          "source_link": "../../web/js/shelf.js#L68"
+          "source_link": "../../reference/web/js/shelf.js#L68"
         },
         {
           "line": 70,
           "source": "const search = h('input', { type: 'search', placeholder: tr('找一本书，或一位作者'), value: preferences.query, 'aria-label': tr('搜索书名或作者'), autocomplete: 'off', oninput: () => { preferences.query = search.value; saveView(); render(); } });",
-          "source_link": "../../web/js/shelf.js#L70"
+          "source_link": "../../reference/web/js/shelf.js#L70"
         },
         {
           "line": 71,
           "source": "const clearSearch = h('button', { class: 'library-clear', type: 'button', 'aria-label': tr('清空搜索'), hidden: !preferences.query, onclick: () => { preferences.query = ''; search.value = ''; saveView(); render(); search.focus(); } }, icon('close'));",
-          "source_link": "../../web/js/shelf.js#L71"
+          "source_link": "../../reference/web/js/shelf.js#L71"
         },
         {
           "line": 74,
           "source": "const button = h('button', { type: 'button', 'aria-pressed': preferences.filter === key, onclick: () => { preferences.filter = key; saveView(); render(); } }, FILTER_LABELS[key], h('span', {}, '0'));",
-          "source_link": "../../web/js/shelf.js#L74"
+          "source_link": "../../reference/web/js/shelf.js#L74"
         },
         {
           "line": 77,
           "source": "const sort = h('select', { 'aria-label': tr('书籍排序'), onchange: () => { preferences.sort = sort.value; saveView(); render(); } },",
-          "source_link": "../../web/js/shelf.js#L77"
+          "source_link": "../../reference/web/js/shelf.js#L77"
         },
         {
           "line": 82,
           "source": "const button = h('button', { type: 'button', 'aria-pressed': preferences.view === key, onclick: () => { preferences.view = key; saveView(); render(); } }, key === 'grid' ? tr('封面') : tr('列表')); views.set(key, button); return button;",
-          "source_link": "../../web/js/shelf.js#L82"
+          "source_link": "../../reference/web/js/shelf.js#L82"
         },
         {
           "line": 88,
           "source": "h('button', { class: 'btn zhu library-import-button', type: 'button', onclick: pickFiles }, icon('plus'), tr('导入书籍'))));",
-          "source_link": "../../web/js/shelf.js#L88"
+          "source_link": "../../reference/web/js/shelf.js#L88"
         },
         {
           "line": 125,
           "source": "h('button', { class: 'btn primary', type: 'button', onclick: books.length ? () => { preferences.query = ''; preferences.filter = 'all'; search.value = ''; saveView(); render(); } : pickFiles }, books.length ? tr('查看全部书籍') : tr('导入第一本书'))));",
-          "source_link": "../../web/js/shelf.js#L125"
+          "source_link": "../../reference/web/js/shelf.js#L125"
         },
         {
           "line": 136,
           "source": "? h('button', { class: 'library-ai-status library-ai-link', type: 'button', onclick: (e) => showBook(b.id, e.currentTarget) }, h('span', { class: `ai-dot ${cls}` }), label, icon('chev'))",
-          "source_link": "../../web/js/shelf.js#L136"
+          "source_link": "../../reference/web/js/shelf.js#L136"
         },
         {
           "line": 140,
           "source": "h('button', { class: 'library-book-menu', type: 'button', 'aria-label': tr(\"《{0}》书籍菜单\", [b.title || tr('未命名')]), 'aria-haspopup': 'dialog', onclick: (e) => showBook(b.id, e.currentTarget) }, icon('more')));",
-          "source_link": "../../web/js/shelf.js#L140"
+          "source_link": "../../reference/web/js/shelf.js#L140"
         },
         {
           "line": 170,
           "source": "const download = h('button', { class: 'library-action', 'data-download': id, type: 'button', disabled: downloading.has(id), onclick: async () => {",
-          "source_link": "../../web/js/shelf.js#L170"
+          "source_link": "../../reference/web/js/shelf.js#L170"
         },
         {
           "line": 180,
           "source": "const modalChildren = [h('div', { class: 'library-dialog-head' }, h('h2', { id: 'library-dialog-title' }, b.title || tr('未命名')), h('button', { class: 'library-dialog-close', type: 'button', 'aria-label': tr('关闭书籍菜单'), onclick: closeDialog }, icon('close'))),",
-          "source_link": "../../web/js/shelf.js#L180"
+          "source_link": "../../reference/web/js/shelf.js#L180"
         },
         {
           "line": 185,
           "source": "h('button', { class: 'library-action', type: 'button', onclick: async (event) => {",
-          "source_link": "../../web/js/shelf.js#L185"
+          "source_link": "../../reference/web/js/shelf.js#L185"
         },
         {
           "line": 199,
           "source": "idle || retry ? h('button', { class: 'library-action', type: 'button', 'aria-label': retry ? tr('重试待核对资料') : tr('开始整理人物'), onclick: async (e) => {",
-          "source_link": "../../web/js/shelf.js#L199"
+          "source_link": "../../reference/web/js/shelf.js#L199"
         },
         {
           "line": 222,
           "source": "activeJob ? h('button', { class: 'library-action', type: 'button', disabled: b.status?.state === 'cancelling', onclick: async (event) => {",
-          "source_link": "../../web/js/shelf.js#L222"
+          "source_link": "../../reference/web/js/shelf.js#L222"
         },
         {
           "line": 233,
           "source": "h('button', { type: 'button', onclick: async (e) => {",
-          "source_link": "../../web/js/shelf.js#L233"
+          "source_link": "../../reference/web/js/shelf.js#L233"
         },
         {
           "line": 243,
           "source": "modal.addEventListener('click', (event) => { if (event.target === modal) { const bounds = modal.getBoundingClientRect(); if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeDialog(); } });",
-          "source_link": "../../web/js/shelf.js#L243"
+          "source_link": "../../reference/web/js/shelf.js#L243"
         },
         {
           "line": 263,
           "source": "h('button', { class: 'linkish', type: 'button', disabled: importsRunning, onclick: () => { receipts = []; importFiles.clear(); persistReceipts(); renderImports(); } }, tr('清空记录')),",
-          "source_link": "../../web/js/shelf.js#L263"
+          "source_link": "../../reference/web/js/shelf.js#L263"
         },
         {
           "line": 268,
           "source": ": ['failed', 'interrupted'].includes(row.state) ? h('button', { class: 'btn', type: 'button', disabled: importsRunning, onclick: () => {",
-          "source_link": "../../web/js/shelf.js#L268"
+          "source_link": "../../reference/web/js/shelf.js#L268"
         },
         {
           "line": 297,
           "source": "file.addEventListener('change', () => {",
-          "source_link": "../../web/js/shelf.js#L297"
+          "source_link": "../../reference/web/js/shelf.js#L297"
         },
         {
           "line": 322,
           "source": "h('button', { class: 'btn primary', type: 'button', onclick: () => refresh() }, tr('重新连接'))));",
-          "source_link": "../../web/js/shelf.js#L322"
+          "source_link": "../../reference/web/js/shelf.js#L322"
         }
       ]
     },
     {
-      "path": "web/js/reading-list.js",
+      "path": "reference/web/js/reading-list.js",
       "sha256": "66d886a6e0f638a3eb8dbc55a3f870e86dec118d0d271ac90735cdf7f7e5d08f",
       "coverage_groups": [
         "W"
@@ -3859,67 +3859,67 @@
         {
           "line": 181,
           "source": "const syncButton = h('button', { class: 'btn', type: 'button', onclick: async () => {",
-          "source_link": "../../web/js/reading-list.js#L181"
+          "source_link": "../../reference/web/js/reading-list.js#L181"
         },
         {
           "line": 190,
           "source": "const undo = h('button', { class: 'linkish reading-list-undo', type: 'button', hidden: true, onclick: async () => {",
-          "source_link": "../../web/js/reading-list.js#L190"
+          "source_link": "../../reference/web/js/reading-list.js#L190"
         },
         {
           "line": 197,
           "source": "const search = h('input', { type: 'search', placeholder: tr('书名或作者'), 'aria-label': tr('搜索可以加入清单的书'), autocomplete: 'off', oninput: () => { shown = 12; renderPicker(); } });",
-          "source_link": "../../web/js/reading-list.js#L197"
+          "source_link": "../../reference/web/js/reading-list.js#L197"
         },
         {
           "line": 200,
           "source": "const more = h('button', { class: 'btn reading-list-more', type: 'button', hidden: true, onclick: () => { shown += 24; renderPicker(); } }, tr('显示更多书籍'));",
-          "source_link": "../../web/js/reading-list.js#L200"
+          "source_link": "../../reference/web/js/reading-list.js#L200"
         },
         {
           "line": 251,
           "source": "h('button', { class: 'btn zhu', type: 'button', onclick: () => resolveReadingList(true).then(() => { announce = tr('已选择本机顺序'); render(); }).catch(operationError) }, tr('保留本机顺序并同步')),",
-          "source_link": "../../web/js/reading-list.js#L251"
+          "source_link": "../../reference/web/js/reading-list.js#L251"
         },
         {
           "line": 252,
           "source": "h('button', { class: 'btn', type: 'button', onclick: () => resolveReadingList(false).then(() => { announce = tr('已采用另一设备的顺序'); render(); }).catch(operationError) }, tr('使用另一设备顺序'))));",
-          "source_link": "../../web/js/reading-list.js#L252"
+          "source_link": "../../reference/web/js/reading-list.js#L252"
         },
         {
           "line": 269,
           "source": "h('button', { type: 'button', 'data-list-book': id, 'data-list-action': 'up', 'aria-label': tr(\"将《{0}》上移\", [title]), disabled: i === 0 || !!state.conflict, onclick: () => move(id, -1) }, '↑'),",
-          "source_link": "../../web/js/reading-list.js#L269"
+          "source_link": "../../reference/web/js/reading-list.js#L269"
         },
         {
           "line": 270,
           "source": "h('button', { type: 'button', 'data-list-book': id, 'data-list-action': 'down', 'aria-label': tr(\"将《{0}》下移\", [title]), disabled: i === state.items.length - 1 || !!state.conflict, onclick: () => move(id, 1) }, '↓'),",
-          "source_link": "../../web/js/reading-list.js#L270"
+          "source_link": "../../reference/web/js/reading-list.js#L270"
         },
         {
           "line": 271,
           "source": "h('button', { class: 'reading-list-remove', type: 'button', 'data-list-book': id, 'data-list-action': 'remove', 'aria-label': tr(\"将《{0}》移出清单\", [title]), disabled: !!state.conflict, onclick: () => remove(id) }, tr('移出'))));",
-          "source_link": "../../web/js/reading-list.js#L271"
+          "source_link": "../../reference/web/js/reading-list.js#L271"
         },
         {
           "line": 274,
           "source": "h('button', { class: 'btn primary', type: 'button', onclick: () => { picker.open = true; search.focus(); } }, tr('挑选下一本'))));",
-          "source_link": "../../web/js/reading-list.js#L274"
+          "source_link": "../../reference/web/js/reading-list.js#L274"
         },
         {
           "line": 296,
           "source": "h('button', { type: 'button', class: 'btn', 'data-list-book': book.id, 'data-list-action': 'add', 'aria-label': `${added ? tr('已加入') : tr('加入')}《${book.title || tr('未命名')}》`, disabled: added || !!state.conflict || state.items.length >= LIMIT,",
-          "source_link": "../../web/js/reading-list.js#L296"
+          "source_link": "../../reference/web/js/reading-list.js#L296"
         },
         {
           "line": 297,
           "source": "onclick: async () => { try { await addToReadingList(book.id); announce = tr(\"《{0}》已排在清单末尾\", [book.title]); render(); } catch (error) { operationError(error); } } }, added ? tr('已加入') : tr('加入')));",
-          "source_link": "../../web/js/reading-list.js#L297"
+          "source_link": "../../reference/web/js/reading-list.js#L297"
         }
       ]
     },
     {
-      "path": "web/js/notebook-hub.js",
+      "path": "reference/web/js/notebook-hub.js",
       "sha256": "8fc0d86bc75bd86ba1da5caf107bbaa85678c46e8d3d84cb81df53d0679b9cd0",
       "coverage_groups": [
         "W"
@@ -3928,97 +3928,97 @@
         {
           "line": 127,
           "source": "const search = h('input', { type: 'search', maxlength: 200, placeholder: tr('搜一句原文、一个想法，或一本书'), 'aria-label': tr('搜索全部个人摘记') });",
-          "source_link": "../../web/js/notebook-hub.js#L127"
+          "source_link": "../../reference/web/js/notebook-hub.js#L127"
         },
         {
           "line": 128,
           "source": "const bookSelect = h('select', { 'aria-label': tr('按书籍筛选') }, h('option', { value: '' }, tr('所有书籍')));",
-          "source_link": "../../web/js/notebook-hub.js#L128"
+          "source_link": "../../reference/web/js/notebook-hub.js#L128"
         },
         {
           "line": 129,
           "source": "const kindSelect = h('select', { 'aria-label': tr('按摘记类型筛选') }, h('option', { value: '' }, tr('所有类型')), h('option', { value: 'note' }, tr('摘录与想法')), h('option', { value: 'bookmark' }, tr('书签')));",
-          "source_link": "../../web/js/notebook-hub.js#L129"
+          "source_link": "../../reference/web/js/notebook-hub.js#L129"
         },
         {
           "line": 130,
           "source": "const syncSelect = h('select', { 'aria-label': tr('按同步状态筛选') }, h('option', { value: '' }, tr('所有同步状态')), h('option', { value: 'pending' }, tr('待同步')), h('option', { value: 'conflict' }, tr('待处理冲突')));",
-          "source_link": "../../web/js/notebook-hub.js#L130"
+          "source_link": "../../reference/web/js/notebook-hub.js#L130"
         },
         {
           "line": 133,
           "source": "const pause = h('button', { type: 'button', class: 'nh-link', hidden: true }, tr('暂停加载'));",
-          "source_link": "../../web/js/notebook-hub.js#L133"
+          "source_link": "../../reference/web/js/notebook-hub.js#L133"
         },
         {
           "line": 137,
           "source": "const previous = h('button', { type: 'button', class: 'btn', hidden: true }, tr('上一页'));",
-          "source_link": "../../web/js/notebook-hub.js#L137"
+          "source_link": "../../reference/web/js/notebook-hub.js#L137"
         },
         {
           "line": 138,
           "source": "const next = h('button', { type: 'button', class: 'btn', hidden: true }, tr('下一页'));",
-          "source_link": "../../web/js/notebook-hub.js#L138"
+          "source_link": "../../reference/web/js/notebook-hub.js#L138"
         },
         {
           "line": 153,
           "source": "search.addEventListener('input', filterChanged);",
-          "source_link": "../../web/js/notebook-hub.js#L153"
+          "source_link": "../../reference/web/js/notebook-hub.js#L153"
         },
         {
           "line": 154,
           "source": "for (const select of [bookSelect, kindSelect, syncSelect]) select.addEventListener('change', filterChanged);",
-          "source_link": "../../web/js/notebook-hub.js#L154"
+          "source_link": "../../reference/web/js/notebook-hub.js#L154"
         },
         {
           "line": 155,
           "source": "previous.addEventListener('click', () => { page--; render(); count.scrollIntoView({ block: 'start' }); });",
-          "source_link": "../../web/js/notebook-hub.js#L155"
+          "source_link": "../../reference/web/js/notebook-hub.js#L155"
         },
         {
           "line": 156,
           "source": "next.addEventListener('click', () => { page++; render(); count.scrollIntoView({ block: 'start' }); });",
-          "source_link": "../../web/js/notebook-hub.js#L156"
+          "source_link": "../../reference/web/js/notebook-hub.js#L156"
         },
         {
           "line": 157,
           "source": "pause.addEventListener('click', () => { if (loader.paused) loader.start(); else loader.pause(); render(); });",
-          "source_link": "../../web/js/notebook-hub.js#L157"
+          "source_link": "../../reference/web/js/notebook-hub.js#L157"
         },
         {
           "line": 173,
           "source": "state.phase === 'unavailable' ? h('button', { type: 'button', class: 'nh-link', onclick: () => loader.retry(state.book.id) }, tr('重试')) : null,",
-          "source_link": "../../web/js/notebook-hub.js#L173"
+          "source_link": "../../reference/web/js/notebook-hub.js#L173"
         },
         {
           "line": 191,
           "source": "h('button', { type: 'button', class: 'nh-preview-button', onclick: (e) => preview(book, note, e.currentTarget) }, tr('查看原文'), icon('chev'))));",
-          "source_link": "../../web/js/notebook-hub.js#L191"
+          "source_link": "../../reference/web/js/notebook-hub.js#L191"
         },
         {
           "line": 200,
           "source": "h('div', { class: 'nh-dialog-head' }, h('h2', { id: 'nh-dialog-title' }, summary.title || tr('原文预览')), h('button', { type: 'button', 'aria-label': tr('关闭原文预览'), onclick: closeDialog }, icon('close'))),",
-          "source_link": "../../web/js/notebook-hub.js#L200"
+          "source_link": "../../reference/web/js/notebook-hub.js#L200"
         },
         {
           "line": 205,
           "source": "modal.addEventListener('click', (e) => { if (e.target === modal) { const r = modal.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeDialog(); } });",
-          "source_link": "../../web/js/notebook-hub.js#L205"
+          "source_link": "../../reference/web/js/notebook-hub.js#L205"
         },
         {
           "line": 224,
           "source": "actions.append(h('button', { type: 'button', class: 'btn', onclick: () => preview(summary, note, opener) }, tr('重试预览')));",
-          "source_link": "../../web/js/notebook-hub.js#L224"
+          "source_link": "../../reference/web/js/notebook-hub.js#L224"
         },
         {
           "line": 241,
           "source": "list.replaceChildren(h('section', { class: 'nh-empty' }, h('h2', {}, tr('暂时没有打开书房')), h('p', {}, tr(\"{0}。本机保存的摘记没有改动。\", [error.message])), h('button', { type: 'button', class: 'btn', onclick: () => loadBooks().catch((error) => { if (error instanceof AuthError) location.hash = '#/'; }) }, tr('重新读取书架'))));",
-          "source_link": "../../web/js/notebook-hub.js#L241"
+          "source_link": "../../reference/web/js/notebook-hub.js#L241"
         }
       ]
     },
     {
-      "path": "web/js/offline-library.js",
+      "path": "reference/web/js/offline-library.js",
       "sha256": "589e51fbec7beb6b90ddefb0f4d3a26ce24ebe82087dbeaeb505bf79796077eb",
       "coverage_groups": [
         "W"
@@ -4027,47 +4027,47 @@
         {
           "line": 46,
           "source": "const search = h('input', { type: 'search', placeholder: tr('查找书名或作者'), 'aria-label': tr('搜索下载书籍'), oninput: () => { query = search.value; render(); } });",
-          "source_link": "../../web/js/offline-library.js#L46"
+          "source_link": "../../reference/web/js/offline-library.js#L46"
         },
         {
           "line": 47,
           "source": "const tabs = ['downloaded', 'all'].map((value) => h('button', { type: 'button', 'aria-pressed': filter === value, onclick: () => {",
-          "source_link": "../../web/js/offline-library.js#L47"
+          "source_link": "../../reference/web/js/offline-library.js#L47"
         },
         {
           "line": 50,
           "source": "const refreshButton = h('button', { type: 'button', class: 'btn', onclick: () => refreshInventory().catch(showError) }, tr('刷新本机状态'));",
-          "source_link": "../../web/js/offline-library.js#L50"
+          "source_link": "../../reference/web/js/offline-library.js#L50"
         },
         {
           "line": 95,
           "source": "const download = h('button', { type: 'button', class: 'btn', onclick: () => startDownload(book.id) });",
-          "source_link": "../../web/js/offline-library.js#L95"
+          "source_link": "../../reference/web/js/offline-library.js#L95"
         },
         {
           "line": 96,
           "source": "const verify = h('button', { type: 'button', class: 'btn', onclick: () => checkUpdate(book.id) }, tr('检查更新'));",
-          "source_link": "../../web/js/offline-library.js#L96"
+          "source_link": "../../reference/web/js/offline-library.js#L96"
         },
         {
           "line": 97,
           "source": "const cancel = h('button', { type: 'button', class: 'btn', hidden: true, onclick: () => {",
-          "source_link": "../../web/js/offline-library.js#L97"
+          "source_link": "../../reference/web/js/offline-library.js#L97"
         },
         {
           "line": 100,
           "source": "const remove = h('button', { type: 'button', class: 'offline-book-remove', onclick: () => removeCopy(book.id) }, tr('移除本机副本'));",
-          "source_link": "../../web/js/offline-library.js#L100"
+          "source_link": "../../reference/web/js/offline-library.js#L100"
         },
         {
           "line": 120,
           "source": "inventoryKnown && !term && filter === 'downloaded' ? h('button', { type: 'button', class: 'btn zhu', onclick: () => tabs[1].click() }, tr('选择书籍下载')) : null));",
-          "source_link": "../../web/js/offline-library.js#L120"
+          "source_link": "../../reference/web/js/offline-library.js#L120"
         }
       ]
     },
     {
-      "path": "web/js/model-settings.js",
+      "path": "reference/web/js/model-settings.js",
       "sha256": "8fbb6699e200ebf9f60baaf1627d4588e39c14f5982f683d04b20b75a579b0f6",
       "coverage_groups": [
         "W"
@@ -4076,62 +4076,62 @@
         {
           "line": 7,
           "source": "const select = h('select', { 'aria-label': t('界面语言'), onchange: () => {",
-          "source_link": "../../web/js/model-settings.js#L7"
+          "source_link": "../../reference/web/js/model-settings.js#L7"
         },
         {
           "line": 42,
           "source": "const protocol = h('select', { 'aria-label': t('接口协议') },",
-          "source_link": "../../web/js/model-settings.js#L42"
+          "source_link": "../../reference/web/js/model-settings.js#L42"
         },
         {
           "line": 45,
           "source": "const endpoint = h('input', { type: 'url', required: true, maxlength: 500, autocomplete: 'url', 'aria-label': t('模型接口地址') });",
-          "source_link": "../../web/js/model-settings.js#L45"
+          "source_link": "../../reference/web/js/model-settings.js#L45"
         },
         {
           "line": 47,
           "source": "const model = h('input', { type: 'text', required: true, maxlength: 100, autocomplete: 'off', 'aria-label': t('抽取模型') });",
-          "source_link": "../../web/js/model-settings.js#L47"
+          "source_link": "../../reference/web/js/model-settings.js#L47"
         },
         {
           "line": 49,
           "source": "const key = h('input', { type: 'password', maxlength: 1024, autocomplete: 'new-password', 'aria-label': t('API 密钥') });",
-          "source_link": "../../web/js/model-settings.js#L49"
+          "source_link": "../../reference/web/js/model-settings.js#L49"
         },
         {
           "line": 51,
           "source": "const clearKey = h('input', { type: 'checkbox', 'aria-label': t('清除已保存的密钥') });",
-          "source_link": "../../web/js/model-settings.js#L51"
+          "source_link": "../../reference/web/js/model-settings.js#L51"
         },
         {
           "line": 52,
           "source": "protocol.addEventListener('change', () => {",
-          "source_link": "../../web/js/model-settings.js#L52"
+          "source_link": "../../reference/web/js/model-settings.js#L52"
         },
         {
           "line": 57,
           "source": "const submit = h('button', { type: 'submit', class: 'btn zhu' }, t('保存设置'));",
-          "source_link": "../../web/js/model-settings.js#L57"
+          "source_link": "../../reference/web/js/model-settings.js#L57"
         },
         {
           "line": 58,
           "source": "const test = h('button', { type: 'button', class: 'btn' }, t('测试连接'));",
-          "source_link": "../../web/js/model-settings.js#L58"
+          "source_link": "../../reference/web/js/model-settings.js#L58"
         },
         {
           "line": 75,
           "source": "test.addEventListener('click', async () => {",
-          "source_link": "../../web/js/model-settings.js#L75"
+          "source_link": "../../reference/web/js/model-settings.js#L75"
         },
         {
           "line": 95,
           "source": "form.addEventListener('submit', async (event) => {",
-          "source_link": "../../web/js/model-settings.js#L95"
+          "source_link": "../../reference/web/js/model-settings.js#L95"
         }
       ]
     },
     {
-      "path": "web/js/readerview.js",
+      "path": "reference/web/js/readerview.js",
       "sha256": "65304b2bd1b134d3948ce0f1db5028e84e403022a9946326853f6c148836d0a5",
       "coverage_groups": [
         "W"
@@ -4140,117 +4140,117 @@
         {
           "line": 44,
           "source": "const backChip = h('button', { class: 'back-chip', hidden: true });",
-          "source_link": "../../web/js/readerview.js#L44"
+          "source_link": "../../reference/web/js/readerview.js#L44"
         },
         {
           "line": 72,
           "source": "h('button', { class: 'icon-btn', 'aria-label': tr('回书架'), onclick: () => (location.hash = '#/') }, icon('back')),",
-          "source_link": "../../web/js/readerview.js#L72"
+          "source_link": "../../reference/web/js/readerview.js#L72"
         },
         {
           "line": 74,
           "source": "h('button', { class: 'icon-btn bookmark-toggle', 'aria-label': tr('收藏当前页为书签'), onclick: () => addBookmark() }, icon('bookmark')),",
-          "source_link": "../../web/js/readerview.js#L74"
+          "source_link": "../../reference/web/js/readerview.js#L74"
         },
         {
           "line": 75,
           "source": "h('button', { class: 'icon-btn', 'aria-label': tr('排版'), onclick: () => panes.open('settings') }, icon('font')));",
-          "source_link": "../../web/js/readerview.js#L75"
+          "source_link": "../../reference/web/js/readerview.js#L75"
         },
         {
           "line": 78,
           "source": "const range = h('input', { type: 'range', min: 1, max: 1, value: 1, 'aria-label': tr('页码') });",
-          "source_link": "../../web/js/readerview.js#L78"
+          "source_link": "../../reference/web/js/readerview.js#L78"
         },
         {
           "line": 81,
           "source": "const dockBtn = (ic, label, view) => h('button', { onclick: () => panes.open(view, undefined, { root: true }) }, icon(ic), label);",
-          "source_link": "../../web/js/readerview.js#L81"
+          "source_link": "../../reference/web/js/readerview.js#L81"
         },
         {
           "line": 83,
           "source": "dockBtn('toc', tr('目录'), 'toc'), h('button', { onclick: () => setSelecting(true) }, icon('pen'), tr('摘录')),",
-          "source_link": "../../web/js/readerview.js#L83"
+          "source_link": "../../reference/web/js/readerview.js#L83"
         },
         {
           "line": 88,
           "source": "const menuHandle = h('button', { class: 'reader-menu-handle', 'aria-label': tr('打开阅读菜单'), onclick: () => readerEl.classList.add('ui') }, icon('toc'), tr('菜单'));",
-          "source_link": "../../web/js/readerview.js#L88"
+          "source_link": "../../reference/web/js/readerview.js#L88"
         },
         {
           "line": 91,
           "source": "h('button', { class: 'btn primary', onclick: () => captureSelection() }, tr('记一笔')),",
-          "source_link": "../../web/js/readerview.js#L91"
+          "source_link": "../../reference/web/js/readerview.js#L91"
         },
         {
           "line": 92,
           "source": "h('button', { class: 'btn ai-comment-action', onclick: () => commentSelection() }, tr('AI 批一句')),",
-          "source_link": "../../web/js/readerview.js#L92"
+          "source_link": "../../reference/web/js/readerview.js#L92"
         },
         {
           "line": 93,
           "source": "h('button', { class: 'btn', onclick: () => setSelecting(false) }, tr('完成摘录')));",
-          "source_link": "../../web/js/readerview.js#L93"
+          "source_link": "../../reference/web/js/readerview.js#L93"
         },
         {
           "line": 194,
           "source": "h('button', { onclick: () => progress.useLocal() }, tr('保留本机位置')),",
-          "source_link": "../../web/js/readerview.js#L194"
+          "source_link": "../../reference/web/js/readerview.js#L194"
         },
         {
           "line": 195,
           "source": "h('button', { onclick: async () => { const pos = progress.useServer(); if (pos != null) await reader.goto(pos); } }, tr('使用云端位置')));",
-          "source_link": "../../web/js/readerview.js#L195"
+          "source_link": "../../reference/web/js/readerview.js#L195"
         },
         {
           "line": 216,
           "source": "if (st.state === 'done' && qualityPending(st)) pane.append(h('button', { class: 'btn zhu', onclick: async (e) => {",
-          "source_link": "../../web/js/readerview.js#L216"
+          "source_link": "../../reference/web/js/readerview.js#L216"
         },
         {
           "line": 223,
           "source": "pane.append(h('button', { class: 'btn zhu', onclick: async (e) => { if (!confirm(tr('开始整理这本书的阅读资料？将调用当前配置的模型，可能产生费用；你可以继续阅读正文。'))) return; e.currentTarget.disabled = true; try { await api.process(bookId, { signal }); book.status = { state: 'queued' }; toast(tr('已开始整理，读着读着人物就会出现')); panes.refresh(); } catch (err) { toast(err.message); e.target.disabled = false; } } }, tr('让 AI 开始整理')));",
-          "source_link": "../../web/js/readerview.js#L223"
+          "source_link": "../../reference/web/js/readerview.js#L223"
         },
         {
           "line": 295,
           "source": "const b = h('button', { style: { background: p.color }, 'aria-label': p.name, onclick: (e) => { e.stopPropagation(); panes.open('person', id, { root: true }); } }, p.name[0]);",
-          "source_link": "../../web/js/readerview.js#L295"
+          "source_link": "../../reference/web/js/readerview.js#L295"
         },
         {
           "line": 298,
           "source": "if (ids.length > 4) cast.append(h('button', { class: 'more', onclick: (e) => { e.stopPropagation(); panes.open('cast', { mode: 'page' }, { root: true }); } }, `+${ids.length - 4}`));",
-          "source_link": "../../web/js/readerview.js#L298"
+          "source_link": "../../reference/web/js/readerview.js#L298"
         },
         {
           "line": 318,
           "source": "range.addEventListener('input', () => {",
-          "source_link": "../../web/js/readerview.js#L318"
+          "source_link": "../../reference/web/js/readerview.js#L318"
         },
         {
           "line": 324,
           "source": "range.addEventListener('change', async () => {",
-          "source_link": "../../web/js/readerview.js#L324"
+          "source_link": "../../reference/web/js/readerview.js#L324"
         },
         {
           "line": 339,
           "source": "backChip.addEventListener('click', async (e) => {",
-          "source_link": "../../web/js/readerview.js#L339"
+          "source_link": "../../reference/web/js/readerview.js#L339"
         },
         {
           "line": 407,
           "source": "stage.addEventListener('click', (e) => {",
-          "source_link": "../../web/js/readerview.js#L407"
+          "source_link": "../../reference/web/js/readerview.js#L407"
         },
         {
           "line": 492,
           "source": "addEventListener('keydown', onKey);",
-          "source_link": "../../web/js/readerview.js#L492"
+          "source_link": "../../reference/web/js/readerview.js#L492"
         }
       ]
     },
     {
-      "path": "web/js/reader.js",
+      "path": "reference/web/js/reader.js",
       "sha256": "b2dda2c8b070ff38c919f67ec7470a0c21ef3cf2f3c3bfbbd8503e25ac20dc2f",
       "coverage_groups": [
         "W"
@@ -4259,17 +4259,17 @@
         {
           "line": 154,
           "source": "el.append(h('button', { type: 'button', class: 'fn', 'data-n': m.fn, 'aria-label': tr('查看注释') }, tr('注')));",
-          "source_link": "../../web/js/reader.js#L154"
+          "source_link": "../../reference/web/js/reader.js#L154"
         },
         {
           "line": 158,
           "source": "const span = h('button', { type: 'button', class: 'nm' + (m.g ? ' g' : ''), 'data-id': m.id, 'data-s': m.s, tabindex: -1 }, t.slice(m.at, m.end));",
-          "source_link": "../../web/js/reader.js#L158"
+          "source_link": "../../reference/web/js/reader.js#L158"
         }
       ]
     },
     {
-      "path": "web/js/views.js",
+      "path": "reference/web/js/views.js",
       "sha256": "f0807baeb564bf02ae68c8cd3bccfceedb891d6a466648428c53e88baf0f9090",
       "coverage_groups": [
         "W"
@@ -4278,182 +4278,182 @@
         {
           "line": 23,
           "source": "h('button', { type: 'button', class: 'at', onclick: () => ctx.goSource(e.s, e.p) }, tr(\"第 {0} 页\", [ctx.pageNo(e.s)]))));",
-          "source_link": "../../web/js/views.js#L23"
+          "source_link": "../../reference/web/js/views.js#L23"
         },
         {
           "line": 29,
           "source": "ul.append(h('li', {}, h('button', { type: 'button', class: 'recap-link', onclick: () => ctx.gotoChapter(r.chapter) }, h('b', {}, ctx.chapterTitle(r.chapter)), h('p', {}, r.text))));",
-          "source_link": "../../web/js/views.js#L29"
+          "source_link": "../../reference/web/js/views.js#L29"
         },
         {
           "line": 40,
           "source": "const ta = h('textarea', { rows: 1, placeholder: tr('比如：他为什么要这样做？'), enterkeyhint: 'send' });",
-          "source_link": "../../web/js/views.js#L40"
+          "source_link": "../../reference/web/js/views.js#L40"
         },
         {
           "line": 41,
           "source": "const send = h('button', { 'aria-label': tr('发送') }, icon('send'));",
-          "source_link": "../../web/js/views.js#L41"
+          "source_link": "../../reference/web/js/views.js#L41"
         },
         {
           "line": 42,
           "source": "const cancel = h('button', { type: 'button', hidden: true }, tr('取消回答'));",
-          "source_link": "../../web/js/views.js#L42"
+          "source_link": "../../reference/web/js/views.js#L42"
         },
         {
           "line": 46,
           "source": "cancel.addEventListener('click', () => pending?.abort());",
-          "source_link": "../../web/js/views.js#L46"
+          "source_link": "../../reference/web/js/views.js#L46"
         },
         {
           "line": 52,
           "source": "const suggest = h('div', { class: 'suggest' }, sugg.map((q) => h('button', { onclick: () => ask(q) }, q)));",
-          "source_link": "../../web/js/views.js#L52"
+          "source_link": "../../reference/web/js/views.js#L52"
         },
         {
           "line": 64,
           "source": "body.append(c ? h('button', { type: 'button', class: 'cite', title: c.text, onclick: () => ctx.goSource(c.o, c.o + c.text.length) }, tr(\"[{0}页]\", [ctx.pageNo(c.o)])) : '');",
-          "source_link": "../../web/js/views.js#L64"
+          "source_link": "../../reference/web/js/views.js#L64"
         },
         {
           "line": 118,
           "source": "send.addEventListener('click', () => ask(ta.value));",
-          "source_link": "../../web/js/views.js#L118"
+          "source_link": "../../reference/web/js/views.js#L118"
         },
         {
           "line": 119,
           "source": "ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(ta.value); } });",
-          "source_link": "../../web/js/views.js#L119"
+          "source_link": "../../reference/web/js/views.js#L119"
         },
         {
           "line": 120,
           "source": "ta.addEventListener('input', () => { ta.style.height = 'auto'; ta.style.height = Math.min(120, ta.scrollHeight) + 'px'; });",
-          "source_link": "../../web/js/views.js#L120"
+          "source_link": "../../reference/web/js/views.js#L120"
         },
         {
           "line": 126,
           "source": "h('button', { type: 'button', class: 'on', 'aria-current': 'page' }, icon('toc'), tr('目录')),",
-          "source_link": "../../web/js/views.js#L126"
+          "source_link": "../../reference/web/js/views.js#L126"
         },
         {
           "line": 127,
           "source": "h('button', { type: 'button', onclick: () => ctx.panes.open('search', undefined, { replace: true, full: true }) }, icon('search'), tr('搜索原文')));",
-          "source_link": "../../web/js/views.js#L127"
+          "source_link": "../../reference/web/js/views.js#L127"
         },
         {
           "line": 131,
           "source": "const filter = h('input', { type: 'search', class: 'reader-toc-filter', 'aria-label': tr('筛选目录'), placeholder: tr('按可见章节名查找'), autocomplete: 'off', maxlength: 160 });",
-          "source_link": "../../web/js/views.js#L131"
+          "source_link": "../../reference/web/js/views.js#L131"
         },
         {
           "line": 151,
           "source": "h('button', { type: 'button', 'aria-current': n === ctx.info.ch ? 'location' : null, onclick: () => ctx.gotoChapter(n) },",
-          "source_link": "../../web/js/views.js#L151"
+          "source_link": "../../reference/web/js/views.js#L151"
         },
         {
           "line": 162,
           "source": "h('button', { type: 'button', onclick: () => { filter.value = ''; render(); current?.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } }, tr('定位本章'))));",
-          "source_link": "../../web/js/views.js#L162"
+          "source_link": "../../reference/web/js/views.js#L162"
         },
         {
           "line": 163,
           "source": "const input = h('input', { type: 'number', inputmode: 'numeric', min: 1, max: ctx.info.total, placeholder: `1 – ${ctx.info.total}`, 'aria-label': tr('页码') });",
-          "source_link": "../../web/js/views.js#L163"
+          "source_link": "../../reference/web/js/views.js#L163"
         },
         {
           "line": 170,
           "source": "input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });",
-          "source_link": "../../web/js/views.js#L170"
+          "source_link": "../../reference/web/js/views.js#L170"
         },
         {
           "line": 171,
           "source": "pane.append(h('div', { class: 'jump' }, h('label', {}, tr('跳到第')), input, h('label', {}, /^(zh|ja|ko)/.test(currentLanguage()) ? tr('页') : ''), h('button', { type: 'button', class: 'btn zhu', onclick: go }, tr('跳转'))), jumpStatus);",
-          "source_link": "../../web/js/views.js#L171"
+          "source_link": "../../reference/web/js/views.js#L171"
         },
         {
           "line": 174,
           "source": "const toggle = h('button', { type: 'button', class: 'switch' + (reveal ? ' on' : ''), role: 'switch', 'aria-label': tr('显示未读章节标题（可能剧透）'), 'aria-checked': reveal });",
-          "source_link": "../../web/js/views.js#L174"
+          "source_link": "../../reference/web/js/views.js#L174"
         },
         {
           "line": 175,
           "source": "toggle.addEventListener('click', () => { reveal = !reveal; store.set(`toc-reveal:${ctx.book.id}`, reveal); toggle.classList.toggle('on', reveal); toggle.setAttribute('aria-checked', String(reveal)); render(); });",
-          "source_link": "../../web/js/views.js#L175"
+          "source_link": "../../reference/web/js/views.js#L175"
         },
         {
           "line": 179,
           "source": "filter.addEventListener('input', render);",
-          "source_link": "../../web/js/views.js#L179"
+          "source_link": "../../reference/web/js/views.js#L179"
         },
         {
           "line": 200,
           "source": "h('button', { 'aria-label': tr('减小字号'), onclick: () => set(k, Math.max(min, +(s[k] - step).toFixed(2))) }, '−'), h('span', {}, fmt(s[k])),",
-          "source_link": "../../web/js/views.js#L200"
+          "source_link": "../../reference/web/js/views.js#L200"
         },
         {
           "line": 201,
           "source": "h('button', { 'aria-label': tr('增大字号'), onclick: () => set(k, Math.min(max, +(s[k] + step).toFixed(2))) }, '+'));",
-          "source_link": "../../web/js/views.js#L201"
+          "source_link": "../../reference/web/js/views.js#L201"
         },
         {
           "line": 202,
           "source": "const chips = (k, opts) => h('div', { class: 'chips' }, opts.map(([v, label]) => h('button', { class: s[k] === v ? 'on' : '', onclick: () => set(k, v) }, label)));",
-          "source_link": "../../web/js/views.js#L202"
+          "source_link": "../../reference/web/js/views.js#L202"
         },
         {
           "line": 210,
           "source": "h('button', { class: 'swatch' + (s.theme === v ? ' on' : ''), style: { background: c, color: v === 'night' ? '#ccc' : '#555' }, 'aria-label': t, onclick: () => set('theme', v) }, t)))),",
-          "source_link": "../../web/js/views.js#L210"
+          "source_link": "../../reference/web/js/views.js#L210"
         },
         {
           "line": 211,
           "source": "h('div', { class: 'set-row' }, h('label', {}, tr('人名批注（朱线）')), h('button', { class: 'switch' + (s.names ? ' on' : ''), role: 'switch', 'aria-label': tr('人名批注'), 'aria-checked': s.names, onclick: () => set('names', !s.names) })),",
-          "source_link": "../../web/js/views.js#L211"
+          "source_link": "../../reference/web/js/views.js#L211"
         },
         {
           "line": 212,
           "source": "h('div', { class: 'set-row ai-comments-setting' }, h('label', {}, tr('读者评论'), h('small', { class: 'muted' }, tr('先标出值得评论的句子；点虚线后才生成评论'))), h('button', { class: 'switch' + (s.aiComments ? ' on' : ''), role: 'switch', 'aria-label': tr('读者评论'), 'aria-checked': s.aiComments, onclick: () => set('aiComments', !s.aiComments) })),",
-          "source_link": "../../web/js/views.js#L212"
+          "source_link": "../../reference/web/js/views.js#L212"
         },
         {
           "line": 214,
           "source": "h('div', { class: 'set-row' }, h('label', {}, tr('翻页动画')), h('button', { class: 'switch' + (s.anim ? ' on' : ''), role: 'switch', 'aria-label': tr('翻页动画'), 'aria-checked': s.anim, onclick: () => set('anim', !s.anim) })),",
-          "source_link": "../../web/js/views.js#L214"
+          "source_link": "../../reference/web/js/views.js#L214"
         },
         {
           "line": 215,
           "source": "window.YeduApp ? h('div', { class: 'set-row' }, h('label', {}, tr('音量键翻页')), h('button', { class: 'switch' + (s.volKeys ? ' on' : ''), role: 'switch', 'aria-label': tr('音量键翻页'), 'aria-checked': s.volKeys, onclick: () => set('volKeys', !s.volKeys) })) : null,",
-          "source_link": "../../web/js/views.js#L215"
+          "source_link": "../../reference/web/js/views.js#L215"
         },
         {
           "line": 216,
           "source": "window.YeduApp ? h('div', { class: 'set-row' }, h('label', {}, tr('阅读时全屏')), h('button', { class: 'switch' + (s.immersive ? ' on' : ''), role: 'switch', 'aria-label': tr('阅读时全屏'), 'aria-checked': s.immersive, onclick: () => set('immersive', !s.immersive) })) : null,",
-          "source_link": "../../web/js/views.js#L216"
+          "source_link": "../../reference/web/js/views.js#L216"
         },
         {
           "line": 227,
           "source": "h('div', { class: 'chips' }, KINDS.map(([v, label]) => h('button', {",
-          "source_link": "../../web/js/views.js#L227"
+          "source_link": "../../reference/web/js/views.js#L227"
         },
         {
           "line": 229,
           "source": "onclick: async (e) => { e.currentTarget.disabled = true; try { await api.setKind(ctx.book.id, v, { signal: ctx.signal }); ctx.book.genre = v; ctx.panes.render(false); } catch (err) { toast(err.message); e.target.disabled = false; } },",
-          "source_link": "../../web/js/views.js#L229"
+          "source_link": "../../reference/web/js/views.js#L229"
         },
         {
           "line": 236,
           "source": "const offline = h('button', { title: tr('下载全文、插图和当前已整理的资料；显示仍按当前页截止'), onclick: () => cacheBook(ctx, offline) }, tr('离线下载本书'));",
-          "source_link": "../../web/js/views.js#L236"
+          "source_link": "../../reference/web/js/views.js#L236"
         },
         {
           "line": 239,
           "source": "h('button', { onclick: async (e) => { if (confirm(tr('从书架移除这本书？AI 整理的结果也会一起删除。'))) { e.currentTarget.disabled = true; try { await api.remove(ctx.book.id, { signal: ctx.signal }); navigator.serviceWorker?.controller?.postMessage({ type: 'remove-book', id: ctx.book.id }); location.hash = '#/'; } catch (err) { toast(err.message); e.target.disabled = false; } } } }, tr('从书架移除')))));",
-          "source_link": "../../web/js/views.js#L239"
+          "source_link": "../../reference/web/js/views.js#L239"
         }
       ]
     },
     {
-      "path": "web/js/graph.js",
+      "path": "reference/web/js/graph.js",
       "sha256": "22eb0e272e8787a789f23bc638cb5eea51ed9f43bdde2ff559ef563c21f60d37",
       "coverage_groups": [
         "W"
@@ -4462,47 +4462,47 @@
         {
           "line": 62,
           "source": "const range = h('input', { type: 'range', min: start, max: end, value: end, step: 1, 'aria-label': tr('时间') });",
-          "source_link": "../../web/js/graph.js#L62"
+          "source_link": "../../reference/web/js/graph.js#L62"
         },
         {
           "line": 64,
           "source": "const play = h('button', { class: 'play', 'aria-label': tr('回放关系的形成') }, icon('play'));",
-          "source_link": "../../web/js/graph.js#L64"
+          "source_link": "../../reference/web/js/graph.js#L64"
         },
         {
           "line": 80,
           "source": "description.append(h('p', {}, h('button', { onclick: () => ctx.openPerson(a.id) }, a.name),",
-          "source_link": "../../web/js/graph.js#L80"
+          "source_link": "../../reference/web/js/graph.js#L80"
         },
         {
           "line": 81,
           "source": "`（${r.a_is || tr('相关')}） ↔ `, h('button', { onclick: () => ctx.openPerson(b.id) }, b.name),",
-          "source_link": "../../web/js/graph.js#L81"
+          "source_link": "../../reference/web/js/graph.js#L81"
         },
         {
           "line": 159,
           "source": "onclick: (ev) => { ev.stopPropagation(); if (selected === p.id) ctx.openPerson(p.id); else { selected = p.id; draw(+range.value, true); s.querySelector(`[data-person=\"${CSS.escape(p.id)}\"]`)?.focus({ preventScroll: true }); } } });",
-          "source_link": "../../web/js/graph.js#L159"
+          "source_link": "../../reference/web/js/graph.js#L159"
         },
         {
           "line": 166,
           "source": "s.addEventListener('click', () => { if (selected) { selected = null; draw(+range.value, true); } });",
-          "source_link": "../../web/js/graph.js#L166"
+          "source_link": "../../reference/web/js/graph.js#L166"
         },
         {
           "line": 168,
           "source": "range.addEventListener('input', () => { stop(); draw(+range.value, true); setLabel(+range.value); });",
-          "source_link": "../../web/js/graph.js#L168"
+          "source_link": "../../reference/web/js/graph.js#L168"
         },
         {
           "line": 170,
           "source": "play.addEventListener('click', () => {",
-          "source_link": "../../web/js/graph.js#L170"
+          "source_link": "../../reference/web/js/graph.js#L170"
         }
       ]
     },
     {
-      "path": "web/js/manual.js",
+      "path": "reference/web/js/manual.js",
       "sha256": "5b0099e95e7bb580652333425f3b3d21063d58f016e3bd23cb0193a2cd982c88",
       "coverage_groups": [
         "W"
@@ -4511,52 +4511,52 @@
         {
           "line": 10,
           "source": "const kind = h('select', { 'aria-label': tr('条目类型') },",
-          "source_link": "../../web/js/manual.js#L10"
+          "source_link": "../../reference/web/js/manual.js#L10"
         },
         {
           "line": 12,
           "source": "const name = h('input', { type: 'text', maxlength: 80, required: true, placeholder: tr('原文中的完整名称'), 'aria-label': tr('原文中的完整名称') });",
-          "source_link": "../../web/js/manual.js#L12"
+          "source_link": "../../reference/web/js/manual.js#L12"
         },
         {
           "line": 13,
           "source": "const note = h('textarea', { maxlength: 3000, rows: 5, placeholder: tr('写下你目前知道的身份、含义或线索（可留空）'), 'aria-label': tr('补充说明') });",
-          "source_link": "../../web/js/manual.js#L13"
+          "source_link": "../../reference/web/js/manual.js#L13"
         },
         {
           "line": 14,
           "source": "const submit = h('button', { type: 'submit', class: 'btn primary' }, tr('保存补充'));",
-          "source_link": "../../web/js/manual.js#L14"
+          "source_link": "../../reference/web/js/manual.js#L14"
         },
         {
           "line": 15,
           "source": "const cancel = h('button', { type: 'button', class: 'btn', onclick: () => ctx.panes.open('manual', undefined, { replace: true }) }, tr('取消编辑'));",
-          "source_link": "../../web/js/manual.js#L15"
+          "source_link": "../../reference/web/js/manual.js#L15"
         },
         {
           "line": 17,
           "source": "const remove = h('button', { type: 'button', class: 'linkish' }, tr('删除这条补充'));",
-          "source_link": "../../web/js/manual.js#L17"
+          "source_link": "../../reference/web/js/manual.js#L17"
         },
         {
           "line": 35,
           "source": "h('button', { type: 'button', class: 'linkish', onclick: () => ctx.panes.open('manual', { edit: item.id }, { replace: true }) }, tr('编辑')));",
-          "source_link": "../../web/js/manual.js#L35"
+          "source_link": "../../reference/web/js/manual.js#L35"
         },
         {
           "line": 61,
           "source": "form.addEventListener('submit', async (ev) => {",
-          "source_link": "../../web/js/manual.js#L61"
+          "source_link": "../../reference/web/js/manual.js#L61"
         },
         {
           "line": 82,
           "source": "remove.addEventListener('click', async () => {",
-          "source_link": "../../web/js/manual.js#L82"
+          "source_link": "../../reference/web/js/manual.js#L82"
         }
       ]
     },
     {
-      "path": "web/js/marginalia.js",
+      "path": "reference/web/js/marginalia.js",
       "sha256": "7f8bc0c25f373df62ecad5592fafe004e0ace59d836fee071bed767161d13324",
       "coverage_groups": [
         "W"
@@ -4565,67 +4565,67 @@
         {
           "line": 28,
           "source": "this.scrim = h('button', { type: 'button', class: 'marginalia-scrim', hidden: true,",
-          "source_link": "../../web/js/marginalia.js#L28"
+          "source_link": "../../reference/web/js/marginalia.js#L28"
         },
         {
           "line": 29,
           "source": "'aria-label': tr('关闭这句的评论'), onclick: () => this.closeDrawer() });",
-          "source_link": "../../web/js/marginalia.js#L29"
+          "source_link": "../../reference/web/js/marginalia.js#L29"
         },
         {
           "line": 42,
           "source": "stage.addEventListener('keydown', this.onCueKey);",
-          "source_link": "../../web/js/marginalia.js#L42"
+          "source_link": "../../reference/web/js/marginalia.js#L42"
         },
         {
           "line": 129,
           "source": "const close = h('button', { type: 'button', class: 'marginalia-drawer-close',",
-          "source_link": "../../web/js/marginalia.js#L129"
+          "source_link": "../../reference/web/js/marginalia.js#L129"
         },
         {
           "line": 130,
           "source": "'aria-label': tr('关闭评论'), onclick: () => this.closeDrawer() }, tr('关闭'));",
-          "source_link": "../../web/js/marginalia.js#L130"
+          "source_link": "../../reference/web/js/marginalia.js#L130"
         },
         {
           "line": 164,
           "source": "h('button', { class: id === persona ? `on persona-${id}` : `persona-${id}`, onclick: () => { persona = id; renderChips(); } }, label)));",
-          "source_link": "../../web/js/marginalia.js#L164"
+          "source_link": "../../reference/web/js/marginalia.js#L164"
         },
         {
           "line": 166,
           "source": "const send = h('button', { class: 'btn primary', onclick: async () => {",
-          "source_link": "../../web/js/marginalia.js#L166"
+          "source_link": "../../reference/web/js/marginalia.js#L166"
         },
         {
           "line": 187,
           "source": "const close = h('button', { class: 'linkish', onclick: () => { this.token++; this.composer.hidden = true; } }, tr('取消'));",
-          "source_link": "../../web/js/marginalia.js#L187"
+          "source_link": "../../reference/web/js/marginalia.js#L187"
         },
         {
           "line": 207,
           "source": "h('button', { type: 'button', class: 'marginalia-drawer-save',",
-          "source_link": "../../web/js/marginalia.js#L207"
+          "source_link": "../../reference/web/js/marginalia.js#L207"
         },
         {
           "line": 208,
           "source": "onclick: () => this.save(result) }, tr('收进摘记')))));",
-          "source_link": "../../web/js/marginalia.js#L208"
+          "source_link": "../../reference/web/js/marginalia.js#L208"
         },
         {
           "line": 209,
           "source": "const actions = manual ? [h('button', { type: 'button', class: 'marginalia-drawer-remix',",
-          "source_link": "../../web/js/marginalia.js#L209"
+          "source_link": "../../reference/web/js/marginalia.js#L209"
         },
         {
           "line": 210,
           "source": "onclick: () => this.compose(items[0], items[0].persona) }, tr('换个口吻'))] : [];",
-          "source_link": "../../web/js/marginalia.js#L210"
+          "source_link": "../../reference/web/js/marginalia.js#L210"
         }
       ]
     },
     {
-      "path": "web/js/notebook.js",
+      "path": "reference/web/js/notebook.js",
       "sha256": "9b7f10156fb650e6b7e512a883aec41ff121fb446b363a106e04d387ecf0cfee",
       "coverage_groups": [
         "W"
@@ -4634,102 +4634,102 @@
         {
           "line": 119,
           "source": "const query = h('input', { type: 'search', class: 'notebook-filter', placeholder: tr('查找摘录或想法'), 'aria-label': tr('查找摘记') });",
-          "source_link": "../../web/js/notebook.js#L119"
+          "source_link": "../../reference/web/js/notebook.js#L119"
         },
         {
           "line": 121,
           "source": "const showAll = h('input', { type: 'checkbox', 'aria-label': tr('包含后面读过的摘记') });",
-          "source_link": "../../web/js/notebook.js#L121"
+          "source_link": "../../reference/web/js/notebook.js#L121"
         },
         {
           "line": 123,
           "source": "h('button', { class: 'btn primary', onclick: () => ctx.panes.open('notebook', { draft: { start: ctx.info.start, end: ctx.info.start, quote: '', kind: 'note' } }) }, tr('写下此刻的想法')),",
-          "source_link": "../../web/js/notebook.js#L123"
+          "source_link": "../../reference/web/js/notebook.js#L123"
         },
         {
           "line": 124,
           "source": "h('button', { class: 'btn', onclick: () => ctx.addBookmark() }, tr('书签记在这里')));",
-          "source_link": "../../web/js/notebook.js#L124"
+          "source_link": "../../reference/web/js/notebook.js#L124"
         },
         {
           "line": 127,
           "source": "const exportButton = h('button', { class: 'btn', onclick: async () => {",
-          "source_link": "../../web/js/notebook.js#L127"
+          "source_link": "../../reference/web/js/notebook.js#L127"
         },
         {
           "line": 130,
           "source": "catch { const box = h('textarea', { class: 'notebook-export', readonly: true, 'aria-label': tr('摘记导出文本') }, text); pane.append(box); box.focus(); box.select(); toast(tr('请复制下方选中的摘记')); }",
-          "source_link": "../../web/js/notebook.js#L130"
+          "source_link": "../../reference/web/js/notebook.js#L130"
         },
         {
           "line": 138,
           "source": "status.append(h('button', { class: 'linkish', onclick: () => notebook.sync() }, tr('立即同步')));",
-          "source_link": "../../web/js/notebook.js#L138"
+          "source_link": "../../reference/web/js/notebook.js#L138"
         },
         {
           "line": 144,
           "source": "h('button', { class: 'note-source', onclick: () => ctx.goSource(n.start, n.end || n.start) }, n.kind === 'bookmark' ? tr('书签') : tr('摘记'), tr(\" · 第 {0} 页\", [ctx.pageNo(n.start)]), ' ↗'),",
-          "source_link": "../../web/js/notebook.js#L144"
+          "source_link": "../../reference/web/js/notebook.js#L144"
         },
         {
           "line": 149,
           "source": "h('button', { class: 'btn', onclick: () => notebook.resolve(n.id, true).catch((e) => toast(e.message)) }, n.deleted ? tr('恢复另一设备版本') : tr('两份都保留')),",
-          "source_link": "../../web/js/notebook.js#L149"
+          "source_link": "../../reference/web/js/notebook.js#L149"
         },
         {
           "line": 150,
           "source": "h('button', { class: 'linkish', onclick: () => notebook.resolve(n.id, false).catch((e) => toast(e.message)) }, tr('使用另一设备版本')));",
-          "source_link": "../../web/js/notebook.js#L150"
+          "source_link": "../../reference/web/js/notebook.js#L150"
         },
         {
           "line": 152,
           "source": "h('button', { class: 'linkish', onclick: () => ctx.panes.open('notebook', { edit: n.id }) }, tr('编辑')),",
-          "source_link": "../../web/js/notebook.js#L152"
+          "source_link": "../../reference/web/js/notebook.js#L152"
         },
         {
           "line": 153,
           "source": "h('button', { class: 'linkish', onclick: async () => { if (confirm(tr('删除这条摘记？原文会保留。'))) { try { await notebook.save({ ...n, deleted: true }); } catch (e) { toast(e.message); } } } }, tr('删除')),",
-          "source_link": "../../web/js/notebook.js#L153"
+          "source_link": "../../reference/web/js/notebook.js#L153"
         },
         {
           "line": 159,
           "source": "query.addEventListener('input', render); showAll.addEventListener('change', render);",
-          "source_link": "../../web/js/notebook.js#L159"
+          "source_link": "../../reference/web/js/notebook.js#L159"
         },
         {
           "line": 175,
           "source": "h('button', { class: 'btn', onclick: () => ctx.panes.open('notebook', { ...arg, revealDraft: true }, { replace: true }) }, tr('查看后来的草稿（可能剧透）')),",
-          "source_link": "../../web/js/notebook.js#L175"
+          "source_link": "../../reference/web/js/notebook.js#L175"
         },
         {
           "line": 176,
           "source": "h('button', { class: 'btn', onclick: () => ctx.panes.back() }, tr('返回')));",
-          "source_link": "../../web/js/notebook.js#L176"
+          "source_link": "../../reference/web/js/notebook.js#L176"
         },
         {
           "line": 179,
           "source": "const text = h('textarea', { class: 'note-editor', rows: 7, maxlength: 10000, placeholder: tr('写下你的理解、疑问，或留给下次阅读的提醒…'), 'aria-label': tr('我的想法') });",
-          "source_link": "../../web/js/notebook.js#L179"
+          "source_link": "../../reference/web/js/notebook.js#L179"
         },
         {
           "line": 182,
           "source": "text.addEventListener('input', () => { hint.textContent = store.set(draftKey, { text: text.value, cutoff: Math.max(ctx.info.cutoff, draftCutoff, note.knowledge_cutoff || note.end) }) ? tr('草稿已留在本机') : tr('本机存储不足，请复制文字后再离开'); });",
-          "source_link": "../../web/js/notebook.js#L182"
+          "source_link": "../../reference/web/js/notebook.js#L182"
         },
         {
           "line": 184,
           "source": "h('button', { class: 'btn primary', onclick: async () => {",
-          "source_link": "../../web/js/notebook.js#L184"
+          "source_link": "../../reference/web/js/notebook.js#L184"
         },
         {
           "line": 188,
           "source": "} }, tr('保存摘记')), h('button', { class: 'btn', onclick: () => ctx.panes.back() }, tr('返回')));",
-          "source_link": "../../web/js/notebook.js#L188"
+          "source_link": "../../reference/web/js/notebook.js#L188"
         }
       ]
     },
     {
-      "path": "web/js/person.js",
+      "path": "reference/web/js/person.js",
       "sha256": "f7a561127bb8b3e774b5c763570f1d13941b1239414bf09d8d0045900ba3e4da",
       "coverage_groups": [
         "W"
@@ -4738,87 +4738,87 @@
         {
           "line": 22,
           "source": "return h('button', { type: 'button', class: 'at', onclick: (ev) => { ev.stopPropagation(); ctx.goSource(s, e); } }, label || tr(\"第 {0} 页\", [ctx.pageNo(s)]));",
-          "source_link": "../../web/js/person.js#L22"
+          "source_link": "../../reference/web/js/person.js#L22"
         },
         {
           "line": 53,
           "source": "h('button', { class: 'linkish', onclick: () => ctx.panes.open('manual', { edit: p.id.slice(1) }) }, tr('编辑或删除'))));",
-          "source_link": "../../web/js/person.js#L53"
+          "source_link": "../../reference/web/js/person.js#L53"
         },
         {
           "line": 86,
           "source": "for (const t of trail.slice(-8)) ol.append(h('li', {}, h('span', { class: 'at', onclick: () => ctx.goSource(t.p, t.p + 1) }, tr(\"第 {0} 页\", [ctx.pageNo(t.p)])), h('span', { class: 'tt' }, t.t)));",
-          "source_link": "../../web/js/person.js#L86"
+          "source_link": "../../reference/web/js/person.js#L86"
         },
         {
           "line": 110,
           "source": "box.append(h('button', { class: 'rel' + (r.status === 'ended' ? ' ended' : ''), onclick: () => ctx.openPerson(o.id) },",
-          "source_link": "../../web/js/person.js#L110"
+          "source_link": "../../reference/web/js/person.js#L110"
         },
         {
           "line": 141,
           "source": "const more = h('button', { class: 'more-btn', onclick: () => { more.remove(); draw(evs.slice(limit)); } }, tr(\"展开更早的 {0} 件事\", [evs.length - limit]));",
-          "source_link": "../../web/js/person.js#L141"
+          "source_link": "../../reference/web/js/person.js#L141"
         },
         {
           "line": 170,
           "source": "const g = svg('g', { style: 'cursor:pointer', role: 'button', tabindex: 0, 'aria-label': tr(\"查看{0}的批注\", [o.name]), onclick: () => ctx.openPerson(o.id), onkeydown: (e) => { if (['Enter', ' '].includes(e.key)) { e.preventDefault(); ctx.openPerson(o.id); } } });",
-          "source_link": "../../web/js/person.js#L170"
+          "source_link": "../../reference/web/js/person.js#L170"
         },
         {
           "line": 183,
           "source": "return h('button', { class: 'cast-row', onclick: () => ctx.openPerson(p.id) },",
-          "source_link": "../../web/js/person.js#L183"
+          "source_link": "../../reference/web/js/person.js#L183"
         },
         {
           "line": 216,
           "source": "h('button', { class: 'more-btn', onclick: () => panes.open('recap') }, tr('读完整的前情提要'))));",
-          "source_link": "../../web/js/person.js#L216"
+          "source_link": "../../reference/web/js/person.js#L216"
         },
         {
           "line": 220,
           "source": "h('button', { onclick: () => panes.open('cast') }, W.all),",
-          "source_link": "../../web/js/person.js#L220"
+          "source_link": "../../reference/web/js/person.js#L220"
         },
         {
           "line": 221,
           "source": "h('button', { onclick: () => panes.open('graph') }, W.rel + tr('图')),",
-          "source_link": "../../web/js/person.js#L221"
+          "source_link": "../../reference/web/js/person.js#L221"
         },
         {
           "line": 222,
           "source": "h('button', { onclick: () => panes.open('ask') }, tr('问问这本书')))));",
-          "source_link": "../../web/js/person.js#L222"
+          "source_link": "../../reference/web/js/person.js#L222"
         },
         {
           "line": 231,
           "source": "const search = h('input', { type: 'search', placeholder: tr('搜索已读人物或概念'), 'aria-label': tr('搜索已读人物或概念'), enterkeyhint: 'search' });",
-          "source_link": "../../web/js/person.js#L231"
+          "source_link": "../../reference/web/js/person.js#L231"
         },
         {
           "line": 236,
           "source": "seg.append(h('button', { class: mode.v === k ? 'on' : '', onclick: (e) => { mode.v = k; [...seg.children].forEach((b) => b.classList.toggle('on', b === e.currentTarget)); draw(); } }, label));",
-          "source_link": "../../web/js/person.js#L236"
+          "source_link": "../../reference/web/js/person.js#L236"
         },
         {
           "line": 266,
           "source": "const btn = h('button', { class: 'more-btn', onclick: () => { mode.minor = !mode.minor; box.hidden = !mode.minor; btn.textContent = label(); } });",
-          "source_link": "../../web/js/person.js#L266"
+          "source_link": "../../reference/web/js/person.js#L266"
         },
         {
           "line": 276,
           "source": "search.addEventListener('input', () => { mode.q = search.value; draw(); });",
-          "source_link": "../../web/js/person.js#L276"
+          "source_link": "../../reference/web/js/person.js#L276"
         },
         {
           "line": 278,
           "source": "h('button', { class: 'btn', onclick: () => ctx.panes.open('manual') }, tr('找不到？手动补充人物或概念')), listBox);",
-          "source_link": "../../web/js/person.js#L278"
+          "source_link": "../../reference/web/js/person.js#L278"
         }
       ]
     },
     {
-      "path": "web/js/search.js",
+      "path": "reference/web/js/search.js",
       "sha256": "5d75ced79189a1dd5d83bf79aefa4dc6b6ded31745f6bb2a67eda31b56725afe",
       "coverage_groups": [
         "W"
@@ -4827,87 +4827,87 @@
         {
           "line": 125,
           "source": "h('button', { type: 'button', class: active === 'toc' ? 'on' : '', 'aria-current': active === 'toc' ? 'page' : null, onclick: () => ctx.panes.open('toc', undefined, { replace: true }) }, icon('toc'), tr('目录')),",
-          "source_link": "../../web/js/search.js#L125"
+          "source_link": "../../reference/web/js/search.js#L125"
         },
         {
           "line": 126,
           "source": "h('button', { type: 'button', class: active === 'search' ? 'on' : '', 'aria-current': active === 'search' ? 'page' : null, onclick: () => ctx.panes.open('search', undefined, { replace: true, full: true }) }, icon('search'), tr('搜索原文')));",
-          "source_link": "../../web/js/search.js#L126"
+          "source_link": "../../reference/web/js/search.js#L126"
         },
         {
           "line": 133,
           "source": "const input = h('input', { type: 'search', maxlength: SEARCH_LIMITS.query, placeholder: tr('人名、词语，或记得的一句话'), 'aria-label': tr('搜索原文'), enterkeyhint: 'search', autocomplete: 'off' });",
-          "source_link": "../../web/js/search.js#L133"
+          "source_link": "../../reference/web/js/search.js#L133"
         },
         {
           "line": 135,
           "source": "const submit = h('button', { type: 'submit', class: 'btn zhu' }, tr('搜索'));",
-          "source_link": "../../web/js/search.js#L135"
+          "source_link": "../../reference/web/js/search.js#L135"
         },
         {
           "line": 137,
           "source": "const cancel = h('button', { type: 'button', class: 'reader-search-stop', hidden: true }, tr('暂停搜索'));",
-          "source_link": "../../web/js/search.js#L137"
+          "source_link": "../../reference/web/js/search.js#L137"
         },
         {
           "line": 138,
           "source": "const wholeToggle = h('button', { type: 'button', class: 'switch', role: 'switch', 'aria-label': tr('搜索整本书（包含未读内容）'), 'aria-checked': false });",
-          "source_link": "../../web/js/search.js#L138"
+          "source_link": "../../reference/web/js/search.js#L138"
         },
         {
           "line": 142,
           "source": "const previous = h('button', { type: 'button', hidden: true }, tr('上一组'));",
-          "source_link": "../../web/js/search.js#L142"
+          "source_link": "../../reference/web/js/search.js#L142"
         },
         {
           "line": 143,
           "source": "const more = h('button', { type: 'button', hidden: true }, tr('继续搜索'));",
-          "source_link": "../../web/js/search.js#L143"
+          "source_link": "../../reference/web/js/search.js#L143"
         },
         {
           "line": 156,
           "source": "return h('li', {}, h('button', { type: 'button', onclick: () => ctx.goSource(row.start, row.end) },",
-          "source_link": "../../web/js/search.js#L156"
+          "source_link": "../../reference/web/js/search.js#L156"
         },
         {
           "line": 162,
           "source": "wholeToggle.addEventListener('click', () => {",
-          "source_link": "../../web/js/search.js#L162"
+          "source_link": "../../reference/web/js/search.js#L162"
         },
         {
           "line": 169,
           "source": "input.addEventListener('input', () => { reset(); state.textContent = tr('按回车或点“搜索”开始。'); });",
-          "source_link": "../../web/js/search.js#L169"
+          "source_link": "../../reference/web/js/search.js#L169"
         },
         {
           "line": 170,
           "source": "cancel.addEventListener('click', () => { stop(); state.textContent = tr('搜索已暂停。已找到的结果保留，可以继续搜索。'); more.hidden = !next; previous.hidden = history.length === 0; });",
-          "source_link": "../../web/js/search.js#L170"
+          "source_link": "../../reference/web/js/search.js#L170"
         },
         {
           "line": 200,
           "source": "form.addEventListener('submit', (e) => { e.preventDefault(); reset(); more.textContent = tr('继续搜索'); run(); });",
-          "source_link": "../../web/js/search.js#L200"
+          "source_link": "../../reference/web/js/search.js#L200"
         },
         {
           "line": 201,
           "source": "more.addEventListener('click', () => { if (!next) return; history.push(currentCursor); if (history.length > 100) history.shift(); page++; more.textContent = tr('继续搜索'); run(next); });",
-          "source_link": "../../web/js/search.js#L201"
+          "source_link": "../../reference/web/js/search.js#L201"
         },
         {
           "line": 202,
           "source": "previous.addEventListener('click', () => { if (!history.length) return; const cursor = history.pop(); page--; run(cursor); });",
-          "source_link": "../../web/js/search.js#L202"
+          "source_link": "../../reference/web/js/search.js#L202"
         },
         {
           "line": 203,
           "source": "input.addEventListener('keydown', (e) => {",
-          "source_link": "../../web/js/search.js#L203"
+          "source_link": "../../reference/web/js/search.js#L203"
         }
       ]
     },
     {
-      "path": "web/js/source-preview.js",
+      "path": "reference/web/js/source-preview.js",
       "sha256": "ddf634d26e67d347fdf076ccce177313498c8af907bd5a9bd92593729f119c23",
       "coverage_groups": [
         "W"
@@ -4916,27 +4916,27 @@
         {
           "line": 67,
           "source": "const back = h('button', { type: 'button', class: 'btn source-preview-back', onclick: () => {",
-          "source_link": "../../web/js/source-preview.js#L67"
+          "source_link": "../../reference/web/js/source-preview.js#L67"
         },
         {
           "line": 78,
           "source": "if (sameEdition()) actions.prepend(h('button', { type: 'button', class: 'btn', onclick: () => ctx.panes.render(false) }, tr('按当前页重新查看')));",
-          "source_link": "../../web/js/source-preview.js#L78"
+          "source_link": "../../reference/web/js/source-preview.js#L78"
         },
         {
           "line": 93,
           "source": "const jump = h('button', { type: 'button', class: 'btn zhu source-preview-jump', onclick: async () => {",
-          "source_link": "../../web/js/source-preview.js#L93"
+          "source_link": "../../reference/web/js/source-preview.js#L93"
         },
         {
           "line": 127,
           "source": "h('button', { type: 'button', class: 'btn', onclick: load }, tr('重新获取原文')));",
-          "source_link": "../../web/js/source-preview.js#L127"
+          "source_link": "../../reference/web/js/source-preview.js#L127"
         }
       ]
     },
     {
-      "path": "web/js/panes.js",
+      "path": "reference/web/js/panes.js",
       "sha256": "5366e283f16d94294b0a682ac297f6230ac7fedbc0825a4534ef6b8911bd8f03",
       "coverage_groups": [
         "W"
@@ -4945,32 +4945,32 @@
         {
           "line": 12,
           "source": "this.scrim = h('div', { class: 'scrim', onclick: () => this.close() });",
-          "source_link": "../../web/js/panes.js#L12"
+          "source_link": "../../reference/web/js/panes.js#L12"
         },
         {
           "line": 23,
           "source": "this.mq.addEventListener('change', this.mediaChange);",
-          "source_link": "../../web/js/panes.js#L23"
+          "source_link": "../../reference/web/js/panes.js#L23"
         },
         {
           "line": 34,
           "source": "this.sheet.addEventListener('keydown', this.keyHandler);",
-          "source_link": "../../web/js/panes.js#L34"
+          "source_link": "../../reference/web/js/panes.js#L34"
         },
         {
           "line": 89,
           "source": "canBack ? h('button', { class: 'icon-btn', 'aria-label': this.stack.length > 1 ? tr('返回') : tr('关闭'), onclick: () => (this.stack.length > 1 ? this.back() : this.close()) }, icon(this.stack.length > 1 ? 'back' : 'close')) : null,",
-          "source_link": "../../web/js/panes.js#L89"
+          "source_link": "../../reference/web/js/panes.js#L89"
         },
         {
           "line": 132,
           "source": "this.grip.addEventListener('click', () => this.sheet.classList.toggle('full'));",
-          "source_link": "../../web/js/panes.js#L132"
+          "source_link": "../../reference/web/js/panes.js#L132"
         }
       ]
     },
     {
-      "path": "web/js/workspace-nav.js",
+      "path": "reference/web/js/workspace-nav.js",
       "sha256": "5fe29e91aef1a892e6ece27b2304e28ef967bdd4122355dae4b9be4c02594d76",
       "coverage_groups": [
         "W"

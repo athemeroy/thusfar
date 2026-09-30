@@ -58,7 +58,7 @@
 | Linux x64 | tar.gz | 解压后运行 `./thusfar`，需要 GTK 3。 |
 | iOS / iPadOS 15+ | 未签名 IPA | 使用 AltStore 或 SideStore 签名并侧载。 |
 
-Android 2.0 与 1.7.x 可以并存，两者的书库各自独立。想带走旧书库，可先在 1.7.x 导出备份，再在 2.0 恢复。[1.7.5 仍可下载](https://github.com/athemeroy/thusfar/releases/tag/v1.7.5)。
+Android 2.0 与 1.7.x 可以并存，两者的书库各自独立。想带走旧书库，可先在 1.7.x 导出备份，再在 2.0 恢复。
 
 ## 数据放在哪里
 
@@ -90,6 +90,8 @@ python3 app/web/prepare_offline.py app/build/web
 ```
 
 自行发布网页版见 [静态托管说明](docs/SELF-HOSTING.md)，开发和检查方式见 [客户端说明](app/README.md)。欢迎阅读 [贡献指南](CONTRIBUTING.md)。感谢 Luna 和 Gemini Flash 对 2.0 客户端的贡献。
+
+旧版 Python/浏览器实现仅作为[回归测试参考](reference/README.md)保留。Docker 配置和旧 Android 外壳已从当前源码中移除。
 
 ## 许可证
 

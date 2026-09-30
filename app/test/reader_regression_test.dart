@@ -624,7 +624,7 @@ void main() {
   ) async {
     final BookEntry entry = model.library.books.single;
     File(
-      '../oracle/goldens/books/aq_deepseek/book.json',
+      '../reference/oracle/goldens/books/aq_deepseek/book.json',
     ).copySync('${entry.dir.path}/book.json');
     await model.library.scan();
     model.library.saveProgress(entry.id, 5799, 6086, 21734);
@@ -887,7 +887,7 @@ void main() {
     (WidgetTester tester) async {
       final BookEntry entry = model.library.books.single;
       File(
-        '../oracle/goldens/books/aq_deepseek/book.json',
+        '../reference/oracle/goldens/books/aq_deepseek/book.json',
       ).copySync('${entry.dir.path}/book.json');
       await model.library.scan();
       model.library.saveProgress(entry.id, 5799, 6086, 21734);

@@ -58,7 +58,7 @@ Both installed and browser clients can manually upload a new snapshot to your HT
 | Linux x64 | tar.gz | Extract and run `./thusfar`; GTK 3 is required. |
 | iOS / iPadOS 15+ | Unsigned IPA | Sign and sideload with AltStore or SideStore. |
 
-Android 2.0 can coexist with 1.7.x; each app has its own library. To move books over, export a backup in 1.7.x and restore it in 2.0. [Version 1.7.5 remains available](https://github.com/athemeroy/thusfar/releases/tag/v1.7.5).
+Android 2.0 can coexist with 1.7.x; each app has its own library. To move books over, export a backup in 1.7.x and restore it in 2.0.
 
 ## Your data
 
@@ -90,6 +90,8 @@ python3 app/web/prepare_offline.py app/build/web
 ```
 
 See the [static hosting guide](docs/SELF-HOSTING.md) to publish your own browser reader, the [client guide](app/README.md) for development and checks, and [CONTRIBUTING.md](CONTRIBUTING.md) to contribute. Thanks to Luna and Gemini Flash for their contributions to the 2.0 client.
+
+The retired Python/browser implementation is kept only as a [test reference](reference/README.md). Docker and the old Android wrapper are no longer part of the supported source layout.
 
 ## License
 

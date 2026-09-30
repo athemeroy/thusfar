@@ -11,7 +11,7 @@ void main() {
       in linkAdapters.entries) {
     test('${e.key} matches every existing Python function golden', () async {
       final File source = File(
-        '../oracle/goldens/pipeline/link/${e.key.split('.').last}.jsonl',
+        '../reference/oracle/goldens/pipeline/link/${e.key.split('.').last}.jsonl',
       );
       int count = 0;
       await for (final String line in source

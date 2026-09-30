@@ -3,9 +3,9 @@ data/
 # Flutter's data access source is code, not a local book library.
 !app/lib/data/
 !app/lib/data/**
-testsets/*/*.txt
+reference/testsets/*/*.txt
 
-# filled-in secrets — .env.example is the one that is committed
+# filled-in secrets never belong in source control
 .env
 secrets.env
 *.key
@@ -13,11 +13,7 @@ secrets.env
 *.keystore
 
 # build output
-android/app/build/
-android/build/
-android/.gradle/
-android/local.properties
-web/download/
+reference/web/download/
 *.apk
 
 __pycache__/
@@ -30,5 +26,5 @@ core/.dart_tool/
 core/coverage/
 
 # cassette budget and tape flock files are created locally during recording
-oracle/cassettes/live/.budget.lock
-oracle/cassettes/live/.tape.lock
+reference/oracle/cassettes/live/.budget.lock
+reference/oracle/cassettes/live/.tape.lock

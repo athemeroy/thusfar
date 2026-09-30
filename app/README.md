@@ -2,7 +2,7 @@
 
 Flutter reader for Android, macOS, Windows, Linux, iOS and the browser, using the pure Dart
 package in `../core`. This is the active 2.0 client.
-The Python implementation remains a behavioral reference in the source tree.
+The frozen Python/browser behavioral reference is isolated in [`../reference/`](../reference/README.md); it is used by tests, never by a client build.
 
 The reader provides a local bookshelf, TXT/EPUB and portable-backup import,
 paginated reading, character cards, graph, chapter navigation, bookmarks,
@@ -44,7 +44,6 @@ upgrade but does not prove data migration or interrupted-task acceptance.
 ## Build
 
 Use Flutter 3.47.5 / Dart 3.13.4. Android requires JDK 17 and an Android SDK.
-On the home environment, run heavy builds on the home Mini rather than NAS.
 
 ```sh
 flutter pub get
@@ -78,11 +77,8 @@ CORS permission for the page origin and OPTIONS, PROPFIND, GET and PUT. Native
 biographies use a separate verification pipeline. Model calls may be billed by
 the provider. Do not pass private API keys or book files to the web build.
 
-The Gradle configuration reads `YEDU_SIGNING_STORE` and
-`YEDU_SIGNING_PASSWORD_FILE`, or the existing NAS private signing paths. Without
-those files it builds with the local debug key. For a Mini build, retrieve the
-APK and sign it on NAS with the existing release key; never copy the signing key
-to Mini. Verify the final signature and APK hash before installing with `-r`.
+Release signing is configured outside the repository. Never commit signing credentials
+or include them in client builds, fixtures, or diagnostic artifacts.
 
 ## Verification
 
@@ -96,8 +92,7 @@ dart test -j 1
 ```
 
 `test/screens_test.dart` renders the real UI using offline reference books and
-CJK fonts. It accepts `FLUTTER_ROOT` and `THUSFAR_TEST_SANS_FONT` so it can run on
-the home Mini. Generated screenshot receipts belong in the dated run report;
+CJK fonts. It accepts `FLUTTER_ROOT` and `THUSFAR_TEST_SANS_FONT` for local test runs. Generated screenshot receipts belong in the dated run report;
 `--update-goldens` produces review images and is not evidence that an old visual
 baseline remained unchanged. Inspect the resulting images.
 
@@ -129,5 +124,6 @@ require the full CI matrix. Never generate baselines in CI or use an OS upgrade
 as permission to accept changed layout, text, wrapping or controls.
 
 Core comparisons, widget checks, successful builds, actual device interaction,
-and full 2.0 acceptance are separate milestones. Development evidence is recorded
-in `../STATUS.md` and `../docs/port/runs/`.
+and full 2.0 acceptance are separate milestones. Historical operational notes have been retired from the current tree. The retained
+regression fixtures and their verification instructions are documented in
+[`../reference/README.md`](../reference/README.md).

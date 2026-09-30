@@ -10,7 +10,7 @@ import 'golden_registry.dart';
 void main() {
   final Map<String, List<Map<String, Object?>>> specialByFunction = {};
   final List<File> specialFiles =
-      Directory('../oracle/goldens/special')
+      Directory('../reference/oracle/goldens/special')
           .listSync()
           .whereType<File>()
           .where((File file) => file.path.endsWith('.jsonl'))
@@ -25,10 +25,10 @@ void main() {
     }
   }
   final YamlMap manifest =
-      loadYaml(File('../docs/port/MANIFEST.yaml').readAsStringSync())
+      loadYaml(File('../reference/docs/port/MANIFEST.yaml').readAsStringSync())
           as YamlMap;
   final Map<String, Object?> inventory =
-      jsonDecode(File('../docs/port/inventory.json').readAsStringSync())
+      jsonDecode(File('../reference/docs/port/inventory.json').readAsStringSync())
           as Map<String, Object?>;
   final YamlList entries = manifest['functions'] as YamlList;
   final List<Object?> rawInventory = inventory['functions']! as List<Object?>;
@@ -84,7 +84,7 @@ void main() {
         final SpecialGoldenInvoker? invokeSpecial = specialGoldenRegistry[id];
         final List<String> parts = id.split('.');
         final String path =
-            '../oracle/goldens/${parts.sublist(0, parts.length - 1).join('/')}/${parts.last}.jsonl';
+            '../reference/oracle/goldens/${parts.sublist(0, parts.length - 1).join('/')}/${parts.last}.jsonl';
         final File ordinary = File(path);
         final List<Map<String, Object?>> special =
             specialByFunction[id] ?? <Map<String, Object?>>[];

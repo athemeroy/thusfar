@@ -177,7 +177,7 @@ void main() {
       }
 
       copy(
-        Directory('../oracle/goldens/books/aq_deepseek'),
+        Directory('../reference/oracle/goldens/books/aq_deepseek'),
         Directory('${root.path}/books/aqgraphfixture'),
       );
       final Library library = Library(root);
