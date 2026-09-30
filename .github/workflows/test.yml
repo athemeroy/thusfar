@@ -107,10 +107,19 @@ jobs:
         run: |
           python -m pip install playwright==1.63.0
           python -m playwright install --with-deps chromium
+      - name: Resolve browser client dependencies
+        working-directory: app
+        run: flutter pub get
+      - name: Browser interruption and cancellation regressions
+        working-directory: app
+        run: |
+          export CHROME_EXECUTABLE="$(python3 -c 'from playwright.sync_api import sync_playwright; p = sync_playwright().start(); print(p.chromium.executable_path); p.stop()')"
+          flutter test --no-pub --platform chrome \
+            test/browser/web_reader_flows_test.dart \
+            test/browser/web_ai_cancellation_test.dart
       - name: Build offline browser client at a static subpath
         working-directory: app
         run: |
-          flutter pub get
           flutter build web --release --target lib/main_web.dart --base-href /ux-review/ --no-pub
           python3 web/prepare_offline.py build/web
           mkdir -p build/smoke-root

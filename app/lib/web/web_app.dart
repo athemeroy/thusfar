@@ -1203,6 +1203,9 @@ class _WebReaderState extends State<WebReader> {
   final WebReaderPrefs _prefs = WebReaderPrefs();
   List<List<_WebPageFragment>> _pages = const <List<_WebPageFragment>>[];
   int? _pageLayoutKey;
+  // Keep the same source character through repeated viewport/font changes.
+  // A percentage is only a fallback for an initial load or a deliberate jump.
+  ({int block, int offset})? _reflowAnchor;
   int _pageIndex = 0;
   int _turnDirection = 1;
   bool _wheelLocked = false;
@@ -1217,6 +1220,7 @@ class _WebReaderState extends State<WebReader> {
   Timer? _displayTimer;
   bool _controls = false;
   bool _restoring = true;
+  bool _openingPanel = false;
   String? _selectedText;
   String? _selectionActionQuote;
   Map<String, int> _draftPersonNames = const <String, int>{};
@@ -1528,6 +1532,7 @@ class _WebReaderState extends State<WebReader> {
     _seekPreview = null;
     _blockKeys.clear();
     _pageLayoutKey = null;
+    _reflowAnchor = null;
     _pages = const <List<_WebPageFragment>>[];
     _pageIndex = 0;
     setState(() {
@@ -1647,6 +1652,7 @@ class _WebReaderState extends State<WebReader> {
       final int direction = next > _pageIndex ? 1 : -1;
       setState(() {
         _returnPosition ??= (chapter: _chapter, fraction: _fraction);
+        _reflowAnchor = null;
         _pageIndex = next;
         _turnDirection = direction;
         widget.state.fraction = _fraction;
@@ -1665,59 +1671,72 @@ class _WebReaderState extends State<WebReader> {
 
   void _bookmark() {
     final double fraction = _fraction;
-    final int index = widget.state.bookmarks.indexWhere(
-      (mark) =>
-          mark.chapter == _chapter && (mark.fraction - fraction).abs() < 0.07,
+    final bool exists = widget.state.bookmarks.any(
+      (mark) => mark.chapter == _chapter && mark.fraction == fraction,
     );
-    setState(() {
-      if (index >= 0) {
-        widget.state.remove(widget.state.bookmarks[index]);
-      } else {
-        widget.state.addBookmark(_chapter, fraction);
-      }
-    });
-    unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
+    // This control promises to add. Nearby pages in a long chapter must never
+    // delete each other's bookmarks; removal belongs to the bookmark list.
+    if (!exists) {
+      setState(() => widget.state.addBookmark(_chapter, fraction));
+      unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(index >= 0 ? '已移除书签' : '已添加书签'),
+        content: Text(exists ? '这里已有书签' : '已添加书签'),
         duration: const Duration(seconds: 1),
       ),
     );
   }
 
-  Future<void> _openAi() async {
-    final int cutoff = _visibleCutoffOffset();
-    _saveTimer?.cancel();
-    await widget.library.saveState(widget.book.meta.id, widget.state);
-    if (!mounted) return;
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => WebAiPanel(
-          book: widget.book,
-          reading: widget.state,
-          library: widget.library,
-          cutoffOffset: cutoff,
-        ),
-      ),
+  Future<void> _openReaderPanel(
+    Widget Function(WebReadingState reading) builder,
+  ) async {
+    if (_openingPanel || !mounted) return;
+    final ModalRoute<Object?>? route = ModalRoute.of(context);
+    if (route?.isCurrent != true) return;
+    final WebReadingState reading = WebReadingState.fromJson(
+      widget.state.toJson(),
     );
-    if (mounted) unawaited(_loadPersonPreparation());
+    final int cutoff = _visibleCutoffOffset();
+    _openingPanel = true;
+    _saveTimer?.cancel();
+    try {
+      await widget.library.saveState(widget.book.meta.id, widget.state);
+      // A slow save must not reopen a dismissed route, duplicate a rapid tap,
+      // or pair an earlier page's cutoff with a newer reading position.
+      if (!mounted ||
+          !route!.isCurrent ||
+          reading.chapter != _chapter ||
+          reading.fraction != widget.state.fraction ||
+          cutoff != _visibleCutoffOffset()) {
+        return;
+      }
+      await Navigator.of(
+        context,
+      ).push<void>(MaterialPageRoute<void>(builder: (_) => builder(reading)));
+    } on Object {
+      if (mounted && route?.isCurrent == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('当前阅读位置暂未保存，请检查浏览器存储空间后重试。')),
+        );
+      }
+    } finally {
+      _openingPanel = false;
+    }
   }
 
-  Future<void> _openPerson({String? id, required String name}) async {
+  Future<void> _openAi() => _openPerson();
+
+  Future<void> _openPerson({String? id, String? name}) async {
     final int cutoff = _visibleCutoffOffset();
-    _saveTimer?.cancel();
-    await widget.library.saveState(widget.book.meta.id, widget.state);
-    if (!mounted) return;
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => WebAiPanel(
-          book: widget.book,
-          reading: widget.state,
-          library: widget.library,
-          cutoffOffset: cutoff,
-          focusPersonId: id,
-          focusPersonName: name,
-        ),
+    await _openReaderPanel(
+      (WebReadingState reading) => WebAiPanel(
+        book: widget.book,
+        reading: reading,
+        library: widget.library,
+        cutoffOffset: cutoff,
+        focusPersonId: id,
+        focusPersonName: name,
       ),
     );
     if (mounted) unawaited(_loadPersonPreparation());
@@ -1758,31 +1777,26 @@ class _WebReaderState extends State<WebReader> {
 
   Future<void> _openAsk({String? selectedText}) async {
     final int safeBlock = _askCutoffBlockExclusive();
-    _saveTimer?.cancel();
-    await widget.library.saveState(widget.book.meta.id, widget.state);
-    if (!mounted) return;
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (_) => WebAskPanel(
-          book: widget.book,
-          chapterIndex: _chapter,
-          cutoffBlockExclusive: safeBlock,
-          selectedText: selectedText,
-          onCitationTap: (int blockIndex) {
-            final int targetChapter = _chapters.indexWhere((Json chapter) {
-              final int start = (chapter['b0'] as num?)?.toInt() ?? 0;
-              final int end = (chapter['b1'] as num?)?.toInt() ?? start;
-              return start <= blockIndex && blockIndex < end;
-            });
-            if (targetChapter < 0) return;
-            Navigator.of(context).pop();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _go(targetChapter, block: blockIndex, remember: true);
-              }
-            });
-          },
-        ),
+    await _openReaderPanel(
+      (WebReadingState reading) => WebAskPanel(
+        book: widget.book,
+        chapterIndex: reading.chapter,
+        cutoffBlockExclusive: safeBlock,
+        selectedText: selectedText,
+        onCitationTap: (int blockIndex) {
+          final int targetChapter = _chapters.indexWhere((Json chapter) {
+            final int start = (chapter['b0'] as num?)?.toInt() ?? 0;
+            final int end = (chapter['b1'] as num?)?.toInt() ?? start;
+            return start <= blockIndex && blockIndex < end;
+          });
+          if (targetChapter < 0) return;
+          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _go(targetChapter, block: blockIndex, remember: true);
+            }
+          });
+        },
       ),
     );
     _selectedText = null;
@@ -2326,11 +2340,15 @@ class _WebReaderState extends State<WebReader> {
         builder: (BuildContext context, StateSetter update) {
           void change(void Function() action) {
             final double fraction = _fraction;
+            final bool wasPageMode = _prefs.pageMode;
             update(action);
             widget.state.fraction = fraction;
             _pageLayoutKey = null;
-            _pages = const <List<_WebPageFragment>>[];
-            _pageIndex = 0;
+            if (!wasPageMode || !_prefs.pageMode) {
+              _reflowAnchor = null;
+              _pages = const <List<_WebPageFragment>>[];
+              _pageIndex = 0;
+            }
             _restoring = true;
             setState(() {});
             _prefs.save();
@@ -3377,6 +3395,16 @@ class _WebReaderState extends State<WebReader> {
     return pages;
   }
 
+  ({int block, int offset})? _pageSourceAnchor() {
+    if (_pages.isEmpty || _pageIndex >= _pages.length) return null;
+    for (final _WebPageFragment fragment in _pages[_pageIndex]) {
+      if (fragment.kind == 'img' || fragment.sourceEnd > fragment.sourceStart) {
+        return (block: fragment.block, offset: fragment.sourceStart);
+      }
+    }
+    return null;
+  }
+
   void _ensurePages(double width, double height, TextStyle bodyStyle) {
     final int key = Object.hash(
       _chapter,
@@ -3390,6 +3418,7 @@ class _WebReaderState extends State<WebReader> {
       MediaQuery.textScalerOf(context).scale(10).toStringAsFixed(2),
     );
     if (_pageLayoutKey == key) return;
+    final anchor = _reflowAnchor ?? _pageSourceAnchor();
     _pages = _paginate(width, height, bodyStyle);
     int target = -1;
     if (_jumpBlock != null) {
@@ -3399,12 +3428,24 @@ class _WebReaderState extends State<WebReader> {
         ),
       );
     }
+    if (target < 0 && anchor != null) {
+      target = _pages.indexWhere(
+        (List<_WebPageFragment> page) => page.any(
+          (_WebPageFragment fragment) =>
+              fragment.block == anchor.block &&
+              (fragment.kind == 'img' ||
+                  (fragment.sourceStart <= anchor.offset &&
+                      anchor.offset < fragment.sourceEnd)),
+        ),
+      );
+    }
     if (target < 0) {
       target = _pages.length == 1
           ? 0
           : (widget.state.fraction * (_pages.length - 1)).round();
     }
     _pageIndex = target.clamp(0, _pages.length - 1);
+    _reflowAnchor = anchor ?? _pageSourceAnchor();
     if (widget.state.fraction != _fraction) {
       widget.state.fraction = _fraction;
       _queueSave();
@@ -3428,6 +3469,7 @@ class _WebReaderState extends State<WebReader> {
       return;
     }
     setState(() {
+      _reflowAnchor = null;
       _pageIndex = next;
       _turnDirection = delta.sign;
       _controls = false;

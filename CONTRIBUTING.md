@@ -1,6 +1,6 @@
 # Contributing to Thusfar
 
-The released product is the Flutter client in app/ and its Dart engine in core/. The retired Python/browser implementation and its frozen fixtures live in [reference/](reference/README.md) only for regression tests. It is not a supported app or deployment target. Docker and the old Java/Chaquopy Android packaging have been removed.
+The app lives in `app/`, its Dart engine in `core/`, and regression fixtures in [reference/](reference/README.md). See [build instructions](app/README.md).
 
 ## What to preserve
 

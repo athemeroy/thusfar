@@ -66,6 +66,7 @@ class WebAiPanel extends StatefulWidget {
     this.cutoffOffset,
     this.focusPersonId,
     this.focusPersonName,
+    this.analyze = WebAiEngine.analyze,
   });
 
   final WebBook book;
@@ -77,6 +78,16 @@ class WebAiPanel extends StatefulWidget {
   final int? cutoffOffset;
   final String? focusPersonId;
   final String? focusPersonName;
+
+  /// Allows browser regression tests to exercise cancellation without sending
+  /// book text or credentials to a model service.
+  @visibleForTesting
+  final Future<WebAiResult> Function(
+    WebAiConfig config,
+    WebAiChunk chunk, {
+    Future<bool> Function()? beforeRequest,
+  })
+  analyze;
 
   @override
   State<WebAiPanel> createState() => _WebAiPanelState();
@@ -110,6 +121,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
   bool _running = false;
   bool _starting = false;
   bool _clearing = false;
+  bool _configuring = false;
+  bool _routeExited = false;
   bool _stopRequested = false;
   bool _revealCurrentChapter = false;
   int _generation = 0;
@@ -417,8 +430,18 @@ class _WebAiPanelState extends State<WebAiPanel> {
   }
 
   Future<void> _run(WebAiConfig config, String scope) async {
-    if (_running || _starting || _clearing || _loading) return;
+    if (!mounted ||
+        _routeExited ||
+        _running ||
+        _starting ||
+        _clearing ||
+        _loading) {
+      return;
+    }
     _starting = true;
+    // Only an explicit new run may clear cancellation, before any async work.
+    // Clearing it after a lease await can undo a Back/Close during setup.
+    _stopRequested = false;
     try {
       final bool granted = await _withBrowserLock(
         () => _runLocked(config, scope),
@@ -435,6 +458,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
   }
 
   Future<void> _runLocked(WebAiConfig config, String scope) async {
+    if (!_canStartRequest) return;
     if (_targets(scope).isEmpty) {
       _message('当前范围没有读完的正文。可继续阅读，或明确选择第一章试整理。');
       return;
@@ -457,13 +481,17 @@ class _WebAiPanelState extends State<WebAiPanel> {
     _leaseHeld = true;
     _leaseLost = false;
     _otherLeaseActive = false;
+    if (!_canStartRequest) {
+      await _releaseLease();
+      return;
+    }
     // Ignore an observer read that began before this tab acquired the lease.
     _generation++;
     try {
       final Json? latest = await widget.library.loadPreparation(
         widget.book.meta.id,
       );
-      if (!mounted || !await _renewLease()) {
+      if (!_canStartRequest || !await _renewLease() || !_canStartRequest) {
         await _releaseLease();
         return;
       }
@@ -499,7 +527,6 @@ class _WebAiPanelState extends State<WebAiPanel> {
       return;
     }
     _activeConfig = config;
-    _stopRequested = false;
     _running = true;
     _scope = scope;
     _endpoint = config.endpoint;
@@ -518,12 +545,13 @@ class _WebAiPanelState extends State<WebAiPanel> {
     try {
       await _save();
       for (final WebAiChunk chunk in targets) {
-        if (_stopRequested) break;
+        if (!_canStartRequest) break;
         final String key = _chunkKey(chunk);
         if (_results.containsKey(key)) continue;
         if (!await _renewLease()) {
           throw const WebAiException('整理锁已失效，已停止；没有继续发起模型请求。');
         }
+        if (!_canStartRequest) break;
         _activeChunk = key;
         _inFlight = key;
         _event(
@@ -537,10 +565,11 @@ class _WebAiPanelState extends State<WebAiPanel> {
         if (!await _renewLease()) {
           throw const WebAiException('整理锁已失效，已停止；没有继续发起模型请求。');
         }
-        final WebAiResult answer = await WebAiEngine.analyze(
+        if (!_canStartRequest) break;
+        final WebAiResult answer = await widget.analyze(
           config,
           chunk,
-          beforeRequest: () async => !_stopRequested && await _renewLease(),
+          beforeRequest: _beforeRequest,
         );
         if (!await _renewLease()) {
           throw const WebAiException('模型已回复，但整理锁失效；本段没有保存，重试可能再次计费。');
@@ -596,6 +625,16 @@ class _WebAiPanelState extends State<WebAiPanel> {
     }
   }
 
+  bool get _canStartRequest => mounted && !_routeExited && !_stopRequested;
+
+  Future<bool> _beforeRequest() async {
+    if (!_canStartRequest) return false;
+    final bool renewed = await _renewLease();
+    // Pause or Back can arrive while IndexedDB is renewing the lease. The
+    // check must follow that await for both the first call and a retry.
+    return renewed && _canStartRequest;
+  }
+
   void _pause() {
     if (!_running) return;
     setState(() => _stopRequested = true);
@@ -603,7 +642,23 @@ class _WebAiPanelState extends State<WebAiPanel> {
   }
 
   Future<void> _configureAndStart() async {
-    if (_running || _starting || _clearing) return;
+    if (!mounted ||
+        _routeExited ||
+        _configuring ||
+        _running ||
+        _starting ||
+        _clearing) {
+      return;
+    }
+    _configuring = true;
+    try {
+      await _configureAndStartOnce();
+    } finally {
+      _configuring = false;
+    }
+  }
+
+  Future<void> _configureAndStartOnce() async {
     final WebAiConfig? shared = WebModelSession.current.config;
     final Json? profile = shared == null
         ? WebLibrary.savedModelProfile()
@@ -979,7 +1034,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       model.dispose();
       key.dispose();
     }
-    if (choice == null || !mounted) return;
+    if (choice == null || !mounted || _routeExited) return;
     final _RunChoice selected = choice;
     final int remaining = _targets(selected.scope)
         .where((WebAiChunk chunk) => !_results.containsKey(_chunkKey(chunk)))
@@ -1007,7 +1062,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           ],
         ),
       );
-      if (confirmed != true || !mounted) return;
+      if (confirmed != true || !mounted || _routeExited) return;
     }
     WebModelSession.current.set(selected.config);
     WebLibrary.saveModelProfile(<String, Object?>{
@@ -1187,6 +1242,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
 
   @override
   void dispose() {
+    _routeExited = true;
     _stopRequested = true;
     _observeTimer?.cancel();
     // An in-flight request retains its lease until _runLocked's finally.
@@ -1200,89 +1256,98 @@ class _WebAiPanelState extends State<WebAiPanel> {
     final List<WebAiChunk> targets = _targets(_scope);
     final int done = _done(targets);
     final bool otherTab = !_running && _otherLeaseActive;
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        backgroundColor: t.paper,
-        appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(widget.focusPersonName == null ? '浏览器整理草稿' : '人物详情'),
-              Text(
-                widget.book.meta.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 12, color: t.ink2),
-              ),
-            ],
-          ),
-          actions: <Widget>[
-            PopupMenuButton<String>(
-              tooltip: '整理选项',
-              onSelected: (String value) {
-                if (value == 'clear') unawaited(_clear());
-                if (value == 'export') _exportDiagnostics();
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'export',
-                  child: Text('导出整理诊断'),
-                ),
-                PopupMenuItem<String>(
-                  value: 'clear',
-                  enabled: !_running && !_starting && !_clearing && !otherTab,
-                  child: const Text('清除本书网页整理'),
+    return PopScope<void>(
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (!didPop) return;
+        // A popped route stays mounted through its exit animation. Cancel at
+        // the navigation event, before dispose, but let in-flight results save.
+        _routeExited = true;
+        _stopRequested = true;
+      },
+      child: DefaultTabController(
+        length: 4,
+        child: Scaffold(
+          backgroundColor: t.paper,
+          appBar: AppBar(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(widget.focusPersonName == null ? '浏览器整理草稿' : '人物详情'),
+                Text(
+                  widget.book.meta.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, color: t.ink2),
                 ),
               ],
             ),
-          ],
-        ),
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1080),
-            child: NestedScrollView(
-              headerSliverBuilder: (BuildContext context, bool innerScrolled) =>
-                  <Widget>[
-                    if (widget.focusPersonName == null)
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
-                        sliver: SliverToBoxAdapter(
-                          child: _overview(t, done, targets.length, otherTab),
-                        ),
-                      ),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                      sliver: SliverToBoxAdapter(child: _visibilityNote(t)),
-                    ),
-                    SliverToBoxAdapter(
-                      child: ColoredBox(
-                        color: t.paper,
-                        child: TabBar(
-                          isScrollable: true,
-                          tabAlignment: TabAlignment.start,
-                          labelColor: t.zhu,
-                          unselectedLabelColor: t.ink2,
-                          indicatorColor: t.zhu,
-                          tabs: const <Tab>[
-                            Tab(text: '人物'),
-                            Tab(text: '前情'),
-                            Tab(text: '关系'),
-                            Tab(text: '记录'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-              body: TabBarView(
-                children: <Widget>[
-                  widget.focusPersonName == null
-                      ? _characterTab(t)
-                      : _focusedPersonTab(t),
-                  _summaryTab(t),
-                  _relationshipTab(t),
-                  _logTab(t),
+            actions: <Widget>[
+              PopupMenuButton<String>(
+                tooltip: '整理选项',
+                onSelected: (String value) {
+                  if (value == 'clear') unawaited(_clear());
+                  if (value == 'export') _exportDiagnostics();
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'export',
+                    child: Text('导出整理诊断'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'clear',
+                    enabled: !_running && !_starting && !_clearing && !otherTab,
+                    child: const Text('清除本书网页整理'),
+                  ),
                 ],
+              ),
+            ],
+          ),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1080),
+              child: NestedScrollView(
+                headerSliverBuilder:
+                    (BuildContext context, bool innerScrolled) => <Widget>[
+                      if (widget.focusPersonName == null)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                          sliver: SliverToBoxAdapter(
+                            child: _overview(t, done, targets.length, otherTab),
+                          ),
+                        ),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                        sliver: SliverToBoxAdapter(child: _visibilityNote(t)),
+                      ),
+                      SliverToBoxAdapter(
+                        child: ColoredBox(
+                          color: t.paper,
+                          child: TabBar(
+                            isScrollable: true,
+                            tabAlignment: TabAlignment.start,
+                            labelColor: t.zhu,
+                            unselectedLabelColor: t.ink2,
+                            indicatorColor: t.zhu,
+                            tabs: const <Tab>[
+                              Tab(text: '人物'),
+                              Tab(text: '前情'),
+                              Tab(text: '关系'),
+                              Tab(text: '记录'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                body: TabBarView(
+                  children: <Widget>[
+                    widget.focusPersonName == null
+                        ? _characterTab(t)
+                        : _focusedPersonTab(t),
+                    _summaryTab(t),
+                    _relationshipTab(t),
+                    _logTab(t),
+                  ],
+                ),
               ),
             ),
           ),
