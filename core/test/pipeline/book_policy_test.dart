@@ -45,7 +45,7 @@ void main() {
   final Json fixtures =
       jsonDecode(
             File(
-              '../oracle/goldens/special/book-policy.json',
+              '../reference/oracle/goldens/special/book-policy.json',
             ).readAsStringSync(),
           )
           as Json;

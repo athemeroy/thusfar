@@ -1,0 +1,48 @@
+name: regression reference
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  reference-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify retired distribution and retained reference paths
+        run: |
+          export PYTHONPATH="$GITHUB_WORKSPACE/reference:$GITHUB_WORKSPACE"
+          python scripts/check_reference_layout.py
+          python core/tool/generate_ported_tests.py --check
+          python reference/docs/port/check_test_scope.py
+          python scripts/generate_book_policy_tables.py --check
+          python -m unittest discover -s reference/tests -p 'test_ported_contract_guard.py'
+          python -m unittest discover -s reference/tests -p 'test_verify_function_goldens.py'
+          cd reference
+          python -m oracle.record.verify_folds
+
+  dart-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Resolve Dart engine dependencies
+        working-directory: core
+        run: dart pub get --enforce-lockfile
+      - name: Analyze full engine and regression suite
+        working-directory: core
+        run: dart analyze --fatal-infos --fatal-warnings
+      - name: Check all preserved fixture consumers
+        working-directory: core
+        run: dart test -j 1

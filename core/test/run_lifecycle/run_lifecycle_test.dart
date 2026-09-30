@@ -693,7 +693,7 @@ void main() {
     'limit zero replays all nine legacy segments without model calls or cache rewrites',
     () async {
       final Directory fixture = Directory(
-        '../oracle/corpus/snapshots/aq_complete',
+        '../reference/oracle/corpus/snapshots/aq_complete',
       );
       final Directory root = copyBook(fixture, books, 'legacy-complete');
       final Map<String, String> before = immutableCacheHashes(root);

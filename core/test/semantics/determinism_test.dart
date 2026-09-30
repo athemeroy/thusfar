@@ -55,7 +55,7 @@ void main() {
   test('Python retry timing uses injected clock and random source', () {
     int count = 0;
     for (final String line
-        in File('../oracle/semantics/determinism.jsonl').readAsLinesSync()) {
+        in File('../reference/oracle/semantics/determinism.jsonl').readAsLinesSync()) {
       final Map<String, Object?> item =
           jsonDecode(line) as Map<String, Object?>;
       final double? actual = retryAfter(

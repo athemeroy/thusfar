@@ -1,0 +1,2 @@
+# Frozen regression sources are not the supported product's language footprint.
+reference/** linguist-vendored

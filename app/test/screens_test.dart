@@ -69,11 +69,11 @@ void main() {
     await _font('LXGWWenKaiScreen', 'assets/fonts/LXGWWenKaiScreen.ttf');
     root = Directory.systemTemp.createTempSync('thusfar-shots');
     _copy(
-      Directory('../oracle/goldens/books/aq_deepseek'),
+      Directory('../reference/oracle/goldens/books/aq_deepseek'),
       Directory('${root.path}/books/aqdeepseek000001'),
     );
     _copy(
-      Directory('../oracle/goldens/books/jekyll_partial_deepseek'),
+      Directory('../reference/oracle/goldens/books/jekyll_partial_deepseek'),
       Directory('${root.path}/books/jekyll0000000002'),
     );
     File('${root.path}/progress.json').writeAsStringSync(

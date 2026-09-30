@@ -6,7 +6,7 @@ import 'package:thusfar_core/src/py/py_re.dart';
 
 void main() {
   final List<String> lines =
-      File('../oracle/semantics/py_re.jsonl').readAsLinesSync();
+      File('../reference/oracle/semantics/py_re.jsonl').readAsLinesSync();
   for (final String line in lines) {
     final Map<String, Object?> row = jsonDecode(line) as Map<String, Object?>;
     final String pattern = row['pattern']! as String;

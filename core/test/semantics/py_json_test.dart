@@ -7,7 +7,7 @@ import 'package:thusfar_core/src/py/py_json.dart';
 
 void main() {
   test('10,000 Python json.dumps values match byte for byte', () {
-    final File source = File('../oracle/semantics/py_json.jsonl');
+    final File source = File('../reference/oracle/semantics/py_json.jsonl');
     int count = 0;
     for (final String line in source.readAsLinesSync()) {
       final Map<String, Object?> caseData =

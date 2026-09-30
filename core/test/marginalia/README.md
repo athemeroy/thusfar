@@ -12,7 +12,7 @@ Intentional native changes:
 - Cached comments must have a supported guard and a matching source anchor before display. Corrupt cache structure raises an error and preserves the file rather than silently replacing it.
 - Source/graph/settings changes during a request prevent stale output publication and persistence.
 
-`record_oracles.py` must run with Python 3.11. It records 12 independent Python response scenarios, complete prompts/judge calls/writes, and 8 SequenceMatcher comparisons. It makes no network request. Historical helper/key captures are reused from `oracle/goldens`.
+`record_oracles.py` must run with Python 3.11. It records 12 independent Python response scenarios, complete prompts/judge calls/writes, and 8 SequenceMatcher comparisons. It makes no network request. Historical helper/key captures are reused from `reference/oracle/goldens`.
 
 Validation completed on 2026-09-26:
 

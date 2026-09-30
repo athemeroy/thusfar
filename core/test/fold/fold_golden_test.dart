@@ -9,12 +9,12 @@ Object? _json(Object? v) => jsonDecode(jsonEncode(v));
 
 void main() {
   const Map<String, String> sources = <String, String>{
-    'aq_annotated': '../oracle/corpus/snapshots/aq_annotated',
-    'aq_complete': '../oracle/corpus/snapshots/aq_complete',
-    'aq_paused_annotated': '../oracle/corpus/snapshots/aq_paused_annotated',
+    'aq_annotated': '../reference/oracle/corpus/snapshots/aq_annotated',
+    'aq_complete': '../reference/oracle/corpus/snapshots/aq_complete',
+    'aq_paused_annotated': '../reference/oracle/corpus/snapshots/aq_paused_annotated',
   };
   for (final File golden
-      in Directory('../oracle/goldens/fold').listSync().whereType<File>()) {
+      in Directory('../reference/oracle/goldens/fold').listSync().whereType<File>()) {
     final String name = golden.uri.pathSegments.last.replaceAll('.jsonl', '');
     final String? dir = sources[name] ?? _findBookDir(name);
     if (dir == null) continue;
@@ -71,6 +71,6 @@ void main() {
 }
 
 String? _findBookDir(String name) {
-  final Directory dir = Directory('../oracle/goldens/books/$name');
+  final Directory dir = Directory('../reference/oracle/goldens/books/$name');
   return dir.existsSync() ? dir.path : null;
 }

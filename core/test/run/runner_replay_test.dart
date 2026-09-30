@@ -134,13 +134,13 @@ void main() {
   late Map<String, String> originalEnvironment;
   late llm.ChatTransport originalTransport;
   final Json reference = read(
-    File('../oracle/goldens/books/aq_deepseek/provenance.json'),
+    File('../reference/oracle/goldens/books/aq_deepseek/provenance.json'),
   );
   final Json resumeReceipt = read(
-    File('../oracle/goldens/resume/aq_paused_annotated.json'),
+    File('../reference/oracle/goldens/resume/aq_paused_annotated.json'),
   );
   setUpAll(
-    () => tape = CassetteTransport(Directory('../oracle/cassettes/live')),
+    () => tape = CassetteTransport(Directory('../reference/oracle/cassettes/live')),
   );
   setUp(() {
     root = Directory.systemTemp.createTempSync('thusfar-full-replay-');
@@ -165,7 +165,7 @@ void main() {
       'fresh Aq at concurrency $concurrency matches all 154 Python artifacts',
       () async {
         File(
-          '../oracle/corpus/snapshots/aq_complete/book.json',
+          '../reference/oracle/corpus/snapshots/aq_complete/book.json',
         ).copySync('${root.path}/book.json');
         await runBook(root, concurrency: concurrency);
         final Json state = read(File('${root.path}/status.json'));
@@ -194,7 +194,7 @@ void main() {
     'paused Aq resumes with exact Python artifacts and preserves prefix caches and notebook',
     () async {
       copyTree(
-        Directory('../oracle/corpus/snapshots/aq_paused_annotated'),
+        Directory('../reference/oracle/corpus/snapshots/aq_paused_annotated'),
         root,
       );
       final Json resumed =

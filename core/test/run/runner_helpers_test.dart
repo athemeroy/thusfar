@@ -53,7 +53,7 @@ void main() {
   setUpAll(() async {
     temp = Directory.systemTemp.createTempSync('thusfar-run-helpers-');
     File(
-      '../oracle/corpus/snapshots/aq_complete/book.json',
+      '../reference/oracle/corpus/snapshots/aq_complete/book.json',
     ).copySync('${temp.path}/book.json');
     runner = await Runner.create(temp);
   });
@@ -86,7 +86,7 @@ void main() {
   for (final entry in calls.entries) {
     final List<String> captures =
         File(
-          '../oracle/goldens/pipeline/run/Runner/${entry.key}.jsonl',
+          '../reference/oracle/goldens/pipeline/run/Runner/${entry.key}.jsonl',
         ).readAsLinesSync();
     test('${entry.key}: ${captures.length} historical Python captures', () {
       for (final (int index, String line) in captures.indexed) {

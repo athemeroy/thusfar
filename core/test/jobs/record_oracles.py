@@ -13,7 +13,7 @@ import sys
 import tempfile
 from unittest.mock import patch
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[3] / "reference"
 sys.path.insert(0, str(ROOT))
 from pipeline.run import AlreadyRunning, Cancelled
 from server.jobs import Worker

@@ -9,7 +9,7 @@ import 'package:thusfar_core/src/pipeline/parse.dart';
 void main() {
   final Map<String, Object?> report =
       jsonDecode(
-            File('../oracle/goldens/parsed/report.json').readAsStringSync(),
+            File('../reference/oracle/goldens/parsed/report.json').readAsStringSync(),
           )
           as Map<String, Object?>;
   for (final Object? raw in report['cases']! as List<Object?>) {
@@ -17,7 +17,7 @@ void main() {
     final String input = c['input']! as String;
     final bool epub = input.endsWith('.epub');
     test('parse $input', () {
-      final File src = File('../oracle/corpus/$input');
+      final File src = File('../reference/oracle/corpus/$input');
       final String stem = src.uri.pathSegments.last.replaceAll(
         RegExp(r'\.(txt|epub)$'),
         '',
@@ -37,7 +37,7 @@ void main() {
       }
       final Object? want = jsonDecode(
         File(
-          '../oracle/goldens/parsed/${c['output']}/book.json',
+          '../reference/oracle/goldens/parsed/${c['output']}/book.json',
         ).readAsStringSync(),
       );
       final Object? got = jsonDecode(jsonEncode(parse()));

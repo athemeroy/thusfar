@@ -14,7 +14,7 @@ void main() {
           as Json;
   test('offline link fixtures match the current Python source', () {
     expect(
-      sha256.convert(File('../pipeline/link.py').readAsBytesSync()).toString(),
+      sha256.convert(File('../reference/pipeline/link.py').readAsBytesSync()).toString(),
       fixture['source_sha256'],
     );
   });

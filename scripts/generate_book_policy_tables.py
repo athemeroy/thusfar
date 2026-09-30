@@ -2,10 +2,13 @@
 import argparse
 import json
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "reference"))
 
 from pipeline import classify, kind
 
-ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / 'core/lib/src/pipeline/book_policy_tables.dart'
 
 

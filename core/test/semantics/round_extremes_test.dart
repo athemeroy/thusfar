@@ -8,7 +8,7 @@ void main() {
   test('700 Python float rounding extremes match Dart', () {
     int count = 0;
     for (final String line
-        in File('../oracle/semantics/round_extremes.jsonl').readAsLinesSync()) {
+        in File('../reference/oracle/semantics/round_extremes.jsonl').readAsLinesSync()) {
       final Map<String, Object?> item =
           jsonDecode(line) as Map<String, Object?>;
       final double value = (item['value']! as num).toDouble();

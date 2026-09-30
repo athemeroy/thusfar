@@ -9,7 +9,7 @@ void main() {
   test('Python hash and 1.7.5 source revision cases match Dart', () {
     int count = 0;
     for (final String line
-        in File('../oracle/semantics/hashes.jsonl').readAsLinesSync()) {
+        in File('../reference/oracle/semantics/hashes.jsonl').readAsLinesSync()) {
       final Map<String, Object?> item =
           jsonDecode(line) as Map<String, Object?>;
       final String id = item['id']! as String;

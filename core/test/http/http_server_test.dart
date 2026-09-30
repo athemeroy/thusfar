@@ -179,7 +179,7 @@ void main() {
     data = Directory.systemTemp.createTempSync('thusfar-http-');
     Directory(data.path + '/books').createSync();
     copyTree(
-      Directory('../oracle/corpus/snapshots/aq_complete'),
+      Directory('../reference/oracle/corpus/snapshots/aq_complete'),
       Directory(data.path + '/books/aq_complete'),
     );
     savedEnv = Map<String, String>.of(environ);
@@ -212,7 +212,7 @@ void main() {
   }) async {
     server = YeduHttpServer(
       data: data,
-      web: Directory('../web'),
+      web: Directory('../reference/web'),
       passcode: passcode,
       localMode: localMode,
       cookieSecure: false,
@@ -276,7 +276,7 @@ void main() {
     () async {
       await start();
       final List<Json> fixtures =
-          File('../oracle/goldens/http/aq_complete.jsonl')
+          File('../reference/oracle/goldens/http/aq_complete.jsonl')
               .readAsLinesSync()
               .map((String line) => jsonDecode(line) as Json)
               .toList();

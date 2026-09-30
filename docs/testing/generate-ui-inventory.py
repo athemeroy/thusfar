@@ -103,7 +103,7 @@ web_sources = [
 ]
 web_files = []
 for name in web_sources:
-    path = ROOT / 'web/js' / name
+    path = ROOT / 'reference/web/js' / name
     raw = path.read_bytes()
     entries = []
     for n, line in enumerate(raw.decode().splitlines(), 1):

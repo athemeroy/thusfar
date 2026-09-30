@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 import unicodedata
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = Path(__file__).resolve().parents[4] / "reference"
 sys.path.insert(0, str(ROOT))
 assert sys.version_info[:2] == (3, 11), 'Use the frozen Python 3.11 oracle interpreter'
 from pipeline.kg import KG, Anchor
@@ -149,4 +149,4 @@ out = Path(__file__).parent / 'kg_differential.json'
 out.write_text(json.dumps(encode({'synthetic': cases, 'captured': captured,
     'anchor': {'book': book, 'seg': seg, 'calls': anchor_calls},
     'oracle': {'python': sys.version.split()[0], 'unicode': unicodedata.unidata_version}}), ensure_ascii=False, separators=(',', ':')) + '\n')
-print(f'Wrote {out.relative_to(ROOT)}: {len(cases)} synthetic commits, {len(captured)} captured commits, {len(anchor_calls)} anchor cases')
+print(f'Wrote {out.relative_to(ROOT.parent)}: {len(cases)} synthetic commits, {len(captured)} captured commits, {len(anchor_calls)} anchor cases')

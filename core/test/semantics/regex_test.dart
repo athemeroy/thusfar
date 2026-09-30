@@ -41,7 +41,7 @@ void _checkCase(
 }
 
 void main() {
-  final File fixture = File('../docs/port/REGEX.json');
+  final File fixture = File('../reference/docs/port/REGEX.json');
   final Map<String, Object?> data = _map(
     jsonDecode(fixture.readAsStringSync()),
   );

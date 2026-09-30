@@ -206,7 +206,7 @@ void main() {
   test(
     'Existing committed Python recent-text goldens including long Unicode paragraphs',
     () {
-      final File file = File('../oracle/goldens/server/ask/recent_text.jsonl');
+      final File file = File('../reference/oracle/goldens/server/ask/recent_text.jsonl');
       for (final String line in file.readAsLinesSync().where(
         (String line) => line.isNotEmpty,
       )) {

@@ -13,7 +13,7 @@ void main() {
     final Directory root = Directory.systemTemp.createTempSync('thusfar-import');
     final Library lib = Library(root);
     await lib.scan();
-    final List<int> txt = File('../oracle/corpus/books/aq.txt').readAsBytesSync();
+    final List<int> txt = File('../reference/oracle/corpus/books/aq.txt').readAsBytesSync();
     final ImportResult a = await importBookFile(lib, '阿Q正传.txt', Uint8List.fromList(txt));
     expect(a.error, isNull);
     expect(a.id, crypto.sha1.convert(txt).toString().substring(0, 16));
@@ -24,11 +24,11 @@ void main() {
     final ImportResult again = await importBookFile(lib, '阿Q正传.txt', Uint8List.fromList(txt));
     expect(again.existed, isTrue);
 
-    final ImportResult e = await importBookFile(lib, 'notes.epub', File('../oracle/corpus/synthetic/footnote_illustration.epub').readAsBytesSync());
+    final ImportResult e = await importBookFile(lib, 'notes.epub', File('../reference/oracle/corpus/synthetic/footnote_illustration.epub').readAsBytesSync());
     expect(e.error, isNull);
     await lib.scan();
     expect(lib.books.length, 2);
-    final ImportResult bad = await importBookFile(lib, 'empty.txt', File('../oracle/corpus/synthetic/empty.txt').readAsBytesSync());
+    final ImportResult bad = await importBookFile(lib, 'empty.txt', File('../reference/oracle/corpus/synthetic/empty.txt').readAsBytesSync());
     expect(bad.error, '没有读到文字内容。');
     root.deleteSync(recursive: true);
   });

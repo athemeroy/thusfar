@@ -8,7 +8,7 @@ import 'package:thusfar_core/src/py/py_compat.dart';
 void main() {
   final Map<String, Object?> data =
       jsonDecode(
-            File('../oracle/semantics/utf16_offsets.json').readAsStringSync(),
+            File('../reference/oracle/semantics/utf16_offsets.json').readAsStringSync(),
           )
           as Map<String, Object?>;
   final List<Object?> cases = data['cases'] as List<Object?>;

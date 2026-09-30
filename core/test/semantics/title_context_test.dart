@@ -8,7 +8,7 @@ void main() {
   test('Python 3.11 final sigma title context matches Dart', () {
     int count = 0;
     for (final String line
-        in File('../oracle/semantics/title_context.jsonl').readAsLinesSync()) {
+        in File('../reference/oracle/semantics/title_context.jsonl').readAsLinesSync()) {
       final Map<String, Object?> item =
           jsonDecode(line) as Map<String, Object?>;
       expect(

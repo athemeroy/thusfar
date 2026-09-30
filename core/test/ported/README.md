@@ -3,7 +3,7 @@
 `manifest.json` maps each of the **171** named Python tests in the original
 15-file 1.7.5 suite to exactly one identically named Dart test in this folder.
 `core/tool/generate_ported_tests.py` derives the set from the Python AST and
-`docs/port/inventory.json`; `--check` rejects missing or duplicate mappings,
+`reference/docs/port/inventory.json`; `--check` rejects missing or duplicate mappings,
 changed Python sources, mismatched Dart names, missing owner modules or reasons,
 and stale status counts. For translated callbacks it also checks an explicit
 `contract_owners` ID against the production inventory, an existing script-tool
@@ -34,7 +34,7 @@ The nine original script-tool tests are the three `test_export_exact_context.py`
 for the offline teacher-data exporter and the six `test_release.py` assertions
 for the old Python/Web release builder. Their exact assertions, replacement
 owners, and closure checks are recorded in
-[`docs/port/TEST-PORT-SCOPE.md`](../../../docs/port/TEST-PORT-SCOPE.md).
+[`reference/docs/port/TEST-PORT-SCOPE.md`](../../../reference/docs/port/TEST-PORT-SCOPE.md).
 Each now has a translated Dart assertion body and a `contract_owners` entry,
 but remains skipped until the A4/C replacement tool or adapter exists. They
 count as translated, not as passing Dart assertions.
@@ -52,7 +52,7 @@ From the repository root:
 
 ```sh
 python3 core/tool/generate_ported_tests.py --check
-python3 docs/port/check_test_scope.py
+python3 reference/docs/port/check_test_scope.py
 cd core
 dart analyze --fatal-infos --fatal-warnings test/ported
 dart test test/ported

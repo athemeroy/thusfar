@@ -9,7 +9,7 @@ import 'package:thusfar_core/src/py/py_json_decode.dart';
 void main() {
   test('pyJsonLoads matches Python json.loads values and messages', () {
     for (final String line
-        in File('../oracle/semantics/json_loads.jsonl').readAsLinesSync()) {
+        in File('../reference/oracle/semantics/json_loads.jsonl').readAsLinesSync()) {
       final Map<String, Object?> c = jsonDecode(line) as Map<String, Object?>;
       final String text = c['text']! as String;
       if (c.containsKey('error')) {

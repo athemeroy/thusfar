@@ -59,7 +59,7 @@ void main() {
   Future<AppModel> fixture() async {
     root = Directory.systemTemp.createTempSync('thusfar-foldable-shots-');
     _copy(
-      Directory('../oracle/goldens/books/aq_deepseek'),
+      Directory('../reference/oracle/goldens/books/aq_deepseek'),
       Directory('${root.path}/books/aqfoldable00001'),
     );
     final AppModel model = AppModel(root);
