@@ -151,3 +151,36 @@ Use one reproduction on the affected device, export immediately after the error
 without manually resuming the book, and compare the same request's events. JVM
 and offline tests verify bounded/redacted evidence and resource cleanup only;
 they cannot establish device-background execution or a provider-side outcome.
+
+## Resuming an accepted System One check
+
+Find N5 diagnostics showed successful foreground-service admission, delayed native
+and Dart samples after backgrounding, and `http_exception` before receiving the
+last two replies. The matching NAS window contained two `/v1/systemone` 499s.
+These observations do not establish which device/system component cut the socket.
+
+System One requests now offer `Prefer: respond-async`. Ordinary 200 responses keep
+the existing path. A service may explicitly accept with 202,
+`Preference-Applied: respond-async`, and a same-origin `Location`. The client then
+reads that result with GET. Dropped reads, temporary server errors and partial
+responses retry GET for up to ten minutes; they do not replay inference POSTs.
+Explicit pause still cancels client work. Initial acceptance lost before headers,
+process death and expired server results retain the existing uncertain-outcome
+handling. Chat generation and other providers' retry policy are unchanged.
+
+The personal service implementation is in `tools/systemone/`: it computes accepted
+checks independently of the HTTP connection and retains the latest 256 completed
+results on disk. Identical authenticated inputs and model revision share one job.
+Polling requires authentication, never starts inference and never recreates a lost
+job. No request text is written to this result store. Existing synchronous clients
+remain supported. This protocol is optional, not tied to a model name in the app.
+
+When the background-session observer itself has not run for over 60 seconds, it
+allows one heartbeat interval for delayed worker evidence before retiring a stale
+worker. That grace neither fabricates a heartbeat nor renews the CPU lease.
+
+Focused validation: lost/partial polling replies recover with one inference POST;
+cross-origin result URLs are rejected; initial POST failure and expired jobs never
+resubmit inference; explicit pause stops polling; completed server results survive
+a service restart; observer suspension does not immediately cancel healthy work,
+and truly missing workers still expire. Device confirmation remains necessary.

@@ -198,7 +198,9 @@ String? keyFor(String model) {
 
 /// One prepared HTTP request.
 final class ChatRequest {
-  const ChatRequest(this.url, this.headers, this.body);
+  const ChatRequest(this.url, this.headers, this.body, {this.method = 'POST'});
+
+  final String method;
 
   final Uri url;
   final Map<String, String> headers;
@@ -415,7 +417,10 @@ final class IoTransport implements ChatTransport {
     Future<T> wait<T>(Future<T> operation) =>
         cancellation?.wait(operation) ?? operation;
     try {
-      final Future<HttpClientRequest> opening = _client.postUrl(request.url);
+      final Future<HttpClientRequest> opening = _client.openUrl(
+        request.method,
+        request.url,
+      );
       // postUrl may settle after the deadline/cancel race. Abort that late
       // socket as well; no request may survive to overlap an explicit resume.
       unawaited(
@@ -428,6 +433,8 @@ final class IoTransport implements ChatTransport {
         }, onError: (Object _, StackTrace __) {}),
       );
       final HttpClientRequest req = await wait(opening.timeout(timeout));
+      // Result polling must never forward credentials to a redirect target.
+      if (request.method == 'GET') req.followRedirects = false;
       cancellation?.checkpoint();
       request.headers.forEach(req.headers.set);
       trace?.record('send_started');
@@ -438,7 +445,11 @@ final class IoTransport implements ChatTransport {
         resp.statusCode,
         resp.headers.contentType?.toString() ?? '',
         resp.timeout(timeout),
-        headers: <String, String>{if (retry != null) 'Retry-After': retry},
+        headers: <String, String>{
+          if (retry != null) 'Retry-After': retry,
+          for (final String name in ['location', 'preference-applied'])
+            if (resp.headers.value(name) case final String value) name: value,
+        },
       );
     } on Object catch (error) {
       abandoned = true;
