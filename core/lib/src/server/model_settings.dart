@@ -9,6 +9,7 @@ import 'dart:math';
 import '../env.dart';
 import '../errors.dart';
 import '../pipeline/llm.dart' as llm;
+import '../pipeline/jev.dart' as judge;
 import '../py/py_compat.dart';
 import '../py/py_re.dart';
 
@@ -46,6 +47,9 @@ class ModelSettings {
           'JEV_API_KEY',
           'EXTRACT_MODEL',
           'JEV_ROUTE',
+          'JUDGE_API_URL',
+          'JUDGE_API_MODEL',
+          'JUDGE_API_KEY',
           'LLM_PROTOCOL',
         }.contains(name))
           values[name] = line.substring(split + 1);
@@ -76,6 +80,9 @@ class ModelSettings {
       'api_key': values['LLM_API_KEY'] ?? '',
       'classifier_key': values['CLASSIFIER_KEY'] ?? '',
       'jev_api_key': values['JEV_API_KEY'] ?? '',
+      'judge_url': values['JUDGE_API_URL'] ?? '',
+      'judge_model': values['JUDGE_API_MODEL'] ?? '',
+      'judge_api_key': values['JUDGE_API_KEY'] ?? '',
     };
   }
 
@@ -84,10 +91,13 @@ class ModelSettings {
     final String key = settings.remove('api_key')! as String;
     final String classifierKey = settings.remove('classifier_key')! as String;
     final String jevKey = settings.remove('jev_api_key')! as String;
+    final String judgeKey = settings.remove('judge_api_key')! as String;
     settings['api_key_set'] = key.isNotEmpty;
     settings['api_key_last4'] = PyCompat.slice(key, -4, null);
     settings['classifier_key_set'] = classifierKey.isNotEmpty;
     settings['classifier_key_last4'] = PyCompat.slice(classifierKey, -4, null);
+    settings['judge_api_key_set'] = judgeKey.isNotEmpty;
+    settings['judge_api_key_last4'] = PyCompat.slice(judgeKey, -4, null);
     settings['jev_api_key_set'] = jevKey.isNotEmpty;
     settings['jev_api_key_last4'] = PyCompat.slice(jevKey, -4, null);
     return settings;
@@ -110,9 +120,10 @@ class ModelSettings {
     // Preserve legacy 1.7.x DeepSeek names on read. Current model names must
     // remain exact; the LLM request layer applies any explicit +variant.
     if (protocol == 'openai' &&
-        const <String>{'deepseek-chat', 'deepseek-reasoner'}.contains(
-          name.toLowerCase(),
-        ) &&
+        const <String>{
+          'deepseek-chat',
+          'deepseek-reasoner',
+        }.contains(name.toLowerCase()) &&
         !name.contains('+'))
       name += '+nothink';
     return (address, name);
@@ -152,6 +163,13 @@ class ModelSettings {
           route == protocol ? url : defaultUrls[route]!;
     }
     environ['JEV_ROUTE'] = settings['jev_route']! as String;
+    environ['JUDGE_API_URL'] = settings['judge_url']! as String;
+    environ['JUDGE_API_MODEL'] = settings['judge_model']! as String;
+    environ['JUDGE_API_KEY'] = settings['judge_api_key']! as String;
+    if (settings['jev_route'] == 'model' &&
+        (settings['judge_model']! as String).isNotEmpty) {
+      environ['JUDGE_MODEL'] = settings['judge_model']! as String;
+    }
     llm.resetEnvCache();
   }
 
@@ -188,14 +206,65 @@ class ModelSettings {
         parsed.userInfo.isNotEmpty ||
         parsed.hasQuery ||
         parsed.hasFragment) {
-      throw const ValueError('模型接口请填写 HTTPS 地址；本机 localhost 可用 HTTP。不要包含账号、参数或片段');
+      throw const ValueError(
+        '模型接口请填写 HTTPS 地址；本机 localhost 可用 HTTP。不要包含账号、参数或片段',
+      );
     }
     if (model is! String || pyFullmatch(_model, model) == null) {
       throw const ValueError('模型名称无效');
     }
-    if (route != 'free-only' && route != 'free-then-model') {
+    if (route != 'free-only' &&
+        route != 'free-then-model' &&
+        route != 'systemone' &&
+        route != 'model') {
       throw const ValueError('JEV 路线无效');
     }
+    final Object? rawJudgeUrl = supplied('judge_url');
+    final Object? judgeModel = supplied('judge_model');
+    if (rawJudgeUrl is! String ||
+        judgeModel is! String ||
+        (judgeModel.isNotEmpty && pyFullmatch(_model, judgeModel) == null)) {
+      throw const ValueError('核对接口地址或模型名称无效');
+    }
+    String judgeUrl = rawJudgeUrl.trim().replaceAll(RegExp(r'/+$'), '');
+    if (route == 'systemone' && judgeUrl.isEmpty) {
+      judgeUrl = '${normalize(url, model, protocol: protocol).$1}/systemone';
+    }
+    if (judgeUrl.isNotEmpty) {
+      final Uri? endpoint = Uri.tryParse(judgeUrl);
+      final bool localHttp =
+          endpoint?.scheme == 'http' &&
+          const <String>{
+            'localhost',
+            '127.0.0.1',
+            '::1',
+          }.contains(endpoint!.host);
+      if (endpoint == null ||
+          (endpoint.scheme != 'https' && !localHttp) ||
+          endpoint.host.isEmpty ||
+          endpoint.userInfo.isNotEmpty ||
+          endpoint.hasQuery ||
+          endpoint.hasFragment ||
+          judgeUrl.length > 500 ||
+          judgeUrl.runes.any((c) => c <= 32 || c == 127)) {
+        throw const ValueError('核对接口请填写 HTTPS 地址；本机 localhost 可用 HTTP');
+      }
+    }
+    final Object? judgeKey = payload['judge_api_key'] ?? '';
+    final Object? clearJudge = payload['clear_judge_api_key'];
+    if (judgeKey is! String ||
+        judgeKey.runes.length > 1024 ||
+        judgeKey.runes.any((int c) => c < 33 || c > 126) ||
+        (clearJudge != null && clearJudge is! bool) ||
+        (judgeKey.isNotEmpty && clearJudge == true)) {
+      throw const ValueError('核对接口密钥格式无效');
+    }
+    final String effectiveJudgeKey =
+        clearJudge == true
+            ? ''
+            : judgeKey.isNotEmpty
+            ? judgeKey
+            : current['judge_api_key']! as String;
     if (key is! String ||
         key.runes.length > 1024 ||
         key.runes.any((int c) => c < 33 || c > 126)) {
@@ -266,6 +335,9 @@ class ModelSettings {
       'classifier_key': effectiveClassifier,
       'jev_api_key': effectiveJev,
       'jev_route': route,
+      'judge_url': judgeUrl,
+      'judge_model': judgeModel,
+      'judge_api_key': effectiveJudgeKey,
     };
   }
 
@@ -280,6 +352,9 @@ class ModelSettings {
             'JEV_API_KEY': settings['jev_api_key']! as String,
             'EXTRACT_MODEL': settings['model']! as String,
             'JEV_ROUTE': settings['jev_route']! as String,
+            'JUDGE_API_URL': settings['judge_url']! as String,
+            'JUDGE_API_MODEL': settings['judge_model']! as String,
+            'JUDGE_API_KEY': settings['judge_api_key']! as String,
             'LLM_PROTOCOL': settings['protocol']! as String,
           }.entries
           .map((MapEntry<String, String> e) => '${e.key}=${e.value}\n')
@@ -320,22 +395,72 @@ class ModelSettings {
       final double seconds = watch.elapsedMicroseconds / 1000000;
       final String reply = llm.redactSecrets(
         PyCompat.strip(result.text),
-        <String>[settings['api_key']! as String],
+        <String>[
+          settings['api_key']! as String,
+          settings['judge_api_key']! as String,
+        ],
       );
       String message =
           '连接成功：${settings['model']} 用 ${seconds.toStringAsFixed(1)} 秒回复了「${PyCompat.slice(reply, 0, 20)}」';
+      final String judgeKey =
+          (settings['judge_api_key']! as String).isNotEmpty
+              ? settings['judge_api_key']! as String
+              : settings['api_key']! as String;
+      final String judgeModel = settings['judge_model']! as String;
+      final String judgeUrl = settings['judge_url']! as String;
+      if (settings['jev_route'] == 'systemone' ||
+          settings['jev_route'] == 'model') {
+        final Json questions = <String, Object?>{
+          'check': <String, Object?>{
+            'type': 'choice',
+            'instructions':
+                'Does the passage support the claim that 林舟 is the lighthouse keeper?',
+            'criteria': <String, Object?>{
+              'yes': 'Supported',
+              'no': 'Not supported',
+            },
+          },
+        };
+        if (settings['jev_route'] == 'systemone') {
+          await judge.systemOneJudge(
+            '林舟是灯塔管理员。',
+            questions,
+            endpoint: judgeUrl,
+            apiKey: judgeKey,
+            model: judgeModel,
+          );
+        } else {
+          await judge.llmJudge(
+            '林舟是灯塔管理员。',
+            questions,
+            model:
+                judgeModel.isEmpty ? settings['model']! as String : judgeModel,
+            endpoint: llm.ChatEndpoint(
+              protocol: settings['protocol']! as String,
+              baseUrl:
+                  judgeUrl.isEmpty ? settings['base_url']! as String : judgeUrl,
+              apiKey: judgeKey,
+            ),
+          );
+        }
+        message += '；核对接口测试通过';
+      }
       if (seconds > 8) message += '。这个模型回复较慢，整理一本书可能需要较长时间';
       return <String, Object?>{
         'ok': true,
         'message': llm.redactSecrets(message, <String>[
           settings['api_key']! as String,
+          settings['judge_api_key']! as String,
         ]),
         'seconds': seconds,
       };
     } on Object catch (error) {
       final String detail = llm.redactSecrets(
         error is PyException ? error.message : '$error',
-        <String>[settings['api_key']! as String],
+        <String>[
+          settings['api_key']! as String,
+          settings['judge_api_key']! as String,
+        ],
       );
       return <String, Object?>{
         'ok': false,

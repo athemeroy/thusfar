@@ -28,6 +28,66 @@ String get jevModel => environ['JEV_MODEL'] ?? 'jev-latest';
 String get classifierUrl =>
     environ['CLASSIFIER_URL'] ?? 'https://classifier.dev/v1/classify';
 
+/// A user-selected System One-compatible endpoint returns option probabilities.
+Future<Json> systemOneJudge(
+  Object? state,
+  Json questions, {
+  String? endpoint,
+  String? apiKey,
+  String? model,
+}) async {
+  final String url = endpoint ?? environ['JUDGE_API_URL'] ?? '';
+  if (url.isEmpty) throw const LLMError('请先设置 System One 核对接口');
+  final String key = apiKey ?? configuredJudgeKey();
+  final String selectedModel = model ?? environ['JUDGE_API_MODEL'] ?? '';
+  final String body = _dumps(<String, Object?>{
+    'state': state,
+    'questions': questions,
+    if (selectedModel.isNotEmpty) 'model': selectedModel,
+  });
+  try {
+    _judgeAttempt();
+    final Object? data = await _postJson(
+      url,
+      body,
+      <String, String>{
+        'Content-Type': 'application/json',
+        if (key.isNotEmpty) 'Authorization': 'Bearer $key',
+      },
+      _envDouble('SYSTEMONE_TIMEOUT', '120'),
+      0,
+      paid: true,
+    );
+    if (data is! Json) throw const ValueError('核对接口返回的不是 JSON 对象');
+    final String responder =
+        data['model'] is String && (data['model']! as String).isNotEmpty
+            ? data['model']! as String
+            : selectedModel.isNotEmpty
+            ? selectedModel
+            : 'system-one';
+    final Json answers = _strictModelAnswers(
+      data['answers'],
+      questions,
+      responder,
+    );
+    jevStats['calls'] = (jevStats['calls'] ?? 0) + 1;
+    jevStats['chars'] = (jevStats['chars'] ?? 0) + _cpLen(body);
+    jevStats['questions'] = (jevStats['questions'] ?? 0) + questions.length;
+    jevStats['local_calls'] = (jevStats['local_calls'] ?? 0) + 1;
+    _routeUsed = 'systemone';
+    teacherLog(state, questions, answers, 'systemone');
+    return answers;
+  } on _HttpFailure catch (e) {
+    throw LLMError('System One 核对失败：HTTP ${e.code}');
+  } on ValueError catch (e) {
+    throw LLMError('System One 核对失败：${e.message}');
+  } on IOException {
+    throw const LLMError('System One 核对接口连接中断；已保留进度');
+  } on TimeoutException {
+    throw const LLMError('System One 核对超时；已保留进度');
+  }
+}
+
 const int classifierDims = 20;
 const int classifierDimChars = 16000;
 const int classifierInstructionChars = 4000;
@@ -110,6 +170,24 @@ Reply with one compact JSON object and nothing else:
 Json _criteria(Object? q) =>
     ((q! as Json)['criteria'] as Json?) ?? <String, Object?>{};
 
+String configuredJudgeKey() =>
+    (environ['JUDGE_API_KEY'] ?? '').isNotEmpty
+        ? environ['JUDGE_API_KEY']!
+        : llmEnv('LLM_API_KEY') ?? '';
+
+ChatEndpoint? configuredJudgeEndpoint(String model) {
+  if (environ['JEV_ROUTE'] != 'model') return null;
+  final String url = environ['JUDGE_API_URL'] ?? '';
+  final String key = environ['JUDGE_API_KEY'] ?? '';
+  if (url.isEmpty && key.isEmpty) return null;
+  final String protocol = protocolFor(model);
+  return ChatEndpoint(
+    protocol: protocol,
+    baseUrl: url.isEmpty ? baseFor(protocol) : url,
+    apiKey: configuredJudgeKey(),
+  );
+}
+
 /// The same contract as [jev], answered by the reader's configured model.
 /// Malformed answers are repaired once, never converted to a first-choice guess.
 Future<Json> llmJudge(
@@ -117,6 +195,7 @@ Future<Json> llmJudge(
   Json questions, {
   String? model,
   bool reserveBudget = false,
+  ChatEndpoint? endpoint,
 }) async {
   String pick(String k) => environ[k] ?? '';
   final String m =
@@ -126,7 +205,9 @@ Future<Json> llmJudge(
           : pick('RECAP_MODEL').isNotEmpty
           ? pick('RECAP_MODEL')
           : 'deepseek-flash+nothink');
-  if (m.isEmpty || keyFor(m.split('+').first)?.isNotEmpty != true) {
+  final ChatEndpoint? target = endpoint ?? configuredJudgeEndpoint(m);
+  if (m.isEmpty ||
+      (target?.apiKey ?? keyFor(m.split('+').first) ?? '').isEmpty) {
     throw const LLMError('模型判断需要先在「模型设置」保存可用的模型和 API 密钥');
   }
   final Json qs = <String, Object?>{
@@ -166,6 +247,7 @@ Future<Json> llmJudge(
       m,
       msgs,
       maxTokens: budget,
+      endpoint: target,
       temperature: 0,
       retries: 0,
     );
@@ -219,6 +301,7 @@ Future<Json> llmJudge(
         <String, Object?>{e.key: e.value},
         model: m,
         reserveBudget: reserveBudget,
+        endpoint: target,
       );
       valid[e.key] = one[e.key];
       final Json usage = one['_usage']! as Json;
@@ -871,7 +954,9 @@ void teacherLog(Object? state, Json questions, Json answers, String route) {
           'choice': a['choice'],
           'probabilities': a['probabilities'],
           'model':
-              route == 'configured-model'
+              route == 'systemone'
+                  ? (a['by'] ?? environ['JUDGE_API_MODEL'] ?? 'system-one')
+                  : route == 'configured-model'
                   ? (environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? '')
                   : jevModel,
           'route': route,
@@ -974,12 +1059,14 @@ Future<Json> jevUncached(
     'free-then-paid',
     'model',
     'paid',
+    'systemone',
   ].contains(route)) {
     throw const LLMError(
-      '未知裁判路由；使用 local、free-only、free-then-model、free-then-paid、model 或 paid',
+      '未知裁判路由；使用 local、systemone、free-only、free-then-model、free-then-paid、model 或 paid',
     );
   }
   if (route == 'local') return jevLocal(state, questions);
+  if (route == 'systemone') return systemOneJudge(state, questions);
   _syncFreeCredential();
   if ((route == 'free-only' ||
           route == 'free-then-model' ||
@@ -1157,14 +1244,17 @@ Future<Json> jev(
   final String fingerprint = digest(<String, Object?>{
     'state': state,
     'questions': questions,
-    'model': jevModel,
+    'model':
+        route == 'systemone' ? (environ['JUDGE_API_MODEL'] ?? '') : jevModel,
     'route': route,
-    'url': jevUrl,
+    'url': route == 'systemone' ? environ['JUDGE_API_URL'] : jevUrl,
     if (route == 'free-then-model' || route == 'model') ...<String, Object?>{
       'fallback_model': environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? '',
       'fallback_url': baseFor(
         protocolFor(environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? ''),
       ),
+      if (route == 'model' && (environ['JUDGE_API_URL'] ?? '').isNotEmpty)
+        'judge_url': environ['JUDGE_API_URL'],
     },
     'version': 1,
   });
@@ -1217,7 +1307,10 @@ Future<Json> jev(
         'request_sha256': fingerprint,
         'answers': answers,
         'route': _routeUsed == 'unknown' ? route : _routeUsed,
-        'model': jevModel,
+        'model':
+            route == 'systemone'
+                ? (environ['JUDGE_API_MODEL'] ?? '')
+                : jevModel,
       }),
     );
     tmp.renameSync(path.path);

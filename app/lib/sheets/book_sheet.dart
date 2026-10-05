@@ -540,9 +540,8 @@ class _BookSheetState extends State<BookSheet> {
       acting = false;
       actionLabel = null;
     });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _remove() => _action('正在停止整理，完成后移除…', () async {
@@ -846,7 +845,13 @@ class _BookSheetState extends State<BookSheet> {
     final String? bookJudgeRoute = _bookJudgeFallback(b.dir);
     final String effectiveJudgeRoute =
         bookJudgeRoute ??
-        (widget.settings.judgeFallbackEnabled ? 'model' : 'free');
+        (widget.settings.systemOneEnabled
+            ? 'systemone'
+            : widget.settings.judgeRoute == 'model'
+            ? 'model-direct'
+            : widget.settings.judgeFallbackEnabled
+            ? 'model'
+            : 'free');
     final bool modelFallback = effectiveJudgeRoute == 'model';
     final bool paidFallback = effectiveJudgeRoute == 'jev';
     final bool directModel = effectiveJudgeRoute == 'model-direct';
@@ -991,9 +996,8 @@ class _BookSheetState extends State<BookSheet> {
               'model_attempt',
               'retry',
             }.contains(activity.last['phase']) &&
-            _activityAge(
-              activity.last['started_at'] ?? activity.last['at'],
-            ).isNotEmpty) ...<Widget>[
+            _activityAge(activity.last['started_at'] ?? activity.last['at'])
+                .isNotEmpty) ...<Widget>[
           const SizedBox(height: 5),
           Text(
             '${_activityAge(activity.last['started_at'] ?? activity.last['at'])}；等待时长不代表已完成新段落。',
@@ -1425,7 +1429,9 @@ class _BookSheetState extends State<BookSheet> {
       final String modelName = widget.settings.read().$2;
       body.insertAll(0, <Widget>[
         Text(
-          directPaid
+          effectiveJudgeRoute == 'systemone'
+              ? '判断路线：System One · ${widget.settings.judgeModel.isEmpty ? '服务默认模型' : widget.settings.judgeModel}'
+              : directPaid
               ? '判断路线：直接使用 Jev 网关（仅本书）'
               : directModel
               ? '判断路线：直接使用 $modelName（仅本书）'
