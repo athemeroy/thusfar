@@ -50,3 +50,40 @@ The scheduled task is `Yedu-Decider-4090`; its command and log are
 `yedu_service.py.before-4090-20261005` and
 `com.yedu.decider-user.plist.before-4090-20261005`, unload/reload that LaunchAgent,
 then stop and disable the Windows task. Saved results stay in place.
+
+Read-only dashboard and activity records
+---------------------------------------
+
+Deploy `monitor.py` and `dashboard.html` alongside the adapter. The optional
+`--machine 'RTX 4090'` labels the computing machine. For current GPU readings,
+`--hardware-status-url http://192.168.31.213:1236/v1/status` uses the existing
+Strata hardware monitor with the adapter's existing key. It reads status only;
+it does not submit inference or change Qwen. Only GPU name, memory, utilization
+and temperature are retained. GPU memory is for the whole card, including Qwen.
+
+- `/v1/decider/dashboard`: Chinese mobile-friendly page, refreshes every 5 seconds.
+- `/v1/decider/dashboard.json`: readiness, active progress, queue, cumulative
+  completed checks/items, recent durations/errors, and GPU readings.
+- `/v1/decider/logs`: downloads the latest 100 completion/error records.
+
+These read-only paths require no API key and contain no book text, titles,
+answers, job tokens, keys, request addresses or error messages. Inference and
+saved-answer retrieval retain their existing authentication. The current NAS
+proxy forwards `/v1/decider/` to the adapter; its existing exact health route can
+stay. The dashboard can be opened at the same hostname as the model endpoint.
+
+Cumulative counts and the latest 100 records persist in `activity-summary.json`
+beside the private key. `activity.jsonl` retains timestamped startup/completion/
+failure events, rotating at 2 MiB with two backups. Only exception class names
+are recorded; the page displays plain Chinese descriptions. Counts begin when
+the monitor is deployed, and count actual model checks, not repeated downloads
+of saved answers. An active check lost on process failure is not counted as
+completed. A failed dashboard refresh keeps the last data visibly marked stale.
+
+Validation: one focused test checked queue/progress accounting, persistence and
+private-error-text removal. A 30-item synthetic check passed through the running
+adapter, appeared on the page and survived restart. The 390 px layout had no
+horizontal overflow. The production NAS HTTPS page, JSON and log download all
+returned 200; subsequent real traffic updated the totals. The active adapter was
+restarted with SIGTERM and allowed to finish accepted jobs naturally. Reloading
+its monitor arguments happened only after observing no active or queued jobs.
