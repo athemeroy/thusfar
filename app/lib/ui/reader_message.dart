@@ -4,7 +4,7 @@ String readerMessage(Object? value, {required String fallback}) {
   final String text = '${value ?? ''}'.trim();
   if (text.isEmpty ||
       RegExp(
-        r'Exception|Error:|Traceback|Stack trace|https?://|[/\\](?:tmp|Users|home|data)/|\b(?:JSON|HTTP|TLS|Socket|schema|checksum|SHA256|worker|isolate|PROPFIND|OPTIONS)\b|缓存|指纹|校验和|跨域|整理锁|原子写入|偏移量',
+        r'Exception|Error:|Traceback|Stack trace|https?://|[/\\](?:tmp|Users|home|data)/|\b(?:JSON|HTTP|TLS|Socket|schema|checksum|SHA256|worker|isolate|PROPFIND|OPTIONS)\b|缓存|指纹|校验|跨域|整理锁|原子写入|偏移量|重试意图|质量重试|端点|编码|原文位置',
         caseSensitive: false,
       ).hasMatch(text) ||
       !RegExp(r'[\u4e00-\u9fff]').hasMatch(text)) {

@@ -226,7 +226,7 @@ class _NoteDraftsScreenState extends State<NoteDraftsScreen> {
             child: ListTile(
               title: Text(book.title),
               subtitle: Text(
-                '${draft.noteId == null ? '新笔记草稿' : '现有笔记的未保存修改'} · 原文位置 ${draft.start}–${draft.end}',
+                draft.noteId == null ? '新笔记草稿' : '现有笔记的未保存修改',
               ),
               trailing: const Icon(Icons.edit_note),
               onTap: () => _open(book, draft),

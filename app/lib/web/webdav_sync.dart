@@ -369,7 +369,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
               : error is WebBackupConflict
               ? readerMessage(error.message, fallback: '操作未完成，请检查云端地址、账户和备份文件。')
               : error is FormatException
-              ? '远端文件格式或编码无效；本地书籍未被覆盖。'
+              ? '这份备份无法读取，现有书籍未改变。'
               : '操作失败；本地书籍未被覆盖。',
         );
       }
@@ -439,7 +439,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       previewError = error is WebBackupConflict
           ? readerMessage(error.message, fallback: '这份备份与现有内容不同，请先分别保存两个版本。')
           : error is FormatException
-          ? '远端文件格式或编码无效。'
+          ? '这份备份无法读取，请重新下载后再试。'
           : '无法读取备份，请检查浏览器剩余空间。';
     }
     _checkCurrent(client);

@@ -2480,7 +2480,10 @@ class _WebAiPanelState extends State<WebAiPanel> {
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  '${event['message'] ?? ''}',
+                  readerMessage(
+                    event['message'],
+                    fallback: error ? '这一步未完成，已保存的内容会保留。' : '整理进度已更新。',
+                  ),
                   style: TextStyle(
                     color: error ? t.danger : t.ink2,
                     height: 1.5,
