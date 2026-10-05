@@ -9,33 +9,9 @@ import 'package:thusfar_core/src/pipeline/jev.dart' as jev;
 import 'package:thusfar_core/src/pipeline/request_lifecycle.dart';
 import 'package:thusfar_core/src/pipeline/run_lease.dart';
 
+import '../support/request_fixture.dart';
+
 typedef Json = Map<String, Object?>;
-
-class FixtureTransport implements llm.ChatTransport {
-  FixtureTransport(this.reply);
-  final Future<llm.ChatResponse> Function(int) reply;
-  int calls = 0;
-  @override
-  Future<llm.ChatResponse> post(llm.ChatRequest request, Duration timeout) =>
-      reply(++calls);
-}
-
-llm.ChatResponse streamReply(String text, {bool terminal = true}) =>
-    llm.ChatResponse(
-      200,
-      'text/event-stream',
-      Stream<List<int>>.value(
-        utf8.encode(
-          'data: ${jsonEncode(<String, Object?>{
-            'choices': <Object?>[
-              <String, Object?>{
-                'delta': <String, Object?>{'content': text},
-              },
-            ],
-          })}\n\n${terminal ? 'data: [DONE]\n\n' : ''}',
-        ),
-      ),
-    );
 
 void main() {
   late llm.ChatTransport previous;

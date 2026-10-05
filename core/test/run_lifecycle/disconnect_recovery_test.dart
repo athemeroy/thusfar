@@ -9,8 +9,7 @@ import 'package:thusfar_core/src/env.dart';
 import 'package:thusfar_core/src/pipeline/llm.dart' as llm;
 import 'package:thusfar_core/src/pipeline/request_lifecycle.dart';
 
-import '../pipeline/request_interruption_test.dart'
-    show FixtureTransport, streamReply;
+import '../support/request_fixture.dart';
 import 'run_lifecycle_test.dart' show minimalBook, read, save;
 
 typedef Json = Map<String, Object?>;
