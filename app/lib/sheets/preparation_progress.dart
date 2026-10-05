@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../data/library.dart';
 import '../data/preparation_plan.dart';
 import '../ui/theme.dart';
+import '../screens/background_processing_screen.dart';
 
 /// Separate coverage, the selected goal and usable output. Stage labels report
 /// observed activity, never a made-up percentage for an opaque model request.
@@ -69,6 +72,16 @@ class PreparationProgress extends StatelessWidget {
           style: TextStyle(color: t.ink2, fontSize: 12, height: 1.4),
         ),
         const SizedBox(height: 12),
+        if (Platform.isAndroid)
+          TextButton.icon(
+            icon: const Icon(Icons.battery_saver_outlined, size: 18),
+            label: const Text('切到后台继续整理'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const BackgroundProcessingScreen(),
+              ),
+            ),
+          ),
       ],
     );
   }

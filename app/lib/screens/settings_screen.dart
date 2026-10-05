@@ -12,6 +12,7 @@ import '../sheets/typography_sheet.dart';
 import '../ui/device.dart';
 import '../ui/theme.dart';
 import 'recovery_screen.dart';
+import 'background_processing_screen.dart';
 
 /// S18 设置.
 class SettingsScreen extends StatefulWidget {
@@ -223,6 +224,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                       ),
                     ]),
+                    if (Platform.isAndroid)
+                      group('整理', <Widget>[
+                        ListTile(
+                          title: const Text('切到后台继续整理'),
+                          subtitle: const Text('允许后台运行，查看手机的耗电设置'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  const BackgroundProcessingScreen(),
+                            ),
+                          ),
+                        ),
+                      ]),
                     group('阅读', <Widget>[
                       ListTile(
                         title: const Text('阅读排版'),
