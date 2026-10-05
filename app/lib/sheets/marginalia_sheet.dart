@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -129,7 +130,10 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
         setState(
           () => _error = e is PyException
               ? e.message
-              : llm.explain(e) ?? '这次没有完成批注，请稍后重试。',
+              : readerMessage(
+                  llm.explain(e),
+                  fallback: '这次没有完成批注，请检查网络和 AI 设置后重试。',
+                ),
         );
       }
     } finally {
@@ -410,10 +414,7 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(
-                  color: t.zhu,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: t.zhu, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               Text(

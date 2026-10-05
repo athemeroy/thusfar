@@ -61,8 +61,8 @@ class _WebRecoveryPageState extends State<WebRecoveryPage> {
         await widget.library.restoreFromTrash(book.key);
       }
       await _read();
-    } on Object catch (e) {
-      if (mounted) setState(() => _error = '$e');
+    } on Object {
+      if (mounted) setState(() => _error = '操作未完成，请稍后重试。');
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -115,7 +115,7 @@ class _WebRecoveryPageState extends State<WebRecoveryPage> {
                   Text(
                     '${book.removed.toLocal().toString().split('.').first} · ${(book.bytes / 1024 / 1024).toStringAsFixed(1)} MB',
                   ),
-                  if (book.issue != null) Text(book.issue!),
+                  if (book.issue != null) const Text('这本书暂时无法恢复，请保留备份后重试。'),
                   Wrap(
                     spacing: 12,
                     children: [

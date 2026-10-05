@@ -1,3 +1,5 @@
+import '../ui/reader_message.dart';
+import '../ui/info_button.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -256,7 +258,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
       return;
     }
     if ((draft['api_key']! as String).isEmpty) {
-      _failure('还没有填写模型 API 密钥，请先填写');
+      _failure('请先填写服务密钥');
       return;
     }
     // A successful explicit probe applies only to these exact effective
@@ -274,7 +276,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         : null;
     setState(() {
       test = _Test.running;
-      testMessage = '正在测试当前输入，原有设置仍然生效';
+      testMessage = '正在测试连接…';
       error = null;
     });
     _showResult();
@@ -334,9 +336,8 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     setState(() {
       test = (result['seconds'] as num? ?? 0) > 8 ? _Test.slow : _Test.ok;
       testMessage =
-          '${customJudge ? '写作和内容检查都已连接成功' : 'AI 服务已连接成功'}。'
-          '${saved ? '已保存的设置未改变' : '当前输入尚未保存'}。'
-          '${customJudge ? '' : '其他服务的密钥需要单独测试'}';
+          '${customJudge ? '整理和检查服务均已连接' : 'AI 服务已连接成功'}。'
+          '${saved ? '正在使用此设置' : '当前输入尚未保存'}。';
     });
     _showResult();
   }
@@ -351,7 +352,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
           ? 'AI 服务密钥无效，请重新填写'
           : RegExp(r'Exception|HTTP \d|概率|Traceback').hasMatch(raw)
           ? '连接测试没有成功，请检查服务地址、模型名称和密钥后再试'
-          : raw;
+          : readerMessage(raw, fallback: '连接失败，请检查服务地址、模型名称和密钥。');
       testMessage =
           '${detail.length > 240 ? detail.substring(0, 240) : detail}。'
           '未保存，原有设置保持不变';
@@ -399,12 +400,12 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
       setState(() {
         error = null;
         urlNote = u != url.text.trim() && u.endsWith('/v1')
-            ? '已自动补上 /v1'
+            ? '已补全服务地址'
             : u.endsWith('/v1beta') && u != url.text.trim()
-            ? '已自动补上 /v1beta'
+            ? '已补全服务地址'
             : null;
         modelNote = m != model.text.trim() && m.endsWith('+nothink')
-            ? '已自动加上 +nothink'
+            ? '已更新模型名称'
             : null;
         url.text = u;
         model.text = m;
@@ -427,9 +428,9 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         test = verified ? _Test.saved : _Test.unverified;
         testMessage = verified
             ? customJudge
-                  ? '写作和内容检查都已连接成功，设置已生效。'
-                  : 'AI 服务已连接成功，设置已生效。其他服务的密钥需要单独测试。'
-            : '设置已保存并生效，但未验证连接。';
+                  ? '整理和检查服务均已连接，设置已生效。'
+                  : '连接成功，设置已保存。'
+            : '已保存，还未测试连接。';
       });
       _showResult();
       if (verified &&
@@ -516,7 +517,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             ),
             DropdownButtonFormField<String>(
               initialValue: protocol,
-              decoration: deco('接口类型'),
+              decoration: deco('服务类型'),
               items: <DropdownMenuItem<String>>[
                 for (final MapEntry<String, String> item
                     in ModelSettings.protocolLabels.entries)
@@ -552,7 +553,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
               controller: url,
               enabled: !_busy,
               keyboardType: TextInputType.url,
-              decoration: deco('接口地址', helper: urlNote),
+              decoration: deco('服务地址', helper: urlNote),
               onChanged: (_) => _edited(),
             ),
             const SizedBox(height: 14),
@@ -565,7 +566,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             const SizedBox(height: 14),
             if (_separateKeyRequired) ...<Widget>[
               Text(
-                '接口地址或协议已变更，请填写此接口的独立 API 密钥。原有密钥不会发送到新接口；返回原接口可继续使用原密钥。',
+                '服务已更换，请填写对应的密钥。',
                 style: TextStyle(color: t.amber, fontSize: 13, height: 1.4),
               ),
               const SizedBox(height: 10),
@@ -582,7 +583,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        'API 密钥：已保存 ···${saved.length >= 4 ? saved.substring(saved.length - 4) : saved}',
+                        '服务密钥：已保存 ···${saved.length >= 4 ? saved.substring(saved.length - 4) : saved}',
                         style: TextStyle(
                           color: t.ink,
                           fontFeatures: const <FontFeature>[
@@ -628,7 +629,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 enabled: !_busy,
                 obscureText: !showKey,
                 decoration: deco(
-                  'API 密钥',
+                  '服务密钥',
                   suffix: IconButton(
                     tooltip: showKey ? '隐藏密钥' : '显示密钥',
                     icon: Icon(
@@ -666,11 +667,13 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             ),
             if (customJudge) ...<Widget>[
               const SizedBox(height: 12),
-              Text(
-                judgeMode == 'systemone'
-                    ? '检查人物、事件等内容是否符合原文。支持 System One 接口；模型由你选择。人物小传和问答仍用上方模型。'
-                    : '让对话模型检查内容是否符合原文。人物小传和问答仍用上方模型。保存前可测试是否兼容。',
-                style: TextStyle(fontSize: 12, color: t.ink2),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: InfoButton(
+                  title: '检查整理结果',
+                  message:
+                      '检查模型负责确认人物、事件等内容是否符合原文。人物小传和问答仍使用上方模型。你可以自行选择检查模型，并在保存前测试连接。',
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -680,8 +683,8 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 decoration: deco(
                   '检查服务地址',
                   helper: judgeMode == 'systemone'
-                      ? '与上方使用同一服务时可留空；否则填写服务商提供的完整 System One 地址'
-                      : '留空使用上方服务。另填地址时，接口类型需与上方一致',
+                      ? '填写服务提供的检查地址；使用同一服务时可留空'
+                      : '使用上方服务时可留空',
                 ),
               ),
               const SizedBox(height: 12),
@@ -707,7 +710,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                   '检查服务密钥（可选）',
                   helper: widget.settings.hasJudgeKey && !clearJudgeKey
                       ? '已保存 ****${widget.settings.judgeKeyLast4}；留空保留'
-                      : '留空使用上方 API 密钥',
+                      : '留空使用上方 服务密钥',
                   suffix: widget.settings.hasJudgeKey && !clearJudgeKey
                       ? IconButton(
                           tooltip: '清除检查服务密钥',
@@ -866,7 +869,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                       _edited();
                     },
                     decoration: deco(
-                      'TypeSafe AI / Jev API 密钥',
+                      'TypeSafe AI / Jev 服务密钥',
                       suffix: IconButton(
                         tooltip: showJevApiKey ? '隐藏密钥' : '显示密钥',
                         icon: Icon(

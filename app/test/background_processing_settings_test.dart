@@ -68,7 +68,12 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, '已允许'), findsOneWidget);
-      expect(find.textContaining('页读无法读取所有厂商的开关'), findsOneWidget);
+      expect(find.textContaining('不同手机的选项名称'), findsNothing);
+      await tester.tap(find.byTooltip('了解后台活动设置'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('不同手机的选项名称'), findsOneWidget);
+      await tester.tap(find.text('知道了'));
+      await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('打开页读的手机设置'));
       await tester.tap(find.text('打开页读的手机设置'));
       await tester.pumpAndSettle();

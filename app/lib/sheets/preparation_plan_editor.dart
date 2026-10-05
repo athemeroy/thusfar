@@ -54,7 +54,7 @@ class PreparationPlanEditor extends StatelessWidget {
                       ? null
                       : plan.startChapter,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: '目标从'),
+                  decoration: const InputDecoration(labelText: '从哪章开始'),
                   items: <DropdownMenuItem<int>>[
                     for (final PreparationChapter chapter in plan.chapters)
                       DropdownMenuItem(
@@ -109,8 +109,8 @@ class PreparationPlanEditor extends StatelessWidget {
         const SizedBox(height: 5),
         Text(
           prerequisites > 0
-              ? '前面约 $prerequisites 字还未整理，人物身份和关系依赖它们。本次会先从已保存进度补齐，再处理目标章节；这部分也会发送并计费。'
-              : '从已保存进度继续，已完成的片段不会重复发送。达到本次范围后停止，扩大范围需要你再次开始。',
+              ? '会先补齐前面约 $prerequisites 字，以了解人物和情节。使用付费服务时，这部分也会收费。'
+              : '从上次进度继续，完成所选范围后停止。',
           style: TextStyle(
             color: prerequisites > 0 ? t.amber : t.ink2,
             fontSize: 12,
@@ -120,7 +120,7 @@ class PreparationPlanEditor extends StatelessWidget {
         if (plan.scope == 'read') ...<Widget>[
           const SizedBox(height: 5),
           Text(
-            '以当前显示位置为上限，只发送完整片段；跨过这一页的片段留到以后。不会为了凑整章发送未读正文。',
+            '只整理已读内容，不会发送后面的情节。',
             style: TextStyle(color: t.ink2, fontSize: 12, height: 1.45),
           ),
         ],
@@ -132,19 +132,6 @@ class PreparationPlanEditor extends StatelessWidget {
               style: TextStyle(color: t.amber, fontSize: 12),
             ),
           ),
-        Material(
-          type: MaterialType.transparency,
-          child: ExpansionTile(
-            tilePadding: EdgeInsets.zero,
-            title: const Text('片段大小与缓存复用'),
-            children: <Widget>[
-              Text(
-                '目前保留已验证的片段大小。扩大早期窗口会改变缓存边界，也可能把后文身份带进前文资料；没有跨窗口质量和费用证据前不自动扩大。已完成的片段可复用，无需重新花费。',
-                style: TextStyle(color: t.ink2, fontSize: 12, height: 1.45),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }

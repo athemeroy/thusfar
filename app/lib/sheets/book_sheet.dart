@@ -1,3 +1,5 @@
+import '../ui/reader_message.dart';
+import '../ui/info_button.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -391,9 +393,10 @@ class _BookSheetState extends State<BookSheet> {
     } on Object catch (error) {
       if (mounted) {
         setState(
-          () => engineNote =
-              llm.explain(error) ??
-              (error is StateError ? error.message : '整理操作没有完成，请稍后重试。'),
+          () => engineNote = readerMessage(
+            llm.explain(error) ?? (error is StateError ? error.message : null),
+            fallback: '整理操作没有完成，请稍后重试。',
+          ),
         );
       }
     } finally {
@@ -469,7 +472,7 @@ class _BookSheetState extends State<BookSheet> {
   Future<void> _setBookJudgeFallback(String route, String label) =>
       _action(label, () async {
         if (!widget.settings.hasKey || widget.settings.read().$2.isEmpty) {
-          throw StateError('请先保存可用的模型和 API 密钥');
+          throw StateError('请先保存可用的模型和服务密钥');
         }
         if (route.startsWith('jev') && !widget.settings.hasJevApiKey) {
           throw StateError('请先在模型设置中填写 Jev 密钥');
@@ -537,7 +540,7 @@ class _BookSheetState extends State<BookSheet> {
     if (acting) return;
     setState(() {
       acting = true;
-      actionLabel = '正在准备整理诊断…';
+      actionLabel = '正在准备问题记录…';
     });
     String message;
     try {
@@ -663,7 +666,7 @@ class _BookSheetState extends State<BookSheet> {
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                 title: const Text('网页整理草稿'),
-                subtitle: const Text('查看跨端带来的已读人物、前情和关系'),
+                subtitle: const Text('查看从网页版带来的人物与前情'),
                 trailing: Icon(Icons.chevron_right, color: t.ink3),
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -949,7 +952,7 @@ class _BookSheetState extends State<BookSheet> {
       );
     } else if (missingKey) {
       body.addAll(<Widget>[
-        Text('还没有填写模型 API 密钥', style: TextStyle(color: t.amber, fontSize: 15)),
+        Text('请先填写 AI 服务密钥', style: TextStyle(color: t.amber, fontSize: 15)),
         const SizedBox(height: 10),
         Pill(
           label: '去填写',
@@ -997,7 +1000,7 @@ class _BookSheetState extends State<BookSheet> {
             s.notice!.isNotEmpty) ...<Widget>[
           const SizedBox(height: 6),
           Text(
-            s.notice!,
+            readerMessage(s.notice, fallback: '正在整理，请稍候。'),
             style: TextStyle(fontSize: 13, height: 1.4, color: t.ink2),
           ),
         ] else if (thisBookIsRunning && latestActivity != null) ...<Widget>[
@@ -1027,14 +1030,14 @@ class _BookSheetState extends State<BookSheet> {
             ).isNotEmpty) ...<Widget>[
           const SizedBox(height: 5),
           Text(
-            '${_activityAge(activity.last['started_at'] ?? activity.last['at'])}；等待时长不代表已完成新段落。',
+            _activityAge(activity.last['started_at'] ?? activity.last['at']),
             style: TextStyle(fontSize: 12, color: t.ink3),
           ),
         ],
         if (s.done > 0 && bios.count == 0) ...<Widget>[
           const SizedBox(height: 5),
           Text(
-            '正文按段整理，人物小传在章节整理后生成。',
+            '整理完一章后，会生成人物小传。',
             style: TextStyle(fontSize: 12, color: t.ink3),
           ),
         ],
@@ -1045,11 +1048,7 @@ class _BookSheetState extends State<BookSheet> {
             style: TextStyle(fontSize: 12, color: t.amber),
           ),
         ],
-        const SizedBox(height: 5),
-        Text(
-          '正文最多 $phoneConcurrency 段并行；多本书依次整理。',
-          style: TextStyle(fontSize: 12, color: t.ink3),
-        ),
+
         const SizedBox(height: 10),
         Pill(
           label: '暂停整理',
@@ -1145,7 +1144,7 @@ class _BookSheetState extends State<BookSheet> {
       body.addAll(<Widget>[
         Text(
           s.raw['pause_reason'] == 'scope_complete'
-              ? '本次范围已完成，已停止。选择新的范围后才会继续调用模型。'
+              ? '所选范围已完成，可以选择接下来整理的章节。'
               : '已暂停。已经整理好的部分可以直接看。',
           style: TextStyle(fontSize: 14, color: t.ink),
         ),
@@ -1178,7 +1177,7 @@ class _BookSheetState extends State<BookSheet> {
         if (lastWork != null) ...<Widget>[
           const SizedBox(height: 6),
           Text(
-            '暂停前最后阶段：${_lastStageSummary(lastWork)}${lastWorkAt.isEmpty ? '' : ' · $lastWorkAt'}',
+            '上次正在：${_lastStageSummary(lastWork)}${lastWorkAt.isEmpty ? '' : ' · $lastWorkAt'}',
             style: TextStyle(fontSize: 13, color: t.ink2),
           ),
         ],
@@ -1458,42 +1457,35 @@ class _BookSheetState extends State<BookSheet> {
         ),
       );
       final String modelName = widget.settings.read().$2;
-      body.insertAll(0, <Widget>[
-        Text(
-          effectiveJudgeRoute == 'systemone'
-              ? '内容检查： ${widget.settings.judgeModel.isEmpty ? '服务默认模型' : widget.settings.judgeModel}'
-              : directPaid
-              ? '内容检查：Jev（仅本书）'
-              : directModel
-              ? '内容检查：$modelName（仅本书）'
-              : paidFallback
-              ? '内容检查：免费服务不可用时，改用 Jev（仅本书）'
-              : modelFallback
-              ? '内容检查：免费服务不可用时，改用 $modelName'
-              : widget.settings.hasClassifierKey
-              ? '内容检查：classifier.dev'
-              : '内容检查：免费服务',
-          style: TextStyle(fontSize: 12, color: t.ink2),
+      body.insert(
+        0,
+        Align(
+          alignment: Alignment.centerRight,
+          child: InfoButton(
+            title: '本书的检查设置',
+            message: <String>[
+              effectiveJudgeRoute == 'systemone'
+                  ? '内容检查： ${widget.settings.judgeModel.isEmpty ? '服务默认模型' : widget.settings.judgeModel}'
+                  : directPaid
+                  ? '内容检查：Jev（仅本书）'
+                  : directModel
+                  ? '内容检查：$modelName（仅本书）'
+                  : paidFallback
+                  ? '内容检查：免费服务不可用时，改用 Jev（仅本书）'
+                  : modelFallback
+                  ? '内容检查：免费服务不可用时，改用 $modelName'
+                  : widget.settings.hasClassifierKey
+                  ? '内容检查：classifier.dev'
+                  : '内容检查：免费服务',
+              if (modelUsesBudget && modelBudget.isNotEmpty)
+                '本书已检查 ${modelBudget['calls']} 次，允许 ${modelBudget['max_calls']} 次。'
+              else if (paidUsesBudget)
+                '本书已使用 Jev ${paidBudget['calls'] ?? 0} 次，允许 ${paidBudget['max_calls'] ?? judge_budget.paidJudgeDefaultCalls} 次。',
+              '次数限制用于控制本书的检查用量，不代表账户余额。达到后会暂停，由你决定是否增加。',
+            ].join('\n'),
+          ),
         ),
-        if (modelUsesBudget && modelBudget.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 8),
-            child: Text(
-              '本书已检查 ${modelBudget['calls']} 次，最多允许 ${modelBudget['max_calls']} 次（不是账户余额）',
-              style: TextStyle(fontSize: 12, color: t.ink3),
-            ),
-          )
-        else if (paidUsesBudget)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 8),
-            child: Text(
-              '本书已使用 Jev ${paidBudget['calls'] ?? 0} 次，最多允许 ${paidBudget['max_calls'] ?? judge_budget.paidJudgeDefaultCalls} 次（不是账户余额）',
-              style: TextStyle(fontSize: 12, color: t.ink3),
-            ),
-          )
-        else
-          const SizedBox(height: 8),
-      ]);
+      );
       if (bookJudgeRoute == 'jev' ||
           bookJudgeRoute == 'jev-direct' ||
           bookJudgeRoute == 'model-direct' ||

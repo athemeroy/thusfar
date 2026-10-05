@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -82,7 +83,10 @@ class _TocPageState extends State<TocPage> {
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Text(
-                  link.c.book.notes.error!,
+                  readerMessage(
+                    link.c.book.notes.error,
+                    fallback: '暂时无法读取摘记，请重新打开后重试。',
+                  ),
                   style: TextStyle(color: context.tk.danger),
                 ),
               ),
@@ -368,11 +372,11 @@ class _TocPageState extends State<TocPage> {
                           try {
                             current.restore(receipt);
                             if (context.mounted) notes.refresh();
-                          } on Object catch (e) {
+                          } on Object {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(SnackBar(content: Text('$e')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('操作未完成，请稍后重试。')),
+                              );
                             }
                           } finally {
                             current.dispose();
@@ -382,10 +386,10 @@ class _TocPageState extends State<TocPage> {
                     ),
                   );
                   return true;
-                } on Object catch (e) {
+                } on Object {
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('$e')));
+                  ).showSnackBar(SnackBar(content: Text('操作未完成，请稍后重试。')));
                   return false;
                 }
               },
@@ -462,9 +466,9 @@ class _TocPageState extends State<TocPage> {
                   Clipboard.setData(
                     ClipboardData(text: notesMarkdown(link.c.book)),
                   );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('摘记已复制为 Markdown')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('摘记已复制')));
                 },
                 child: Text('导出', style: TextStyle(color: t.qing)),
               ),

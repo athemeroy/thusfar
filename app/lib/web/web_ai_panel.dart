@@ -1,3 +1,5 @@
+import '../ui/reader_message.dart';
+import '../ui/info_button.dart';
 // Browser-only, per-book preparation controls. Model credentials live only in
 // this browser tab's memory; the IndexedDB checkpoint contains results and status.
 // ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
@@ -252,7 +254,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       done: _done(targets),
       total: targets.length,
       label: _running
-          ? (_stopRequested ? '停止中，等待当前请求' : '正在整理')
+          ? (_stopRequested ? '正在停止整理' : '正在整理')
           : _phase == 'complete'
           ? '本次整理完成'
           : _phase == 'error'
@@ -498,7 +500,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
     if (key != null && key.isNotEmpty) safe = safe.replaceAll(key, '[密钥]');
     safe = safe.replaceAll(RegExp(r'[\r\n]+'), ' ').trim();
     if (safe.length > 300) safe = '${safe.substring(0, 300)}…';
-    return safe.isEmpty ? '模型调用未完成，请检查网络和模型设置。' : safe;
+    return readerMessage(safe, fallback: '整理未完成，请检查网络和 AI 设置。');
   }
 
   Future<void> _run(WebAiConfig config, String scope) async {
@@ -519,10 +521,10 @@ class _WebAiPanelState extends State<WebAiPanel> {
         () => _runLocked(config, scope),
       );
       if (!granted) {
-        _message('另一个标签页正在整理这本书，请先在那边暂停。没有发起模型请求。');
+        _message('另一个标签页正在整理这本书，请先在那边暂停。尚未开始整理。');
       }
     } on Object {
-      _message('浏览器无法确认整理锁，已停止；没有发起模型请求。');
+      _message('暂时无法开始整理，请刷新页面后重试。');
     } finally {
       _starting = false;
       if (mounted) setState(() {});
@@ -542,12 +544,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
         _owner,
       );
     } on Object {
-      _message('无法取得浏览器整理锁，已停止；没有发起模型请求。');
+      _message('暂时无法开始整理，请刷新页面后重试。');
       return;
     }
     if (!acquired) {
       if (mounted) setState(() => _otherLeaseActive = true);
-      _message('另一个标签页正在整理这本书，请先在那边暂停。没有发起模型请求。');
+      _message('另一个标签页正在整理这本书，请先在那边暂停。尚未开始整理。');
       return;
     }
     _leaseHeld = true;
@@ -572,7 +574,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       _hydrate(latest);
     } on Object {
       await _releaseLease();
-      _message('无法读取最新整理进度，已停止；没有发起模型请求。');
+      _message('无法读取最新整理进度，已停止；尚未开始整理。');
       return;
     }
     final List<WebAiChunk> targets = _targets(scope);
@@ -580,9 +582,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       await _releaseLease();
       if (mounted) setState(() {});
       _message(
-        targets.isEmpty
-            ? '当前范围没有读完的正文，没有发起模型请求。'
-            : '所选范围已由另一个标签页整理完成，没有重复发起模型请求。',
+        targets.isEmpty ? '当前范围没有读完的正文，尚未开始整理。' : '所选范围已由另一个标签页整理完成，无需重复整理。',
       );
       return;
     }
@@ -595,7 +595,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           webPreparationPassageContainsCredential(chunk.text),
     )) {
       await _releaseLease();
-      _message('所选正文含疑似密钥格式，浏览器不会发送或保存这段内容；没有发起模型请求。');
+      _message('所选正文含疑似密钥格式，浏览器不会发送或保存这段内容；尚未开始整理。');
       return;
     }
     _activeConfig = config;
@@ -622,7 +622,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         final String key = _chunkKey(chunk);
         if (_results.containsKey(key)) continue;
         if (!await _renewLease()) {
-          throw const WebAiException('整理锁已失效，已停止；没有继续发起模型请求。');
+          throw const WebAiException('整理已停止，请刷新页面后继续。');
         }
         if (!_canStartRequest) break;
         _activeChunk = key;
@@ -637,7 +637,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         // Renew immediately before the billable request, then again after its
         // response before writing any result. A lost lease stops this tab.
         if (!await _renewLease()) {
-          throw const WebAiException('整理锁已失效，已停止；没有继续发起模型请求。');
+          throw const WebAiException('整理已停止，请刷新页面后继续。');
         }
         if (!_canStartRequest) break;
         final WebAiResult answer = await widget.analyze(
@@ -646,7 +646,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           beforeRequest: _beforeRequest,
         );
         if (!await _renewLease()) {
-          throw const WebAiException('模型已回复，但整理锁失效；本段没有保存，重试可能再次计费。');
+          throw const WebAiException('整理结果未能保存，重试可能再次收费。');
         }
         _requestStage = 'saving';
         if (mounted) setState(() {});
@@ -695,7 +695,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         }
       } else {
         _phase = 'error';
-        _lastError = '整理锁失效，已停止；未保存的模型回复可能已计费。请刷新查看另一标签页的进度。';
+        _lastError = '整理已停止，未保存的内容可能已经收费。请刷新页面查看进度。';
       }
       await _releaseLease();
       _publishReadingActivity();
@@ -717,7 +717,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
     if (!_running) return;
     setState(() => _stopRequested = true);
     _publishReadingActivity();
-    _message('当前模型请求结束后暂停；已完成的片段会保留。');
+    _message('正在暂停，已完成的内容会保留。');
   }
 
   Future<void> _configureAndStart() async {
@@ -1044,7 +1044,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                             ),
                           if (provider == 'custom') ...<Widget>[
                             const SizedBox(height: 12),
-                            Text('接口协议', style: TextStyle(color: t.ink)),
+                            Text('服务类型', style: TextStyle(color: t.ink)),
                             const SizedBox(height: 6),
                             Wrap(
                               spacing: 8,
@@ -1085,7 +1085,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                               textInputAction: TextInputAction.next,
                               scrollPadding: const EdgeInsets.only(bottom: 120),
                               decoration: const InputDecoration(
-                                labelText: '模型 API 地址',
+                                labelText: '服务地址',
                                 hintText: 'https://example.com/v1',
                               ),
                               onChanged: (String value) => redraw(() {
@@ -1121,8 +1121,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
                                     protocol,
                                     endpoint.text,
                                   )
-                                  ? '你的 API 密钥（本机可留空）'
-                                  : '你的 API 密钥',
+                                  ? '你的 服务密钥（本机可留空）'
+                                  : '你的 服务密钥',
                               suffixIcon: IconButton(
                                 tooltip: showKey ? '隐藏密钥' : '显示密钥',
                                 onPressed: () =>
@@ -1154,12 +1154,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
                             title: const Text('费用与连接说明'),
                             children: <Widget>[
                               Text(
-                                '请求发往 $host。每段通常调用 1 次；回复格式或引文校验失败时最多追加 1 次，两次均可能计费。网络或额度错误不会自动重试。',
+                                '由 $host 提供服务。未完成的内容可能再试一次，使用付费服务时可能再次收费。',
                                 style: TextStyle(color: t.ink2, fontSize: 12),
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '接口需要允许当前网页来源跨域访问；Claude 浏览器直连会发送官方要求的直连头。本机 Ollama 可能需配置允许来源。密钥不会写入备份或浏览器存储；协议、地址和模型名称会保存在本机。关闭网页会暂停，重开后不会自动发起请求。',
+                                '关闭页面后整理会暂停，回来后可手动继续。密钥不会保存，其他模型设置会保留。使用电脑上的模型时，请确认电脑和模型服务已开启。',
                                 style: TextStyle(color: t.ink2, fontSize: 12),
                               ),
                             ],
@@ -1186,9 +1186,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                                     protocol,
                                     endpoint.text,
                                   )) {
-                                throw const WebModelException(
-                                  '请填写你自己的 API 密钥。',
-                                );
+                                throw const WebModelException('请填写你自己的 服务密钥。');
                               }
                             } on WebModelException catch (failure) {
                               redraw(() => error = failure.message);
@@ -1231,9 +1229,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
         builder: (BuildContext context) => AlertDialog(
           title: Text('确认整理${_scopeLabel(selected.scope)}？'),
           content: Text(
-            '本次尚有 $remaining 段，通常需要 $remaining 次模型请求；'
-            '若各段都需校验重试，最多可能发起 ${remaining * 2} 次。'
-            '这些请求可能产生费用，由 ${Uri.parse(selected.config.endpoint).host} 按其账户规则收取；页读无法确定你的实际单价。'
+            '本次将整理 $remaining 段，未完成的内容可能再试一次。'
+            '费用由 ${Uri.parse(selected.config.endpoint).host} 收取，具体金额以该服务的账单为准。'
             '网页关闭后不会自动继续。',
           ),
           actions: <Widget>[
@@ -1541,9 +1538,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
   }
 
   Widget _overview(Tokens t, int done, int total, bool otherTab) {
-    final String provider = Uri.tryParse(_endpoint)?.host ?? _endpoint;
     final String phase = _running
-        ? (_stopRequested ? '等待当前请求结束后暂停' : '正在整理')
+        ? (_stopRequested ? '正在暂停，已完成的内容会保留' : '正在整理')
         : _starting || _clearing
         ? '正在核对本地整理状态'
         : otherTab
@@ -1619,31 +1615,27 @@ class _WebAiPanelState extends State<WebAiPanel> {
           ),
           const SizedBox(height: 9),
           Text(
-            '全书已保存 ${_results.length} / ${_bodyChunks.length} 段；本次范围与全书覆盖分开计算。',
+            '全书已整理 ${_results.length} / ${_bodyChunks.length} 段',
             style: TextStyle(fontSize: 12, color: t.ink2),
           ),
-          const SizedBox(height: 5),
-          Text(
-            '选择片段 → 模型抽取 → 引文校验 → 本地保存',
-            style: TextStyle(fontSize: 12, color: t.ink2),
-          ),
+
           if (_running)
             Text(switch (_requestStage) {
-              'saving' => '当前：本地保存。引文已通过连续原文校验，内容判断仍是草稿。',
-              'model' => '当前：等待模型回复与引文校验。单次请求没有可测百分比。',
-              _ => '当前：核对范围与已保存片段。',
+              'saving' => '正在保存整理结果',
+              'model' => '正在整理人物和情节',
+              _ => '正在准备整理',
             }, style: TextStyle(fontSize: 12, color: t.ink2)),
           const SizedBox(height: 5),
           Text(
             _activeChunk == null
-                ? '服务商：$provider · 关闭页面后不会继续处理'
-                : '服务商：$provider · 正在等待第 ${int.parse(_activeChunk!.split(':').first) + 1} 章的模型回复（本次最多 90 秒）',
+                ? '关闭页面后，整理会暂停'
+                : '正在整理第 ${int.parse(_activeChunk!.split(':').first) + 1} 章',
             style: TextStyle(fontSize: 12, color: t.ink2),
           ),
           if (!_running && done == 0 && _phase == 'idle') ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              '当前尚未发起模型请求。点“开始整理”后再选择范围与模型。',
+              '点击“开始整理”，选择整理范围。',
               style: TextStyle(
                 fontSize: 12,
                 color: t.ink2,
@@ -1655,7 +1647,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           if (done > 0) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              '引文已核对为原文连续文字；人物归属、关系和总结仍可能判断错误。',
+              'AI 整理可能有误，可以对照原文查看。',
               style: TextStyle(
                 fontSize: 12,
                 color: t.ink2,
@@ -1679,9 +1671,9 @@ class _WebAiPanelState extends State<WebAiPanel> {
           ],
           if (prompt > 0 || completion > 0 || calls > 0) ...<Widget>[
             const SizedBox(height: 11),
-            Text(
-              '已保存结果：$calls 次模型请求 · 输入 $prompt / 输出 $completion token。失败或未保存的请求未计入；实际费用以服务商账单为准。',
-              style: TextStyle(fontSize: 12, color: t.ink2, height: 1.4),
+            InfoButton(
+              title: '整理用量',
+              message: '已保存 $calls 次整理结果。未完成的整理也可能收费，实际费用以服务商账单为准。',
             ),
           ],
           const SizedBox(height: 16),
@@ -2461,7 +2453,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         t,
         Icons.receipt_long_outlined,
         '尚无整理记录',
-        '开始后会逐段记录请求、完成、暂停及错误；这里不保存模型密钥或书籍正文。',
+        '开始整理后，可在这里查看进展。',
       );
     }
     final List<Json> events = _events.reversed.toList();

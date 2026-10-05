@@ -1,3 +1,5 @@
+import '../ui/reader_message.dart';
+import '../ui/info_button.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -75,7 +77,12 @@ class _WebDavScreenState extends State<WebDavScreen> {
       setState(() => _message = result);
     } on WebDavException catch (error) {
       if (mounted && identical(_active, client)) {
-        setState(() => _message = error.message);
+        setState(
+          () => _message = readerMessage(
+            error.message,
+            fallback: '操作未完成，请检查云端地址、账户和网络。',
+          ),
+        );
       }
     } on Object {
       if (mounted && identical(_active, client)) {
@@ -101,7 +108,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
       builder: (context) => AlertDialog(
         title: Text(leave ? '停止当前任务并离开？' : '停止当前 WebDAV 任务？'),
         content: const Text(
-          '停止等待与传输，不再导入本地资料。已经到达服务器的上传可能仍会完成；再次上传前，请先重新列出快照以免重复。',
+          '停止等待与传输，不再导入本地资料。已经到达服务器的上传可能仍会完成；再次上传前，请先重新列出备份以免重复。',
         ),
         actions: [
           TextButton(
@@ -121,24 +128,22 @@ class _WebDavScreenState extends State<WebDavScreen> {
       _active = null;
       _busy = false;
       _activity = null;
-      _message = '已停止等待；本地未导入。若正在上传，请重新列出远端快照确认结果。';
+      _message = '已停止等待；本地未导入。若正在上传，请重新列出远端备份确认结果。';
     });
     if (leave) Navigator.of(context).pop();
   }
 
-  Future<void> _list() => _run('正在读取云端快照', (client) async {
+  Future<void> _list() => _run('正在读取云端备份', (client) async {
     final List<WebDavSnapshot> found = await client.list();
     _checkCurrent(client);
     setState(() => _snapshots = found);
-    return found.isEmpty
-        ? '这个文件夹还没有页读快照。'
-        : '找到 ${found.length} 个快照。点击快照可先校验并预览。';
+    return found.isEmpty ? '这个文件夹还没有页读备份。' : '找到 ${found.length} 个备份。点击查看备份内容。';
   });
 
   Future<void> _upload(BookEntry book) =>
       _run('正在准备《${book.title}》', (client) async {
         final Uint8List bytes = exportBookBytes(widget.library, book);
-        _phase(client, '正在上传《${book.title}》的新快照');
+        _phase(client, '正在上传《${book.title}》的新备份');
         final String name = await client.upload(bytes);
         _checkCurrent(client);
         setState(() {
@@ -148,14 +153,14 @@ class _WebDavScreenState extends State<WebDavScreen> {
             ..._snapshots,
           ];
         });
-        return '《${book.title}》已上传为新快照。旧快照仍保留。';
+        return '《${book.title}》已上传为新备份。旧备份仍保留。';
       });
 
-  Future<void> _download(WebDavSnapshot snapshot) => _run('正在下载快照以供校验和预览', (
+  Future<void> _download(WebDavSnapshot snapshot) => _run('正在下载备份…', (
     client,
   ) async {
     final Uint8List bytes = await client.download(snapshot);
-    _phase(client, '正在校验原文和合并条件');
+    _phase(client, '正在检查备份…');
     final BackupSummary summary = BackupSummary.read(
       bytes,
       fallback: snapshot.name,
@@ -175,10 +180,10 @@ class _WebDavScreenState extends State<WebDavScreen> {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('WebDAV 快照预览'),
+        title: const Text('WebDAV 备份预览'),
         content: SingleChildScrollView(
           child: Text(
-            '${summary.title}\n${summary.exported == null ? _label(snapshot) : summary.dateLabel}\n${summary.sizeLabel}\n\n${preview.error == null ? '已校验。${preview.existed ? '已有同一本书，将只合并兼容的阅读资料。' : '将导入为书架上的一本书。'}确认前不会修改本地。' : '未能通过校验：${preview.error}\n本地未改动，可取消后检查备份。'}',
+            '${summary.title}\n${summary.exported == null ? _label(snapshot) : summary.dateLabel}\n${summary.sizeLabel}\n\n${preview.error == null ? '${preview.existed ? '已有同一本书，会保留已有阅读记录。' : '将导入为书架上的一本书。'}确认前不会修改本地。' : '${readerMessage(preview.error, fallback: '这份备份暂时无法恢复。')}\n现有书籍未改变。'}',
           ),
         ),
         actions: [
@@ -196,7 +201,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
     );
     _checkCurrent(client);
     if (confirmed != true) return '已取消导入，本地书籍未改动。';
-    _phase(client, '正在导入已校验的快照，完成后可离开');
+    _phase(client, '正在恢复书籍，请稍候…');
     setState(() => _committing = true);
     // Revalidate at publication: local state may have changed during preview.
     final ImportResult result = restoreBackup(
@@ -231,12 +236,18 @@ class _WebDavScreenState extends State<WebDavScreen> {
       if (!didPop && _busy) _cancel(leave: true);
     },
     child: Scaffold(
-      appBar: AppBar(title: const Text('WebDAV 快照')),
+      appBar: AppBar(title: const Text('WebDAV 备份')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 36),
         children: [
-          const Text(
-            '手动上传完整书籍备份到你自己的 WebDAV 文件夹。每次生成独立快照，不会自动双向同步；旧快照保留。导入前会校验并预览书名、时间和大小。',
+          const Text('将书籍备份到自己的云端，再到其他设备恢复。需要手动上传，旧备份会保留。'),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: InfoButton(
+              title: '云端备份',
+              message:
+                  '备份包含原文、图片、阅读进度和整理资料，不包含模型密钥。导入前可以查看书名、时间和大小。上传完成后，可在其他设备恢复。',
+            ),
           ),
           const SizedBox(height: 18),
           TextField(
@@ -277,12 +288,12 @@ class _WebDavScreenState extends State<WebDavScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text('登录信息只在此页面使用，离开后清除。备份含原文、图片、阅读进度与整理资料，不含模型密钥。'),
+          const Text('登录信息不会保存，离开后需重新填写。'),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _busy ? null : _list,
             icon: const Icon(Icons.cloud_download_outlined),
-            label: const Text('查看云端快照'),
+            label: const Text('查看云端备份'),
           ),
           if (_busy) ...[
             const SizedBox(height: 12),
@@ -311,17 +322,17 @@ class _WebDavScreenState extends State<WebDavScreen> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  subtitle: const Text('上传新的完整快照'),
+                  subtitle: const Text('上传新的完整备份'),
                   trailing: const Icon(Icons.cloud_upload_outlined),
                   enabled: !_busy,
                   onTap: () => _upload(book),
                 ),
               ),
           const SizedBox(height: 24),
-          Text('云端快照', style: Theme.of(context).textTheme.titleMedium),
+          Text('云端备份', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           if (_snapshots.isEmpty)
-            const Text('填写地址后点击“查看云端快照”。')
+            const Text('填写地址后点击“查看云端备份”。')
           else
             for (final WebDavSnapshot snapshot in _snapshots)
               Card(
@@ -333,7 +344,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
                   subtitle: Text(switch (_previews[snapshot.name]) {
                     final BackupSummary summary =>
                       '${summary.dateLabel} · ${summary.sizeLabel}',
-                    null => '点击下载、校验并预览书名和大小',
+                    null => '点击查看备份内容',
                   }),
                   trailing: const Icon(Icons.chevron_right),
                   enabled: !_busy,

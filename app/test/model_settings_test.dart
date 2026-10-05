@@ -219,7 +219,7 @@ void main() {
     expect(settings.file.existsSync(), false);
     await tap(tester, '测试并保存');
     expect(pending.calls, 0);
-    expect(find.textContaining('还没有填写模型 API 密钥'), findsOneWidget);
+    expect(find.textContaining('请先填写服务密钥'), findsOneWidget);
     expect(settings.file.existsSync(), false);
   });
 
@@ -280,7 +280,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(pending.calls, 1);
       expect(settings.read().$2, 'broken-model');
-      expect(find.textContaining('但未验证连接'), findsOneWidget);
+      expect(find.textContaining('还未测试连接'), findsOneWidget);
     },
   );
 
@@ -335,7 +335,7 @@ void main() {
     seed();
     await open(tester);
     await tap(tester, '清除');
-    await tester.enterText(field('API 密钥'), 'new-fixture-key');
+    await tester.enterText(field('服务密钥'), 'new-fixture-key');
     await tap(tester, '测试并保存');
     expect(settings.read().$3, 'saved-fixture-key');
     expect(
@@ -372,7 +372,7 @@ void main() {
       );
       await tester.tap(find.text('其他服务的密钥（可选）'));
       await tester.pumpAndSettle();
-      final Finder jev = field('TypeSafe AI / Jev API 密钥');
+      final Finder jev = field('TypeSafe AI / Jev 服务密钥');
       await tester.scrollUntilVisible(
         jev,
         240,
@@ -396,28 +396,28 @@ void main() {
       final String before = settings.file.readAsStringSync();
       await open(tester);
       await tap(tester, 'DeepSeek');
-      expect(find.textContaining('独立 API 密钥'), findsOneWidget);
-      expect(field('API 密钥'), findsOneWidget);
-      expect(tester.widget<TextField>(field('API 密钥')).controller!.text, '');
+      expect(find.textContaining('服务已更换，请填写对应的密钥'), findsOneWidget);
+      expect(field('服务密钥'), findsOneWidget);
+      expect(tester.widget<TextField>(field('服务密钥')).controller!.text, '');
       await tap(tester, '测试并保存');
       expect(pending.calls, 0);
       expect(settings.file.readAsStringSync(), before);
       await tester.scrollUntilVisible(
-        field('API 密钥'),
+        field('服务密钥'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.enterText(field('API 密钥'), 'deepseek-fixture-key');
+      await tester.enterText(field('服务密钥'), 'deepseek-fixture-key');
       await tap(tester, 'OpenAI');
-      expect(find.textContaining('独立 API 密钥'), findsNothing);
+      expect(find.textContaining('服务已更换，请填写对应的密钥'), findsNothing);
       expect(
         tester.widget<TextField>(field('模型')).controller!.text,
         'saved-model',
       );
-      expect(field('API 密钥'), findsNothing);
+      expect(field('服务密钥'), findsNothing);
       await tap(tester, 'DeepSeek');
       expect(
-        tester.widget<TextField>(field('API 密钥')).controller!.text,
+        tester.widget<TextField>(field('服务密钥')).controller!.text,
         'deepseek-fixture-key',
       );
       await tap(tester, 'OpenAI');
@@ -438,20 +438,20 @@ void main() {
       seed();
       await open(tester);
       await tap(tester, '更换');
-      await tester.enterText(field('API 密钥'), 'replacement-fixture-key');
+      await tester.enterText(field('服务密钥'), 'replacement-fixture-key');
       await tester.scrollUntilVisible(
-        field('接口地址'),
+        field('服务地址'),
         -200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.enterText(field('接口地址'), 'https://other.invalid/v1');
+      await tester.enterText(field('服务地址'), 'https://other.invalid/v1');
       await tester.pump();
-      expect(find.textContaining('独立 API 密钥'), findsOneWidget);
-      expect(tester.widget<TextField>(field('API 密钥')).controller!.text, '');
-      await tester.enterText(field('接口地址'), 'https://offline.invalid/v1');
+      expect(find.textContaining('服务已更换，请填写对应的密钥'), findsOneWidget);
+      expect(tester.widget<TextField>(field('服务密钥')).controller!.text, '');
+      await tester.enterText(field('服务地址'), 'https://offline.invalid/v1');
       await tester.pump();
       expect(
-        tester.widget<TextField>(field('API 密钥')).controller!.text,
+        tester.widget<TextField>(field('服务密钥')).controller!.text,
         'replacement-fixture-key',
       );
       expect(pending.calls, 0);
@@ -566,11 +566,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text(label).last);
       await tester.pumpAndSettle();
-      expect(find.textContaining('独立 API 密钥'), findsOneWidget);
-      await tester.enterText(field('接口地址'), 'https://custom.invalid/proxy');
+      expect(find.textContaining('服务已更换，请填写对应的密钥'), findsOneWidget);
+      await tester.enterText(field('服务地址'), 'https://custom.invalid/proxy');
       await tester.enterText(field('模型'), 'fixture');
-      await tester.ensureVisible(field('API 密钥'));
-      await tester.enterText(field('API 密钥'), 'offline-new-key');
+      await tester.ensureVisible(field('服务密钥'));
+      await tester.enterText(field('服务密钥'), 'offline-new-key');
       await tap(tester, '测试并保存');
       expect(settings.file.readAsStringSync(), before);
       expect(pending.requests.single.url.path, '/proxy$suffix');

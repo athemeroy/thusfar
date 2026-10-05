@@ -87,7 +87,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('列出远端快照'));
+    await tester.tap(find.text('列出远端备份'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('2026-10-05 01:02:03 UTC'));
     return navigator;
@@ -124,7 +124,8 @@ void main() {
     await open(tester, library, _Client());
     await tester.tap(find.text('2026-10-05 01:02:03 UTC'));
     await tester.pump(const Duration(milliseconds: 400));
-    expect(find.textContaining('Synthetic conflict'), findsOneWidget);
+    expect(find.textContaining('Synthetic conflict'), findsNothing);
+    expect(find.textContaining('这份备份与现有内容不同'), findsOneWidget);
     expect(find.text('导入到此浏览器'), findsNothing);
     expect(library.imports, 0);
     await tester.tap(find.text('取消'));
@@ -148,7 +149,7 @@ void main() {
       expect(client.disposed, 1);
       library.previewGate!.complete('fixture');
       await tester.pumpAndSettle();
-      expect(find.text('远端书籍快照'), findsNothing);
+      expect(find.text('远端书籍备份'), findsNothing);
       expect(library.imports, 0);
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(tester.takeException(), isNull);

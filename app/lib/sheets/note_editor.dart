@@ -115,9 +115,9 @@ class _NoteEditorState extends State<NoteEditor> {
           error = '旧版草稿缺少原文与阅读位置记录，未自动显示。原始文件仍保留，本次编辑已锁定以避免剧透或覆盖。';
         }
       }
-    } on Object catch (e) {
+    } on Object {
       _draftBlocked = true;
-      error = '草稿读取失败，原始内容仍保留。本次编辑已锁定以避免覆盖：$e';
+      error = '暂时无法读取草稿。原稿已保留，请稍后重新打开。';
     }
     if (((widget.existing?['knowledge_cutoff'] as num?)?.toInt() ?? 0) >
             widget.cutoff ||
@@ -146,8 +146,8 @@ class _NoteEditorState extends State<NoteEditor> {
           revision: _baseRevision,
         ).write(widget.draftDir);
       }
-    } on Object catch (e) {
-      setState(() => error = '草稿保存失败，请保留当前输入：$e');
+    } on Object {
+      setState(() => error = '草稿未能保存，请先复制并保留当前文字。');
     }
   }
 
@@ -180,8 +180,8 @@ class _NoteEditorState extends State<NoteEditor> {
         _recovered = false;
         error = null;
       });
-    } on Object catch (e) {
-      setState(() => error = '草稿未能清除：$e');
+    } on Object {
+      setState(() => error = '草稿未能删除，请稍后重试。');
     }
   }
 
@@ -204,8 +204,8 @@ class _NoteEditorState extends State<NoteEditor> {
         text: text.text.trim(),
         cutoff: widget.cutoff,
       );
-    } on Object catch (e) {
-      setState(() => error = '$e');
+    } on Object {
+      setState(() => error = '操作未完成，请保留当前文字，稍后重试。');
       return;
     }
     // The note is already durable. A draft cleanup failure must not leave a
@@ -220,8 +220,8 @@ class _NoteEditorState extends State<NoteEditor> {
           );
           if (legacy.existsSync()) legacy.deleteSync();
         }
-      } on Object catch (e) {
-        cleanupError = '笔记已保存，草稿清理失败：$e';
+      } on Object {
+        cleanupError = '笔记已保存，旧草稿未能删除。';
       }
     }
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
@@ -268,8 +268,8 @@ class _NoteEditorState extends State<NoteEditor> {
       widget.book.notes.delete(widget.existing!);
       if (_draft.existsSync()) _draft.deleteSync();
       Navigator.of(context).pop();
-    } on Object catch (e) {
-      setState(() => error = '$e');
+    } on Object {
+      setState(() => error = '操作未完成，请保留当前文字，稍后重试。');
     }
   }
 

@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' show DisplayFeatureState, DisplayFeatureType;
@@ -457,7 +458,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              error is PyException ? error.message : '摘记未能保存，请检查存储空间后重试',
+              readerMessage(
+                error is PyException ? error.message : null,
+                fallback: '摘记未能保存，请检查剩余空间后重试。',
+              ),
             ),
           ),
         );
@@ -497,7 +501,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   SnackBar(
                     content: Text(
                       error is PyException
-                          ? error.message
+                          ? readerMessage(
+                              error.message,
+                              fallback: '撤销未能完成，请重新打开摘记后重试。',
+                            )
                           : '撤销未能完成，请重新打开摘记后重试',
                     ),
                   ),
@@ -1608,9 +1615,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   _openBookSheet();
                 case 1:
                   Clipboard.setData(ClipboardData(text: notesMarkdown(book)));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('摘记已复制为 Markdown')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('摘记已复制')));
                 case 2:
                   c.setToolbar(false);
                   openTypography(
