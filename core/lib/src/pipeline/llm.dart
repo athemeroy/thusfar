@@ -11,6 +11,7 @@ import '../env.dart';
 import '../errors.dart';
 import '../py/py_json_decode.dart';
 import '../py/py_re.dart';
+import 'request_diagnostics.dart';
 import 'request_lifecycle.dart';
 import 'run_lease.dart';
 
@@ -378,6 +379,7 @@ final class ChatResponse {
     this.contentType,
     this.body, {
     this.headers = const <String, String>{},
+    this.diagnostics,
   });
 
   final int status;
@@ -386,6 +388,7 @@ final class ChatResponse {
 
   /// Response headers that matter to retries, e.g. `Retry-After`.
   final Map<String, String> headers;
+  final ModelRequestTrace? diagnostics;
 }
 
 /// `dart:io` transport honouring system proxies like urllib does.
@@ -401,10 +404,12 @@ final class IoTransport implements ChatTransport {
   Future<ChatResponse> post(ChatRequest request, Duration timeout) async {
     final RunCancellation? cancellation = RunCancellation.current;
     cancellation?.checkpoint();
+    final ModelRequestTrace? trace = ModelRequestTrace.current;
     HttpClientRequest? active;
     bool abandoned = false;
     final void Function()? remove = cancellation?.onCancel(() {
       abandoned = true;
+      if (active != null) trace?.record('abort_requested', code: 'cancelled');
       active?.abort(const Cancelled());
     });
     Future<T> wait<T>(Future<T> operation) =>
@@ -416,12 +421,16 @@ final class IoTransport implements ChatTransport {
       unawaited(
         opening.then<void>((HttpClientRequest req) {
           active = req;
-          if (abandoned) req.abort();
+          if (abandoned) {
+            trace?.record('abort_requested', code: 'late_open_abandoned');
+            req.abort();
+          }
         }, onError: (Object _, StackTrace __) {}),
       );
       final HttpClientRequest req = await wait(opening.timeout(timeout));
       cancellation?.checkpoint();
       request.headers.forEach(req.headers.set);
+      trace?.record('send_started');
       req.add(utf8.encode(request.body));
       final HttpClientResponse resp = await wait(req.close().timeout(timeout));
       final String? retry = resp.headers.value('retry-after');
@@ -431,8 +440,14 @@ final class IoTransport implements ChatTransport {
         resp.timeout(timeout),
         headers: <String, String>{if (retry != null) 'Retry-After': retry},
       );
-    } on Object {
+    } on Object catch (error) {
       abandoned = true;
+      if (active != null) {
+        trace?.record(
+          'abort_requested',
+          code: ModelRequestTrace.exceptionCode(error),
+        );
+      }
       active?.abort();
       rethrow;
     } finally {
@@ -445,48 +460,109 @@ ChatTransport transport = IoTransport();
 
 /// Stop receiving a response immediately. Transport cleanup may complete only
 /// after its event loop advances, so it must not extend the request deadline.
-Future<void> _cancelResponse<T>(StreamIterator<T> iterator) async {
+Future<void> _cancelResponse<T>(
+  StreamIterator<T> iterator, [
+  ModelRequestTrace? trace,
+]) async {
+  trace?.record('body_cancel_requested');
   try {
     await iterator.cancel();
-  } on Object {
+    trace?.record('body_cancelled');
+  } on Object catch (error) {
+    trace?.record(
+      'body_cancel_error',
+      code: ModelRequestTrace.exceptionCode(error),
+    );
     // The request has already finished or failed; retain that outcome.
   }
 }
 
 /// Close a response whose body will not be parsed (e.g. ambiguous gateway errors).
 Future<void> discardChatResponse(ChatResponse response) =>
-    _disposeResponseBody(response.body);
+    _disposeResponseBody(response.body, response.diagnostics);
 
-Future<void> _disposeResponseBody(Stream<List<int>> body) async {
+Future<void> _disposeResponseBody(
+  Stream<List<int>> body, [
+  ModelRequestTrace? trace,
+]) async {
+  trace?.record('body_cancel_requested');
   try {
     // StreamIterator does not subscribe before moveNext; use a real
     // subscription so an unconsumed late response releases its socket too.
     await body.listen((_) {}, onError: (Object _) {}).cancel();
-  } on Object {
+    trace?.record('body_cancelled');
+  } on Object catch (error) {
+    trace?.record(
+      'body_cancel_error',
+      code: ModelRequestTrace.exceptionCode(error),
+    );
     // Preserve the already-established request outcome.
   }
 }
 
 /// Observe late headers after cancellation/deadline and dispose their body.
 /// The native transport also aborts its socket before headers are available.
-Future<ChatResponse> postRequest(ChatRequest request, Duration timeout) async {
+Future<ChatResponse> postRequest(
+  ChatRequest request,
+  Duration timeout, {
+  ModelRequestTrace? trace,
+}) async {
   final RunCancellation? cancellation = RunCancellation.current;
   cancellation?.checkpoint();
   bool abandoned = false;
   ChatResponse? arrived;
-  final Future<ChatResponse> pending = transport.post(request, timeout);
+  final Future<ChatResponse> pending =
+      trace == null
+          ? transport.post(request, timeout)
+          : trace.run(() => transport.post(request, timeout));
   unawaited(
     pending.then<void>((ChatResponse response) {
       arrived = response;
-      if (abandoned) unawaited(_disposeResponseBody(response.body));
+      trace?.record('headers', httpStatus: response.status);
+      if (abandoned) unawaited(_disposeResponseBody(response.body, trace));
     }, onError: (Object _, StackTrace __) {}),
   );
   try {
     final Future<ChatResponse> bounded = pending.timeout(timeout);
-    return await (cancellation?.wait(bounded) ?? bounded);
-  } on Object {
+    final ChatResponse response =
+        await (cancellation?.wait(bounded) ?? bounded);
+    if (trace == null) return response;
+    return ChatResponse(
+      response.status,
+      response.contentType,
+      response.body.transform(
+        StreamTransformer<List<int>, List<int>>.fromHandlers(
+          handleData: (List<int> bytes, EventSink<List<int>> sink) {
+            trace.bytes(bytes.length);
+            sink.add(bytes);
+          },
+          handleError: (
+            Object error,
+            StackTrace stack,
+            EventSink<List<int>> sink,
+          ) {
+            trace.record(
+              'body_error',
+              code: ModelRequestTrace.exceptionCode(error),
+            );
+            sink.addError(error, stack);
+          },
+          handleDone: (EventSink<List<int>> sink) {
+            trace.record('body_done');
+            sink.close();
+          },
+        ),
+      ),
+      headers: response.headers,
+      diagnostics: trace,
+    );
+  } on Object catch (error) {
+    trace?.record(
+      'transport_error',
+      code: ModelRequestTrace.exceptionCode(error),
+    );
     abandoned = true;
-    if (arrived != null) unawaited(_disposeResponseBody(arrived!.body));
+    if (arrived != null) unawaited(_disposeResponseBody(arrived!.body, trace));
     rethrow;
   }
 }
@@ -609,6 +685,7 @@ Future<ChatResult> chat(
               remaining().inMilliseconds,
             ),
           ),
+          trace: receipt?.trace,
         ).timeout(remaining()),
       );
       if (resp.status >= 400) {
@@ -621,7 +698,7 @@ Future<ChatResult> chat(
           422,
           429,
         }.contains(resp.status)) {
-          unawaited(_disposeResponseBody(resp.body));
+          unawaited(_disposeResponseBody(resp.body, receipt?.trace));
           throw const UnknownOutcomeLLMError('provider_outcome_unknown');
         }
         receipt?.rejected();
@@ -649,7 +726,7 @@ Future<ChatResult> chat(
             raw.addAll(chunks.current);
           }
         } finally {
-          if (!exhausted) unawaited(_cancelResponse(chunks));
+          if (!exhausted) unawaited(_cancelResponse(chunks, receipt?.trace));
         }
         final String safe = redactSecrets(
           utf8.decode(raw.take(readLimit).toList(), allowMalformed: true),
@@ -664,7 +741,7 @@ Future<ChatResult> chat(
       if (resp.contentType.contains('text/html')) {
         responseSettled = true;
         receipt?.rejected();
-        unawaited(_disposeResponseBody(resp.body));
+        unawaited(_disposeResponseBody(resp.body, receipt?.trace));
         throw LLMError('NOT_API: 接口地址返回的是网页，不是模型接口：${req.url}');
       }
       final StringBuffer parts = StringBuffer();
@@ -718,7 +795,7 @@ Future<ChatResult> chat(
           }
         }
       } finally {
-        if (!exhausted) unawaited(_cancelResponse(lines));
+        if (!exhausted) unawaited(_cancelResponse(lines, receipt?.trace));
       }
       if (!complete) throw const UnknownOutcomeLLMError('incomplete_response');
       receipt?.received();

@@ -3,6 +3,7 @@ package com.yedu.zhupi
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -67,6 +68,11 @@ class MainActivity : FlutterActivity() {
         ProcessingEngineHost.requestNotificationPermission = null
         ProcessingRuntimeDiagnostics.record(this, "activity_paused")
         super.onPause()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        ProcessingRuntimeDiagnostics.record(this, "activity_configuration_changed")
     }
 
     override fun onStop() {

@@ -84,6 +84,24 @@ class ProcessingNotificationBridge {
     }
   }
 
+  static Future<void> recordWorkerHeartbeat(Map<String, Object?> sample) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _channel.invokeMethod<void>('workerHeartbeat', <String, Object?>{
+        'ui_at_ms': DateTime.now().millisecondsSinceEpoch,
+        for (final String key in <String>[
+          'at_ms',
+          'elapsed_ms',
+          'gap_ms',
+          'sequence',
+        ])
+          if (sample[key] is int) key: sample[key],
+      });
+    } on Object {
+      // A failed diagnostic channel cannot affect request ownership.
+    }
+  }
+
   /// Drain the book ID from a notification tap after the library is ready.
   static Future<String?> takeOpenedBookId() async {
     if (!Platform.isAndroid) return null;

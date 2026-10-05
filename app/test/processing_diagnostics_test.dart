@@ -118,6 +118,105 @@ void main() {
     );
   });
 
+  test(
+    'request and heartbeat export retains cause and rejects arbitrary strings',
+    () {
+      const String secret = 'PRIVATE-BODY-URL-KEY-EXCEPTION';
+      void save(String path, Object value) =>
+          File('${book.path}/$path').writeAsStringSync(jsonEncode(value));
+      save('status.json', <String, Object?>{
+        'state': 'paused',
+        'error': '上次请求结果不确定',
+        'failure_code': 'network_interrupted',
+      });
+      save('work/model-request-journal.json', <String, Object?>{
+        'requests': <Object?>[
+          <String, Object?>{
+            'id': 1,
+            'phase': 'unknown',
+            'code': 'network_interrupted',
+            'key': secret,
+          },
+        ],
+      });
+      save('work/model-request-diagnostics.json', <String, Object?>{
+        'id_scope': secret,
+        'attempts': <Object?>[
+          for (int i = 0; i < 40; i++)
+            <String, Object?>{
+              'id': i,
+              'run_id': 1234,
+              'phase': i == 39 ? secret : 'unknown',
+              'code': 'network_interrupted',
+              'last_byte_at_ms': 2000,
+              'bytes_received': 10,
+              'url': secret,
+              'events': <Object?>[
+                for (int j = 0; j < 20; j++)
+                  <String, Object?>{
+                    'event': 'transport_error',
+                    'code': j == 0 ? secret : 'socket_exception',
+                    'at_ms': 2100,
+                    'message': secret,
+                  },
+              ],
+            },
+        ],
+      });
+      save('work/worker-heartbeat.json', <String, Object?>{
+        'samples': <Object?>[
+          for (int i = 0; i < 80; i++)
+            <String, Object?>{
+              'sequence': i,
+              'gap_ms': 15000,
+              'finished': false,
+              'message': secret,
+            },
+        ],
+      });
+      final String encoded = utf8.decode(
+        ProcessingDiagnostics.bytes(
+          bookDirectory: book,
+          workerHealth: const <String, Object?>{},
+          backgroundRuntime: <String, Object?>{
+            'heartbeats': <Object?>[
+              <String, Object?>{
+                'event': 'worker_heartbeat',
+                'worker_at_ms': 3000,
+                'ui_at_ms': 3100,
+                'at_ms': 3200,
+                'worker_gap_ms': 15000,
+                'process_importance': 125,
+                'secret': secret,
+              },
+            ],
+          },
+        ),
+      );
+      expect(encoded, isNot(contains(secret)));
+      final Map<String, Object?> output =
+          jsonDecode(encoded) as Map<String, Object?>;
+      expect(
+        (output['status']! as Map<String, Object?>)['failure_code'],
+        'network_interrupted',
+      );
+      final Map<String, Object?> requests =
+          output['model_requests']! as Map<String, Object?>;
+      expect(requests['id_scope'], 'local_only');
+      expect(requests['unsettled'], hasLength(1));
+      final List<Object?> attempts = requests['attempts']! as List<Object?>;
+      expect(attempts, hasLength(32));
+      expect((attempts.last! as Map<String, Object?>)['events'], hasLength(16));
+      expect(output['worker_heartbeats'], hasLength(64));
+      final List<Object?> beats =
+          (output['android_runtime']! as Map<String, Object?>)['heartbeats']!
+              as List<Object?>;
+      expect((beats.single! as Map<String, Object?>)['worker_at_ms'], 3000);
+      expect((beats.single! as Map<String, Object?>)['at_ms'], 3200);
+      expect((beats.single! as Map<String, Object?>)['ui_at_ms'], 3100);
+    },
+  );
+
   test('file name is stable and does not include a book title', () {
     expect(
       ProcessingDiagnostics.fileName(DateTime(2026, 9, 27, 16, 8, 9)),

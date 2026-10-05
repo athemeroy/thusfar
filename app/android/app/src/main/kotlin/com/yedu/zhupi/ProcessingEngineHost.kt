@@ -97,6 +97,19 @@ internal object ProcessingEngineHost {
                     result.success(prefs.getStringSet("background_limit_books", emptySet())?.toList() ?: emptyList<String>())
                     prefs.edit().remove("background_limit_books").apply()
                 }
+                "workerHeartbeat" -> {
+                    val sample = mutableMapOf<String, Long>()
+                    for (key in setOf("at_ms", "elapsed_ms", "gap_ms", "sequence")) {
+                        call.argument<Number>(key)?.toLong()?.takeIf { it >= 0 }?.let {
+                            sample["worker_$key"] = it
+                        }
+                    }
+                    call.argument<Number>("ui_at_ms")?.toLong()?.takeIf { it >= 0 }?.let {
+                        sample["ui_at_ms"] = it
+                    }
+                    ProcessingRuntimeDiagnostics.record(app, "worker_heartbeat", sample = sample)
+                    result.success(null)
+                }
                 "diagnostics" -> result.success(ProcessingRuntimeDiagnostics.snapshot(app))
                 "lifecycle" -> {
                     val state = call.argument<String>("state")

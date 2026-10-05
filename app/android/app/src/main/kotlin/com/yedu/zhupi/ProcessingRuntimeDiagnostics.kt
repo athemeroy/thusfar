@@ -20,23 +20,31 @@ internal object ProcessingRuntimeDiagnostics {
     private const val LIMIT = 64
 
     @Synchronized
-    fun record(context: Context, event: String, failure: Throwable? = null) {
+    fun record(context: Context, event: String, failure: Throwable? = null,
+               sample: Map<String, Long> = emptyMap()) {
         val row = JSONObject()
             .put("event", event)
             .put("at_ms", System.currentTimeMillis())
             .put("elapsed_ms", SystemClock.elapsedRealtime())
             .put("uptime_ms", SystemClock.uptimeMillis())
             .put("pid", Process.myPid())
+        val process = ActivityManager.RunningAppProcessInfo()
+        ActivityManager.getMyMemoryState(process)
+        row.put("process_importance", process.importance)
+        for (key in setOf("worker_at_ms", "worker_elapsed_ms", "worker_gap_ms", "worker_sequence", "ui_at_ms")) {
+            sample[key]?.let { row.put(key, it) }
+        }
         failure?.let { row.put("error_type", it.javaClass.simpleName) }
         Log.i(TAG, row.toString())
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        val previous = try { JSONArray(prefs.getString("events", "[]")) } catch (_: Exception) { JSONArray() }
+        val key = if (event == "native_heartbeat" || event == "worker_heartbeat") "heartbeats" else "events"
+        val previous = try { JSONArray(prefs.getString(key, "[]")) } catch (_: Exception) { JSONArray() }
         val events = JSONArray()
         for (index in maxOf(0, previous.length() - LIMIT + 1) until previous.length()) {
             events.put(previous.get(index))
         }
         events.put(row)
-        prefs.edit().putString("events", events.toString()).apply()
+        prefs.edit().putString(key, events.toString()).apply()
     }
 
     fun snapshot(context: Context): Map<String, Any?> {
@@ -46,6 +54,7 @@ internal object ProcessingRuntimeDiagnostics {
         val capabilities = network.getNetworkCapabilities(network.activeNetwork)
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val events = try { JSONArray(prefs.getString("events", "[]")) } catch (_: Exception) { JSONArray() }
+        val heartbeats = try { JSONArray(prefs.getString("heartbeats", "[]")) } catch (_: Exception) { JSONArray() }
         return mapOf(
             "sdk" to Build.VERSION.SDK_INT,
             "pid" to Process.myPid(),
@@ -62,6 +71,10 @@ internal object ProcessingRuntimeDiagnostics {
             "background_data_restriction" to network.restrictBackgroundStatus,
             "notifications_enabled" to context.getSystemService(NotificationManager::class.java).areNotificationsEnabled(),
             "service" to ProcessingNotificationService.runtimeState(),
+            "heartbeats" to (0 until heartbeats.length()).map { index ->
+                val row = heartbeats.getJSONObject(index)
+                row.keys().asSequence().associateWith { row.get(it) }
+            },
             "events" to (0 until events.length()).map { index ->
                 val row = events.getJSONObject(index)
                 row.keys().asSequence().associateWith { row.get(it) }

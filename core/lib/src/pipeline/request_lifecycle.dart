@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'request_diagnostics.dart';
+
 typedef _Json = Map<String, Object?>;
 
 File _journal(Directory root) =>
@@ -31,12 +33,14 @@ void acknowledgeUnsettledModelRequests(Directory root) {
 }
 
 final class ModelRequestScope {
-  ModelRequestScope(this.root);
+  ModelRequestScope(this.root) : _diagnostics = ModelRequestDiagnostics(root);
   static final Object _zoneKey = Object();
   static ModelRequestScope? get current =>
       Zone.current[_zoneKey] as ModelRequestScope?;
 
   final Directory root;
+  final ModelRequestDiagnostics _diagnostics;
+  final List<ModelRequestTrace> _traces = <ModelRequestTrace>[];
   final Map<int, _Json> _requests = <int, _Json>{};
   int _next = 0;
   bool _touched = false;
@@ -50,7 +54,10 @@ final class ModelRequestScope {
     final int id = ++_next;
     _requests[id] = <String, Object?>{'id': id, 'phase': 'inflight'};
     _save(); // Must succeed before dispatch, otherwise there is no request.
-    return ModelRequestReceipt._(this, id);
+    final ModelRequestTrace trace = _diagnostics.begin(id);
+    _traces.add(trace);
+    if (_traces.length > 32) _traces.removeAt(0);
+    return ModelRequestReceipt._(this, id, trace);
   }
 
   void _save() {
@@ -71,6 +78,14 @@ final class ModelRequestScope {
   /// Keep ambiguous receipts; a restart cannot infer their server outcome.
   void settle({bool receivedCommitted = false}) {
     if (!_touched) return;
+    for (final ModelRequestTrace trace in _traces) {
+      trace.record(
+        'run_settled',
+        receivedCommitted: receivedCommitted,
+        persist: false,
+      );
+    }
+    _diagnostics.flush();
     if (receivedCommitted) {
       _requests.removeWhere((_, value) => value['phase'] == 'received');
     }
@@ -83,7 +98,8 @@ final class ModelRequestScope {
 }
 
 final class ModelRequestReceipt {
-  ModelRequestReceipt._(this._scope, this._id);
+  ModelRequestReceipt._(this._scope, this._id, this.trace);
+  final ModelRequestTrace trace;
   final ModelRequestScope _scope;
   final int _id;
   bool _settled = false;
@@ -93,6 +109,7 @@ final class ModelRequestReceipt {
     _settled = true;
     _scope._requests[_id]!['phase'] = 'received';
     _scope._save();
+    trace.finish('received');
   }
 
   void rejected() {
@@ -100,6 +117,7 @@ final class ModelRequestReceipt {
     _settled = true;
     _scope._requests.remove(_id);
     _scope._save();
+    trace.finish('rejected');
   }
 
   void unknown(String code) {
@@ -110,5 +128,6 @@ final class ModelRequestReceipt {
       'code': code,
     });
     _scope._save();
+    trace.finish('unknown', code: code);
   }
 }

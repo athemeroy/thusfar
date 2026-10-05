@@ -20,6 +20,7 @@ import 'library.dart';
 import 'model_settings.dart';
 import 'processing_background_session.dart';
 import 'processing_notification_bridge.dart';
+import 'processing_worker_heartbeat.dart';
 
 /// UI contract; tests substitute a worker without making model requests.
 abstract class BookProcessing extends ChangeNotifier {
@@ -177,6 +178,12 @@ class ProcessingController extends BookProcessing {
           if (!ready.isCompleted) ready.complete();
         } else if (message['heartbeat'] == true) {
           _background.workerHeartbeat();
+          final Object? sample = message['sample'];
+          if (sample is Map<String, Object?>) {
+            unawaited(
+              ProcessingNotificationBridge.recordWorkerHeartbeat(sample),
+            );
+          }
         } else if (message['health'] is Map<String, Object?>) {
           final Map<String, Object?> health =
               message['health']! as Map<String, Object?>;
@@ -385,6 +392,7 @@ Future<void> _processingIsolate(List<Object?> args) async {
     );
   }
 
+  ProcessingWorkerHeartbeat? activeHeartbeat;
   final Worker worker = Worker(
     Directory('${data.path}/books'),
     resumeInterrupted: true,
@@ -399,6 +407,11 @@ Future<void> _processingIsolate(List<Object?> args) async {
           required int concurrency,
         }) async {
           final ReceivePort reply = ReceivePort();
+          final ProcessingWorkerHeartbeat journal = ProcessingWorkerHeartbeat(
+            root,
+          );
+          activeHeartbeat = journal;
+          journal.record();
           try {
             parent.send(<String, Object?>{
               'backgroundStart': root.uri.pathSegments
@@ -420,6 +433,8 @@ Future<void> _processingIsolate(List<Object?> args) async {
               concurrency: concurrency,
             );
           } finally {
+            journal.record(finished: true);
+            if (identical(activeHeartbeat, journal)) activeHeartbeat = null;
             reply.close();
           }
         },
@@ -458,7 +473,10 @@ Future<void> _processingIsolate(List<Object?> args) async {
     final Map<String, Object?> health = worker.health();
     if (health['current'] != null ||
         ((health['queued'] as List<Object?>?) ?? const []).isNotEmpty) {
-      parent.send(<String, Object?>{'heartbeat': true});
+      parent.send(<String, Object?>{
+        'heartbeat': true,
+        'sample': activeHeartbeat?.record(),
+      });
     }
   });
   commands.listen((Object? raw) async {

@@ -19,6 +19,7 @@ import 'judge_context.dart';
 import 'llm.dart';
 import 'models.dart' as pricing;
 import 'provenance.dart';
+import 'request_diagnostics.dart';
 import 'request_lifecycle.dart';
 import 'run_lease.dart';
 
@@ -730,6 +731,7 @@ Future<Object?> _postJson(
       postRequest(
         ChatRequest(Uri.parse(url), headers, body),
         Duration(microseconds: (timeout * 1e6).round()),
+        trace: receipt?.trace,
       ),
     );
     if (resp.status >= 400) {
@@ -757,7 +759,20 @@ Future<Object?> _postJson(
         if (raw.length > 16 * 1024 * 1024) throw const LLMError('模型响应超过大小上限');
       }
     } finally {
-      unawaited(chunks.cancel().catchError((Object _) {}));
+      receipt?.trace.record('body_cancel_requested');
+      unawaited(
+        chunks.cancel().then<void>(
+          (_) {
+            receipt?.trace.record('body_cancelled');
+          },
+          onError: (Object error) {
+            receipt?.trace.record(
+              'body_cancel_error',
+              code: ModelRequestTrace.exceptionCode(error),
+            );
+          },
+        ),
+      );
     }
     receipt?.received();
   } on Cancelled {

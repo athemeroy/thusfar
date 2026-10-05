@@ -48,6 +48,7 @@ jobs:
             test/http/http_server_test.dart \
             test/jobs/jobs_test.dart test/pipeline/llm_timeout_test.dart \
             test/pipeline/request_interruption_test.dart \
+            test/pipeline/request_diagnostics_test.dart \
             test/pipeline/jev_model_fallback_test.dart \
             test/run_lifecycle/disconnect_recovery_test.dart \
             test/run_lifecycle/bio_reliability_test.dart \
@@ -78,6 +79,7 @@ jobs:
             test/portable_work_test.dart test/webdav_test.dart test/webdav_screen_test.dart \
             test/people_search_test.dart test/processing_test.dart \
             test/processing_background_session_test.dart \
+            test/processing_worker_heartbeat_test.dart \
             test/preparation_plan_test.dart \
             test/processing_diagnostics_test.dart \
             test/reader_regression_test.dart test/selection_bounds_test.dart \

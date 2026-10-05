@@ -27,6 +27,8 @@ final class RunCancellation {
   final Completer<void> _signal = Completer<void>();
   final Set<void Function()> _listeners = <void Function()>{};
   bool get isCancelled => _signal.isCompleted;
+  String? get reason => _reason;
+  String? _reason;
   Future<void> get whenCancelled => _signal.future;
 
   /// Scope all model requests to this run without process-global cancellation.
@@ -43,8 +45,17 @@ final class RunCancellation {
     return () => _listeners.remove(listener);
   }
 
-  void cancel() {
+  void cancel({String reason = 'unspecified'}) {
     if (isCancelled) return;
+    _reason =
+        const <String>{
+              'user',
+              'background_time_limit',
+              'background_unavailable',
+              'worker_close',
+            }.contains(reason)
+            ? reason
+            : 'unspecified';
     _signal.complete();
     final List<void Function()> listeners = _listeners.toList();
     _listeners.clear();

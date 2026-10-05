@@ -605,14 +605,14 @@ class Worker {
     }
     // Mark intent before the first await, so a rapid resume cannot flip auto
     // back on while this run is already leaving its cancellation boundary.
-    if (_current == id) _cancellation?.cancel();
+    if (_current == id) _cancellation?.cancel(reason: reason.value);
     if (!preserveAuto) {
       await setAuto(root, false, preserveQualityRetry: true);
     }
     _queue.remove(id);
     final Completer<void>? active = _current == id ? _currentDone : null;
     if (active != null) {
-      _cancellation!.cancel();
+      _cancellation!.cancel(reason: reason.value);
       final Json state = _json(root, 'status.json');
       state.addAll(<String, Object?>{
         'state': 'cancelling',
@@ -1097,7 +1097,7 @@ class Worker {
     _timer = null;
     _retryTimer?.cancel();
     _retryTimer = null;
-    _cancellation?.cancel();
+    _cancellation?.cancel(reason: 'worker_close');
     _queue.clear();
     if (_current == null) _alive = false;
     _notify();

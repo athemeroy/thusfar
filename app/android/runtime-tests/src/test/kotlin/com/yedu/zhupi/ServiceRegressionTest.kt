@@ -320,6 +320,7 @@ class ServiceRegressionTest {
                 "notifications_enabled",
                 "service",
                 "events",
+                "heartbeats",
             ),
             snapshot.keys,
         )
@@ -327,6 +328,40 @@ class ServiceRegressionTest {
         assertTrue(snapshot["network_validated"] is Boolean)
         assertTrue(snapshot["network_metered"] is Boolean)
         assertTrue(snapshot["background_data_restriction"] is Int)
+    }
+
+    @Test
+    fun heartbeatsCannotEvictLifecycleOrPersistUnapprovedSampleFields() {
+        ProcessingRuntimeDiagnostics.record(app, "activity_stopped")
+        repeat(80) { index ->
+            ProcessingRuntimeDiagnostics.record(app, "worker_heartbeat", sample = mapOf(
+                "worker_at_ms" to index.toLong(),
+                "worker_elapsed_ms" to (index * 15000L),
+                "worker_gap_ms" to 15000L,
+                "worker_sequence" to index.toLong(),
+                "PRIVATE_SENTINEL" to 123L,
+            ))
+        }
+        val prefs = app.getSharedPreferences("processing_runtime_diagnostics", Context.MODE_PRIVATE)
+        val raw = prefs.getString("heartbeats", "[]")!!
+        assertFalse(raw.contains("PRIVATE_SENTINEL"))
+        val beats = org.json.JSONArray(raw)
+        assertEquals(64, beats.length())
+        assertEquals(79L, beats.getJSONObject(63).getLong("worker_at_ms"))
+        assertTrue(beats.getJSONObject(63).has("process_importance"))
+        assertTrue(prefs.getString("events", "[]")!!.contains("activity_stopped"))
+    }
+
+    @Test
+    fun nativeSamplingDoesNotRenewLeaseAndStopsWithTheLastTask() {
+        val service = start()
+        val field = ProcessingNotificationService::class.java.getDeclaredField("diagnosticThread")
+        field.isAccessible = true
+        assertNotNull(field.get(service))
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMinutes(11))
+        assertEquals(false, state()["wake_lock_held"])
+        ProcessingNotificationService.stop(app, "book1")
+        assertNull(field.get(service))
     }
 
     @Test

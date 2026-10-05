@@ -11,6 +11,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.os.PowerManager
 
@@ -29,6 +30,36 @@ class ProcessingNotificationService : Service() {
     private var foregroundId: Int? = null
     private var stopping = false
     private lateinit var cpuLease: PowerManager.WakeLock
+    private var diagnosticThread: HandlerThread? = null
+    @Volatile private var diagnosticHandler: Handler? = null
+    private val diagnosticHeartbeat = object : Runnable {
+        override fun run() {
+            try {
+                ProcessingRuntimeDiagnostics.record(applicationContext, "native_heartbeat")
+            } catch (_: RuntimeException) {
+                // Sampling never controls the foreground service.
+            }
+            diagnosticHandler?.postDelayed(this, 15_000)
+        }
+    }
+
+    private fun startDiagnostics() {
+        if (diagnosticThread != null) return
+        try {
+            val thread = HandlerThread("ThusfarDiagnostics").apply { start() }
+            diagnosticThread = thread
+            diagnosticHandler = Handler(thread.looper).also { it.post(diagnosticHeartbeat) }
+        } catch (_: RuntimeException) {
+            stopDiagnostics()
+        }
+    }
+
+    private fun stopDiagnostics() {
+        diagnosticHandler?.removeCallbacks(diagnosticHeartbeat)
+        diagnosticHandler = null
+        diagnosticThread?.quitSafely()
+        diagnosticThread = null
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -126,6 +157,7 @@ class ProcessingNotificationService : Service() {
     private fun publish() {
         val foreground = tasks.values.firstOrNull { it.phase != "queued" } ?: tasks.values.firstOrNull()
         if (foreground == null) {
+            stopDiagnostics()
             foregroundId = null
             releaseCpuLease()
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -140,6 +172,7 @@ class ProcessingNotificationService : Service() {
         } else {
             startForeground(id, notification(foreground))
         }
+        startDiagnostics()
         val old = foregroundId
         foregroundId = id
         if (old == null) ProcessingRuntimeDiagnostics.record(this, "foreground_started")
@@ -222,6 +255,7 @@ class ProcessingNotificationService : Service() {
     }
 
     override fun onDestroy() {
+        stopDiagnostics()
         stopping = true
         foregroundId = null
         releaseCpuLease()
@@ -237,6 +271,7 @@ class ProcessingNotificationService : Service() {
     }
 
     override fun onTimeout(startId: Int, fgsType: Int) {
+        stopDiagnostics()
         stopping = true
         foregroundId = null
         releaseCpuLease()

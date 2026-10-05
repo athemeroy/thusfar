@@ -56,6 +56,28 @@ final class ProcessingDiagnostics {
     'scope_complete',
   };
 
+  static const Set<String> _requestCodes = <String>{
+    'network_interrupted',
+    'timeout',
+    'cancelled',
+    'provider_outcome_unknown',
+    'response_interrupted',
+    'incomplete_response',
+    'interrupted_before_commit',
+    'previous_request_unknown',
+    'socket_exception',
+    'http_exception',
+    'handshake_exception',
+    'io_exception',
+    'other_exception',
+    'late_open_abandoned',
+    'user',
+    'background_time_limit',
+    'background_unavailable',
+    'worker_close',
+    'unspecified',
+  };
+
   static String fileName(DateTime now) {
     String two(int n) => n.toString().padLeft(2, '0');
     return 'yedu-processing-${now.year}${two(now.month)}${two(now.day)}-'
@@ -143,6 +165,7 @@ final class ProcessingDiagnostics {
         'retry_count': _number(status['retry_count']),
         'retry_at': _number(status['retry_at']),
         'error_code': _errorCode(status['error']),
+        'failure_code': _code(status['failure_code'], _requestCodes),
         'quality_state': _code(
           _object(status['quality'])['state'],
           const <String>{'pending', 'verified'},
@@ -211,6 +234,8 @@ final class ProcessingDiagnostics {
             },
       ],
       'biography_jobs': _biographyJobs(bookDirectory),
+      'model_requests': _modelRequests(bookDirectory),
+      'worker_heartbeats': _workerHeartbeats(bookDirectory),
       if (backgroundRuntime.isNotEmpty)
         'android_runtime': _runtime(backgroundRuntime),
     };
@@ -233,6 +258,9 @@ final class ProcessingDiagnostics {
       'activity_paused',
       'activity_stopped',
       'activity_destroyed',
+      'activity_configuration_changed',
+      'native_heartbeat',
+      'worker_heartbeat',
       'dart_resumed',
       'dart_inactive',
       'dart_hidden',
@@ -262,6 +290,29 @@ final class ProcessingDiagnostics {
       'MissingForegroundServiceTypeException',
       'RuntimeException',
     };
+    List<Map<String, Object?>> exportEvents(List<Object?> input) =>
+        <Map<String, Object?>>[
+          for (final Object? event in input.skip(
+            input.length > 64 ? input.length - 64 : 0,
+          ))
+            <String, Object?>{
+              'event': _code(object(event)['event'], kinds),
+              'error_type': _code(object(event)['error_type'], failures),
+              for (final String key in <String>[
+                'at_ms',
+                'elapsed_ms',
+                'uptime_ms',
+                'pid',
+                'process_importance',
+                'worker_at_ms',
+                'worker_elapsed_ms',
+                'worker_gap_ms',
+                'worker_sequence',
+                'ui_at_ms',
+              ])
+                key: _number(object(event)[key]),
+            },
+        ];
     return <String, Object?>{
       for (final String key in <String>[
         'sdk',
@@ -290,20 +341,112 @@ final class ProcessingDiagnostics {
         'wake_lock_held': _boolean(service['wake_lock_held']),
         'task_count': _number(service['task_count']),
       },
-      'events': <Map<String, Object?>>[
-        for (final Object? event in events.skip(
-          events.length > 64 ? events.length - 64 : 0,
+      'events': exportEvents(events),
+      'heartbeats': exportEvents(
+        raw['heartbeats'] is List
+            ? List<Object?>.from(raw['heartbeats']! as List)
+            : const <Object?>[],
+      ),
+    };
+  }
+
+  static List<Map<String, Object?>> _workerHeartbeats(Directory book) {
+    final Object? raw = _object(
+      _read(File('${book.path}/work/worker-heartbeat.json')),
+    )['samples'];
+    final List<Object?> rows = raw is List<Object?> ? raw : const <Object?>[];
+    return <Map<String, Object?>>[
+      for (final Object? row in rows.skip(
+        rows.length > 64 ? rows.length - 64 : 0,
+      ))
+        <String, Object?>{
+          for (final String key in <String>[
+            'pid',
+            'sequence',
+            'at_ms',
+            'elapsed_ms',
+            'gap_ms',
+          ])
+            key: _number(_object(row)[key]),
+          'finished': _boolean(_object(row)['finished']),
+        },
+    ];
+  }
+
+  static Map<String, Object?> _modelRequests(Directory book) {
+    final Map<String, Object?> journal = _object(
+      _read(File('${book.path}/work/model-request-journal.json')),
+    );
+    final Map<String, Object?> diagnostics = _object(
+      _read(File('${book.path}/work/model-request-diagnostics.json')),
+    );
+    List<Object?> rows(Object? value) =>
+        value is List<Object?> ? value : const <Object?>[];
+    const Set<String> phases = <String>{
+      'inflight',
+      'received',
+      'rejected',
+      'unknown',
+    };
+    final List<Object?> attempts = rows(diagnostics['attempts']);
+    return <String, Object?>{
+      'id_scope': 'local_only',
+      'unsettled': <Map<String, Object?>>[
+        for (final Object? item in rows(journal['requests']).take(32))
+          <String, Object?>{
+            'id': _number(_object(item)['id']),
+            'phase': _code(_object(item)['phase'], phases),
+            'code': _code(_object(item)['code'], _requestCodes),
+          },
+      ],
+      'attempts': <Map<String, Object?>>[
+        for (final Object? item in attempts.skip(
+          attempts.length > 32 ? attempts.length - 32 : 0,
         ))
           <String, Object?>{
-            'event': _code(object(event)['event'], kinds),
-            'error_type': _code(object(event)['error_type'], failures),
             for (final String key in <String>[
-              'at_ms',
+              'run_id',
+              'id',
+              'started_at_ms',
               'elapsed_ms',
-              'uptime_ms',
-              'pid',
+              'bytes_received',
+              'last_byte_at_ms',
+              'last_byte_elapsed_ms',
             ])
-              key: _number(object(event)[key]),
+              key: _number(_object(item)[key]),
+            'phase': _code(_object(item)['phase'], phases),
+            'code': _code(_object(item)['code'], _requestCodes),
+            'events': <Map<String, Object?>>[
+              for (final Object? event in rows(
+                _object(item)['events'],
+              ).take(16))
+                <String, Object?>{
+                  'event': _code(_object(event)['event'], const <String>{
+                    'dispatch',
+                    'send_started',
+                    'headers',
+                    'cancel_requested',
+                    'abort_requested',
+                    'transport_error',
+                    'body_error',
+                    'body_done',
+                    'body_cancel_requested',
+                    'body_cancelled',
+                    'body_cancel_error',
+                    'received',
+                    'rejected',
+                    'unknown',
+                    'run_settled',
+                  }),
+                  'code': _code(_object(event)['code'], _requestCodes),
+                  'at_ms': _number(_object(event)['at_ms']),
+                  'elapsed_ms': _number(_object(event)['elapsed_ms']),
+                  'http_status': _number(_object(event)['http_status']),
+                  'received_committed': _boolean(
+                    _object(event)['received_committed'],
+                  ),
+                },
+            ],
           },
       ],
     };

@@ -100,3 +100,54 @@ Activity 与 engine 所有权的处理遵循 Flutter 的提供 engine / 宿主�
 2. 为分离模型格式问题与 Android 生命周期问题，可以使用无计费、确定性、返回完整且严格合法判断分布的本地 HTTP fixture。必须报告这是模拟模型，不把它作为 Qwen 通过证明。
 3. 需要看到 `done` 和 `frontier` 非零增长，然后执行切应用、至少两分钟活跃锁屏、暂停与恢复；确认进度不回退、已有抽取缓存不重发、暂停后服务与 CPU 锁释放。保留 SHA、时间、计数和裁剪后的生命周期证据。
 4. PR 保持未合并；本补丁不发布正式版本，不代替真机验收。
+
+
+## Delayed-background-error diagnostic candidate
+
+This instrumentation does not claim to fix an unconfirmed device suspension or
+network cause. It preserves model choice, request/retry/cancellation behavior,
+FGS admission, finite CPU lease, cache/frontier, and explicit unknown-outcome
+resume policy.
+
+The existing JSON export now retains allowlisted `status.failure_code` and the
+unsettled request journal. Previously the generic uncertainty message could
+export as `error_code: unknown` even when the worker had recorded a precise code.
+New `model_requests` diagnostics retain the last 32 attempts, up to 16 events per
+attempt: dispatch, application-observed request submission, response headers,
+application-observed raw bytes, safe
+exception category, cancel/abort/body-close observations, and settlement. Byte
+checkpoints are throttled to five seconds and flushed at terminal events. IDs
+are explicitly local to the app; they are not provider/server correlation IDs.
+No diagnostic metadata is added to HTTP headers.
+
+For an active worker only, `worker_heartbeats` is written directly by its isolate
+every 15 seconds and at run start/end, without waiting for UI frames. Android
+records an independent native-thread heartbeat, actual process importance, and
+separate worker-sample, UI-receipt, and native-delivery timestamps in a separate bounded ring.
+Native samples neither renew the wake lock nor restart work; sampling stops
+with the service. Lifecycle events retain their own ring, including Activity
+configuration changes, so heartbeat traffic cannot evict them. All exports use
+fixed enums, numbers, and booleans; no book text, prompts, replies, endpoints,
+credentials, exception messages, or arbitrary provider IDs are included.
+
+Interpretation must distinguish observations from causes:
+
+- Continuous worker samples with late UI/native receipt indicate delayed UI or
+  channel delivery, not a stopped worker
+- Continuous native samples with a worker gap narrow the delay to Dart or its
+  execution dependencies; this does not by itself identify a Flutter bug
+- Gaps in both samples require device/system evidence; an unchanged PID and
+  foreground-service notification alone do not prove or disprove freezing
+- `body_cancel_requested` can be normal parser cleanup after a complete reply;
+  only `cancel_requested` identifies run cancellation, with its recorded cause
+- Early transport errors followed by late status updates can be distinguished
+  from errors first observed late; ordered in-flight requests are still drained
+  to preserve successful work before final settlement
+- Native elapsed time is since boot, while Dart elapsed time is since its run or
+  request. Compare intervals within each clock; wall times provide alignment
+  but may change if the device clock changes
+
+Use one reproduction on the affected device, export immediately after the error
+without manually resuming the book, and compare the same request's events. JVM
+and offline tests verify bounded/redacted evidence and resource cleanup only;
+they cannot establish device-background execution or a provider-side outcome.
