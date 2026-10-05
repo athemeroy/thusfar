@@ -100,6 +100,58 @@ final class ModelJudgeInvalidAnswer extends LLMError {
   const ModelJudgeInvalidAnswer(super.message);
 }
 
+/// Fixed diagnostic codes only. Never include model text, question/option ids,
+/// probability values, prompts, URLs or credentials in the diagnostic receipt.
+enum _ModelAnswerIssue {
+  invalidJson('invalid_json', '回复不是有效 JSON'),
+  missingAnswer('missing_answer', '缺少问题回答或回答类型错误'),
+  invalidChoice('invalid_choice', '选项缺失或无效'),
+  incompleteProbabilities('incomplete_probabilities', '概率字段缺失或选项数量不符'),
+  nonNumericProbability('non_numeric_probability', '概率不是数字'),
+  nonFiniteProbability('non_finite_probability', '概率不是有限数值'),
+  probabilityOutOfRange('probability_out_of_range', '概率超出 0 到 1'),
+  inconsistentSum('inconsistent_sum', '概率合计不为 1'),
+  zeroChoiceProbability('zero_choice_probability', '所选选项概率为零');
+
+  const _ModelAnswerIssue(this.code, this.label);
+  final String code;
+  final String label;
+}
+
+final class _ModelAnswerError extends ValueError {
+  const _ModelAnswerError(this.issue) : super('model judge: invalid answer');
+  final _ModelAnswerIssue issue;
+}
+
+void _recordModelAnswerFailure(
+  Map<String, _ModelAnswerIssue> issues,
+  int questionCount,
+) {
+  final String? directory = selectedJudgeDirectory();
+  if (directory == null || directory.isEmpty) return;
+  final Json diagnostic = <String, Object?>{
+    'schema': 1,
+    'at': wallClock(),
+    'attempts': 2,
+    'question_count': questionCount,
+    'unresolved_count': issues.length,
+    'reasons': <String, int>{
+      for (final _ModelAnswerIssue issue in _ModelAnswerIssue.values)
+        if (issues.containsValue(issue))
+          issue.code: issues.values.where((value) => value == issue).length,
+    },
+  };
+  try {
+    final File file = File('$directory/model-answer-failure.json');
+    file.parent.createSync(recursive: true);
+    final File temp = File('${file.path}.$pid.tmp');
+    temp.writeAsStringSync(jsonEncode(diagnostic), flush: true);
+    temp.renameSync(file.path);
+  } on FileSystemException {
+    // Optional diagnostics must never obscure the original validation error.
+  }
+}
+
 /// What the judge costs; reset per book run.
 final Map<String, num> jevStats = <String, num>{
   'calls': 0,
@@ -232,6 +284,7 @@ Future<Json> llmJudge(
   int promptTokens = 0, completionTokens = 0;
   final Json valid = <String, Object?>{};
   final Json pending = Map<String, Object?>.of(questions);
+  final Map<String, _ModelAnswerIssue> issues = {};
   for (int attempt = 0; attempt < 2; attempt++) {
     if (reserveBudget) {
       try {
@@ -259,25 +312,28 @@ Future<Json> llmJudge(
     if (reserveBudget) _recordModelJudgeUsage(m, input, output);
     try {
       final Object? raw = parseJson(result.text);
-      if (raw is Json) {
-        for (final MapEntry<String, Object?> e in pending.entries.toList()) {
-          try {
-            // Accept only complete, strict answers. An invalid answer for one
-            // question must not discard valid answers for the others.
-            final Json one = _strictModelAnswers(
-              <String, Object?>{e.key: raw[e.key]},
-              <String, Object?>{e.key: e.value},
-              m,
-            );
-            valid[e.key] = one[e.key];
-            pending.remove(e.key);
-          } on ValueError {
-            // This question still needs a model answer.
-          }
+      if (raw is! Json) throw const ValueError('model judge: expected object');
+      for (final MapEntry<String, Object?> e in pending.entries.toList()) {
+        try {
+          // Accept only complete, strict answers. An invalid answer for one
+          // question must not discard valid answers for the others.
+          final Json one = _strictModelAnswers(
+            <String, Object?>{e.key: raw[e.key]},
+            <String, Object?>{e.key: e.value},
+            m,
+          );
+          valid[e.key] = one[e.key];
+          pending.remove(e.key);
+          issues.remove(e.key);
+        } on _ModelAnswerError catch (error) {
+          issues[e.key] = error.issue;
         }
       }
     } on ValueError {
       // The entire reply is malformed; the next bounded attempt can repair it.
+      for (final String key in pending.keys) {
+        issues[key] = _ModelAnswerIssue.invalidJson;
+      }
     }
     if (pending.isEmpty) break;
     if (attempt == 0) {
@@ -311,7 +367,14 @@ Future<Json> llmJudge(
     }
   }
   if (pending.isNotEmpty) {
-    throw const ModelJudgeInvalidAnswer('已配置模型的判断回答不完整或概率无效；已保留进度，请重试');
+    _recordModelAnswerFailure(issues, questions.length);
+    final String reasons = issues.values
+        .toSet()
+        .map((issue) => issue.label)
+        .join('、');
+    throw ModelJudgeInvalidAnswer(
+      '已配置模型的判断回答不完整或概率无效：$reasons（未完成 ${pending.length}/${questions.length} 个问题）；已保留进度，请检查模型后手动重试',
+    );
   }
   valid['_usage'] = <String, Object?>{
     'prompt_tokens': promptTokens,
@@ -321,37 +384,45 @@ Future<Json> llmJudge(
 }
 
 Json _strictModelAnswers(Object? raw, Json questions, String model) {
-  if (raw is! Json) throw const ValueError('model judge: expected object');
+  if (raw is! Json)
+    throw const _ModelAnswerError(_ModelAnswerIssue.invalidJson);
   final Json out = <String, Object?>{};
   for (final MapEntry<String, Object?> e in questions.entries) {
     final Json criteria = _criteria(e.value);
     final Object? answer = raw[e.key];
-    if (answer is! Json ||
-        answer['choice'] is! String ||
+    if (answer is! Json) {
+      throw const _ModelAnswerError(_ModelAnswerIssue.missingAnswer);
+    }
+    if (answer['choice'] is! String ||
         !criteria.containsKey(answer['choice'])) {
-      throw const ValueError('model judge: missing choice');
+      throw const _ModelAnswerError(_ModelAnswerIssue.invalidChoice);
     }
     final Object? given = answer['probabilities'];
     if (given is! Json ||
         given.length != criteria.length ||
         !given.keys.toSet().containsAll(criteria.keys)) {
-      throw const ValueError('model judge: incomplete probabilities');
+      throw const _ModelAnswerError(_ModelAnswerIssue.incompleteProbabilities);
     }
     final Map<String, double> probs = <String, double>{};
     for (final String option in criteria.keys) {
       final Object? value = given[option];
-      if (value is! num ||
-          value is bool ||
-          !value.isFinite ||
-          value < 0 ||
-          value > 1) {
-        throw const ValueError('model judge: invalid probability');
+      if (value is! num || value is bool) {
+        throw const _ModelAnswerError(_ModelAnswerIssue.nonNumericProbability);
+      }
+      if (!value.isFinite) {
+        throw const _ModelAnswerError(_ModelAnswerIssue.nonFiniteProbability);
+      }
+      if (value < 0 || value > 1) {
+        throw const _ModelAnswerError(_ModelAnswerIssue.probabilityOutOfRange);
       }
       probs[option] = value.toDouble();
     }
     final double total = probs.values.fold(0.0, (a, b) => a + b);
-    if ((total - 1).abs() > 0.02 || probs[answer['choice']] == 0) {
-      throw const ValueError('model judge: inconsistent probabilities');
+    if ((total - 1).abs() > 0.02) {
+      throw const _ModelAnswerError(_ModelAnswerIssue.inconsistentSum);
+    }
+    if (probs[answer['choice']] == 0) {
+      throw const _ModelAnswerError(_ModelAnswerIssue.zeroChoiceProbability);
     }
     out[e.key] = <String, Object?>{
       'type': 'choice',

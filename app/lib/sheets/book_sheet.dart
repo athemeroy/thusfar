@@ -1141,6 +1141,13 @@ class _BookSheetState extends State<BookSheet> {
           '${ProcessingDiagnostics.pauseReasonLabel(b.dir, s.raw)}${pausedAt.isEmpty ? '' : ' · $pausedAt'}',
           style: TextStyle(fontSize: 13, color: t.ink2),
         ),
+        if (s.error != null && s.error!.trim().isNotEmpty) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            s.error!,
+            style: TextStyle(fontSize: 13, height: 1.5, color: t.amber),
+          ),
+        ],
         if (lastWork != null) ...<Widget>[
           const SizedBox(height: 6),
           Text(

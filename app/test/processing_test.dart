@@ -549,6 +549,34 @@ void main() {
     },
   );
 
+  testWidgets(
+    'paused task shows the actual judgment failure and still confirms paid replay',
+    (WidgetTester tester) async {
+      configure();
+      const String error = '已配置模型的判断回答不完整或概率无效：概率合计不为 1（未完成 1/1 个问题）';
+      processing.status(entry, <String, Object?>{
+        'state': 'paused',
+        'done': 1,
+        'total': 2,
+        'frontier': 17,
+        'pause_reason': 'request_outcome_unknown',
+        'error': error,
+      });
+      await open(tester);
+      expect(find.text(error), findsOneWidget);
+      expect(find.textContaining('上次模型请求结果未确认，请检查后继续'), findsOneWidget);
+      await tester.tap(find.text('继续整理'));
+      await tester.pumpAndSettle();
+      expect(processing.starts, 0);
+      expect(find.text('上次模型请求结果未确认'), findsOneWidget);
+      expect(find.textContaining('可能再次产生模型费用'), findsOneWidget);
+      await tester.tap(find.text('暂不继续'));
+      await tester.pumpAndSettle();
+      expect(processing.starts, 0);
+      expect(entry.status.error, error);
+    },
+  );
+
   for (final bool journalOnly in <bool>[false, true]) {
     for (final String decision in <String>['cancel', 'confirm', 'dismiss']) {
       testWidgets(

@@ -82,7 +82,7 @@ Future<void> reconcileStoppedWorker(Library library, String reason) async {
       }
       raw.addAll(<String, Object?>{
         'state': resume ? 'queued' : 'paused',
-        'error': null,
+        'error': uncertain ? raw['error'] : null,
         'notice': resume ? reason : null,
         'updated': DateTime.now().microsecondsSinceEpoch / 1e6,
       });

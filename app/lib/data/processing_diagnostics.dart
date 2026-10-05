@@ -167,6 +167,7 @@ final class ProcessingDiagnostics {
           'jev-direct',
         }),
       },
+      'last_model_judge_failure': _modelJudgeFailure(bookDirectory),
       'judge_usage': <String, Object?>{
         'model_calls': _number(modelBudget['calls']),
         'model_call_limit': _number(modelBudget['max_calls']),
@@ -383,6 +384,34 @@ final class ProcessingDiagnostics {
     return result;
   }
 
+  static Map<String, Object?> _modelJudgeFailure(Directory book) {
+    final Map<String, Object?> raw = _object(
+      _read(File('${book.path}/work/judge/model-answer-failure.json')),
+    );
+    if (raw.isEmpty) return const <String, Object?>{};
+    final Map<String, Object?> reasons = _object(raw['reasons']);
+    return <String, Object?>{
+      'at': _number(raw['at']),
+      'attempts': _number(raw['attempts']),
+      'question_count': _number(raw['question_count']),
+      'unresolved_count': _number(raw['unresolved_count']),
+      'reasons': <String, Object?>{
+        for (final String code in const <String>[
+          'invalid_json',
+          'missing_answer',
+          'invalid_choice',
+          'incomplete_probabilities',
+          'non_numeric_probability',
+          'non_finite_probability',
+          'probability_out_of_range',
+          'inconsistent_sum',
+          'zero_choice_probability',
+        ])
+          if (_number(reasons[code]) != null) code: _number(reasons[code]),
+      },
+    };
+  }
+
   static Map<String, Object?> _object(Object? value) =>
       value is Map<String, Object?> ? value : const <String, Object?>{};
 
@@ -399,6 +428,7 @@ final class ProcessingDiagnostics {
   static String? _errorCode(Object? value) {
     if (value is! String || value.trim().isEmpty) return null;
     final String error = value.toLowerCase();
+    if (error.contains('判断回答不完整或概率无效')) return 'model_judge_invalid_answer';
     if (error.contains('人物小传') &&
         (error.contains('通过 0/') ||
             error.contains('没有返回可核对') ||
