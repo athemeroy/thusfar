@@ -19,6 +19,8 @@ import 'judge_context.dart';
 import 'llm.dart';
 import 'models.dart' as pricing;
 import 'provenance.dart';
+import 'request_lifecycle.dart';
+import 'run_lease.dart';
 
 String get jevUrl =>
     environ['JEV_URL'] ?? 'https://api.typesafe.ai/v1/systemone';
@@ -363,7 +365,10 @@ Future<void> _judgeRetry(
     '[judge] 路由=$route 状态=$status 尝试=${attempt + 1}/${retries + 1} '
     '等待=${wait.toStringAsFixed(1)}s 已用=${(started.elapsedMilliseconds / 1000).toStringAsFixed(1)}s',
   );
-  await sleep(Duration(microseconds: (wait * 1e6).round()));
+  final Future<void> delay = sleep(
+    Duration(microseconds: (wait * 1e6).round()),
+  );
+  await (RunCancellation.current?.wait(delay) ?? delay);
 }
 
 void _judgeAttempt() => jevStats['attempts'] = (jevStats['attempts'] ?? 0) + 1;
@@ -552,17 +557,75 @@ Future<Object?> _postJson(
   String body,
   Map<String, String> headers,
   double timeout,
-  int detailBytes,
-) async {
-  final ChatResponse resp = await transport.post(
-    ChatRequest(Uri.parse(url), headers, body),
-    Duration(microseconds: (timeout * 1e6).round()),
-  );
-  final List<int> raw = <int>[];
-  await for (final List<int> chunk in resp.body) {
-    raw.addAll(chunk);
-    if (raw.length > 16 * 1024 * 1024) throw const LLMError('模型响应超过大小上限');
+  int detailBytes, {
+  bool paid = false,
+}) async {
+  final RunCancellation? cancellation = RunCancellation.current;
+  cancellation?.checkpoint();
+  if (ModelRequestScope.current?.hasUnknown ?? false) {
+    throw const UnknownOutcomeLLMError('previous_request_unknown');
   }
+  Future<T> wait<T>(Future<T> operation) =>
+      cancellation?.wait(operation) ?? operation;
+  final ModelRequestReceipt? receipt =
+      paid ? ModelRequestScope.current?.begin() : null;
+  late ChatResponse resp;
+  final List<int> raw = <int>[];
+  try {
+    resp = await wait(
+      postRequest(
+        ChatRequest(Uri.parse(url), headers, body),
+        Duration(microseconds: (timeout * 1e6).round()),
+      ),
+    );
+    if (resp.status >= 400) {
+      if (paid &&
+          !const <int>{
+            400,
+            401,
+            402,
+            403,
+            404,
+            422,
+            429,
+          }.contains(resp.status)) {
+        unawaited(discardChatResponse(resp));
+        throw const UnknownOutcomeLLMError('provider_outcome_unknown');
+      }
+      receipt?.rejected();
+    }
+    final StreamIterator<List<int>> chunks = StreamIterator<List<int>>(
+      resp.body,
+    );
+    try {
+      while (await wait(chunks.moveNext())) {
+        raw.addAll(chunks.current);
+        if (raw.length > 16 * 1024 * 1024) throw const LLMError('模型响应超过大小上限');
+      }
+    } finally {
+      unawaited(chunks.cancel().catchError((Object _) {}));
+    }
+    receipt?.received();
+  } on Cancelled {
+    receipt?.unknown('cancelled');
+    rethrow;
+  } on UnknownOutcomeLLMError catch (e) {
+    receipt?.unknown(e.code);
+    rethrow;
+  } on TimeoutException {
+    if (!paid) rethrow;
+    receipt?.unknown('timeout');
+    throw const UnknownOutcomeLLMError('timeout');
+  } on IOException {
+    if (!paid) rethrow;
+    receipt?.unknown('network_interrupted');
+    throw const UnknownOutcomeLLMError('network_interrupted');
+  } on Object {
+    if (!paid) rethrow;
+    receipt?.unknown('response_interrupted');
+    throw const UnknownOutcomeLLMError('response_interrupted');
+  }
+
   if (resp.status >= 400) {
     String detail = utf8.decode(
       raw.take(detailBytes).toList(),
@@ -930,6 +993,10 @@ Future<Json> jevUncached(
       return out;
     } on DeadlineExceeded {
       rethrow;
+    } on Cancelled {
+      rethrow;
+    } on UnknownOutcomeLLMError {
+      rethrow;
     } on Object catch (e) {
       if (e is ClassifierAccessError) freeBreaker.bad = freeBreaker.fails - 1;
       freeBreaker.failed(
@@ -998,6 +1065,7 @@ Future<Json> jevUncached(
           },
           timeout.toDouble(),
           300,
+          paid: true,
         );
       });
       if (data is! Json || data.containsKey('error'))

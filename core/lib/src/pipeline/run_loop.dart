@@ -89,6 +89,8 @@ extension RunnerLoops on Runner {
       usage['jev_calls'] = _int(usage['jev_calls']) + 1;
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (e) {
       throw llm.LLMError('第 $i 段人物描述验证失败，已保留抽取缓存：${_error(e)}');
     }
@@ -147,6 +149,8 @@ extension RunnerLoops on Runner {
           if (again['verdict'] == 'flag') p['_withheld'] = true;
         } on Cancelled {
           rethrow;
+        } on llm.UnknownOutcomeLLMError {
+          rethrow;
         } catch (e) {
           throw llm.LLMError('人物描述重写尚未验证：${_error(e)}');
         }
@@ -190,6 +194,8 @@ extension RunnerLoops on Runner {
       usage['jev_calls'] = _int(usage['jev_calls']) + 1;
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (e) {
       guard['attrs_error'] = _cut(_error(e), 200);
     }
@@ -209,6 +215,8 @@ extension RunnerLoops on Runner {
                   15) ~/
               16;
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (e) {
       decisions = {};
@@ -274,6 +282,10 @@ extension RunnerLoops on Runner {
           rec = await process(i);
           break;
         } on Cancelled {
+          rethrow;
+        } on llm.UnknownOutcomeLLMError {
+          rethrow;
+        } on FileSystemException {
           rethrow;
         } catch (e) {
           status('running', i, error: _cut(_error(e), 300));
@@ -347,6 +359,8 @@ extension RunnerLoops on Runner {
     try {
       if (limit != 0) await markTitles();
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (error) {
       qualityPending.add('chapter-titles');
@@ -521,12 +535,48 @@ Future<void> runBook(
   RunBackend backend = const RunBackend(),
   void Function(Json)? onProgress,
 }) async {
+  final RunCancellation token = cancellation ?? RunCancellation();
+  final ModelRequestScope scope = ModelRequestScope(root);
+  await token.run(
+    () => scope.run(
+      () => _runBook(
+        root,
+        model: model,
+        limit: limit,
+        classic: classic,
+        retryQuality: retryQuality,
+        localModel: localModel,
+        concurrency: concurrency,
+        cancellation: token,
+        backend: backend,
+        onProgress: onProgress,
+      ),
+    ),
+  );
+}
+
+Future<void> _runBook(
+  Directory root, {
+  String? model,
+  int? limit,
+  bool classic = false,
+  bool retryQuality = false,
+  String? localModel,
+  int concurrency = 12,
+  RunCancellation? cancellation,
+  RunBackend backend = const RunBackend(),
+  void Function(Json)? onProgress,
+}) async {
   final RunLease lease = await RunLease.acquire(root);
   Runner? runner;
   bool cancelled = false;
   bool failed = false;
+  bool drained = false;
   try {
     cancellation?.checkpoint();
+    if (hasUnsettledModelRequests(root)) {
+      throw const llm.UnknownOutcomeLLMError('interrupted_before_commit');
+    }
     runner = await Runner.create(
       root,
       model: model,
@@ -595,7 +645,11 @@ Future<void> runBook(
     state.addAll({
       'state': 'error',
       'error': _cut(e is llm.LLMError ? _error(e) : _typedError(e), 300),
-      'retryable': state['retryable'] == true || llm.transientFailure(e),
+      'retryable':
+          e is! llm.UnknownOutcomeLLMError &&
+          !(ModelRequestScope.current?.hasUnknown ?? false) &&
+          (state['retryable'] == true || llm.transientFailure(e)),
+      if (e is llm.UnknownOutcomeLLMError) 'failure_code': e.code,
       'notice': null,
       'updated': backend.now(),
     });
@@ -606,6 +660,7 @@ Future<void> runBook(
     try {
       if (runner != null) {
         await runner.close(cancelled: cancelled);
+        drained = true;
         // Requests already in flight retain their successful draft and usage
         // while draining. Publish that final accounting before releasing the
         // lease; the paused/error state and reading frontier remain unchanged.
@@ -626,7 +681,30 @@ Future<void> runBook(
         }
       }
     } finally {
-      lease.release();
+      try {
+        final ModelRequestScope? scope = ModelRequestScope.current;
+        scope?.settle(receivedCommitted: drained && !failed && !cancelled);
+        if (hasUnsettledModelRequests(root)) {
+          final File path = File('${root.path}/status.json');
+          final Json state = path.existsSync() ? _read(path) : {};
+          state.addAll(<String, Object?>{
+            'state': 'paused',
+            'pause_reason': 'request_outcome_unknown',
+            'retryable': false,
+            'request_outcome': 'unknown',
+            'error':
+                const llm.UnknownOutcomeLLMError(
+                  'interrupted_before_commit',
+                ).message,
+            'updated': backend.now(),
+          });
+          state.remove('retry_at');
+          writeJson(path, state, compact: false);
+          onProgress?.call(state);
+        }
+      } finally {
+        lease.release();
+      }
     }
   }
 }

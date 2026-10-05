@@ -92,10 +92,10 @@ void main() {
           onText: (_) => partials++,
         ),
         throwsA(
-          isA<llm.LLMError>().having(
-            (llm.LLMError e) => e.message,
-            'message',
-            contains('TimeoutException'),
+          isA<llm.UnknownOutcomeLLMError>().having(
+            (llm.UnknownOutcomeLLMError e) => e.code,
+            'code',
+            'timeout',
           ),
         ),
       );

@@ -307,6 +307,8 @@ extension RunnerSupport on Runner {
       generated = data;
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (_) {
       return {};
     }
@@ -390,6 +392,8 @@ extension RunnerSupport on Runner {
           _int(usage['jev_calls']) +
           3 * ((pairs.length + items.length + 47) ~/ 48);
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (e) {
       rec['relation_check_error'] = _cut(_typedError(e), 300);
@@ -549,6 +553,8 @@ extension RunnerSupport on Runner {
       rec.remove('support_error');
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (e) {
       rec['support_error'] = _cut(_typedError(e), 300);
       writeJson(localPath(i), rec);
@@ -646,6 +652,10 @@ extension RunnerSupport on Runner {
         writeJson(path, rec);
         break;
       } on Cancelled {
+        rethrow;
+      } on llm.UnknownOutcomeLLMError {
+        rethrow;
+      } on FileSystemException {
         rethrow;
       } catch (e) {
         if (_error(e).startsWith('REFUSED:')) {
@@ -821,6 +831,8 @@ extension RunnerSupport on Runner {
       await verifyCritical(data, _obj(localRec['data']), linkRec, text, guard);
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (e) {
       guard['critical_error'] = _cut(_error(e), 200);
       writeJson(
@@ -864,6 +876,8 @@ extension RunnerSupport on Runner {
         usage['jev_calls'] = _int(usage['jev_calls']) + 1;
       } on Cancelled {
         rethrow;
+      } on llm.UnknownOutcomeLLMError {
+        rethrow;
       } catch (e) {
         guard['error'] = _cut(_error(e), 200);
         writeJson(
@@ -896,6 +910,8 @@ extension RunnerSupport on Runner {
                   15) ~/
               16;
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (e) {
       decisions = {};

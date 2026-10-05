@@ -159,45 +159,54 @@ void main() {
     <String, Object?>{'base_url': 'https://other.invalid/v1'},
     <String, Object?>{'protocol': 'anthropic'},
   ]) {
-    test('endpoint changes reject inherited credentials before any request: $change', () async {
-      settings.save(<String, Object?>{
-        'base_url': 'https://saved.invalid/v1',
-        'model': 'saved',
-        'api_key': 'saved-fixture-key',
-        'classifier_key': 'classifier-fixture-key',
-        'jev_api_key': 'jev-fixture-key',
-      });
-      final String bytes = settings.file.readAsStringSync();
-      final Map<String, String> environment = Map<String, String>.of(environ);
-      final ProtocolTransport transport = ProtocolTransport('openai');
-      llm.transport = transport;
-      final Json draft = <String, Object?>{...change, 'api_key': ''};
-      expect(() => settings.preview(draft), throwsA(isA<ValueError>()));
-      expect(() => settings.save(draft), throwsA(isA<ValueError>()));
-      await expectLater(settings.test(payload: draft), throwsA(isA<ValueError>()));
-      expect(transport.requests, isEmpty);
-      expect(settings.file.readAsStringSync(), bytes);
-      expect(environ, environment);
-      final Json original = settings.preview(<String, Object?>{
-        'protocol': 'openai',
-        'base_url': 'https://saved.invalid',
-        'api_key': '',
-      });
-      expect(original['api_key'], 'saved-fixture-key');
-      expect(original['classifier_key'], 'classifier-fixture-key');
-      expect(original['jev_api_key'], 'jev-fixture-key');
-    });
+    test(
+      'endpoint changes reject inherited credentials before any request: $change',
+      () async {
+        settings.save(<String, Object?>{
+          'base_url': 'https://saved.invalid/v1',
+          'model': 'saved',
+          'api_key': 'saved-fixture-key',
+          'classifier_key': 'classifier-fixture-key',
+          'jev_api_key': 'jev-fixture-key',
+        });
+        final String bytes = settings.file.readAsStringSync();
+        final Map<String, String> environment = Map<String, String>.of(environ);
+        final ProtocolTransport transport = ProtocolTransport('openai');
+        llm.transport = transport;
+        final Json draft = <String, Object?>{...change, 'api_key': ''};
+        expect(() => settings.preview(draft), throwsA(isA<ValueError>()));
+        expect(() => settings.save(draft), throwsA(isA<ValueError>()));
+        await expectLater(
+          settings.test(payload: draft),
+          throwsA(isA<ValueError>()),
+        );
+        expect(transport.requests, isEmpty);
+        expect(settings.file.readAsStringSync(), bytes);
+        expect(environ, environment);
+        final Json original = settings.preview(<String, Object?>{
+          'protocol': 'openai',
+          'base_url': 'https://saved.invalid',
+          'api_key': '',
+        });
+        expect(original['api_key'], 'saved-fixture-key');
+        expect(original['classifier_key'], 'classifier-fixture-key');
+        expect(original['jev_api_key'], 'jev-fixture-key');
+      },
+    );
   }
 
-  test('missing-model test asks for input without requiring a premature save', () async {
-    settings.file.writeAsStringSync('LLM_API_KEY=offline-fixture-key\n');
-    final ProtocolTransport transport = ProtocolTransport('openai');
-    llm.transport = transport;
-    final Json result = await settings.test();
-    expect(result['ok'], false);
-    expect(result['message'], '请先填写模型名称');
-    expect(transport.requests, isEmpty);
-  });
+  test(
+    'missing-model test asks for input without requiring a premature save',
+    () async {
+      settings.file.writeAsStringSync('LLM_API_KEY=offline-fixture-key\n');
+      final ProtocolTransport transport = ProtocolTransport('openai');
+      llm.transport = transport;
+      final Json result = await settings.test();
+      expect(result['ok'], false);
+      expect(result['message'], '请先填写模型名称');
+      expect(transport.requests, isEmpty);
+    },
+  );
 
   test('unconfigured defaults expose only the three requested protocols', () {
     expect(ModelSettings.protocolLabels.values, <String>[
@@ -750,13 +759,27 @@ void main() {
           isA<llm.LLMError>().having(
             (e) => e.message,
             'message',
-            allOf(contains('[REDACTED]'), isNot(contains(key))),
+            allOf(
+              contains(
+                kind == 'deadline'
+                    ? '[REDACTED]'
+                    : const llm.UnknownOutcomeLLMError('test').message,
+              ),
+              isNot(contains(key)),
+            ),
           ),
         ),
       );
       final Json result = await settings.test();
       expect(result['ok'], false);
-      expect(result['message'], contains('[REDACTED]'));
+      expect(
+        result['message'],
+        contains(
+          kind == 'deadline'
+              ? '[REDACTED]'
+              : const llm.UnknownOutcomeLLMError('test').message,
+        ),
+      );
       expect(result['message'], isNot(contains(key)));
     });
   }

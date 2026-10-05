@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/data/model_settings.dart';
 import 'package:thusfar_app/data/processing.dart';
+import 'package:thusfar_app/data/processing_background_session.dart';
 import 'package:thusfar_app/main.dart';
 import 'package:thusfar_app/sheets/book_sheet.dart';
 import 'package:thusfar_app/ui/theme.dart';
@@ -22,6 +23,7 @@ class FixtureProcessing extends BookProcessing {
   Json? lastPlan;
   int pauses = 0;
   int removals = 0;
+  int closes = 0;
   Completer<void>? pauseGate;
   Completer<void>? removalGate;
   Object? startError;
@@ -75,7 +77,7 @@ class FixtureProcessing extends BookProcessing {
   }
 
   @override
-  Future<void> close() async {}
+  Future<void> close() async => closes++;
 }
 
 Json fixtureBook() => <String, Object?>{
@@ -236,6 +238,117 @@ void main() {
     }
   });
 
+  for (final bool pauseBeforeReady in <bool>[false, true]) {
+    test(
+      'real isolate makes no model requests before native readiness '
+      '(${pauseBeforeReady ? 'user pause before acknowledgement' : 'native start failure'})',
+      () async {
+        // The configured model route is a loopback HTTP server. No fixture
+        // contains credentials that could authorize a paid model request.
+        final HttpServer server = await HttpServer.bind(
+          InternetAddress.loopbackIPv4,
+          0,
+        );
+        int modelRequests = 0;
+        server.listen((HttpRequest request) async {
+          modelRequests++;
+          request.response.statusCode = HttpStatus.serviceUnavailable;
+          request.response.write(
+            'Offline fixture: model work is not permitted',
+          );
+          await request.response.close();
+        });
+        final Completer<bool> nativeReady = Completer<bool>();
+        final Completer<void> nativeRequested = Completer<void>();
+        final List<String> stops = <String>[];
+        final ProcessingBackgroundSession background =
+            ProcessingBackgroundSession(
+              start: (BookEntry book, String phase) {
+                expect(book.id, entry.id);
+                expect(phase, 'preparing');
+                if (!nativeRequested.isCompleted) nativeRequested.complete();
+                return nativeReady.future;
+              },
+              update: (_, _) async => true,
+              stop: (String id) async {
+                stops.add(id);
+              },
+              onUnavailable: (_) async {},
+            );
+        final ProcessingController actual = ProcessingController(
+          library,
+          background: background,
+        );
+        try {
+          expect(
+            settings.save(
+              url: 'http://127.0.0.1:${server.port}/v1',
+              model: 'offline-fixture',
+              key: 'offline-placeholder-not-a-real-key',
+            ),
+            isNull,
+          );
+          writeJson(File('${bookRoot.path}/status.json'), <String, Object?>{
+            'state': 'paused',
+            'done': 1,
+            'total': 2,
+            'frontier': 17,
+          });
+          library.refreshStatus(entry);
+          await actual.initialize().timeout(const Duration(seconds: 10));
+          await actual.startBook(entry).timeout(const Duration(seconds: 10));
+          await nativeRequested.future.timeout(const Duration(seconds: 10));
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          expect(modelRequests, 0);
+          expect(entry.status.done, 1);
+          expect(entry.status.frontier, 17);
+          expect(actual.health['current'], entry.id);
+
+          if (pauseBeforeReady) {
+            await actual
+                .pauseBookUntilIdle(entry)
+                .timeout(const Duration(seconds: 10));
+            nativeReady.complete(true);
+          } else {
+            nativeReady.completeError(
+              StateError('native foreground service failed'),
+            );
+          }
+          final DateTime deadline = DateTime.now().add(
+            const Duration(seconds: 10),
+          );
+          while (actual.health['current'] != null &&
+              DateTime.now().isBefore(deadline)) {
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          library.refreshStatus(entry);
+          expect(actual.health['current'], isNull);
+          expect(modelRequests, 0);
+          expect(stops, contains(entry.id));
+          expect(entry.status.isActive, isFalse);
+          expect(entry.status.done, 1);
+          expect(entry.status.frontier, 17);
+          if (pauseBeforeReady) {
+            expect(entry.status.state, 'paused');
+            expect(entry.status.raw['pause_reason'], 'user');
+            expect(
+              (readJson(File('${bookRoot.path}/meta.json')) as Json)['auto'],
+              false,
+            );
+          }
+        } finally {
+          if (!nativeReady.isCompleted) {
+            nativeReady.completeError(StateError('fixture cleanup'));
+          }
+          await actual.close().timeout(const Duration(seconds: 10));
+          actual.dispose();
+          await server.close(force: true);
+        }
+      },
+    );
+  }
+
   test(
     'dead worker pauses unowned manual work without replacing its receipt',
     () async {
@@ -306,6 +419,63 @@ void main() {
       );
     },
   );
+
+  for (final String journalKind in <String>[
+    'inflight',
+    'received',
+    'invalid',
+  ]) {
+    test(
+      'dead worker fails closed for $journalKind request evidence',
+      () async {
+        final File status = File('${bookRoot.path}/status.json');
+        final File meta = File('${bookRoot.path}/meta.json');
+        final File journal = File(
+          '${bookRoot.path}/work/model-request-journal.json',
+        );
+        writeJson(meta, <String, Object?>{'auto': true});
+        writeJson(status, <String, Object?>{
+          'state': 'running',
+          'done': 10,
+          'total': 603,
+          'frontier': 9042,
+          'retryable': true,
+          'retry_at': 1780000000,
+        });
+        journal.parent.createSync(recursive: true);
+        if (journalKind == 'invalid') {
+          journal.writeAsStringSync('{"version":1,"requests":');
+        } else {
+          writeJson(journal, <String, Object?>{
+            'version': 1,
+            'requests': <Json>[
+              <String, Object?>{'id': 1, 'phase': journalKind},
+            ],
+          });
+        }
+        final String originalJournal = journal.readAsStringSync();
+        library.refreshStatus(entry);
+
+        await reconcileStoppedWorker(library, '整理任务意外停止');
+
+        final Json saved = readJson(status)! as Json;
+        expect(saved['state'], 'paused');
+        expect(saved['pause_reason'], 'request_outcome_unknown');
+        expect(saved['request_outcome'], 'unknown');
+        expect(saved['retryable'], false);
+        expect(saved.containsKey('retry_at'), false);
+        expect(saved['done'], 10);
+        expect(saved['total'], 603);
+        expect(saved['frontier'], 9042);
+        expect((readJson(meta) as Json)['auto'], false);
+        expect(journal.readAsStringSync(), originalJournal);
+        expect(
+          File('${bookRoot.path}/work/activity.json').readAsStringSync(),
+          contains('上次模型请求结果未确认'),
+        );
+      },
+    );
+  }
 
   test('dead worker respects an already recorded user pause', () async {
     final File status = File('${bookRoot.path}/status.json');
@@ -379,6 +549,76 @@ void main() {
     },
   );
 
+  for (final bool journalOnly in <bool>[false, true]) {
+    for (final String decision in <String>['cancel', 'confirm', 'dismiss']) {
+      testWidgets(
+        'unknown request resume requires explicit confirmation '
+        '(${journalOnly ? 'journal without pause marker' : 'unknown pause marker'}, $decision)',
+        (WidgetTester tester) async {
+          configure();
+          processing.status(entry, <String, Object?>{
+            'state': 'paused',
+            'done': 1,
+            'total': 2,
+            'frontier': 17,
+            'pause_reason': journalOnly
+                ? 'interrupted'
+                : 'request_outcome_unknown',
+          });
+          final File journal = File(
+            '${bookRoot.path}/work/model-request-journal.json',
+          );
+          if (journalOnly) {
+            writeJson(journal, <String, Object?>{
+              'version': 1,
+              'requests': <Json>[
+                <String, Object?>{'id': 1, 'phase': 'inflight'},
+              ],
+            });
+          }
+          String? readJournal() =>
+              journal.existsSync() ? journal.readAsStringSync() : null;
+          final String? originalJournal = readJournal();
+          final String originalStatus = File(
+            '${bookRoot.path}/status.json',
+          ).readAsStringSync();
+          await open(tester);
+          await tester.tap(find.text('继续整理'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(processing.starts, 0);
+          expect(find.text('上次模型请求结果未确认'), findsOneWidget);
+          expect(find.textContaining('服务器可能已经处理并计费'), findsOneWidget);
+          expect(find.textContaining('可能再次产生模型费用'), findsOneWidget);
+          expect(readJournal(), originalJournal);
+
+          if (decision == 'confirm') {
+            await tester.tap(find.text('确认继续'));
+          } else if (decision == 'cancel') {
+            await tester.tap(find.text('暂不继续'));
+          } else {
+            await tester.binding.handlePopRoute();
+          }
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(find.text('上次模型请求结果未确认'), findsNothing);
+          expect(processing.starts, decision == 'confirm' ? 1 : 0);
+          if (decision != 'confirm') {
+            expect(readJournal(), originalJournal);
+            expect(
+              File('${bookRoot.path}/status.json').readAsStringSync(),
+              originalStatus,
+            );
+            expect(entry.status.done, 1);
+            expect(entry.status.frontier, 17);
+            expect(find.text('继续整理'), findsOneWidget);
+          }
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
   test(
     'background-limit pause forwards to legacy processing implementations',
     () async {
@@ -424,6 +664,205 @@ void main() {
 
       await tester.pumpWidget(const SizedBox());
       model.dispose();
+    },
+  );
+
+  for (final String reason in <String>[
+    'background_time_limit',
+    'background_unavailable',
+  ]) {
+    testWidgets(
+      'foreground does not silently resume $reason with unsettled request evidence',
+      (WidgetTester tester) async {
+        configure();
+        late FixtureProcessing appProcessing;
+        final AppModel model = AppModel(
+          root,
+          createProcessing: (Library value) =>
+              appProcessing = FixtureProcessing(value),
+        );
+        model.prefs.update(
+          (p) => p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch,
+        );
+        await model.initialize();
+        final BookEntry appBook = model.library.books.single;
+        appProcessing.status(appBook, <String, Object?>{
+          'state': 'paused',
+          'pause_reason': reason,
+          'done': 1,
+          'total': 2,
+          'frontier': 17,
+        });
+        final File journal = File(
+          '${appBook.dir.path}/work/model-request-journal.json',
+        );
+        writeJson(journal, <String, Object?>{
+          'version': 1,
+          'requests': <Json>[
+            <String, Object?>{'id': 1, 'phase': 'inflight'},
+          ],
+        });
+        final String evidence = journal.readAsStringSync();
+        try {
+          await tester.pumpWidget(ThusfarApp(model: model));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 20));
+          expect(appProcessing.starts, 0);
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+          await tester.pump();
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 20));
+          expect(appProcessing.starts, 0);
+          expect(appBook.status.done, 1);
+          expect(appBook.status.frontier, 17);
+          expect(journal.readAsStringSync(), evidence);
+        } finally {
+          await tester.pumpWidget(const SizedBox());
+          model.dispose();
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'HomeShell hidden paused and detached lifecycle does not cancel processing',
+    (WidgetTester tester) async {
+      configure();
+      late FixtureProcessing appProcessing;
+      final AppModel model = AppModel(
+        root,
+        createProcessing: (Library value) =>
+            appProcessing = FixtureProcessing(value),
+      );
+      model.prefs.update(
+        (p) => p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch,
+      );
+      await model.initialize();
+      final BookEntry appBook = model.library.books.single;
+      appProcessing.status(appBook, <String, Object?>{
+        'state': 'running',
+        'done': 3,
+        'total': 10,
+        'frontier': 9042,
+      });
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pump();
+      try {
+        for (final AppLifecycleState state in <AppLifecycleState>[
+          AppLifecycleState.inactive,
+          AppLifecycleState.hidden,
+          AppLifecycleState.paused,
+          AppLifecycleState.detached,
+        ]) {
+          tester.binding.handleAppLifecycleStateChanged(state);
+          await tester.pump();
+          expect(
+            appProcessing.pauses,
+            0,
+            reason: '$state must not pause the worker',
+          );
+          expect(
+            appProcessing.closes,
+            0,
+            reason: '$state must not close the worker',
+          );
+          expect(
+            appProcessing.starts,
+            0,
+            reason: '$state must not duplicate a run',
+          );
+          expect(appBook.status.state, 'running');
+          expect(appBook.status.done, 3);
+          expect(appBook.status.frontier, 9042);
+        }
+        await tester.pumpWidget(const SizedBox());
+        expect(
+          appProcessing.closes,
+          0,
+          reason: 'disposing a screen does not own worker lifetime',
+        );
+        expect(appProcessing.pauses, 0);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpWidget(const SizedBox());
+        model.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'background completion survives detached screen recreation and library reload',
+    (WidgetTester tester) async {
+      configure();
+      late FixtureProcessing appProcessing;
+      final AppModel model = AppModel(
+        root,
+        createProcessing: (Library value) =>
+            appProcessing = FixtureProcessing(value),
+      );
+      model.prefs.update(
+        (p) => p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch,
+      );
+      await model.initialize();
+      final BookEntry appBook = model.library.books.single;
+      appProcessing.status(appBook, <String, Object?>{
+        'state': 'running',
+        'done': 3,
+        'total': 10,
+        'frontier': 9042,
+      });
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pump();
+      try {
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+        appProcessing.status(appBook, <String, Object?>{
+          'state': 'done',
+          'done': 10,
+          'total': 10,
+          'frontier': 20000,
+        });
+        final String durable = File(
+          '${appBook.dir.path}/status.json',
+        ).readAsStringSync();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.detached,
+        );
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(ThusfarApp(model: model));
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 20));
+        await model.library.scan();
+        final BookEntry reloaded = model.library.books.single;
+        expect(reloaded.status.state, 'done');
+        expect(reloaded.status.done, 10);
+        expect(reloaded.status.total, 10);
+        expect(reloaded.status.frontier, 20000);
+        expect(
+          File('${appBook.dir.path}/status.json').readAsStringSync(),
+          durable,
+        );
+        expect(appProcessing.pauses, 0);
+        expect(appProcessing.closes, 0);
+        expect(appProcessing.starts, 0);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpWidget(const SizedBox());
+        model.dispose();
+      }
     },
   );
 

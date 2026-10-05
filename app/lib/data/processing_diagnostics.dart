@@ -48,6 +48,8 @@ final class ProcessingDiagnostics {
     'user',
     'manual',
     'background_time_limit',
+    'background_unavailable',
+    'request_outcome_unknown',
     'reconciled',
     'interrupted',
     'worker_stopped',
@@ -74,6 +76,8 @@ final class ProcessingDiagnostics {
     return switch (code) {
       'user' || 'manual' => '由你暂停',
       'background_time_limit' => '系统后台整理时段已结束',
+      'background_unavailable' => '后台整理服务已停止',
+      'request_outcome_unknown' => '上次模型请求结果未确认，请检查后继续',
       'reconciled' => '上次整理中断后已暂停',
       'interrupted' => '上次整理中断后已暂停',
       'worker_stopped' => '整理任务中断后已暂停',
@@ -88,6 +92,7 @@ final class ProcessingDiagnostics {
   static Uint8List bytes({
     required Directory bookDirectory,
     required Map<String, Object?> workerHealth,
+    Map<String, Object?> backgroundRuntime = const <String, Object?>{},
     DateTime? now,
   }) {
     final DateTime created = now ?? DateTime.now();
@@ -205,10 +210,102 @@ final class ProcessingDiagnostics {
             },
       ],
       'biography_jobs': _biographyJobs(bookDirectory),
+      if (backgroundRuntime.isNotEmpty)
+        'android_runtime': _runtime(backgroundRuntime),
     };
     return Uint8List.fromList(
       utf8.encode('${const JsonEncoder.withIndent('  ').convert(snapshot)}\n'),
     );
+  }
+
+  static Map<String, Object?> _runtime(Map<String, Object?> raw) {
+    Map<String, Object?> object(Object? value) => value is Map
+        ? Map<String, Object?>.from(value)
+        : const <String, Object?>{};
+    final Map<String, Object?> service = object(raw['service']);
+    final List<Object?> events = raw['events'] is List
+        ? List<Object?>.from(raw['events']! as List)
+        : const [];
+    const Set<String> kinds = <String>{
+      'engine_started',
+      'activity_resumed',
+      'activity_paused',
+      'activity_stopped',
+      'activity_destroyed',
+      'dart_resumed',
+      'dart_inactive',
+      'dart_hidden',
+      'dart_paused',
+      'dart_detached',
+      'service_created',
+      'service_destroyed',
+      'task_stopped',
+      'foreground_started',
+      'foreground_start_requested',
+      'foreground_start_failed',
+      'foreground_start_rejected',
+      'foreground_start_timeout',
+      'foreground_command_failed',
+      'foreground_time_limit',
+      'cpu_lease_acquired',
+      'cpu_lease_released',
+      'notification_permission_failed',
+    };
+    const Set<String> failures = <String>{
+      'SecurityException',
+      'IllegalStateException',
+      'IllegalArgumentException',
+      'ForegroundServiceStartNotAllowedException',
+      'ForegroundServiceTypeNotAllowedException',
+      'InvalidForegroundServiceTypeException',
+      'MissingForegroundServiceTypeException',
+      'RuntimeException',
+    };
+    return <String, Object?>{
+      for (final String key in <String>[
+        'sdk',
+        'background_data_restriction',
+        'pid',
+        'elapsed_ms',
+        'uptime_ms',
+      ])
+        key: _number(raw[key]),
+      for (final String key in <String>[
+        'available',
+        'interactive',
+        'device_idle',
+        'power_save',
+        'battery_optimization_exempt',
+        'background_restricted',
+        'notifications_enabled',
+        'network_available',
+        'network_validated',
+        'network_metered',
+      ])
+        key: _boolean(raw[key]),
+      'service': <String, Object?>{
+        'running': _boolean(service['running']),
+        'start_pending': _boolean(service['start_pending']),
+        'wake_lock_held': _boolean(service['wake_lock_held']),
+        'task_count': _number(service['task_count']),
+      },
+      'events': <Map<String, Object?>>[
+        for (final Object? event in events.skip(
+          events.length > 64 ? events.length - 64 : 0,
+        ))
+          <String, Object?>{
+            'event': _code(object(event)['event'], kinds),
+            'error_type': _code(object(event)['error_type'], failures),
+            for (final String key in <String>[
+              'at_ms',
+              'elapsed_ms',
+              'uptime_ms',
+              'pid',
+            ])
+              key: _number(object(event)[key]),
+          },
+      ],
+    };
   }
 
   static Object? _read(File file) {

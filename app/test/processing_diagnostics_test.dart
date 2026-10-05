@@ -25,6 +25,49 @@ void main() {
     );
   });
 
+  test('native runtime export is bounded and rejects private fields', () {
+    const String secret = 'PRIVATE-BOOK-API-URL';
+    final String encoded = utf8.decode(
+      ProcessingDiagnostics.bytes(
+        bookDirectory: book,
+        workerHealth: const <String, Object?>{},
+        backgroundRuntime: <String, Object?>{
+          'sdk': 35,
+          'pid': 123,
+          'device_idle': true,
+          'private': secret,
+          'service': <String, Object?>{
+            'running': true,
+            'wake_lock_held': true,
+            'title': secret,
+          },
+          'events': <Object?>[
+            for (int i = 0; i < 80; i++)
+              <String, Object?>{
+                'event': i == 79 ? secret : 'foreground_started',
+                'error_type': secret,
+                'message': secret,
+                'at_ms': i,
+                'elapsed_ms': i,
+                'uptime_ms': i,
+              },
+          ],
+        },
+      ),
+    );
+    expect(encoded, isNot(contains(secret)));
+    final Map<String, Object?> decoded =
+        jsonDecode(encoded) as Map<String, Object?>;
+    final Map<String, Object?> native =
+        decoded['android_runtime']! as Map<String, Object?>;
+    expect(native['device_idle'], isTrue);
+    expect(
+      (native['service']! as Map<String, Object?>)['wake_lock_held'],
+      isTrue,
+    );
+    expect(native['events'], hasLength(64));
+  });
+
   test('file name is stable and does not include a book title', () {
     expect(
       ProcessingDiagnostics.fileName(DateTime(2026, 9, 27, 16, 8, 9)),
