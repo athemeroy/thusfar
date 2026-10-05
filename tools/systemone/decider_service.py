@@ -22,6 +22,7 @@ def main():
     parser.add_argument('--host', default='192.168.31.38')
     parser.add_argument('--port', type=int, default=47838)
     parser.add_argument('--backend-port', type=int, default=47839)
+    parser.add_argument('--backend-url', help='Use an independently managed llama-server')
     parser.add_argument('--key-file', type=Path, required=True)
     args = parser.parse_args()
     key = args.key_file.read_text().strip()
@@ -36,8 +37,8 @@ def main():
     def stop(signum, frame):
         raise SystemExit(0)
     signal.signal(signal.SIGTERM, stop)
-    backends.BASE = f'http://127.0.0.1:{args.backend_port}'
-    backend = subprocess.Popen([
+    backends.BASE = args.backend_url or f'http://127.0.0.1:{args.backend_port}'
+    backend = None if args.backend_url else subprocess.Popen([
         str(ROOT / 'runtime/build/bin/llama-server'), '-m', str(weights),
         '--host', '127.0.0.1', '--port', str(args.backend_port),
         '-ngl', '99', '-c', '32768', '-b', '8192', '-ub', '512',
@@ -45,11 +46,14 @@ def main():
     ])
     try:
         for _ in range(120):
-            if backend.poll() is not None:
+            if backend is not None and backend.poll() is not None:
                 raise RuntimeError('Decider backend stopped')
             try:
                 props = backends.post('/props', timeout=2)
-                if Path(props['model_path']).resolve() != weights.resolve():
+                remote_name = str(props['model_path']).replace('\\', '/').split('/')[-1]
+                matches = (remote_name == weights.name if args.backend_url else
+                           Path(props['model_path']).resolve() == weights.resolve())
+                if not matches:
                     raise RuntimeError('Unexpected backend model')
                 break
             except OSError:
@@ -98,9 +102,13 @@ def main():
                     status, value = jobs.get(token)
                     self.reply(status, value)
                 elif self.path == '/v1/decider/health':
-                    self.reply(200 if backend.poll() is None else 503,
+                    try:
+                        ready = backends.post('/health', timeout=2).get('status') == 'ok'
+                    except OSError:
+                        ready = False
+                    self.reply(200 if ready else 503,
                                {'model': model['name'], 'revision': model['revision'],
-                                'ready': backend.poll() is None})
+                                'ready': ready})
                 else:
                     self.reply(404, {'error': 'unknown_path'})
 
@@ -145,12 +153,13 @@ def main():
         print('DECIDER_READY', flush=True)
         server.serve_forever()
     finally:
-        backend.terminate()
-        try:
-            backend.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            backend.kill()
-            backend.wait()
+        if backend is not None:
+            backend.terminate()
+            try:
+                backend.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                backend.kill()
+                backend.wait()
 
 
 if __name__ == '__main__':
