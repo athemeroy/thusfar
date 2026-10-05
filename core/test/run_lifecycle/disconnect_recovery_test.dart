@@ -355,6 +355,44 @@ void main() {
   );
 
   test(
+    'model change archives pending extraction and keeps completed data',
+    () async {
+      final Directory root = minimalBook(books, 'changed-model');
+      final FixtureTransport fake = FixtureTransport(
+        (_) async => streamReply(
+          '{"people":[],"same":[],"events":[],"facts":[],"rels":[]}',
+        ),
+      );
+      llm.transport = fake;
+      final Runner runner = await Runner.create(root, model: 'fixture-old');
+      try {
+        await runner.localJob(0, 'fixture-old');
+        final String old = runner.localPath(0).readAsStringSync();
+        await runner.localJob(0, 'fixture-new');
+        expect(fake.calls, 2);
+        expect(read(root, 'work/local/0000.json')['model'], 'fixture-new');
+        final Directory archive = Directory('${root.path}/work')
+            .listSync()
+            .whereType<Directory>()
+            .singleWhere((d) => d.path.contains('previous-model-'));
+        expect(File('${archive.path}/0000.json').readAsStringSync(), old);
+        await runner.localJob(0, 'fixture-new');
+        expect(fake.calls, 2, reason: 'same-model resume reuses the new cache');
+        save(root, 'work/segs/0000.json', <String, Object?>{'completed': true});
+        await expectLater(
+          runner.localJob(0, 'fixture-third'),
+          throwsA(isA<llm.LLMError>()),
+        );
+        expect(fake.calls, 2);
+        expect(read(root, 'work/segs/0000.json'), {'completed': true});
+        expect(read(root, 'work/local/0000.json')['model'], 'fixture-new');
+      } finally {
+        await runner.close();
+      }
+    },
+  );
+
+  test(
     'queued books never publish a false idle transition between runs',
     () async {
       final Directory a = minimalBook(books, 'a'), b = minimalBook(books, 'b');

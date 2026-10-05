@@ -573,22 +573,30 @@ extension RunnerSupport on Runner {
     final File path = localPath(i);
     if (path.existsSync()) {
       final Json rec = _read(path);
-      if (_truth(rec['empty']))
-        throw llm.LLMError('第 $i 段缓存来自抽取失败，须先隔离失败缓存再重试');
-      if (_truth(rec['refused'])) {
-        refused.add(i);
-        return addSupport(await addRelations(rec, i, model), i);
-      }
       final Json p = _obj(rec['provenance']);
       if (p.isNotEmpty &&
           (p['input_sha256'] != inputSha256 ||
-              p['extractor_revision'] != prompts.extractorRevision ||
-              rec['model'] != model))
+              p['extractor_revision'] != prompts.extractorRevision))
         throw const llm.LLMError('抽取缓存的输入、模型或提示版本已变更；请隔离旧缓存后重建');
-      rec['data'] = local.sanitize(_obj(rec['data']));
-      if (!_truth(rec['relation_context']))
-        rec['relation_context'] = relationContext(i, _obj(rec['data']), memory);
-      return addSupport(await addRelations(rec, i, model), i);
+      if (p.isNotEmpty && rec['model'] != model) {
+        // Only pending extraction is rebuilt. Published segments replay from
+        // segs/ and retain their original model and verified progress.
+        if (segPath(i).existsSync())
+          throw const llm.LLMError('已完成片段的抽取缓存不能随模型切换重建');
+        final Directory archive = work.createTempSync('previous-model-');
+        path.renameSync('${archive.path}/${i.toString().padLeft(4, '0')}.json');
+      } else {
+        if (_truth(rec['empty']))
+          throw llm.LLMError('第 $i 段缓存来自抽取失败，须先隔离失败缓存再重试');
+        if (_truth(rec['refused'])) {
+          refused.add(i);
+          return addSupport(await addRelations(rec, i, model), i);
+        }
+        rec['data'] = local.sanitize(_obj(rec['data']));
+        if (!_truth(rec['relation_context']))
+          rec['relation_context'] = relationContext(i, _obj(rec['data']), memory);
+        return addSupport(await addRelations(rec, i, model), i);
+      }
     }
     Json? rec;
     int refusals = 0;

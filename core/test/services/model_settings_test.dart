@@ -86,6 +86,37 @@ final class CallbackTransport implements llm.ChatTransport {
       reply(request);
 }
 
+final class TwoModelTransport implements llm.ChatTransport {
+  final List<llm.ChatRequest> requests = [];
+  @override
+  Future<llm.ChatResponse> post(
+    llm.ChatRequest request,
+    Duration timeout,
+  ) async {
+    requests.add(request);
+    final String model = (jsonDecode(request.body) as Json)['model']! as String;
+    final String content =
+        model == 'generation-model'
+            ? '可以'
+            : '{"check":{"choice":"yes","probabilities":{"yes":0.95,"no":0.05}}}';
+    return llm.ChatResponse(
+      200,
+      'text/event-stream',
+      Stream.value(
+        utf8.encode(
+          'data: ${jsonEncode({
+            'choices': [
+              {
+                'delta': {'content': content},
+              },
+            ],
+          })}\n\ndata: [DONE]\n\n',
+        ),
+      ),
+    );
+  }
+}
+
 void main() {
   late Directory root;
   late ModelSettings settings;
@@ -107,6 +138,44 @@ void main() {
     llm.resetEnvCache();
     root.deleteSync(recursive: true);
   });
+
+  test(
+    'custom System Two tests its own endpoint without changing generation',
+    () async {
+      settings.save({
+        'base_url': 'https://generate.invalid/v1',
+        'model': 'generation-model',
+        'api_key': 'generation-key',
+      });
+      final String original = settings.file.readAsStringSync();
+      final Map<String, String> active = Map.of(environ);
+      final TwoModelTransport transport = TwoModelTransport();
+      llm.transport = transport;
+      final Json draft = {
+        'jev_route': 'model',
+        'judge_url': 'https://judge.invalid/v1',
+        'judge_model': 'judge-model',
+        'judge_api_key': 'judge-key',
+      };
+      expect((await settings.test(payload: draft))['ok'], true);
+      expect(transport.requests.map((r) => r.url.host), [
+        'generate.invalid',
+        'judge.invalid',
+      ]);
+      expect(
+        transport.requests.last.headers['Authorization'],
+        'Bearer judge-key',
+      );
+      expect(settings.file.readAsStringSync(), original);
+      expect(environ, active);
+      final Json public = settings.save(draft);
+      expect(public.containsKey('judge_api_key'), false);
+      expect(public['judge_api_key_set'], true);
+      expect(environ['EXTRACT_MODEL'], 'generation-model');
+      expect(environ['JUDGE_MODEL'], 'judge-model');
+      expect(settings.read()['judge_url'], 'https://judge.invalid/v1');
+    },
+  );
 
   test(
     'unsaved probe uses the form and preserves active settings and file',
@@ -443,6 +512,23 @@ void main() {
   }
 
   for (final String variant in <String>['think', 'nothink']) {
+    test('Qwen +$variant uses the chat template thinking option', () async {
+      settings.save(<String, Object?>{
+        'base_url': 'https://offline.invalid/v1',
+        'model': 'huihui-swift-qwen3.8-flash-next-iq3_xxs+$variant',
+        'api_key': 'offline-variant-key',
+      });
+      final ProtocolTransport transport = ProtocolTransport('openai');
+      llm.transport = transport;
+      expect((await settings.test())['ok'], true);
+      final Json body = jsonDecode(transport.requests.single.body) as Json;
+      expect(body['model'], 'huihui-swift-qwen3.8-flash-next-iq3_xxs');
+      expect(body['chat_template_kwargs'], <String, Object?>{
+        'enable_thinking': variant == 'think',
+      });
+      expect(body.containsKey('thinking'), false);
+    });
+
     test(
       'explicit +$variant stays saved and sets the OpenAI thinking flag',
       () async {
