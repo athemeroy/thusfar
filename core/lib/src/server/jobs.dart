@@ -12,8 +12,10 @@ import 'dart:io';
 import '../async_util.dart';
 import '../env.dart';
 import '../errors.dart';
+import '../pipeline/extract.dart' as extraction;
 import '../pipeline/jev.dart' as jev;
 import '../pipeline/judge_context.dart';
+import '../pipeline/preparation_plan.dart' show validatePreparationPlan;
 import '../pipeline/run.dart' as pipeline;
 import '../pipeline/run_lease.dart';
 import '../py/py_compat.dart';
@@ -374,7 +376,60 @@ class Worker {
     if (_alive && _queue.isNotEmpty) _wake();
   }
 
-  Future<void> startBook(Directory root) async {
+  Future<void> startBook(Directory root, {Json? plan}) async {
+    _checkRoot(root);
+    bool alreadyCovered = false;
+    if (plan != null) {
+      if (_current == _name(root)) {
+        throw const RuntimeError('请先暂停当前整理，再调整范围');
+      }
+      await _withLease(root, () {
+        final Json book = _json(root, 'book.json');
+        final Json validated = validatePreparationPlan(plan, book);
+        final Json meta = _json(root, 'meta.json');
+        meta['preparation_plan'] = validated;
+        final Json state = _json(root, 'status.json');
+        alreadyCovered =
+            state['state'] == 'done' && !_truth(meta['retry_quality']);
+        if (alreadyCovered) {
+          final List<Json> chapters =
+              (book['chapters']! as List<Object?>).cast<Json>();
+          final List<Json> targets =
+              extraction
+                  .segments(book, <int>[
+                    for (final (int i, Json chapter) in chapters.indexed)
+                      if ((chapter['kind'] ?? 'body') == 'body') i,
+                  ])
+                  .takeWhile(
+                    (Json segment) =>
+                        (segment['o1']! as int) <=
+                        (validated['end_offset']! as int),
+                  )
+                  .toList();
+          state['plan'] = <String, Object?>{
+            ...validated,
+            'target_segments': targets.length,
+            'completed_segments': targets.length,
+            'effective_end_offset': targets.isEmpty ? 0 : targets.last['o1'],
+            'state': 'complete',
+            if (book['classification_source'] == 'local-bounded')
+              'classification_source': 'local',
+          };
+          meta['auto'] = false;
+        } else {
+          state.remove('plan');
+        }
+        _save(root, 'meta.json', meta);
+        if (state['pause_reason'] == 'scope_complete') {
+          state.remove('pause_reason');
+        }
+        _save(root, 'status.json', state);
+      });
+    }
+    if (alreadyCovered) {
+      _notify();
+      return;
+    }
     await start();
     await setAuto(root, true);
   }
@@ -397,6 +452,10 @@ class Worker {
     final Json meta = _json(root, 'meta.json');
     final Json state = _json(root, 'status.json');
     final Json quality = _object(state['quality']);
+    final bool completedGoal =
+        state['state'] == 'done' ||
+        (state['pause_reason'] == 'scope_complete' &&
+            _object(state['plan'])['state'] == 'complete');
     final bool resumeFinalJobs = _resumeBioFinalJobsInPlace(root, quality);
     final bool retryOnlyTitles = _retryOnlyTitlesInPlace(quality);
     final bool resumeInPlace = resumeFinalJobs || retryOnlyTitles;
@@ -414,7 +473,7 @@ class Worker {
         <String>{'error', 'paused'}.contains(state['state']);
     final bool retryQuality =
         value &&
-        (state['state'] == 'done' ||
+        (completedGoal ||
             (criticalRepair &&
                 <String>{'error', 'paused'}.contains(state['state']))) &&
         (criticalRepair ||
@@ -434,7 +493,7 @@ class Worker {
           'error',
         }.contains(state['state']);
     meta['auto'] = value;
-    if ((value && state['state'] == 'done' && resumeFinalJobs) || !value) {
+    if ((value && completedGoal && resumeFinalJobs) || !value) {
       for (final Object? item
           in (pendingQuality is List ? pendingQuality : [])) {
         if (item is! String || !_bioJobName.hasMatch(item)) continue;
@@ -452,15 +511,15 @@ class Worker {
     if (retryQuality) {
       meta['retry_quality'] = true;
     } else if ((!value && !preserveQualityTransaction) ||
-        (resumeInPlace && state['state'] == 'done')) {
+        (resumeInPlace && completedGoal)) {
       meta.remove('retry_quality');
     }
     _save(root, 'meta.json', meta);
     final bool queued =
         value &&
         (retryQuality ||
-            (resumeFinalJobs && state['state'] == 'done') ||
-            (retryOnlyTitles && state['state'] == 'done') ||
+            (resumeFinalJobs && completedGoal) ||
+            (retryOnlyTitles && completedGoal) ||
             !<String>{
               'done',
               'running',
@@ -732,6 +791,9 @@ class Worker {
       _file(root, 'book.json').existsSync() &&
       _truth(meta['auto']) &&
       !(state['state'] == 'done' && !_truth(meta['retry_quality'])) &&
+      !(state['pause_reason'] == 'scope_complete' &&
+          _object(state['plan'])['state'] == 'complete' &&
+          !_truth(meta['retry_quality'])) &&
       (state['state'] != 'error' ||
           (_retryPending(meta, state) && _clock() >= _retryAt(state)));
 
@@ -829,7 +891,17 @@ class Worker {
           _save(root, 'meta.json', meta);
         }
       }
-      if (auto && _stopping && code != 0) {
+      final bool scopeComplete =
+          code == 0 &&
+          state['pause_reason'] == 'scope_complete' &&
+          _object(state['plan'])['state'] == 'complete';
+      if (scopeComplete) {
+        // A selected goal is terminal until explicitly expanded. Retain both
+        // the plan and caches, but never let the worker widen it on a scan.
+        meta['auto'] = false;
+        meta.remove('retry_quality');
+        _save(root, 'meta.json', meta);
+      } else if (auto && _stopping && code != 0) {
         state.addAll(<String, Object?>{
           'state': 'queued',
           'updated': _clock(),

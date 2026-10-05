@@ -206,7 +206,9 @@ void main() {
   test(
     'Existing committed Python recent-text goldens including long Unicode paragraphs',
     () {
-      final File file = File('../reference/oracle/goldens/server/ask/recent_text.jsonl');
+      final File file = File(
+        '../reference/oracle/goldens/server/ask/recent_text.jsonl',
+      );
       for (final String line in file.readAsLinesSync().where(
         (String line) => line.isNotEmpty,
       )) {
@@ -593,6 +595,89 @@ void main() {
       environ['JUDGE_MODEL'] = 'initial';
       await service.answer(bookDir, 'Alice?', 20);
       expect(backend.chats, 2);
+    },
+  );
+  test(
+    'early metadata rejection releases the caller transport gate exactly once',
+    () async {
+      prepare();
+      File('${bookDir.path}/meta.json').writeAsStringSync('broken JSON');
+      final RepeatBackend backend = RepeatBackend();
+      int settlements = 0;
+      await expectLater(
+        AskService(
+          backend: backend,
+        ).answer(bookDir, 'Alice?', 20, onSettled: () => settlements++),
+        throwsA(isA<FormatException>()),
+      );
+      expect(settlements, 1);
+      expect(backend.chats, 0);
+    },
+  );
+
+  test(
+    'separate full-length question, selection and bounded references reach offline request',
+    () async {
+      prepare();
+      final RepeatBackend backend = RepeatBackend();
+      final AskService service = AskService(backend: backend);
+      final int cutoff = input['pos']! as int;
+      final String question = '${'问' * 491}只比较甲和乙。';
+      final List<AskTurn> history = <AskTurn>[
+        AskTurn(
+          bookId: bookDir.absolute.path,
+          cutoff: cutoff,
+          question: 'Previous Alice?',
+          answer: 'Alice came.',
+        ),
+        AskTurn(
+          bookId: bookDir.absolute.path,
+          cutoff: cutoff + 1,
+          question: 'LATER_QUESTION',
+          answer: 'LATER_SECRET',
+        ),
+        AskTurn(
+          bookId: 'other-book',
+          cutoff: cutoff,
+          question: 'OTHER_QUESTION',
+          answer: 'OTHER_SECRET',
+        ),
+      ];
+      await service.answer(
+        bookDir,
+        question,
+        cutoff,
+        selectedText: '选' * 180,
+        history: history,
+      );
+      expect(backend.materials.last, contains(question));
+      expect(backend.materials.last, contains('选' * 180));
+      expect(backend.materials.last, contains('Previous Alice?'));
+      expect(backend.materials.last, isNot(contains('LATER_SECRET')));
+      expect(backend.materials.last, isNot(contains('OTHER_SECRET')));
+      await service.answer(
+        bookDir,
+        question,
+        cutoff,
+        selectedText: '选' * 180,
+        history: history,
+      );
+      expect(backend.chats, 1);
+      await service.answer(
+        bookDir,
+        question,
+        cutoff,
+        selectedText: 'different selection',
+        history: history,
+      );
+      expect(backend.chats, 2);
+      await service.answer(
+        bookDir,
+        question,
+        cutoff,
+        selectedText: 'different selection',
+      );
+      expect(backend.chats, 3);
     },
   );
 }

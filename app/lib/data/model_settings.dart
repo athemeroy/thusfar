@@ -46,6 +46,10 @@ class ModelSettings {
     String protocol = 'openai',
   }) => core.ModelSettings.normalize(url, model, protocol: protocol);
 
+  /// Resolve and validate a draft without writing or changing active routing.
+  Map<String, Object?> preview(Map<String, Object?> payload) =>
+      _settings.preview(payload);
+
   Future<Map<String, Object?>> test({
     required String url,
     required String model,

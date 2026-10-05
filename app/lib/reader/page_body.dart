@@ -8,6 +8,7 @@ import 'package:thusfar_core/thusfar_core.dart';
 import '../data/library.dart';
 import '../ui/theme.dart';
 import 'paginator.dart';
+import 'image_viewer.dart';
 
 /// What the page needs to draw its AI and personal layers.
 class PageLayers {
@@ -65,7 +66,7 @@ class PageBody extends StatelessWidget {
             if (f.image)
               SizedBox(
                 height: f.lines * spec.line,
-                child: _image(book, book.blocks[f.block], t),
+                child: _image(context, book, book.blocks[f.block], t),
               )
             else
               _Fragment(
@@ -81,7 +82,7 @@ class PageBody extends StatelessWidget {
     );
   }
 
-  Widget _image(BookData book, Block b, Tokens t) {
+  Widget _image(BuildContext context, BookData book, Block b, Tokens t) {
     final Object? rawAlt = b.raw['alt'];
     final String? alt = rawAlt is String && rawAlt.trim().isNotEmpty
         ? rawAlt
@@ -100,7 +101,17 @@ class PageBody extends StatelessWidget {
     }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Image.file(f, fit: BoxFit.contain, semanticLabel: alt),
+      child: InkWell(
+        onTap: () => openReaderImage(context, FileImage(f), label: alt),
+        child: Image.file(
+          f,
+          fit: BoxFit.contain,
+          semanticLabel: alt,
+          errorBuilder: (_, _, _) => Center(
+            child: Text('图片无法加载', style: TextStyle(color: t.ink3)),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -10,12 +10,14 @@ import 'package:thusfar_core/llm.dart' as llm;
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/processing.dart';
+import '../data/preparation_plan.dart';
 import '../data/processing_diagnostics.dart';
 import '../screens/imported_web_preparation_screen.dart';
 import '../ui/cover.dart';
-import '../ui/device.dart';
 import '../ui/theme.dart';
 import 'sheet_host.dart';
+import 'preparation_plan_editor.dart';
+import 'preparation_progress.dart';
 
 /// S02 书籍抽屉: everything about one book, above all its processing.
 class BookSheet extends StatefulWidget {
@@ -57,6 +59,66 @@ class BookSheet extends StatefulWidget {
 
 class _BookSheetState extends State<BookSheet> {
   bool confirmStart = false;
+  NativePreparationPlan? _selectedPlan;
+
+  NativePreparationPlan _plan() {
+    if (_selectedPlan != null) return _selectedPlan!;
+    final Object? book = readJson(File('${widget.entry.dir.path}/book.json'));
+    final Object? meta = readJson(File('${widget.entry.dir.path}/meta.json'));
+    final Object? saved = meta is Json ? meta['preparation_plan'] : null;
+    return _selectedPlan = NativePreparationPlan.fromBook(
+      book is Json ? book : <String, Object?>{},
+      readingCutoff: widget.library.progressOf(widget.entry.id)?.cutoff ?? 0,
+      saved: saved is Json ? saved : null,
+    );
+  }
+
+  Future<void> _adjustPlan() async {
+    if (!widget.settings.hasKey) {
+      setState(() => missingKey = true);
+      return;
+    }
+    NativePreparationPlan selected = _plan();
+    final NativePreparationPlan? choice =
+        await showDialog<NativePreparationPlan>(
+          context: context,
+          builder: (BuildContext context) => StatefulBuilder(
+            builder: (BuildContext context, StateSetter redraw) => AlertDialog(
+              title: const Text('调整这次整理范围'),
+              content: SizedBox(
+                width: 520,
+                child: SingleChildScrollView(
+                  child: PreparationPlanEditor(
+                    plan: selected,
+                    frontier: widget.entry.status.frontier,
+                    onChanged: (NativePreparationPlan plan) =>
+                        redraw(() => selected = plan),
+                  ),
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: !selected.valid
+                      ? null
+                      : () => Navigator.pop(context, selected),
+                  child: const Text('按此范围开始（可能收费）'),
+                ),
+              ],
+            ),
+          ),
+        );
+    if (choice == null || !mounted) return;
+    setState(() => _selectedPlan = choice);
+    await _action(
+      '正在开始本次范围…',
+      () => widget.processing.startBookWithPlan(widget.entry, choice.toJson()),
+    );
+  }
+
   bool confirmRemove = false;
   bool missingKey = false;
   String? engineNote;
@@ -327,7 +389,18 @@ class _BookSheetState extends State<BookSheet> {
       setState(() => missingKey = true);
       return;
     }
-    await _action('正在开始整理…', () => widget.processing.startBook(widget.entry));
+    final bool bounded = confirmStart || widget.entry.status.isIdle;
+    final NativePreparationPlan plan = _plan();
+    if (bounded && !plan.valid) {
+      setState(() => engineNote = '这个范围没有可处理的正文，请调整范围。');
+      return;
+    }
+    await _action(
+      '正在开始整理…',
+      () => bounded
+          ? widget.processing.startBookWithPlan(widget.entry, plan.toJson())
+          : widget.processing.startBook(widget.entry),
+    );
   }
 
   Future<void> _continueWithModel() =>
@@ -629,10 +702,7 @@ class _BookSheetState extends State<BookSheet> {
                         HapticFeedback.lightImpact();
                         setState(() => confirmRemove = true);
                       },
-                child: Text(
-                  '从这台$deviceWord移除',
-                  style: TextStyle(color: t.danger),
-                ),
+                child: Text('移到回收站', style: TextStyle(color: t.danger)),
               )
             else
               Container(
@@ -646,7 +716,7 @@ class _BookSheetState extends State<BookSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      '会删除正文、人物资料和你的摘记。建议先导出备份。',
+                      '书籍、人物资料、摘记和阅读进度会保留，可在设置 → 回收站恢复；仍占用存储空间。',
                       style: TextStyle(
                         color: t.danger,
                         fontSize: 14,
@@ -665,7 +735,7 @@ class _BookSheetState extends State<BookSheet> {
                         ),
                         const SizedBox(width: 10),
                         Pill(
-                          label: acting ? '正在移除…' : '移除',
+                          label: acting ? '正在移动…' : '移到回收站',
                           filled: true,
                           color: t.danger,
                           onTap: acting
@@ -831,7 +901,7 @@ class _BookSheetState extends State<BookSheet> {
     } else if (s.isCancelling) {
       body.addAll(<Widget>[
         Text(
-          '正在暂停，等待当前步骤结束。已经整理好的内容会保留。',
+          '正在暂停，等待当前步骤结束。已经整理好的内容会保留；不再发起新请求，已发出的请求仍可能计费。',
           style: TextStyle(fontSize: 14, height: 1.6, color: t.ink),
         ),
         const SizedBox(height: 10),
@@ -1012,7 +1082,9 @@ class _BookSheetState extends State<BookSheet> {
           : _activityTime(lastWork['last_at'] ?? lastWork['at']);
       body.addAll(<Widget>[
         Text(
-          '已暂停。已经整理好的部分可以直接看。',
+          s.raw['pause_reason'] == 'scope_complete'
+              ? '本次范围已完成，已停止。选择新的范围后才会继续调用模型。'
+              : '已暂停。已经整理好的部分可以直接看。',
           style: TextStyle(fontSize: 14, color: t.ink),
         ),
         if (s.done > 0 || s.people > 0) ...<Widget>[
@@ -1043,14 +1115,18 @@ class _BookSheetState extends State<BookSheet> {
         ],
         const SizedBox(height: 10),
         Pill(
-          label: '继续整理',
+          label: s.raw['pause_reason'] == 'scope_complete' ? '选择下一次范围' : '继续整理',
           filled: true,
           color: t.zhu,
           onTap: acting
               ? null
               : () {
                   HapticFeedback.lightImpact();
-                  _start();
+                  if (s.raw['pause_reason'] == 'scope_complete') {
+                    _adjustPlan();
+                  } else {
+                    _start();
+                  }
                 },
         ),
       ]);
@@ -1210,12 +1286,12 @@ class _BookSheetState extends State<BookSheet> {
       ]);
     } else {
       final Map<String, Object?> estimate = models.estimate(
-        b.length,
+        _plan().pendingCharacters(s.frontier),
         lang: b.lang,
         model: widget.settings.read().$2,
       );
       final int? minutes = models.deviceMinutes(
-        b.length,
+        _plan().pendingCharacters(s.frontier),
         lang: b.lang,
         model: widget.settings.read().$2,
         concurrency: phoneConcurrency,
@@ -1225,7 +1301,7 @@ class _BookSheetState extends State<BookSheet> {
           : '正文整理预计约 $minutes 分钟、约 ¥${estimate['high']}（${estimate['model']}）';
       body.add(
         Text(
-          '让 AI 读完这本书，整理人物、关系和前情。只显示到你读到的那一页。',
+          '按你选择的范围整理人物、关系和前情。先试首章，再按需要继续；资料只显示到当前阅读位置。',
           style: TextStyle(fontSize: 14, height: 1.6, color: t.ink),
         ),
       );
@@ -1252,6 +1328,13 @@ class _BookSheetState extends State<BookSheet> {
         );
       } else {
         body.addAll(<Widget>[
+          PreparationPlanEditor(
+            plan: _plan(),
+            frontier: s.frontier,
+            onChanged: (NativePreparationPlan plan) =>
+                setState(() => _selectedPlan = plan),
+          ),
+          const SizedBox(height: 10),
           Text(
             '会调用你的模型接口，$cost${modelFallback ? ' 若免费判断不可用，还会额外使用该模型判断；调用量受本书判断额度限制，实际账单以服务商为准。' : ''}${paidFallback ? ' 若免费判断不可用，会使用本书选择的 Jev 额度；实际账单以 TypeSafe AI 为准。' : ''}${directModel ? ' 本书核对直接使用已配置模型和单书额度。' : ''}${directPaid ? ' 本书核对直接使用 Jev 和单书额度。' : ''}',
             style: TextStyle(fontSize: 13, color: t.ink2),
@@ -1285,7 +1368,29 @@ class _BookSheetState extends State<BookSheet> {
         ]);
       }
     }
+    if ((s.isPaused || s.isError || s.isDone) && !acting) {
+      body.add(
+        TextButton.icon(
+          onPressed: _adjustPlan,
+          icon: const Icon(Icons.tune),
+          label: const Text('调整整理范围'),
+        ),
+      );
+    }
     if (s.isActive || s.isPaused || s.isError || s.isDone) {
+      body.insert(
+        0,
+        PreparationProgress(
+          status: s,
+          plan: _plan(),
+          latest:
+              activity.reversed
+                  .where((Json row) => row['stage'] != null)
+                  .firstOrNull ??
+              latestActivity,
+          biographies: bios.count,
+        ),
+      );
       final String modelName = widget.settings.read().$2;
       body.insertAll(0, <Widget>[
         Text(

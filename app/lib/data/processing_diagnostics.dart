@@ -51,6 +51,7 @@ final class ProcessingDiagnostics {
     'reconciled',
     'interrupted',
     'worker_stopped',
+    'scope_complete',
   };
 
   static String fileName(DateTime now) {
@@ -76,6 +77,7 @@ final class ProcessingDiagnostics {
       'reconciled' => '上次整理中断后已暂停',
       'interrupted' => '上次整理中断后已暂停',
       'worker_stopped' => '整理任务中断后已暂停',
+      'scope_complete' => '本次范围已完成',
       _ => '暂停原因未记录',
     };
   }

@@ -20,9 +20,10 @@ class _Library extends Fake implements WebLibrary {
   int acquisitions = 0;
   int renewals = 0;
   int releases = 0;
+  Json? saved;
 
   @override
-  Future<Json?> loadPreparation(String bookId) async => null;
+  Future<Json?> loadPreparation(String bookId) async => saved;
 
   @override
   Future<bool> otherPreparationLeaseActive(String bookId, String owner) async =>
@@ -47,13 +48,15 @@ class _Library extends Fake implements WebLibrary {
 
   @override
   Future<void> savePreparation(String bookId, Json value) async {
-    saves.add(jsonDecode(jsonEncode(value)) as Json);
+    saved = jsonDecode(jsonEncode(value)) as Json;
+    saves.add(saved!);
   }
 }
 
 class _Model {
   int calls = 0;
   int analyses = 0;
+  final List<WebAiChunk> chunks = <WebAiChunk>[];
   bool retry = false;
   Completer<void>? reply;
 
@@ -65,6 +68,7 @@ class _Model {
     analyses++;
     if (!await beforeRequest!()) throw const WebAiException('cancelled');
     calls++;
+    chunks.add(chunk);
     if (reply != null) await reply!.future;
     if (retry) {
       if (!await beforeRequest()) throw const WebAiException('cancelled retry');
@@ -80,7 +84,7 @@ class _Model {
   }
 }
 
-WebBook _book({int chunks = 2}) {
+WebBook _book({int chunks = 2, int chapters = 1}) {
   const String passage = '林远读完来信。';
   final String text = List<String>.filled(
     (WebAiEngine.maxChunkChars * (chunks - 1) + 100) ~/ passage.length + 1,
@@ -91,44 +95,55 @@ WebBook _book({int chunks = 2}) {
       id: 'cancellation-fixture',
       title: 'Cancellation fixture',
       author: '',
-      length: text.length,
-      chapters: 1,
+      length: text.length * chapters,
+      chapters: chapters,
       added: 0,
     ),
     data: <String, Object?>{
       'blocks': <Json>[
-        <String, Object?>{'k': 'p', 't': text, 'o': 0},
+        for (int i = 0; i < chapters; i++)
+          <String, Object?>{'k': 'p', 't': text, 'o': i * text.length},
       ],
       'chapters': <Json>[
-        <String, Object?>{
-          'title': '第一章',
-          'kind': 'body',
-          'b0': 0,
-          'b1': 1,
-          'o0': 0,
-          'o1': text.length,
-        },
+        for (int i = 0; i < chapters; i++)
+          <String, Object?>{
+            'title': '第 ${i + 1} 章',
+            'kind': 'body',
+            'b0': i,
+            'b1': i + 1,
+            'o0': i * text.length,
+            'o1': (i + 1) * text.length,
+          },
       ],
     },
     images: <String, String>{},
   );
 }
 
-Future<void> _until(WidgetTester tester, bool Function() condition) async {
-  for (int i = 0; i < 100 && !condition(); i++) {
-    // Browser Web Locks settle outside Flutter's fake clock.
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
-    );
-    await tester.pump(const Duration(milliseconds: 10));
-  }
-  expect(condition(), isTrue);
-}
-
 void main() {
   late _Library library;
   late _Model model;
   late GlobalKey<NavigatorState> navigator;
+
+  Future<void> until(WidgetTester tester, bool Function() condition) async {
+    for (int i = 0; i < 100 && !condition(); i++) {
+      // Browser Web Locks settle outside Flutter's fake clock.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(
+      condition(),
+      isTrue,
+      reason:
+          'Fixture state: acquisitions=${library.acquisitions}, '
+          'renewals=${library.renewals}, releases=${library.releases}, '
+          'analyses=${model.analyses}, calls=${model.calls}, '
+          'phase=${library.saved?['phase']}, '
+          'configuration dialogs=${find.byType(AlertDialog).evaluate().length}',
+    );
+  }
 
   setUp(() {
     library = _Library();
@@ -148,15 +163,42 @@ void main() {
     html.window.localStorage.remove('thusfar-web-model-profile-v1');
   });
 
-  Future<void> open(WidgetTester tester, {int chunks = 2}) async {
+  Future<void> open(
+    WidgetTester tester, {
+    int chunks = 2,
+    int chapters = 1,
+    int? cutoff,
+  }) async {
     tester.view.physicalSize = const Size(1100, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(() async {
+      // A failed assertion must not leave the browser's real Web Lock held by
+      // an unresolved fixture response and invalidate every following test.
+      await tester.pumpWidget(const SizedBox.shrink());
+      for (final Completer<bool> gate in library.renewalGates.values) {
+        if (!gate.isCompleted) gate.complete(true);
+      }
+      final Completer<void>? reply = model.reply;
+      if (reply != null && !reply.isCompleted) reply.complete();
+      await until(tester, () => library.releases == library.acquisitions);
+      // Release of the JS Promise wrapping the operation follows the lease
+      // callback, outside Flutter's fake clock.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    });
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navigator,
-        theme: buildTheme(Brightness.light),
+        // flutter test's Chrome server does not serve compiled shader assets.
+        // Keep the application theme and real taps, but use Flutter's normal
+        // paint-based ripple rather than fetching ink_sparkle.frag in runAsync.
+        theme: buildTheme(
+          Brightness.light,
+        ).copyWith(splashFactory: InkRipple.splashFactory),
         home: const Scaffold(body: Text('Reader')),
       ),
     );
@@ -164,10 +206,13 @@ void main() {
       navigator.currentState!.push<void>(
         MaterialPageRoute<void>(
           builder: (_) => WebAiPanel(
-            book: _book(chunks: chunks),
+            book: _book(chunks: chunks, chapters: chapters),
+            cutoffOffset: cutoff,
             reading: WebReadingState(),
             library: library,
             analyze: model.analyze,
+            readingBuilder: (_, _) =>
+                const Scaffold(body: Text('Reading while preparing')),
           ),
         ),
       ),
@@ -189,8 +234,85 @@ void main() {
         matching: find.text('开始整理'),
       ),
     );
-    await tester.pump();
+    // The accepted dialog is still mounted during its reverse transition.
+    // Finish that transition before any test taps the preparation underneath.
+    await tester.pumpAndSettle();
   }
+
+  testWidgets('reading above preparation keeps the same run alive', (
+    WidgetTester tester,
+  ) async {
+    final Completer<void> response = Completer<void>();
+    model.reply = response;
+    await open(tester, chunks: 3);
+    await start(tester);
+    await until(tester, () => model.calls == 1);
+    await tester.tap(find.text('边读边整理'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Reading while preparing'), findsOneWidget);
+    response.complete();
+    await until(tester, () => library.releases == 1);
+    expect(model.calls, 3);
+    expect(library.acquisitions, 1);
+    expect(library.saves.last['phase'], 'complete');
+    expect(find.textContaining('本次整理完成'), findsOneWidget);
+    await tester.tap(find.text('查看整理'));
+    await tester.pumpAndSettle();
+    expect(find.byType(WebAiPanel), findsOneWidget);
+    expect(model.calls, 3);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+    'stop from reading saves current chunk without scheduling another',
+    (WidgetTester tester) async {
+      final Completer<void> response = Completer<void>();
+      model.reply = response;
+      await open(tester, chunks: 3);
+      await start(tester);
+      await until(tester, () => model.calls == 1);
+      await tester.tap(find.text('边读边整理'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.byTooltip('停止整理'));
+      response.complete();
+      await until(tester, () => library.releases == 1);
+      expect(model.calls, 1);
+      expect(library.saves.last['phase'], 'paused');
+      expect((library.saves.last['results'] as Map).length, 1);
+      expect(find.text('Reading while preparing'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('selected chapter range skips earlier and later chunks', (
+    WidgetTester tester,
+  ) async {
+    library.saved = <String, Object?>{'scope': 'range:1:1'};
+    await open(tester, chunks: 1, chapters: 3);
+    await start(tester);
+    await until(tester, () => library.releases == 1);
+    expect(model.chunks.map((WebAiChunk c) => c.chapterIndex), <int>[1]);
+    expect(library.saves.last['scope'], 'range:1:1');
+    expect(library.saves.last['phase'], 'complete');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+    'read scope freezes boundary and sends only complete earlier chunks',
+    (WidgetTester tester) async {
+      final int firstEnd = WebAiEngine.chunks(_book(chunks: 3)).first.endOffset;
+      library.saved = <String, Object?>{'scope': 'read:${firstEnd + 20}'};
+      await open(tester, chunks: 3, cutoff: 999999);
+      await start(tester);
+      await until(tester, () => library.releases == 1);
+      expect(model.calls, 1);
+      expect(model.chunks.single.endOffset, firstEnd);
+      expect(library.saves.last['scope'], 'read:${firstEnd + 20}');
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   testWidgets(
     'cancelling configuration never acquires a lease or calls a model',
@@ -227,11 +349,11 @@ void main() {
     library.renewalGates[1] = renewal;
     await open(tester);
     await start(tester);
-    await _until(tester, () => library.renewals == 1);
+    await until(tester, () => library.renewals == 1);
     await tester.pumpAndSettle();
     navigator.currentState!.pop();
     renewal.complete(true);
-    await _until(tester, () => library.releases == 1);
+    await until(tester, () => library.releases == 1);
     await tester.pumpAndSettle();
     expect(model.analyses, 0);
     expect(model.calls, 0);
@@ -247,7 +369,7 @@ void main() {
         library.renewalGates[4] = renewal;
         await open(tester);
         await start(tester);
-        await _until(tester, () => library.renewals == 4);
+        await until(tester, () => library.renewals == 4);
         await tester.pumpAndSettle();
         if (leave) {
           final State<StatefulWidget> panel = tester.state(
@@ -259,7 +381,7 @@ void main() {
           await tester.tap(find.text('暂停整理'));
         }
         renewal.complete(true);
-        await _until(tester, () => library.releases == 1);
+        await until(tester, () => library.releases == 1);
         await tester.pumpAndSettle();
         expect(model.calls, 0);
         expect(library.saves.last['phase'], 'paused');
@@ -276,12 +398,12 @@ void main() {
     library.renewalGates[5] = renewal;
     await open(tester);
     await start(tester);
-    await _until(tester, () => library.renewals == 5);
+    await until(tester, () => library.renewals == 5);
     await tester.pumpAndSettle();
     expect(model.calls, 1);
     navigator.currentState!.pop();
     renewal.complete(true);
-    await _until(tester, () => library.releases == 1);
+    await until(tester, () => library.releases == 1);
     await tester.pumpAndSettle();
     expect(model.calls, 1);
     expect(library.saves.last['phase'], 'paused');
@@ -294,12 +416,12 @@ void main() {
       model.reply = response;
       await open(tester, chunks: 3);
       await start(tester);
-      await _until(tester, () => model.calls == 1);
+      await until(tester, () => model.calls == 1);
       await tester.pumpAndSettle();
       navigator.currentState!.pop();
       await tester.pumpAndSettle();
       response.complete();
-      await _until(tester, () => library.releases == 1);
+      await until(tester, () => library.releases == 1);
       expect(model.calls, 1);
       expect(library.saves.last['phase'], 'paused');
       expect((library.saves.last['results'] as Map<String, Object?>).length, 1);

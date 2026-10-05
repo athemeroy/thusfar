@@ -158,9 +158,38 @@ class SheetFrame extends StatefulWidget {
   State<SheetFrame> createState() => SheetFrameState();
 }
 
+class _SheetEntry {
+  _SheetEntry(this.page);
+  final Widget page;
+  final Key key = UniqueKey();
+  final ScrollController inactiveScroll = ScrollController();
+}
+
 class SheetFrameState extends State<SheetFrame> {
-  late final List<Widget> _stack = <Widget>[widget.root];
-  bool _forward = true;
+  late final List<_SheetEntry> _stack = <_SheetEntry>[_SheetEntry(widget.root)];
+  final FocusNode _focus = FocusNode(debugLabel: 'Reader drawer');
+
+  void _restoreKeyboardFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_focus.hasFocus) _focus.requestFocus();
+    });
+  }
+
+  void _disposeEntry(_SheetEntry entry) {
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => entry.inactiveScroll.dispose(),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final _SheetEntry entry in _stack) {
+      entry.inactiveScroll.dispose();
+    }
+    _focus.dispose();
+    super.dispose();
+  }
+
   bool _expandPending = false;
 
   /// A graph needs a readable viewport instead of inheriting a short list's
@@ -193,18 +222,20 @@ class SheetFrameState extends State<SheetFrame> {
   void push(Widget page) {
     HapticFeedback.lightImpact();
     setState(() {
-      _forward = true;
-      _stack.add(page);
+      FocusManager.instance.primaryFocus?.unfocus();
+      _stack.add(_SheetEntry(page));
     });
+    _restoreKeyboardFocus();
   }
 
   void pop() {
     HapticFeedback.lightImpact();
     if (_stack.length > 1) {
       setState(() {
-        _forward = false;
-        _stack.removeLast();
+        FocusManager.instance.primaryFocus?.unfocus();
+        _disposeEntry(_stack.removeLast());
       });
+      _restoreKeyboardFocus();
     } else {
       Navigator.of(context).pop();
     }
@@ -212,10 +243,12 @@ class SheetFrameState extends State<SheetFrame> {
 
   /// Replaces the whole stack (e.g. jumping from the people list to a card).
   void reset(Widget page) => setState(() {
-    _forward = true;
+    for (final _SheetEntry entry in _stack) {
+      _disposeEntry(entry);
+    }
     _stack
       ..clear()
-      ..add(page);
+      ..add(_SheetEntry(page));
   });
 
   int get depth => _stack.length;
@@ -233,6 +266,7 @@ class SheetFrameState extends State<SheetFrame> {
           const SingleActivator(LogicalKeyboardKey.escape): pop,
         },
         child: Focus(
+          focusNode: _focus,
           autofocus: true,
           skipTraversal: true,
           child: Material(
@@ -241,36 +275,30 @@ class SheetFrameState extends State<SheetFrame> {
                 ? BorderRadius.circular(20)
                 : const BorderRadius.vertical(top: Radius.circular(20)),
             clipBehavior: Clip.antiAlias,
-            child: SheetScope(
-              state: this,
-              scroll: widget.scroll,
-              child: AnimatedSwitcher(
-                duration: MediaQuery.of(context).disableAnimations
-                    ? Duration.zero
-                    : Motion.push,
-                transitionBuilder: (Widget child, Animation<double> a) {
-                  final bool incoming =
-                      child.key == ValueKey<int>(_stack.length);
-                  final double from = (_forward == incoming) ? 1 : -1;
-                  return SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: Offset(from * 0.35, 0),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: a,
-                            curve: Curves.easeOutCubic,
-                          ),
+            // Retain every route's State, text controllers, filters and scroll
+            // position. Only the visible route uses the draggable controller;
+            // hidden routes keep their own attached ScrollPosition.
+            child: IndexedStack(
+              index: _stack.length - 1,
+              children: <Widget>[
+                for (int i = 0; i < _stack.length; i++)
+                  KeyedSubtree(
+                    key: _stack[i].key,
+                    child: ExcludeFocus(
+                      excluding: i != _stack.length - 1,
+                      child: TickerMode(
+                        enabled: i == _stack.length - 1,
+                        child: SheetScope(
+                          state: this,
+                          scroll: i == _stack.length - 1
+                              ? widget.scroll
+                              : _stack[i].inactiveScroll,
+                          child: _stack[i].page,
                         ),
-                    child: FadeTransition(opacity: a, child: child),
-                  );
-                },
-                child: KeyedSubtree(
-                  key: ValueKey<int>(_stack.length),
-                  child: _stack.last,
-                ),
-              ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -350,6 +378,8 @@ class SheetPage extends StatelessWidget {
           tagHeight = painter.height + 12;
           painter.dispose();
         }
+        final double headerHeight =
+            headingHeight + (dialog ? 12 : 26) + tagHeight + headerExtraHeight;
         return Column(
           children: <Widget>[
             Expanded(
@@ -357,13 +387,9 @@ class SheetPage extends StatelessWidget {
                 controller: scope.scroll,
                 slivers: <Widget>[
                   SliverPersistentHeader(
-                    pinned: true,
+                    pinned: headerHeight < box.maxHeight * 0.65,
                     delegate: _Header(
-                      height:
-                          headingHeight +
-                          (dialog ? 12 : 26) +
-                          tagHeight +
-                          headerExtraHeight,
+                      height: headerHeight,
                       builder: (BuildContext context) => Container(
                         color: t.sheet,
                         child: Column(
@@ -488,7 +514,12 @@ class SheetPage extends StatelessWidget {
                   top: false,
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                    child: bottom,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: math.max(1, box.maxHeight * .4),
+                      ),
+                      child: SingleChildScrollView(child: bottom),
+                    ),
                   ),
                 ),
               ),

@@ -62,6 +62,7 @@ class PageSpec {
       other.lineHeight == lineHeight &&
       other.letterSpacing == letterSpacing &&
       other.fontFamily == fontFamily &&
+      other.color == color &&
       listEquals(other.fontFamilyFallback, fontFamilyFallback) &&
       other.textScaler == textScaler;
 
@@ -75,6 +76,7 @@ class PageSpec {
     fontFamily,
     fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback!),
     textScaler,
+    color,
   );
 }
 
@@ -175,7 +177,10 @@ class Paginator {
     return tp;
   }
 
-  int _imageLines() => math.max(3, (spec.linesPerPage * 0.55).floor());
+  int _imageLines() => math.min(
+    spec.linesPerPage,
+    math.max(1, (spec.linesPerPage * 0.55).floor()),
+  );
 
   List<PageData> _layout(int c) {
     final Chapter ch = book.chapters[c];
@@ -224,25 +229,69 @@ class Paginator {
       final bool heading = b.kind == 'h';
       final int shift = heading ? 0 : indentShift;
       final List<LineMetrics> metrics = tp.computeLineMetrics();
-      // Headings use their own line height; count them in body lines.
-      final double headingHeight = tp.height;
+      // Headings can be longer than a short foldable viewport. Split them by
+      // measured lines rather than letting one unbounded fragment overflow.
       if (heading) {
-        final int need =
-            math.max(1, (headingHeight / line).ceil()) +
-            (current.isEmpty ? 0 : 1);
-        if (used + need > capacity) flush();
-        final int extra = current.isEmpty ? 0 : 1;
-        current.add(
-          Frag(
-            block: bi,
-            start: 0,
-            end: b.text.length,
-            top: -extra * line,
-            lines: need,
-            image: false,
-          ),
-        );
-        used += need;
+        final int textLines = math.max(1, (tp.height / line).ceil());
+        if (textLines <= capacity) {
+          if (used + textLines + (current.isEmpty ? 0 : 1) > capacity) flush();
+          final int extra = current.isEmpty ? 0 : 1;
+          current.add(
+            Frag(
+              block: bi,
+              start: 0,
+              end: b.text.length,
+              top: -extra * line,
+              lines: textLines + extra,
+              image: false,
+            ),
+          );
+          used += textLines + extra;
+          tp.dispose();
+          continue;
+        }
+        int from = 0;
+        if (current.isNotEmpty) flush();
+        while (from < metrics.length) {
+          final double top = metrics[from].baseline - metrics[from].ascent;
+          int to = from;
+          double bottom = top;
+          while (to < metrics.length) {
+            final LineMetrics metric = metrics[to];
+            final double nextBottom = metric.baseline + metric.descent;
+            if (to > from && nextBottom - top > capacity * line) break;
+            bottom = nextBottom;
+            to++;
+          }
+          int boundary(int index) => tp
+              .getLineBoundary(
+                tp.getPositionForOffset(
+                  Offset(
+                    1,
+                    metrics[index].baseline -
+                        metrics[index].ascent +
+                        metrics[index].height / 2,
+                  ),
+                ),
+              )
+              .start;
+          current.add(
+            Frag(
+              block: bi,
+              start: from == 0 ? 0 : boundary(from),
+              end: to == metrics.length ? b.text.length : boundary(to),
+              top: top,
+              lines: math.min(
+                capacity,
+                math.max(1, ((bottom - top) / line).ceil()),
+              ),
+              image: false,
+            ),
+          );
+          used = current.last.lines;
+          from = to;
+          if (from < metrics.length) flush();
+        }
         tp.dispose();
         continue;
       }

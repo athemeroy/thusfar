@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/llm.dart' as llm;
@@ -76,7 +77,7 @@ class ModelSettingsScreen extends StatefulWidget {
   State<ModelSettingsScreen> createState() => _ModelSettingsScreenState();
 }
 
-enum _Test { none, running, ok, slow, saved, failed }
+enum _Test { none, running, ok, slow, saved, unverified, failed }
 
 class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   final ScrollController formScroll = ScrollController();
@@ -101,6 +102,56 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   String? modelNote;
   _Test test = _Test.none;
   String testMessage = '';
+  int _operation = 0;
+  bool _leaving = false;
+  bool _saving = false;
+  Map<String, Object?>? _passedDraft;
+  Map<String, Object?>? _passedResult;
+  late (String, String) _keyEndpoint;
+  final Map<(String, String), (String, bool, bool)> _keyDrafts = {};
+  final Map<(String, String), String> _modelDrafts = {};
+
+  bool get _busy => test == _Test.running || _saving;
+
+  (String, String) get _endpoint => (
+    protocol,
+    ModelSettings.normalize(url.text, model.text, protocol: protocol).$1,
+  );
+
+  bool get _separateKeyRequired =>
+      widget.settings.hasKey &&
+      _endpoint != (widget.settings.protocol, widget.settings.read().$1);
+
+  void _syncKeyEndpoint() {
+    final (String, String) endpoint = _endpoint;
+    if (endpoint == _keyEndpoint) return;
+    _keyDrafts[_keyEndpoint] = (key.text, replacing, clearKey);
+    final (String, bool, bool)? draft = _keyDrafts[endpoint];
+    key.text = draft?.$1 ?? '';
+    replacing = draft?.$2 ?? false;
+    clearKey = draft?.$3 ?? false;
+    showKey = false;
+    _keyEndpoint = endpoint;
+  }
+
+  Map<String, Object?> _payload() => <String, Object?>{
+    'protocol': protocol,
+    'base_url': url.text.trim(),
+    'model': model.text.trim(),
+    'api_key': key.text.trim(),
+    'clear_key': clearKey,
+    'jev_route': judgeFallback ? 'free-then-model' : 'free-only',
+    'classifier_key': classifierKey.text.trim(),
+    'clear_classifier_key': clearClassifierKey,
+    'jev_api_key': jevApiKey.text.trim(),
+    'clear_jev_api_key': clearJevApiKey,
+  };
+
+  bool _active(int operation) =>
+      mounted &&
+      !_leaving &&
+      operation == _operation &&
+      (ModalRoute.of(context)?.isCurrent ?? true);
 
   @override
   void initState() {
@@ -110,15 +161,22 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     // opening this screen never saves a model or starts a provider request.
     final _ProviderPreset? firstRunPreset = widget.settings.file.existsSync()
         ? null
-        : _presets.firstWhere((_ProviderPreset item) => item.protocol == 'gemini');
+        : _presets.firstWhere(
+            (_ProviderPreset item) => item.protocol == 'gemini',
+          );
     protocol = firstRunPreset?.protocol ?? widget.settings.protocol;
     judgeFallback = widget.settings.judgeFallbackEnabled;
     url = TextEditingController(text: firstRunPreset?.url ?? u);
     model = TextEditingController(text: firstRunPreset?.defaultModel ?? m);
+    _keyEndpoint = _endpoint;
   }
 
   @override
   void dispose() {
+    _leaving = true;
+    _operation++;
+    _passedDraft = null;
+    _keyDrafts.clear();
     url.dispose();
     model.dispose();
     key.dispose();
@@ -139,6 +197,8 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   }
 
   void _edited() => setState(() {
+    _operation++;
+    _syncKeyEndpoint();
     test = _Test.none;
     error = null;
     urlNote = null;
@@ -146,150 +206,192 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   });
 
   void _applyPreset(_ProviderPreset p) {
+    if (_busy) return;
     HapticFeedback.selectionClick();
-    setState(() {
-      protocol = p.protocol;
-      url.text = p.url;
-      model.text = p.defaultModel;
-      _edited();
-    });
+    _modelDrafts[_endpoint] = model.text;
+    protocol = p.protocol;
+    url.text = p.url;
+    model.text =
+        _modelDrafts[_endpoint] ??
+        (_endpoint == (widget.settings.protocol, widget.settings.read().$1)
+            ? widget.settings.read().$2
+            : p.defaultModel);
+    _edited();
   }
 
-  Future<void> _test({bool saved = false}) async {
-    if (test == _Test.running) return;
+  Future<void> _test({bool saveAfter = false}) async {
+    if (_busy || _leaving) return;
     HapticFeedback.lightImpact();
-    if (clearKey || (key.text.trim().isEmpty && !widget.settings.hasKey)) {
-      setState(() {
-        test = _Test.failed;
-        testMessage = '还没有填写模型 API 密钥，请先填写';
-      });
-      _showResult();
+    final int operation = ++_operation;
+    final Map<String, Object?> payload = _payload();
+    Map<String, Object?> draft;
+    try {
+      draft = widget.settings.preview(payload);
+    } on Object catch (e) {
+      _failure(e);
       return;
     }
-    final (String savedUrl, String savedModel, String savedKey) = widget
-        .settings
-        .read();
-    final (String probeUrl, String probeModel) = ModelSettings.normalize(
-      url.text,
-      model.text,
-      protocol: protocol,
-    );
-    final String probeKey = clearKey
-        ? ''
-        : key.text.trim().isEmpty
-        ? savedKey
-        : key.text.trim();
-    final bool unsaved =
-        protocol != widget.settings.protocol ||
-        probeUrl != savedUrl ||
-        probeModel != savedModel ||
-        probeKey != savedKey ||
-        judgeFallback != widget.settings.judgeFallbackEnabled ||
-        classifierKey.text.trim().isNotEmpty ||
-        clearClassifierKey ||
-        jevApiKey.text.trim().isNotEmpty ||
-        clearJevApiKey;
+    if ((draft['api_key']! as String).isEmpty) {
+      _failure('还没有填写模型 API 密钥，请先填写');
+      return;
+    }
+    // A successful explicit probe applies only to these exact effective
+    // settings. Saving or repeatedly tapping never launches a second probe.
+    if (mapEquals(draft, _passedDraft)) {
+      if (saveAfter) {
+        _saveDraft(draft, verified: true);
+      } else {
+        _reportSuccess(draft, _passedResult!);
+      }
+      return;
+    }
+    final String? savedBefore = widget.settings.file.existsSync()
+        ? widget.settings.file.readAsStringSync()
+        : null;
     setState(() {
       test = _Test.running;
-      testMessage = '';
+      testMessage = '正在测试当前输入，原有设置仍然生效';
+      error = null;
     });
+    _showResult();
     try {
       final Map<String, Object?> result = await widget.settings.test(
-        url: url.text,
-        model: model.text,
-        key: key.text,
-        clearKey: clearKey,
-        protocol: protocol,
-        judgeFallback: judgeFallback,
-        classifierKey: classifierKey.text,
-        clearClassifierKey: clearClassifierKey,
-        jevApiKey: jevApiKey.text,
-        clearJevApiKey: clearJevApiKey,
+        url: draft['base_url']! as String,
+        model: draft['model']! as String,
+        key: draft['api_key']! as String,
+        clearKey: false,
+        protocol: draft['protocol']! as String,
+        judgeFallback: draft['jev_route'] == 'free-then-model',
+        classifierKey: draft['classifier_key']! as String,
+        clearClassifierKey: draft['classifier_key'] == '',
+        jevApiKey: draft['jev_api_key']! as String,
+        clearJevApiKey: draft['jev_api_key'] == '',
       );
-      if (!mounted) return;
-      setState(() {
-        test = result['ok'] != true
-            ? _Test.failed
-            : (result['seconds'] as num) > 8
-            ? _Test.slow
-            : _Test.ok;
-        testMessage = result['ok'] == true
-            ? '模型${result['message']}（此测试未验证 classifier.dev 或 Jev 网关密钥）'
-            : '${result['message']}';
-        if (unsaved && result['ok'] == true) testMessage += '。当前输入尚未保存';
-      });
-      _showResult();
-      if (saved && widget.returnOnSuccess && mounted && test == _Test.ok) {
-        await Future<void>.delayed(const Duration(milliseconds: 900));
-        if (mounted) Navigator.of(context).pop(true);
+      if (!_active(operation)) return;
+      if (!mapEquals(payload, _payload())) {
+        setState(() => test = _Test.none);
+        return;
+      }
+      final String? savedNow = widget.settings.file.existsSync()
+          ? widget.settings.file.readAsStringSync()
+          : null;
+      if (savedNow != savedBefore) {
+        _failure('已保存的设置在测试期间发生变化，请重新确认后再试');
+        return;
+      }
+      if (result['ok'] != true) {
+        _failure('${result['message']}');
+        return;
+      }
+      _passedDraft = Map<String, Object?>.of(draft);
+      _passedResult = result;
+      if (saveAfter) {
+        _saveDraft(draft, verified: true);
+      } else {
+        _reportSuccess(draft, result);
       }
     } on Object catch (e) {
-      if (!mounted) return;
-      setState(() {
-        test = _Test.failed;
-        testMessage =
-            llm.explain(e) ??
-            '连接失败：${e.toString().length > 200 ? e.toString().substring(0, 200) : e}';
-      });
-      _showResult();
+      if (_active(operation)) _failure(e);
     }
   }
 
-  void _save() {
-    if (test == _Test.running) return;
-    HapticFeedback.lightImpact();
-    final (String u, String m) = ModelSettings.normalize(
-      url.text,
-      model.text,
-      protocol: protocol,
-    );
-    final String? e = widget.settings.save(
-      url: url.text,
-      model: model.text,
-      key: key.text.trim(),
-      clearKey: clearKey,
-      protocol: protocol,
-      judgeFallback: judgeFallback,
-      classifierKey: classifierKey.text,
-      clearClassifierKey: clearClassifierKey,
-      jevApiKey: jevApiKey.text,
-      clearJevApiKey: clearJevApiKey,
-    );
+  void _reportSuccess(Map<String, Object?> draft, Map<String, Object?> result) {
+    bool saved = false;
+    try {
+      saved = mapEquals(draft, widget.settings.preview(<String, Object?>{}));
+    } on Object {
+      // A fresh install has no saved model yet.
+    }
     setState(() {
-      error = e;
-      urlNote = u != url.text.trim() && u.endsWith('/v1')
-          ? '已自动补上 /v1'
-          : u.endsWith('/v1beta') && u != url.text.trim()
-          ? '已自动补上 /v1beta'
-          : null;
-      modelNote = m != model.text.trim() && m.endsWith('+nothink')
-          ? '已自动加上 +nothink'
-          : null;
-      if (e == null) {
+      test = (result['seconds'] as num? ?? 0) > 8 ? _Test.slow : _Test.ok;
+      testMessage =
+          '模型${result['message']}。'
+          '${saved ? '已保存的设置未改变' : '当前输入尚未保存'}；'
+          '此测试未验证 classifier.dev 或 Jev 网关密钥';
+    });
+    _showResult();
+  }
+
+  void _failure(Object error) {
+    setState(() {
+      test = _Test.failed;
+      final String detail = llm.explain(error) ?? '$error';
+      testMessage =
+          '${detail.length > 240 ? detail.substring(0, 240) : detail}。'
+          '未保存，原有设置保持不变';
+    });
+    _showResult();
+  }
+
+  void _saveUnverified() {
+    if (_busy || _leaving) return;
+    HapticFeedback.lightImpact();
+    try {
+      _saveDraft(widget.settings.preview(_payload()), verified: false);
+    } on Object catch (e) {
+      _failure(e);
+    }
+  }
+
+  void _saveDraft(Map<String, Object?> draft, {required bool verified}) {
+    if (_saving || _leaving) return;
+    _saving = true;
+    try {
+      final String u = draft['base_url']! as String;
+      final String m = draft['model']! as String;
+      final String? e = widget.settings.save(
+        url: u,
+        model: m,
+        key: draft['api_key']! as String,
+        clearKey: draft['api_key'] == '',
+        protocol: draft['protocol']! as String,
+        judgeFallback: draft['jev_route'] == 'free-then-model',
+        classifierKey: draft['classifier_key']! as String,
+        clearClassifierKey: draft['classifier_key'] == '',
+        jevApiKey: draft['jev_api_key']! as String,
+        clearJevApiKey: draft['jev_api_key'] == '',
+      );
+      if (e != null) {
+        _failure(e);
+        return;
+      }
+      setState(() {
+        error = null;
+        urlNote = u != url.text.trim() && u.endsWith('/v1')
+            ? '已自动补上 /v1'
+            : u.endsWith('/v1beta') && u != url.text.trim()
+            ? '已自动补上 /v1beta'
+            : null;
+        modelNote = m != model.text.trim() && m.endsWith('+nothink')
+            ? '已自动加上 +nothink'
+            : null;
         url.text = u;
         model.text = m;
         key.clear();
         classifierKey.clear();
         jevApiKey.clear();
+        _keyDrafts.clear();
+        _modelDrafts.clear();
+        _keyEndpoint = _endpoint;
         replacing = false;
         replacingClassifierKey = false;
         replacingJevApiKey = false;
         clearKey = false;
         clearClassifierKey = false;
         clearJevApiKey = false;
+        test = verified ? _Test.saved : _Test.unverified;
+        testMessage = verified
+            ? '连接测试通过，设置已保存并生效。此测试未验证 classifier.dev 或 Jev 网关密钥。'
+            : '设置已保存并生效，但未验证连接。classifier.dev 和 Jev 网关密钥也未验证。';
+      });
+      _showResult();
+      if (verified &&
+          widget.returnOnSuccess &&
+          (ModalRoute.of(context)?.isCurrent ?? false)) {
+        Navigator.of(context).pop(true);
       }
-    });
-    if (e == null) {
-      applyModelEnvironment(widget.settings);
-      if (widget.settings.hasKey && widget.settings.read().$2.isNotEmpty) {
-        _test(saved: true);
-      } else {
-        setState(() {
-          test = _Test.saved;
-          testMessage = '密钥已保存。连接测试仅检查上方模型接口，Jev 网关密钥会在你为书籍选择该路线时使用。';
-        });
-        _showResult();
-      }
+    } finally {
+      _saving = false;
     }
   }
 
@@ -297,7 +399,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final String saved = widget.settings.read().$3;
-    final bool hasKey = saved.isNotEmpty && !clearKey;
+    final bool hasKey = saved.isNotEmpty && !clearKey && !_separateKeyRequired;
     InputDecoration deco(String label, {String? helper, Widget? suffix}) =>
         InputDecoration(
           labelText: label,
@@ -311,350 +413,377 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             borderSide: BorderSide(color: t.rule),
           ),
         );
-    return Scaffold(
-      backgroundColor: t.paper,
-      appBar: AppBar(
+    return PopScope(
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) {
+          _leaving = true;
+          _operation++;
+        }
+      },
+      child: Scaffold(
         backgroundColor: t.paper,
-        surfaceTintColor: Colors.transparent,
-        title: const Text('模型设置'),
-      ),
-      body: ListView(
-        controller: formScroll,
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-        children: <Widget>[
-          if (test != _Test.none) ...<Widget>[
-            _testCard(context),
-            const SizedBox(height: 16),
-          ],
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  '服务商快捷预设',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: t.ink2,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: <Widget>[
-                    for (final _ProviderPreset p in _presets)
-                      Pill(
-                        label: p.name,
-                        dense: true,
-                        filled:
-                            protocol == p.protocol && url.text.trim() == p.url,
-                        onTap: test == _Test.running
-                            ? null
-                            : () => _applyPreset(p),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          DropdownButtonFormField<String>(
-            initialValue: protocol,
-            decoration: deco('接口协议'),
-            items: <DropdownMenuItem<String>>[
-              for (final MapEntry<String, String> item
-                  in ModelSettings.protocolLabels.entries)
-                DropdownMenuItem<String>(
-                  value: item.key,
-                  child: Text(item.value),
-                ),
+        appBar: AppBar(
+          backgroundColor: t.paper,
+          surfaceTintColor: Colors.transparent,
+          title: const Text('模型设置'),
+        ),
+        body: ListView(
+          controller: formScroll,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          children: <Widget>[
+            if (test != _Test.none) ...<Widget>[
+              _testCard(context),
+              const SizedBox(height: 16),
             ],
-            onChanged: test == _Test.running
-                ? null
-                : (String? value) {
-                    if (value == null || value == protocol) return;
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      protocol = value;
-                      url.text = ModelSettings.defaultUrls[value]!;
-                      model.clear();
-                      key.clear();
-                      replacing = true;
-                      clearKey = false;
-                      urlNote = null;
-                      modelNote = null;
-                      test = _Test.none;
-                      error = null;
-                    });
-                  },
-          ),
-          const SizedBox(height: 20),
-          TextField(
-            controller: url,
-            enabled: test != _Test.running,
-            keyboardType: TextInputType.url,
-            decoration: deco('接口地址', helper: urlNote),
-            onChanged: (_) => _edited(),
-          ),
-          const SizedBox(height: 14),
-          TextField(
-            controller: model,
-            onChanged: (_) => _edited(),
-            enabled: test != _Test.running,
-            decoration: deco('模型', helper: modelNote ?? '填写接口提供的模型名称'),
-          ),
-          const SizedBox(height: 14),
-          if (hasKey && !replacing)
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
-              decoration: BoxDecoration(
-                color: t.raised,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: t.rule),
-              ),
-              child: Row(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      'API 密钥：已保存 ···${saved.length >= 4 ? saved.substring(saved.length - 4) : saved}',
-                      style: TextStyle(
-                        color: t.ink,
-                        fontFeatures: const <FontFeature>[
-                          FontFeature.tabularFigures(),
-                        ],
-                      ),
+                  Text(
+                    '服务商快捷预设',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: t.ink2,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                  TextButton(
-                    onPressed: test == _Test.running
-                        ? null
-                        : () {
-                            HapticFeedback.selectionClick();
-                            setState(() => replacing = true);
-                          },
-                    child: const Text('更换'),
-                  ),
-                  TextButton(
-                    onPressed: test == _Test.running
-                        ? null
-                        : () {
-                            HapticFeedback.mediumImpact();
-                            setState(() {
-                              clearKey = true;
-                              test = _Test.none;
-                            });
-                          },
-                    child: Text('清除', style: TextStyle(color: t.danger)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      for (final _ProviderPreset p in _presets)
+                        Pill(
+                          label: p.name,
+                          dense: true,
+                          filled:
+                              protocol == p.protocol &&
+                              url.text.trim() == p.url,
+                          onTap: _busy ? null : () => _applyPreset(p),
+                        ),
+                    ],
                   ),
                 ],
               ),
-            )
-          else
-            TextField(
-              controller: key,
-              onChanged: (String value) {
-                if (value.isNotEmpty && clearKey) {
-                  clearKey = false;
-                  replacing = true;
-                }
-                _edited();
-              },
-              enabled: test != _Test.running,
-              obscureText: !showKey,
-              decoration: deco(
-                'API 密钥',
-                suffix: IconButton(
-                  tooltip: showKey ? '隐藏密钥' : '显示密钥',
-                  icon: Icon(showKey ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () {
-                    HapticFeedback.selectionClick();
-                    setState(() => showKey = !showKey);
-                  },
-                ),
-              ),
             ),
-          const SizedBox(height: 20),
-          Material(
-            color: t.raised,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: t.rule),
-            ),
-            child: SwitchListTile.adaptive(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-              title: const Text('免费判断不可用时，使用已配置模型继续'),
-              subtitle: Text(
-                '此设置作用于所有书籍，会消耗上方模型的 API 额度。每本书初始最多 ${budget.modelJudgeInitialCalls} 次判断、${budget.modelJudgeInitialChars ~/ 10000} 万字符；用完可在书籍详情追加。',
-                style: TextStyle(fontSize: 12, color: t.ink2),
-              ),
-              value: judgeFallback,
-              onChanged: test == _Test.running
+            DropdownButtonFormField<String>(
+              initialValue: protocol,
+              decoration: deco('接口协议'),
+              items: <DropdownMenuItem<String>>[
+                for (final MapEntry<String, String> item
+                    in ModelSettings.protocolLabels.entries)
+                  DropdownMenuItem<String>(
+                    value: item.key,
+                    child: Text(item.value),
+                  ),
+              ],
+              onChanged: _busy
                   ? null
-                  : (bool value) {
+                  : (String? value) {
+                      if (value == null || value == protocol) return;
                       HapticFeedback.selectionClick();
                       setState(() {
-                        judgeFallback = value;
+                        _modelDrafts[_endpoint] = model.text;
+                        protocol = value;
+                        url.text = ModelSettings.defaultUrls[value]!;
+                        model.text =
+                            _modelDrafts[_endpoint] ??
+                            (_endpoint ==
+                                    (
+                                      widget.settings.protocol,
+                                      widget.settings.read().$1,
+                                    )
+                                ? widget.settings.read().$2
+                                : '');
                         _edited();
                       });
                     },
             ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'classifier.dev 已充值工作区密钥（可选）',
-            style: TextStyle(
-              fontSize: 14,
-              color: t.ink,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            '匿名额度用完时，需有余额的 classifier.dev 工作区密钥。会使用该工作区额度；它与上方模型密钥、Jev 网关密钥不同。',
-            style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
-          ),
-          const SizedBox(height: 10),
-          if (widget.settings.hasClassifierKey &&
-              !replacingClassifierKey &&
-              !clearClassifierKey)
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text('已保存 ···${widget.settings.classifierKeyLast4}'),
-                ),
-                TextButton(
-                  onPressed: test == _Test.running
-                      ? null
-                      : () => setState(() => replacingClassifierKey = true),
-                  child: const Text('更换'),
-                ),
-                TextButton(
-                  onPressed: test == _Test.running
-                      ? null
-                      : () => setState(() {
-                          clearClassifierKey = true;
-                          _edited();
-                        }),
-                  child: Text('清除', style: TextStyle(color: t.danger)),
-                ),
-              ],
-            )
-          else
+            const SizedBox(height: 20),
             TextField(
-              controller: classifierKey,
-              enabled: test != _Test.running,
-              obscureText: !showClassifierKey,
-              onChanged: (String value) {
-                if (value.isNotEmpty) clearClassifierKey = false;
-                _edited();
-              },
-              decoration: deco(
-                'classifier.dev 密钥',
-                suffix: IconButton(
-                  tooltip: showClassifierKey ? '隐藏密钥' : '显示密钥',
-                  icon: Icon(
-                    showClassifierKey ? Icons.visibility_off : Icons.visibility,
-                  ),
-                  onPressed: () =>
-                      setState(() => showClassifierKey = !showClassifierKey),
-                ),
-              ),
+              controller: url,
+              enabled: !_busy,
+              keyboardType: TextInputType.url,
+              decoration: deco('接口地址', helper: urlNote),
+              onChanged: (_) => _edited(),
             ),
-          const SizedBox(height: 18),
-          Text(
-            'Jev 网关密钥（可选）',
-            style: TextStyle(
-              fontSize: 14,
-              color: t.ink,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            '填写 TypeSafe AI / Jev 官网的 API 密钥。保存密钥不会自动启用 Jev 判断；你需要在书籍详情中单独选择。它与 classifier.dev 工作区密钥、上方模型密钥不同。',
-            style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
-          ),
-          const SizedBox(height: 10),
-          if (widget.settings.hasJevApiKey &&
-              !replacingJevApiKey &&
-              !clearJevApiKey)
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text('已保存 ···${widget.settings.jevApiKeyLast4}'),
-                ),
-                TextButton(
-                  onPressed: test == _Test.running
-                      ? null
-                      : () => setState(() => replacingJevApiKey = true),
-                  child: const Text('更换'),
-                ),
-                TextButton(
-                  onPressed: test == _Test.running
-                      ? null
-                      : () => setState(() {
-                          clearJevApiKey = true;
-                          _edited();
-                        }),
-                  child: Text('清除', style: TextStyle(color: t.danger)),
-                ),
-              ],
-            )
-          else
+            const SizedBox(height: 14),
             TextField(
-              controller: jevApiKey,
-              enabled: test != _Test.running,
-              obscureText: !showJevApiKey,
-              onChanged: (String value) {
-                if (value.isNotEmpty) clearJevApiKey = false;
-                _edited();
-              },
-              decoration: deco(
-                'TypeSafe AI / Jev API 密钥',
-                suffix: IconButton(
-                  tooltip: showJevApiKey ? '隐藏密钥' : '显示密钥',
-                  icon: Icon(
-                    showJevApiKey ? Icons.visibility_off : Icons.visibility,
-                  ),
-                  onPressed: () =>
-                      setState(() => showJevApiKey = !showJevApiKey),
-                ),
-              ),
+              controller: model,
+              onChanged: (_) => _edited(),
+              enabled: !_busy,
+              decoration: deco('模型', helper: modelNote ?? '填写接口提供的模型名称'),
             ),
-          if (error != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Text(error!, style: TextStyle(color: t.danger)),
-            ),
-          const SizedBox(height: 20),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            8,
-            20,
-            12 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Pill(
-                  label: '测试连接',
-                  onTap: test == _Test.running ? null : _test,
-                ),
+            const SizedBox(height: 14),
+            if (_separateKeyRequired) ...<Widget>[
+              Text(
+                '接口地址或协议已变更，请填写此接口的独立 API 密钥。原有密钥不会发送到新接口；返回原接口可继续使用原密钥。',
+                style: TextStyle(color: t.amber, fontSize: 13, height: 1.4),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Pill(
-                  label: '保存',
-                  filled: true,
-                  onTap: test == _Test.running ? null : _save,
-                ),
-              ),
+              const SizedBox(height: 10),
             ],
+            if (hasKey && !replacing)
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+                decoration: BoxDecoration(
+                  color: t.raised,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: t.rule),
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        'API 密钥：已保存 ···${saved.length >= 4 ? saved.substring(saved.length - 4) : saved}',
+                        style: TextStyle(
+                          color: t.ink,
+                          fontFeatures: const <FontFeature>[
+                            FontFeature.tabularFigures(),
+                          ],
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              HapticFeedback.selectionClick();
+                              setState(() => replacing = true);
+                            },
+                      child: const Text('更换'),
+                    ),
+                    TextButton(
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              HapticFeedback.mediumImpact();
+                              setState(() {
+                                clearKey = true;
+                                _edited();
+                              });
+                            },
+                      child: Text('清除', style: TextStyle(color: t.danger)),
+                    ),
+                  ],
+                ),
+              )
+            else
+              TextField(
+                controller: key,
+                onChanged: (String value) {
+                  if (value.isNotEmpty && clearKey) {
+                    clearKey = false;
+                    replacing = true;
+                  }
+                  _edited();
+                },
+                enabled: !_busy,
+                obscureText: !showKey,
+                decoration: deco(
+                  'API 密钥',
+                  suffix: IconButton(
+                    tooltip: showKey ? '隐藏密钥' : '显示密钥',
+                    icon: Icon(
+                      showKey ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => showKey = !showKey);
+                    },
+                  ),
+                ),
+              ),
+            const SizedBox(height: 20),
+            Material(
+              color: t.raised,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: t.rule),
+              ),
+              child: SwitchListTile.adaptive(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                title: const Text('免费判断不可用时，使用已配置模型继续'),
+                subtitle: Text(
+                  '此设置作用于所有书籍，会消耗上方模型的 API 额度。每本书初始最多 ${budget.modelJudgeInitialCalls} 次判断、${budget.modelJudgeInitialChars ~/ 10000} 万字符；用完可在书籍详情追加。',
+                  style: TextStyle(fontSize: 12, color: t.ink2),
+                ),
+                value: judgeFallback,
+                onChanged: _busy
+                    ? null
+                    : (bool value) {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          judgeFallback = value;
+                          _edited();
+                        });
+                      },
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'classifier.dev 已充值工作区密钥（可选）',
+              style: TextStyle(
+                fontSize: 14,
+                color: t.ink,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              '匿名额度用完时，需有余额的 classifier.dev 工作区密钥。会使用该工作区额度；它与上方模型密钥、Jev 网关密钥不同。',
+              style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
+            ),
+            const SizedBox(height: 10),
+            if (widget.settings.hasClassifierKey &&
+                !replacingClassifierKey &&
+                !clearClassifierKey)
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text('已保存 ···${widget.settings.classifierKeyLast4}'),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() => replacingClassifierKey = true),
+                    child: const Text('更换'),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() {
+                            clearClassifierKey = true;
+                            _edited();
+                          }),
+                    child: Text('清除', style: TextStyle(color: t.danger)),
+                  ),
+                ],
+              )
+            else
+              TextField(
+                controller: classifierKey,
+                enabled: !_busy,
+                obscureText: !showClassifierKey,
+                onChanged: (String value) {
+                  if (value.isNotEmpty) clearClassifierKey = false;
+                  _edited();
+                },
+                decoration: deco(
+                  'classifier.dev 密钥',
+                  suffix: IconButton(
+                    tooltip: showClassifierKey ? '隐藏密钥' : '显示密钥',
+                    icon: Icon(
+                      showClassifierKey
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => showClassifierKey = !showClassifierKey),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 18),
+            Text(
+              'Jev 网关密钥（可选）',
+              style: TextStyle(
+                fontSize: 14,
+                color: t.ink,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              '填写 TypeSafe AI / Jev 官网的 API 密钥。保存密钥不会自动启用 Jev 判断；你需要在书籍详情中单独选择。它与 classifier.dev 工作区密钥、上方模型密钥不同。',
+              style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
+            ),
+            const SizedBox(height: 10),
+            if (widget.settings.hasJevApiKey &&
+                !replacingJevApiKey &&
+                !clearJevApiKey)
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text('已保存 ···${widget.settings.jevApiKeyLast4}'),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() => replacingJevApiKey = true),
+                    child: const Text('更换'),
+                  ),
+                  TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () => setState(() {
+                            clearJevApiKey = true;
+                            _edited();
+                          }),
+                    child: Text('清除', style: TextStyle(color: t.danger)),
+                  ),
+                ],
+              )
+            else
+              TextField(
+                controller: jevApiKey,
+                enabled: !_busy,
+                obscureText: !showJevApiKey,
+                onChanged: (String value) {
+                  if (value.isNotEmpty) clearJevApiKey = false;
+                  _edited();
+                },
+                decoration: deco(
+                  'TypeSafe AI / Jev API 密钥',
+                  suffix: IconButton(
+                    tooltip: showJevApiKey ? '隐藏密钥' : '显示密钥',
+                    icon: Icon(
+                      showJevApiKey ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => showJevApiKey = !showJevApiKey),
+                  ),
+                ),
+              ),
+            if (error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(error!, style: TextStyle(color: t.danger)),
+              ),
+            const SizedBox(height: 20),
+          ],
+        ),
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              8,
+              20,
+              12 + MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Pill(label: '测试连接', onTap: _busy ? null : _test),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Pill(
+                        label: '测试并保存',
+                        filled: true,
+                        onTap: _busy ? null : () => _test(saveAfter: true),
+                      ),
+                    ),
+                  ],
+                ),
+                TextButton(
+                  onPressed: _busy ? null : _saveUnverified,
+                  child: const Text('仅保存（未验证）'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -668,6 +797,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
       _Test.ok => (t.ok, Icons.check_circle, '连接成功'),
       _Test.slow => (t.amber, Icons.speed, '能用，但很慢'),
       _Test.saved => (t.ok, Icons.check_circle, '设置已保存'),
+      _Test.unverified => (t.amber, Icons.info_outline, '设置已保存（未验证）'),
       _ => (t.danger, Icons.error_outline, '连接失败'),
     };
     return AnimatedContainer(

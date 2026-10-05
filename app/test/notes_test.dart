@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
+import 'package:thusfar_app/data/note_drafts.dart';
 import 'package:thusfar_app/screens/notes_screen.dart';
 import 'package:thusfar_app/sheets/note_editor.dart';
 import 'package:thusfar_app/sheets/sheet_host.dart';
@@ -381,4 +382,158 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+  Future<void> openEditor(
+    WidgetTester tester, {
+    Json? existing,
+    int cutoff = 30,
+  }) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: Scaffold(
+          body: NoteEditor(
+            book: fixture.data,
+            start: 0,
+            end: 5,
+            cutoff: cutoff,
+            draftDir: fixture.directory,
+            existing: existing,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'direct draft reopening after rewind hides later knowledge and preserves bytes',
+    (tester) async {
+      final NoteDraft draft = NoteDraft(
+        start: 0,
+        end: 5,
+        cutoff: 100,
+        text: 'LATER DRAFT SPOILER',
+        source: NoteDraft.sourceFor(fixture.data, 0, 5),
+      );
+      draft.write(fixture.directory);
+      final File file = NoteDraft.fileFor(fixture.directory, 0, 5, null);
+      final String before = file.readAsStringSync();
+      await openEditor(tester);
+      expect(find.text('LATER DRAFT SPOILER'), findsNothing);
+      expect(find.textContaining('较后的阅读位置'), findsOneWidget);
+      final TextField field = tester.widget(find.byType(TextField));
+      expect(field.enabled, isFalse);
+      field.controller!.text = 'Must not overwrite';
+      await tester.pump();
+      expect(file.readAsStringSync(), before);
+      expect(find.text('保存'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await openEditor(tester, cutoff: 100);
+      expect(find.text('LATER DRAFT SPOILER'), findsOneWidget);
+      expect(file.readAsStringSync(), before);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  for (final bool malformed in [false, true]) {
+    testWidgets(
+      'unavailable ${malformed ? 'unreadable' : 'source-mismatched'} draft is never overwritten or deleted',
+      (tester) async {
+        final Json original = add();
+        final File file = NoteDraft.fileFor(
+          fixture.directory,
+          0,
+          5,
+          original['id'] as String,
+        );
+        file.writeAsStringSync(
+          malformed
+              ? '{original broken bytes'
+              : jsonEncode(
+                  NoteDraft(
+                    start: 0,
+                    end: 5,
+                    cutoff: 20,
+                    text: 'DO NOT EXPOSE',
+                    source: 'changed source',
+                    noteId: original['id'] as String,
+                    revision: original['revision'] as int,
+                  ).toJson(),
+                ),
+        );
+        final String before = file.readAsStringSync();
+        await openEditor(tester, existing: original);
+        expect(find.text('DO NOT EXPOSE'), findsNothing);
+        final TextField field = tester.widget(find.byType(TextField));
+        expect(field.enabled, isFalse);
+        field.controller!.text = 'replacement';
+        await tester.pump();
+        field.controller!.text = original['text'] as String;
+        await tester.pump();
+        expect(file.readAsStringSync(), before);
+        expect(find.text('保存'), findsNothing);
+        expect(find.text('删除'), findsNothing);
+        expect(find.text('放弃草稿'), findsNothing);
+        await tester.pumpWidget(const SizedBox.shrink());
+        expect(file.readAsStringSync(), before);
+      },
+    );
+  }
+
+  testWidgets('editing an existing note keeps its draft across dismissal', (
+    tester,
+  ) async {
+    final Json original = add();
+    await openEditor(tester, existing: original);
+    await tester.enterText(find.byType(TextField), 'saved only as draft');
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(notes.notes.single['text'], '旧想法');
+    final List<NoteDraft> drafts = NoteDraft.list(fixture.directory);
+    expect(drafts.single.noteId, original['id']);
+    expect(drafts.single.cutoff, 30);
+    await openEditor(tester, existing: original);
+    expect(find.text('saved only as draft'), findsOneWidget);
+    expect(find.text('已恢复未保存的草稿'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+  testWidgets(
+    'legacy draft with unknown reading boundary remains hidden and intact',
+    (tester) async {
+      final File legacy = File('${fixture.directory.path}/.note-draft-0-5.txt')
+        ..writeAsStringSync('UNKNOWN SPOILER');
+      await openEditor(tester);
+      expect(find.text('UNKNOWN SPOILER'), findsNothing);
+      expect(find.textContaining('旧版草稿缺少原文'), findsOneWidget);
+      final TextField field = tester.widget(find.byType(TextField));
+      expect(field.enabled, isFalse);
+      field.controller!.text = 'must not replace';
+      expect(legacy.readAsStringSync(), 'UNKNOWN SPOILER');
+      expect(
+        NoteDraft.fileFor(fixture.directory, 0, 5, null).existsSync(),
+        isFalse,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('later existing note is hidden even when earlier draft exists', (
+    tester,
+  ) async {
+    final Json note = add(cutoff: 100, text: 'LATER SAVED SPOILER');
+    NoteDraft(
+      start: 0,
+      end: 5,
+      cutoff: 20,
+      text: 'early draft',
+      source: NoteDraft.sourceFor(fixture.data, 0, 5),
+      noteId: note['id'] as String,
+      revision: note['revision'] as int,
+    ).write(fixture.directory);
+    await openEditor(tester, existing: note);
+    expect(find.text('LATER SAVED SPOILER'), findsNothing);
+    expect(find.text('early draft'), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    expect(find.text('保存'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }

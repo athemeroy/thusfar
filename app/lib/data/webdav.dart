@@ -32,6 +32,17 @@ class WebDavClient {
   final Uri collection;
   final String username;
   final String password;
+  final Set<HttpClient> _active = <HttpClient>{};
+  bool _disposed = false;
+
+  /// Cancel outstanding requests when the reader leaves or cancels the task.
+  void dispose() {
+    _disposed = true;
+    for (final HttpClient client in _active.toList()) {
+      client.close(force: true);
+    }
+    _active.clear();
+  }
 
   static const int maxBackupBytes = 144 * 1024 * 1024;
   static const int _maxListingBytes = 2 * 1024 * 1024;
@@ -169,8 +180,10 @@ class WebDavClient {
     Map<String, String> headers = const <String, String>{},
     required int maxResponseBytes,
   }) async {
+    if (_disposed) throw const WebDavException('WebDAV 操作已取消。');
     final HttpClient client = HttpClient()
       ..connectionTimeout = const Duration(seconds: 20);
+    _active.add(client);
     try {
       final HttpClientRequest request = await client
           .openUrl(method, uri)
@@ -220,6 +233,7 @@ class WebDavClient {
     } on HttpException {
       throw const WebDavException('WebDAV 连接异常。');
     } finally {
+      _active.remove(client);
       client.close(force: true);
     }
   }

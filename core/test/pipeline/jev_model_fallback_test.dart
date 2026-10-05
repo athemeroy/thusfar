@@ -210,11 +210,18 @@ void main() {
       llm.transport = fake;
       final Json answer = await judge.jev('passage', questions);
       expect((answer['q1'] as Json)['choice'], 'yes');
-      expect((answer['q1'] as Json)['by'], 'deepseek-test+nothink');
+      expect((answer['q1'] as Json)['by'], 'deepseek-test');
       expect(fake.requests.map((r) => r.url.host), <String>[
         'classifier.dev',
         'offline.invalid',
       ]);
+      final llm.ChatRequest modelRequest = fake.requests.last;
+      final Json modelBody = jsonDecode(modelRequest.body) as Json;
+      expect(modelRequest.url.path, '/v1/chat/completions');
+      expect(modelBody['model'], 'deepseek-test');
+      expect(modelBody.containsKey('thinking'), false);
+      expect(modelRequest.headers['Authorization'], 'Bearer offline-model-key');
+      expect(fake.requests.first.headers['Authorization'], isNull);
       expect(judge.freeBreaker.open(), true);
       expect(
         (budget.readModelJudgeBudget(

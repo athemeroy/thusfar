@@ -9,15 +9,46 @@ import 'package:thusfar_core/thusfar_core.dart' show PyException;
 
 typedef Json = Map<String, Object?>;
 
+// personal.json is an unchanged recording of the Python 1.7.x oracle, not a
+// fixture for the current settings contract. Release 2.0.10 (7cf423b) deliberately
+// stopped adding +nothink to arbitrary deepseek-* IDs. Pin both historical rows
+// and current results so this exception cannot hide other reference drift.
+const Map<int, ({Json python, List<String> current})> _normalize210 = {
+  64: (
+    python: {
+      'operation': 'model_settings.normalize',
+      'args': [' https://example.invalid/v1/ ', ' deepseek-test '],
+      'result': ['https://example.invalid/v1', 'deepseek-test+nothink'],
+    },
+    current: ['https://example.invalid/v1', 'deepseek-test'],
+  ),
+  65: (
+    python: {
+      'operation': 'model_settings.normalize',
+      'args': ['https://example.invalid/proxy/v1', 'DeepSeek-Test'],
+      'result': ['https://example.invalid/proxy/v1', 'DeepSeek-Test+nothink'],
+    },
+    current: ['https://example.invalid/proxy/v1', 'DeepSeek-Test'],
+  ),
+};
+
 void main() {
   final List<Object?> rows =
       jsonDecode(
             File('test/services/fixtures/personal.json').readAsStringSync(),
           )
           as List<Object?>;
+  test('2.0.10 normalization changes retain exact Python source rows', () {
+    for (final entry in _normalize210.entries) {
+      expect(rows[entry.key], entry.value.python);
+    }
+  });
   for (int i = 0; i < rows.length; i++) {
     final Json row = rows[i]! as Json;
-    test('Python personal reference $i ${row['operation']}', () {
+    final change = _normalize210[i];
+    final String contract =
+        change == null ? 'Python personal reference' : '2.0.10 model contract';
+    test('$contract $i ${row['operation']}', () {
       final List<Object?> args = row['args']! as List<Object?>;
       Object? invoke() {
         switch (row['operation']) {
@@ -82,7 +113,7 @@ void main() {
           ),
         );
       } else {
-        expect(invoke(), row['result']);
+        expect(invoke(), change?.current ?? row['result']);
       }
     });
   }

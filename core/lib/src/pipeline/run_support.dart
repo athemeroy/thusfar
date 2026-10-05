@@ -9,20 +9,18 @@ extension RunnerSupport on Runner {
   }
 
   List<Json> _memoryPeople(int limit) {
-    final int start =
-        works.isNotEmpty && segs.isNotEmpty
-            ? scopeStart(_int(segs[math.min(kg.seg, segs.length - 1)]['o0']))
-            : 0;
+    final int start = works.isNotEmpty && segs.isNotEmpty
+        ? scopeStart(_int(segs[math.min(kg.seg, segs.length - 1)]['o0']))
+        : 0;
     return PyCompat.stableSorted(
       kg.people.values.where(
         (p) => !_truth(p['merged_into']) && _int(p['first']) >= start,
       ),
-      key:
-          (Json p) => [
-            -(_int(p['mentions']) +
-                20 * (kg.seg - _int(p['last_seg'], -99) <= 6 ? 1 : 0)),
-            p['id'],
-          ],
+      key: (Json p) => [
+        -(_int(p['mentions']) +
+            20 * (kg.seg - _int(p['last_seg'], -99) <= 6 ? 1 : 0)),
+        p['id'],
+      ],
     ).take(limit).toList();
   }
 
@@ -62,28 +60,27 @@ extension RunnerSupport on Runner {
     }
     return {
       'story': _cut(kg.saga, 1800),
-      'recent_events':
-          kg.recent.skip(math.max(0, kg.recent.length - 12)).toList(),
+      'recent_events': kg.recent
+          .skip(math.max(0, kg.recent.length - 12))
+          .toList(),
       'people': {
         for (final e in chosen.entries)
           e.key: {
             'name': e.value['name'],
-            'aliases':
-                _sorted(
-                  (_set(e.value['aliases'])
-                    ..addAll(_set(e.value['weak'])))..remove(e.value['name']),
-                ).take(6).toList(),
+            'aliases': _sorted(
+              (_set(e.value['aliases'])..addAll(_set(e.value['weak'])))
+                ..remove(e.value['name']),
+            ).take(6).toList(),
             'tagline': _cut(
               _str(e.value['tagline'], _str(e.value['intro'])),
               120,
             ),
             'bio': _cut(_str(e.value['bio']), 520),
             'known_relations': relations[e.key]!.take(8).toList(),
-            'recent_events':
-                events[e.key]!
-                    .skip(math.max(0, events[e.key]!.length - 6))
-                    .where((t) => t.isNotEmpty)
-                    .toList(),
+            'recent_events': events[e.key]!
+                .skip(math.max(0, events[e.key]!.length - 6))
+                .where((t) => t.isNotEmpty)
+                .toList(),
           },
       },
     };
@@ -94,9 +91,8 @@ extension RunnerSupport on Runner {
     final Json known = _obj(memory['people']), characters = {};
     for (final Json person in _rows(data['people'])) {
       final Json row = {
-        'name_in_this_passage': _str(
-          person['name'],
-        ).replaceFirst(RegExp(r'^\*+'), ''),
+        'name_in_this_passage': _str(person['name'])
+            .replaceFirst(RegExp(r'^\*+'), ''),
         'description_in_this_passage': _str(person['role']),
       };
       final Json prior = _obj(known[pyStr(person['known'])]);
@@ -108,8 +104,10 @@ extension RunnerSupport on Runner {
       characters[pyStr(person['id'])] = row;
     }
     String story = _str(memory['story']);
-    final List<String> recent =
-        _list(memory['recent_events']).where(_truth).cast<String>().toList();
+    final List<String> recent = _list(memory['recent_events'])
+        .where(_truth)
+        .cast<String>()
+        .toList();
     if (recent.isNotEmpty)
       story += '${story.isEmpty ? '' : '\n'}最近事件：${recent.join('；')}';
     String previous = '';
@@ -192,10 +190,9 @@ extension RunnerSupport on Runner {
     );
     final Json support = rec['support'] is Json ? rec['support']! as Json : {};
     rec['support'] = support;
-    final Json fingerprints =
-        rec['support_fingerprints'] is Json
-            ? rec['support_fingerprints']! as Json
-            : {};
+    final Json fingerprints = rec['support_fingerprints'] is Json
+        ? rec['support_fingerprints']! as Json
+        : {};
     rec['support_fingerprints'] = fingerprints;
     final Map<String, (String, String)> items = supportItems(
       _obj(rec['data']),
@@ -339,10 +336,11 @@ extension RunnerSupport on Runner {
     final List<(String, String)> pairs = [];
     final Map<(String, String), (Object?, Object?)> where = {};
     for (final Json e in _rows(data['events'])) {
-      final List<String> who =
-          _list(
-            e['who'],
-          ).where(names.containsKey).cast<String>().toSet().toList();
+      final List<String> who = _list(e['who'])
+          .where(names.containsKey)
+          .cast<String>()
+          .toSet()
+          .toList();
       for (int x = 0; x < who.length; x++) {
         for (int y = x + 1; y < who.length; y++) {
           final pair = (who[x], who[y]);
@@ -361,10 +359,9 @@ extension RunnerSupport on Runner {
       return rec;
     }
     final String language = lang.cardLang(book) == 'en' ? 'en' : 'zh',
-        kind =
-            ['nonfiction', 'reference'].contains(book['genre'])
-                ? 'concept'
-                : 'novel';
+        kind = ['nonfiction', 'reference'].contains(book['genre'])
+            ? 'concept'
+            : 'novel';
     final Json inverse = judge.trees(kind).$3;
     final Map<(String, String), Json> got;
     try {
@@ -413,21 +410,21 @@ extension RunnerSupport on Runner {
           e.key,
     ];
     checkpoint();
-    final Map<(String, String), Json> worded =
-        other.isEmpty
-            ? {}
-            : await nameRelations(
-              i,
-              model.isEmpty ? local.localModel : model,
-              other,
-              names,
-              extraction.segText(book, segs[i]),
-            );
+    final Map<(String, String), Json> worded = other.isEmpty
+        ? {}
+        : await nameRelations(
+            i,
+            model.isEmpty ? local.localModel : model,
+            other,
+            names,
+            extraction.segText(book, segs[i]),
+          );
     for (final entry in got.entries) {
       final (String a, String b) = entry.key;
       final Json v = entry.value;
-      final List<Json> ties =
-          _rows(v['ties']).where((t) => t['role'] != 'other').toList();
+      final List<Json> ties = _rows(v['ties'])
+          .where((t) => t['role'] != 'other')
+          .toList();
       final List<String> facets = [];
       for (final String f in ['state', 'stance']) {
         final Object? x = v[f];
@@ -446,22 +443,20 @@ extension RunnerSupport on Runner {
       if (r != null) {
         final String label = _str(r['b_is']);
         final bool same = pyStr(r['a']) == a;
-        final String expectedB =
-            ties.isEmpty
-                ? ''
-                : judge.label(
-                  (same ? ties.first['role'] : inverse[ties.first['role']])!
-                      as String,
-                  language,
-                );
-        final String expectedA =
-            ties.isEmpty
-                ? ''
-                : judge.label(
-                  (same ? inverse[ties.first['role']] : ties.first['role'])!
-                      as String,
-                  language,
-                );
+        final String expectedB = ties.isEmpty
+            ? ''
+            : judge.label(
+                (same ? ties.first['role'] : inverse[ties.first['role']])!
+                    as String,
+                language,
+              );
+        final String expectedA = ties.isEmpty
+            ? ''
+            : judge.label(
+                (same ? inverse[ties.first['role']] : ties.first['role'])!
+                    as String,
+                language,
+              );
         final Set<String> canonical = {
           for (final Object? table in judge.trees(kind).$2.values)
             for (final String role in (table! as Json).keys)
@@ -533,10 +528,9 @@ extension RunnerSupport on Runner {
 
   Json _relationJson(Json value) => {
     for (final e in value.entries)
-      e.key:
-          e.value is (String, num)
-              ? [(e.value as (String, num)).$1, (e.value as (String, num)).$2]
-              : e.value,
+      e.key: e.value is (String, num)
+          ? [(e.value as (String, num)).$1, (e.value as (String, num)).$2]
+          : e.value,
   };
   Future<Json> addSupport(Json rec, int i) async {
     checkpoint();
@@ -862,10 +856,9 @@ extension RunnerSupport on Runner {
             for (final Json np in _rows(data['new_people'])) {
               if (np['ref'] == ref) np['intro'] = '';
             }
-            data['profiles'] =
-                _rows(
-                  data['profiles'],
-                ).where((pr) => pr['who'] != ref).toList();
+            data['profiles'] = _rows(data['profiles'])
+                .where((pr) => pr['who'] != ref)
+                .toList();
           }
         }
         usage['jev_calls'] = _int(usage['jev_calls']) + 1;
@@ -937,14 +930,21 @@ extension RunnerSupport on Runner {
   }
 
   Future<void> markTitles() async {
-    final List<Json> chapters = _rows(book['chapters']);
+    final List<int> indices = <int>[
+      for (final (int i, Json c) in _rows(book['chapters']).indexed)
+        if (permitsEnd(_int(c['o1']))) i,
+    ];
+    final List<Json> chapters = <Json>[
+      for (final int i in indices) _rows(book['chapters'])[i],
+    ];
+    if (chapters.isEmpty) return;
     if ((environ['JUDGE_TITLES'] ?? '1') != '1' ||
         chapters.every((c) => c.containsKey('spoil')) &&
             !qualityPending.contains('chapter-titles'))
       return;
     if (activity) recordBookActivity(root, 'check_titles', '正在核对章节标题');
     final List<bool> spoils = await judge.titleSpoilers([
-      for (int i = 0; i < chapters.length; i++) chapterName(i),
+      for (final int i in indices) chapterName(i),
     ], _str(book['title']));
     if (spoils.length != chapters.length)
       throw const llm.LLMError('章节标题验证结果不完整');

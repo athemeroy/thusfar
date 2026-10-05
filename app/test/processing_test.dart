@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:thusfar_app/ui/device.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/data/model_settings.dart';
 import 'package:thusfar_app/data/processing.dart';
@@ -20,6 +19,7 @@ class FixtureProcessing extends BookProcessing {
   final Library library;
   int initializations = 0;
   int starts = 0;
+  Json? lastPlan;
   int pauses = 0;
   int removals = 0;
   Completer<void>? pauseGate;
@@ -43,6 +43,12 @@ class FixtureProcessing extends BookProcessing {
     starts++;
     if (startError != null) throw startError!;
     status(book, <String, Object?>{'state': 'running', 'done': 0, 'total': 2});
+  }
+
+  @override
+  Future<void> startBookWithPlan(BookEntry book, Json plan) async {
+    lastPlan = plan;
+    await startBook(book);
   }
 
   @override
@@ -521,7 +527,12 @@ void main() {
     expect(find.text('下一段：第 11 / 603 段，尚未完成。'), findsOneWidget);
     expect(find.textContaining('上次整理中断后已暂停'), findsOneWidget);
     expect(find.textContaining('第 11 段 · 人物关联已等待'), findsWidgets);
-    expect(find.text('导出整理诊断'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('导出整理诊断'),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('导出整理诊断').hitTestable(), findsOneWidget);
   });
 
   testWidgets('automatic retry can be stopped from the book card', (
@@ -969,11 +980,19 @@ void main() {
     int removed = 0;
     processing.removalGate = Completer<void>();
     await open(tester, onRemoved: () => removed++);
-    await tester.ensureVisible(find.text('从这台$deviceWord移除'));
-    await tester.tap(find.text('从这台$deviceWord移除'));
+    await tester.scrollUntilVisible(
+      find.text('移到回收站'),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('移到回收站'));
     await tester.pump();
-    await tester.ensureVisible(find.text('移除'));
-    await tester.tap(find.text('移除'));
+    await tester.scrollUntilVisible(
+      find.text('移到回收站'),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('移到回收站'));
     await tester.pump();
     expect(processing.removals, 1);
     expect(bookRoot.existsSync(), isTrue);

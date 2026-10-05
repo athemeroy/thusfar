@@ -19,39 +19,54 @@ String _string(Object? value) => switch (value) {
   _ => '$value',
 };
 
-/// Reader coordinates use UTF-16; a quote must fit one textual block and may
-/// not split a surrogate pair. Empty bookmarks are valid at any checked offset.
+/// Reader coordinates use UTF-16. Adjacent textual blocks are joined with a
+/// newline, matching the displayed quote; gaps, images and split surrogate
+/// pairs are never treated as source evidence.
 String sourceQuote(Json book, int start, int end) {
   if (start == end) return '';
+  final List<String> parts = <String>[];
+  int covered = start;
+  bool complete = false;
   for (final Object? value in book['blocks']! as List<Object?>) {
     final Json block = value! as Json;
     final int offset = block['o']! as int;
-    if (offset > start) break;
     final String text = block['t']! as String;
-    if ((block['k'] == 'p' || block['k'] == 'h') &&
-        offset <= start &&
-        start < end &&
-        end <= offset + text.length) {
-      final String quote = text.substring(start - offset, end - offset);
-      bool valid = true;
-      for (int i = 0; i < quote.length; i++) {
-        final int c = quote.codeUnitAt(i);
-        if (c >= 0xd800 && c <= 0xdbff) {
-          if (++i >= quote.length ||
-              quote.codeUnitAt(i) < 0xdc00 ||
-              quote.codeUnitAt(i) > 0xdfff) {
-            valid = false;
-            break;
-          }
-        } else if (c >= 0xdc00 && c <= 0xdfff) {
+    final int blockEnd = offset + text.length;
+    if (blockEnd <= start) continue;
+    if (offset >= end) break;
+    if (block['k'] != 'p' && block['k'] != 'h') break;
+    // Book parsers use either contiguous blocks or one structural newline.
+    if (parts.isEmpty
+        ? offset > start
+        : offset < covered || offset > covered + 1)
+      break;
+    final int a = (start - offset).clamp(0, text.length);
+    final int z = (end - offset).clamp(0, text.length);
+    final String quote = text.substring(a, z);
+    bool valid = true;
+    for (int i = 0; i < quote.length; i++) {
+      final int c = quote.codeUnitAt(i);
+      if (c >= 0xd800 && c <= 0xdbff) {
+        if (++i >= quote.length ||
+            quote.codeUnitAt(i) < 0xdc00 ||
+            quote.codeUnitAt(i) > 0xdfff) {
           valid = false;
           break;
         }
+      } else if (c >= 0xdc00 && c <= 0xdfff) {
+        valid = false;
+        break;
       }
-      if (valid) return quote;
+    }
+    if (!valid || quote.isEmpty) break;
+    parts.add(quote);
+    covered = offset + z;
+    if (covered == end) {
+      complete = true;
       break;
     }
   }
+  if (complete) return parts.join('\n');
   throw const ValueError('摘录位置已变化，请重新选择原文');
 }
 

@@ -113,38 +113,37 @@ void main() {
   );
 
   test(
-    'forward drag across blocks stops at original block and saves a valid quote',
+    'forward drag across visible paragraphs saves exact multi-paragraph quote',
     () {
       page(0, book.length);
       controller.select((2, 4));
       controller.select((2, book.length), anchor: 2);
-      expect(controller.selection, (2, first.length));
+      expect(controller.selection, (2, book.length));
       final Json saved = book.notes.save(
         kind: 'note',
         start: controller.selection!.$1,
         end: controller.selection!.$2,
         cutoff: controller.cutoff,
       );
-      expect(saved['quote'], first.substring(2));
-      expect(saved['quote'], isNot(contains('另一段落')));
+      expect(saved['quote'], '${first.substring(2)}\n$second');
     },
   );
 
   test(
-    'backward drag preserves its second-block anchor rather than selecting the previous paragraph',
+    'backward drag reaches the preceding visible paragraph with exact source offsets',
     () {
       page(0, book.length);
       final int anchor = first.length + 3;
       controller.select((anchor, anchor + 2));
       controller.select((0, anchor + 2), anchor: anchor);
-      expect(controller.selection, (first.length, anchor + 2));
+      expect(controller.selection, (0, anchor + 2));
       final Json saved = book.notes.save(
         kind: 'note',
         start: controller.selection!.$1,
         end: controller.selection!.$2,
         cutoff: controller.cutoff,
       );
-      expect(saved['quote'], second.substring(0, 5));
+      expect(saved['quote'], '$first\n${second.substring(0, 5)}');
     },
   );
 

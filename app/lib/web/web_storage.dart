@@ -17,6 +17,8 @@ import 'package:thusfar_core/parse.dart' as parser;
 
 import '../data/library_zip.dart';
 import '../data/portable_work.dart';
+import '../data/restore_report.dart';
+import '../data/preparation_scope.dart';
 
 typedef Json = Map<String, Object?>;
 
@@ -43,6 +45,8 @@ class WebLibraryZipRestoreResult {
     required this.existing,
     required this.failures,
     this.settingsError,
+    required this.report,
+    this.reportError,
   });
 
   final int total;
@@ -50,6 +54,8 @@ class WebLibraryZipRestoreResult {
   final int existing;
   final List<String> failures;
   final String? settingsError;
+  final RestoreReport report;
+  final String? reportError;
   bool get complete => failures.isEmpty && settingsError == null;
 }
 
@@ -202,12 +208,18 @@ class WebReadingState {
     this.chapter = 0,
     this.fraction = 0,
     this.lastOpened = 0,
+    this.returnChapter,
+    this.returnFraction,
+    this.returnOffset,
     List<WebPersonalItem>? items,
   }) : items = items ?? <WebPersonalItem>[];
 
   int chapter;
   double fraction;
   int lastOpened;
+  int? returnChapter;
+  double? returnFraction;
+  int? returnOffset;
   final List<WebPersonalItem> items;
   List<WebPersonalItem> get bookmarks => items
       .where((WebPersonalItem item) => item.kind == 'bookmark' && !item.deleted)
@@ -256,6 +268,12 @@ class WebReadingState {
     chapter: (value['chapter'] as num?)?.toInt() ?? 0,
     fraction: ((value['fraction'] as num?)?.toDouble() ?? 0).clamp(0.0, 1.0),
     lastOpened: (value['lastOpened'] as num?)?.toInt() ?? 0,
+    returnChapter: (value['returnChapter'] as num?)?.toInt(),
+    returnOffset: (value['returnOffset'] as num?)?.toInt(),
+    returnFraction: (value['returnFraction'] as num?)?.toDouble().clamp(
+      0.0,
+      1.0,
+    ),
     items: <WebPersonalItem>[
       for (final String key in <String>['bookmarks', 'notes'])
         for (final Object? row in value[key] as List<Object?>? ?? const [])
@@ -268,6 +286,9 @@ class WebReadingState {
     'chapter': chapter,
     'fraction': fraction,
     'lastOpened': lastOpened,
+    if (returnChapter != null) 'returnChapter': returnChapter,
+    if (returnFraction != null) 'returnFraction': returnFraction,
+    if (returnOffset != null) 'returnOffset': returnOffset,
     'bookmarks': <Json>[
       for (final WebPersonalItem item in items)
         if (item.kind == 'bookmark') item.toJson(),
@@ -1031,18 +1052,20 @@ class WebLibrary {
   static const String _meta = 'meta';
   static const String _states = 'states';
   static const String _preparations = 'preparations';
+  static const String _trash = 'trash';
+  static const String _reportKey = 'thusfar-web-restore-report-v1';
   static String _preparationLeaseKey(String bookId) => 'lease:$bookId';
 
   final idb.Database _database;
 
-  static Future<WebLibrary> open() async {
+  static Future<WebLibrary> open({String databaseName = _databaseName}) async {
     final idb.IdbFactory? factory = html.window.indexedDB;
     if (factory == null) throw StateError('浏览器不支持本地书库（IndexedDB）。');
     final Completer<idb.Database> ready = Completer<idb.Database>();
     factory
         .open(
-          _databaseName,
-          version: 2,
+          databaseName,
+          version: 3,
           onBlocked: (_) {
             if (!ready.isCompleted) {
               ready.completeError(
@@ -1053,6 +1076,7 @@ class WebLibrary {
           onUpgradeNeeded: (idb.VersionChangeEvent event) {
             final idb.Database db = (event.target as idb.OpenDBRequest).result!;
             final List<String> stores = db.objectStoreNames ?? <String>[];
+            if (!stores.contains(_trash)) db.createObjectStore(_trash);
             if (!stores.contains(_books)) {
               db.createObjectStore(_books);
             }
@@ -1333,7 +1357,10 @@ class WebLibrary {
     return meta;
   }
 
-  Future<String> importBackup(Uint8List bytes) async {
+  Future<String> importBackup(
+    Uint8List bytes, {
+    bool previewOnly = false,
+  }) async {
     if (bytes.length > 144 * 1024 * 1024) {
       throw const FormatException('网页版单个备份最多导入 144 MB。');
     }
@@ -1487,7 +1514,7 @@ class WebLibrary {
       _meta,
       _states,
       _preparations,
-    ], 'readwrite');
+    ], previewOnly ? 'readonly' : 'readwrite');
     final Future<idb.Database> completed = transaction.completed;
     final idb.ObjectStore booksStore = transaction.objectStore(_books);
     final idb.ObjectStore statesStore = transaction.objectStore(_states);
@@ -1542,6 +1569,10 @@ class WebLibrary {
         currentPrep,
         preparation == null ? null : _decodePreparation(preparation),
       );
+      if (previewOnly) {
+        await completed;
+        return targetId;
+      }
       if (!_sameJson(currentBook['book'], mergedBook) ||
           (mergedNative != null && !_sameJson(localNative, mergedNative))) {
         await booksStore.put(
@@ -1558,6 +1589,10 @@ class WebLibrary {
         await preparationStore.put(_encodePreparation(mergedPrep), targetId);
       }
     } else {
+      if (previewOnly) {
+        await completed;
+        return targetId;
+      }
       await booksStore.put(
         jsonEncode(<String, Object?>{
           'book': book,
@@ -1615,6 +1650,7 @@ class WebLibrary {
       }
       final Json backup = <String, Object?>{
         'format': 'thusfar-web-backup-v1',
+        'exported': DateTime.now().millisecondsSinceEpoch / 1000,
         'meta': book.meta.toJson(),
         'book': book.data,
         'images': book.images,
@@ -1727,21 +1763,56 @@ class WebLibrary {
     LibraryZipData archive, {
     required bool applySettings,
   }) async {
-    final int before = (await list()).length;
+    final Set<String> beforeIds = (await list()).map((b) => b.id).toSet();
+    final int before = beforeIds.length;
+    final List<RestoreReportEntry> entries = <RestoreReportEntry>[];
     final List<String> failures = <String>[];
     final List<String?> ids = <String?>[];
     for (int i = 0; i < archive.books.length; i++) {
+      final String title = BackupSummary.read(
+        archive.books[i],
+        fallback: '第 ${i + 1} 本书',
+      ).title;
       try {
-        ids.add(await importBackup(archive.books[i]));
+        final String id = await importBackup(archive.books[i]);
+        ids.add(id);
+        entries.add(
+          RestoreReportEntry(
+            title: title,
+            status: beforeIds.contains(id) ? 'merged' : 'imported',
+          ),
+        );
+        beforeIds.add(id);
       } on WebBackupConflict catch (error) {
         ids.add(null);
-        failures.add('第 ${i + 1} 本：${error.message}');
+        failures.add('《$title》：${error.message}');
+        entries.add(
+          RestoreReportEntry(
+            title: title,
+            status: 'conflict',
+            detail: error.message,
+          ),
+        );
       } on FormatException catch (error) {
         ids.add(null);
-        failures.add('第 ${i + 1} 本：${error.message}');
+        failures.add('《$title》：${error.message}');
+        entries.add(
+          RestoreReportEntry(
+            title: title,
+            status: 'conflict',
+            detail: error.message,
+          ),
+        );
       } on Object {
         ids.add(null);
-        failures.add('第 ${i + 1} 本无法导入，请检查浏览器存储空间。');
+        failures.add('《$title》无法导入，请检查浏览器存储空间。');
+        entries.add(
+          RestoreReportEntry(
+            title: title,
+            status: 'conflict',
+            detail: '无法导入，请检查浏览器存储空间。',
+          ),
+        );
       }
     }
     final int imported = ((await list()).length - before).clamp(
@@ -1770,12 +1841,29 @@ class WebLibrary {
         settingsError = '书籍已恢复，设置未完全保存；请检查浏览器可用空间。';
       }
     }
+    final RestoreReport report = RestoreReport(
+      created: DateTime.now(),
+      entries: entries,
+      settingsStatus: !applySettings
+          ? '按你的选择保留当前设置'
+          : failures.isNotEmpty
+          ? '因书籍冲突而跳过，当前设置保留；可处理冲突后重试'
+          : settingsError ?? '已导入阅读清单、排版和模型设置；模型密钥需重填',
+    );
+    String? reportError;
+    try {
+      html.window.localStorage[_reportKey] = jsonEncode(report.toJson());
+    } on Object {
+      reportError = '恢复报告未能保存，请保留本次结果并检查存储空间。';
+    }
     return WebLibraryZipRestoreResult(
       total: archive.books.length,
       imported: imported,
       existing: archive.books.length - imported - failures.length,
       failures: failures,
       settingsError: settingsError,
+      report: report,
+      reportError: reportError,
     );
   }
 
@@ -1841,21 +1929,151 @@ class WebLibrary {
     if (model is Json) saveModelProfile(model);
   }
 
+  RestoreReport? get lastRestoreReport {
+    try {
+      final String? raw = html.window.localStorage[_reportKey];
+      return raw == null
+          ? null
+          : RestoreReport.fromJson(jsonDecode(raw) as Json);
+    } on Object {
+      return null;
+    }
+  }
+
+  Future<List<WebTrashEntry>> listTrash() async {
+    final idb.Transaction transaction = _database.transaction(
+      _trash,
+      'readonly',
+    );
+    final List<WebTrashEntry> result = [];
+    await for (final idb.CursorWithValue row
+        in transaction.objectStore(_trash).openCursor(autoAdvance: true)) {
+      if (row.key is! String) continue;
+      try {
+        final Json value = jsonDecode(row.value as String) as Json;
+        final Json meta = jsonDecode(value['meta'] as String) as Json;
+        final Json book = jsonDecode(value['book'] as String) as Json;
+        if (book['book'] is! Json || meta['id'] != value['id']) {
+          throw const FormatException('invalid trash book');
+        }
+        result.add(
+          WebTrashEntry(
+            key: row.key as String,
+            id: value['id'] as String,
+            title: '${meta['title']}',
+            removed: DateTime.parse(value['removed'] as String),
+            bytes: utf8.encode(row.value as String).length,
+          ),
+        );
+      } on Object {
+        result.add(
+          WebTrashEntry(
+            key: row.key as String,
+            id: '',
+            title: '无法读取书名的回收记录',
+            removed: DateTime.fromMillisecondsSinceEpoch(0),
+            bytes: row.value is String
+                ? utf8.encode(row.value as String).length
+                : 0,
+            issue: '这条回收记录损坏，暂不能自动恢复。原始数据仍保留，其他书籍可正常恢复。',
+          ),
+        );
+      }
+    }
+    return result..sort((a, b) => b.removed.compareTo(a.removed));
+  }
+
   Future<void> remove(String id) async {
     final idb.Transaction transaction = _database.transactionList(<String>[
       _books,
       _meta,
       _states,
       _preparations,
+      _trash,
     ], 'readwrite');
     final Future<idb.Database> completed = transaction.completed;
-    await transaction.objectStore(_books).delete(id);
-    await transaction.objectStore(_meta).delete(id);
-    await transaction.objectStore(_states).delete(id);
-    await transaction.objectStore(_preparations).delete(id);
+    final Object? book = await transaction.objectStore(_books).getObject(id);
+    final Object? meta = await transaction.objectStore(_meta).getObject(id);
+    final Object? state = await transaction.objectStore(_states).getObject(id);
+    final Object? preparation = await transaction
+        .objectStore(_preparations)
+        .getObject(id);
+    final Json? lease = _decodeLease(
+      await transaction
+          .objectStore(_preparations)
+          .getObject(_preparationLeaseKey(id)),
+    );
+    if (lease != null &&
+        (lease['expires'] as int) > DateTime.now().millisecondsSinceEpoch) {
+      throw StateError('这本书正在整理，请先暂停并等待当前请求结束再移除。');
+    }
+    if (book == null || meta == null) throw StateError('书籍已变化，请刷新书架。');
+    final String key = '$id-${DateTime.now().microsecondsSinceEpoch}';
+    await transaction
+        .objectStore(_trash)
+        .put(
+          jsonEncode({
+            'id': id,
+            'book': book,
+            'meta': meta,
+            'state': state,
+            'preparation': preparation,
+            'removed': DateTime.now().toIso8601String(),
+          }),
+          key,
+        );
+    for (final String store in [_books, _meta, _states, _preparations]) {
+      await transaction.objectStore(store).delete(id);
+    }
     await transaction
         .objectStore(_preparations)
         .delete(_preparationLeaseKey(id));
+    await completed;
+  }
+
+  Future<void> restoreFromTrash(String key) async {
+    final idb.Transaction transaction = _database.transactionList(<String>[
+      _books,
+      _meta,
+      _states,
+      _preparations,
+      _trash,
+    ], 'readwrite');
+    final Future<idb.Database> completed = transaction.completed;
+    final Object? raw = await transaction.objectStore(_trash).getObject(key);
+    if (raw is! String) throw StateError('回收站记录已变化，请刷新。');
+    final Json value = jsonDecode(raw) as Json;
+    final String id = value['id'] as String;
+    final Json stored = jsonDecode(value['book'] as String) as Json;
+    final Json meta = jsonDecode(value['meta'] as String) as Json;
+    if (stored['book'] is! Json || meta['id'] != id || id.isEmpty) {
+      throw StateError('回收记录损坏，未恢复；原始数据仍保留。');
+    }
+    if (await transaction.objectStore(_books).getObject(id) != null) {
+      throw StateError('书架已有同一本书，未覆盖；回收站版本仍保留。请先导出两个版本。');
+    }
+    for (final (String store, String field) in [
+      (_books, 'book'),
+      (_meta, 'meta'),
+      (_states, 'state'),
+      (_preparations, 'preparation'),
+    ]) {
+      if (value[field] != null) {
+        await transaction.objectStore(store).put(value[field], id);
+      }
+    }
+    await transaction.objectStore(_trash).delete(key);
+    await completed;
+  }
+
+  /// The caller must show an explicit irreversible-deletion confirmation.
+  Future<void> permanentlyDeleteFromTrash(String key) async {
+    final idb.Transaction transaction = _database.transaction(
+      _trash,
+      'readwrite',
+    );
+    final Future<idb.Database> completed = transaction.completed;
+    await transaction.objectStore(_trash).delete(key);
     await completed;
   }
 
@@ -1971,7 +2189,7 @@ Json _validatedPreparation(Json state) {
       field.key: _safePreparationValue(field.value, 0),
   };
   if (result['schema'] != 'thusfar-web-ai-v1' ||
-      !const <String>{'first', 'read', 'all'}.contains(result['scope']) ||
+      !validPreparationScope(result['scope']) ||
       !const <String>{
         'idle',
         'running',
@@ -2125,3 +2343,20 @@ Json _decodePreparation(String raw) {
 String _safeFilename(String title) => title
     .replaceAll(RegExp(r'[<>:"/\\|?*\x00-\x1f]'), '_')
     .substring(0, math.min(title.length, 64));
+
+class WebTrashEntry {
+  const WebTrashEntry({
+    required this.key,
+    required this.id,
+    required this.title,
+    required this.removed,
+    required this.bytes,
+    this.issue,
+  });
+  final String? issue;
+  final String key;
+  final String id;
+  final String title;
+  final DateTime removed;
+  final int bytes;
+}

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/backup.dart';
 import 'package:thusfar_app/data/library.dart';
+import 'package:thusfar_app/data/library_zip.dart';
 import 'package:thusfar_app/main.dart';
 
 void main() {
@@ -163,6 +164,67 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+
+  for (final bool failReportSave in <bool>[false, true]) {
+    testWidgets(
+      'all-failed ZIP exposes every result from the native import UI, report save failure=$failReportSave',
+      (WidgetTester tester) async {
+        final List<Uint8List> books = <Uint8List>[
+          for (final String title in <String>[
+            'Broken first',
+            'Broken second',
+            'Broken third',
+          ])
+            Uint8List.fromList(
+              utf8.encode(
+                jsonEncode(<String, Object?>{
+                  'format': 'yedu-book/2',
+                  'book': <String, Object?>{'title': title, 'len': -1},
+                }),
+              ),
+            ),
+        ];
+        final File zip = File('${root.path}/failed.zip')
+          ..writeAsBytesSync(
+            LibraryZipCodec.encode(books: books, settings: <String, Object?>{}),
+          );
+        if (failReportSave) {
+          Directory('${root.path}/restore-report.json').createSync();
+        }
+        pending.add(<String, String>{'name': 'failed.zip', 'path': zip.path});
+        await tester.pumpWidget(ThusfarApp(model: model));
+        for (int i = 0; i < 30 && find.text('恢复整个书库').evaluate().isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.text('恢复整个书库'), findsOneWidget);
+        expect(find.textContaining('Broken first'), findsOneWidget);
+        await tester.tap(find.text('保留当前设置'));
+        await tester.pumpAndSettle();
+        expect(model.library.books, isEmpty);
+        if (failReportSave) {
+          expect(find.textContaining('报告未能保存'), findsWidgets);
+          expect(model.library.lastRestoreReport, isNull);
+        } else {
+          expect(model.library.lastRestoreReport?.entries, hasLength(3));
+          expect(model.library.lastRestoreReport?.failed, 3);
+        }
+        await tester.tap(find.text('查看报告'));
+        await tester.pumpAndSettle();
+        expect(find.text('上次恢复报告'), findsOneWidget);
+        for (final String title in <String>[
+          'Broken first',
+          'Broken second',
+          'Broken third',
+        ]) {
+          expect(find.text(title), findsOneWidget);
+        }
+        expect(find.textContaining('0 本已恢复，3 本未导入'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
 
   testWidgets(
     'native copy errors and corrupt files remain visible while later files import',

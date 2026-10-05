@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/library.dart';
+import '../data/note_drafts.dart';
 import '../ui/theme.dart';
 
 /// S17 笔记编辑: quote on top, autofocus, drafts survive closing.
@@ -47,13 +48,16 @@ class NoteEditor extends StatefulWidget {
         draftDir: book.entry.dir,
       ),
     );
-    if (existing == null &&
-        File(
-          '${book.entry.dir.path}/.note-draft-$start-$end.txt',
-        ).existsSync()) {
-      if (messenger.mounted) {
-        messenger.showSnackBar(const SnackBar(content: Text('草稿已保留')));
-      }
+    if (NoteDraft.fileFor(
+          book.entry.dir,
+          start,
+          end,
+          existing?['id'] as String?,
+        ).existsSync() &&
+        messenger.mounted) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('草稿已保留，可在设置 → 未保存笔记草稿继续编辑')),
+      );
     }
   }
 
@@ -65,34 +69,119 @@ class _NoteEditorState extends State<NoteEditor> {
   late final TextEditingController text;
   String? error;
 
-  File get _draft => File(
-    '${widget.draftDir.path}/.note-draft-${widget.start}-${widget.end}.txt',
+  bool _recovered = false;
+  bool _staleDraft = false;
+  bool _draftBlocked = false;
+  int? _baseRevision;
+  String get _original => '${widget.existing?['text'] ?? ''}';
+  File get _draft => NoteDraft.fileFor(
+    widget.draftDir,
+    widget.start,
+    widget.end,
+    widget.existing?['id'] as String?,
   );
 
   @override
   void initState() {
     super.initState();
-    String initial = '${widget.existing?['text'] ?? ''}';
+    String initial = _original;
+    _baseRevision = widget.existing?['revision'] as int?;
     try {
-      if (widget.existing == null && _draft.existsSync()) {
-        initial = _draft.readAsStringSync();
+      if (_draft.existsSync()) {
+        final NoteDraft draft = NoteDraft.fromJson(readJson(_draft)! as Json);
+        if (draft.start != widget.start ||
+            draft.end != widget.end ||
+            draft.noteId != widget.existing?['id'] ||
+            draft.source !=
+                NoteDraft.sourceFor(widget.book, widget.start, widget.end)) {
+          _draftBlocked = true;
+          error = '这份草稿对应的原文或笔记已变化，未自动载入。原草稿仍保留，本次编辑已锁定以避免覆盖。';
+        } else if (draft.end > widget.cutoff || draft.cutoff > widget.cutoff) {
+          _draftBlocked = true;
+          error = '这份草稿涉及较后的阅读位置。为避免剧透，请回到写下它的位置后再恢复；原草稿仍保留。';
+        } else {
+          initial = draft.text;
+          _recovered = true;
+          _staleDraft =
+              widget.existing != null && draft.revision != _baseRevision;
+          _baseRevision = draft.revision;
+        }
+      } else if (widget.existing == null) {
+        final File legacy = File(
+          '${widget.draftDir.path}/.note-draft-${widget.start}-${widget.end}.txt',
+        );
+        if (legacy.existsSync()) {
+          _draftBlocked = true;
+          error = '旧版草稿缺少原文与阅读位置记录，未自动显示。原始文件仍保留，本次编辑已锁定以避免剧透或覆盖。';
+        }
       }
     } on Object catch (e) {
-      error = '草稿读取失败：$e';
+      _draftBlocked = true;
+      error = '草稿读取失败，原始内容仍保留。本次编辑已锁定以避免覆盖：$e';
+    }
+    if (((widget.existing?['knowledge_cutoff'] as num?)?.toInt() ?? 0) >
+            widget.cutoff ||
+        widget.end > widget.cutoff) {
+      initial = '';
+      _draftBlocked = true;
+      _recovered = false;
+      error = '这条笔记涉及较后的阅读位置，请回到写下它的位置后再编辑。笔记与草稿仍保留。';
     }
     text = TextEditingController(text: initial)..addListener(_keepDraft);
   }
 
   void _keepDraft() {
-    if (widget.existing != null) return;
+    if (_draftBlocked) return;
     try {
-      if (text.text.isEmpty) {
+      if (text.text == _original && !_staleDraft) {
         if (_draft.existsSync()) _draft.deleteSync();
       } else {
-        _draft.writeAsStringSync(text.text);
+        NoteDraft(
+          start: widget.start,
+          end: widget.end,
+          cutoff: widget.cutoff,
+          text: text.text,
+          source: NoteDraft.sourceFor(widget.book, widget.start, widget.end),
+          noteId: widget.existing?['id'] as String?,
+          revision: _baseRevision,
+        ).write(widget.draftDir);
       }
     } on Object catch (e) {
       setState(() => error = '草稿保存失败，请保留当前输入：$e');
+    }
+  }
+
+  Future<void> _discardDraft() async {
+    if (_draftBlocked) return;
+    final bool? discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('放弃未保存的修改？'),
+        content: const Text('只清除此草稿，已保存的笔记不变。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('继续编辑'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('放弃草稿'),
+          ),
+        ],
+      ),
+    );
+    if (discard != true || !mounted) return;
+    try {
+      if (_draft.existsSync()) _draft.deleteSync();
+      _staleDraft = false;
+      _baseRevision = widget.existing?['revision'] as int?;
+      text.text = _original;
+      setState(() {
+        _recovered = false;
+        error = null;
+      });
+    } on Object catch (e) {
+      setState(() => error = '草稿未能清除：$e');
     }
   }
 
@@ -103,11 +192,12 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   void _save() {
+    if (_draftBlocked) return;
     HapticFeedback.lightImpact();
     try {
       widget.book.notes.save(
-        id: widget.existing?['id'] as String?,
-        expectedRevision: widget.existing?['revision'] as int?,
+        id: _staleDraft ? null : widget.existing?['id'] as String?,
+        expectedRevision: _staleDraft ? null : _baseRevision,
         kind: 'note',
         start: widget.start,
         end: widget.end,
@@ -121,9 +211,15 @@ class _NoteEditorState extends State<NoteEditor> {
     // The note is already durable. A draft cleanup failure must not leave a
     // new-note editor open where pressing save again would create a duplicate.
     String? cleanupError;
-    if (widget.existing == null) {
+    {
       try {
         if (_draft.existsSync()) _draft.deleteSync();
+        if (widget.existing == null) {
+          final File legacy = File(
+            '${widget.draftDir.path}/.note-draft-${widget.start}-${widget.end}.txt',
+          );
+          if (legacy.existsSync()) legacy.deleteSync();
+        }
       } on Object catch (e) {
         cleanupError = '笔记已保存，草稿清理失败：$e';
       }
@@ -136,6 +232,7 @@ class _NoteEditorState extends State<NoteEditor> {
   }
 
   Future<void> _delete() async {
+    if (_draftBlocked) return;
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
@@ -169,6 +266,7 @@ class _NoteEditorState extends State<NoteEditor> {
     HapticFeedback.mediumImpact();
     try {
       widget.book.notes.delete(widget.existing!);
+      if (_draft.existsSync()) _draft.deleteSync();
       Navigator.of(context).pop();
     } on Object catch (e) {
       setState(() => error = '$e');
@@ -178,7 +276,9 @@ class _NoteEditorState extends State<NoteEditor> {
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    final String quote = widget.book.textBetween(widget.start, widget.end);
+    final String quote = widget.end <= widget.cutoff
+        ? widget.book.textBetween(widget.start, widget.end)
+        : '';
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -213,10 +313,7 @@ class _NoteEditorState extends State<NoteEditor> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        Container(
-                          width: 4,
-                          color: t.qing,
-                        ),
+                        Container(width: 4, color: t.qing),
                         Expanded(
                           child: Container(
                             constraints: const BoxConstraints(maxHeight: 120),
@@ -243,7 +340,8 @@ class _NoteEditorState extends State<NoteEditor> {
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: TextField(
                 controller: text,
-                autofocus: true,
+                enabled: !_draftBlocked,
+                autofocus: !_draftBlocked,
                 minLines: 4,
                 maxLines: 10,
                 maxLength: 10000,
@@ -255,6 +353,24 @@ class _NoteEditorState extends State<NoteEditor> {
                 ),
               ),
             ),
+            if ((_recovered || _staleDraft) && !_draftBlocked)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _staleDraft ? '原笔记已有新版本。已找回草稿，可另存一条笔记。' : '已恢复未保存的草稿',
+                        style: TextStyle(color: t.ink2),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _discardDraft,
+                      child: const Text('放弃草稿'),
+                    ),
+                  ],
+                ),
+              ),
             if (error != null)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
@@ -264,7 +380,7 @@ class _NoteEditorState extends State<NoteEditor> {
               padding: const EdgeInsets.fromLTRB(12, 0, 20, 12),
               child: Row(
                 children: <Widget>[
-                  if (widget.existing != null)
+                  if (widget.existing != null && !_draftBlocked)
                     TextButton(
                       onPressed: _delete,
                       child: Text('删除', style: TextStyle(color: t.danger)),
@@ -272,25 +388,41 @@ class _NoteEditorState extends State<NoteEditor> {
                   const Spacer(),
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: text,
-                    builder: (BuildContext context, TextEditingValue val, Widget? _) {
-                      final int count = val.text.trim().length;
-                      if (count == 0) return const SizedBox.shrink();
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 12),
-                        child: Text(
-                          '$count 字',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: t.ink3,
-                            fontFeatures: const <FontFeature>[
-                              FontFeature.tabularFigures(),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                    builder:
+                        (
+                          BuildContext context,
+                          TextEditingValue val,
+                          Widget? _,
+                        ) {
+                          final int count = val.text.trim().length;
+                          if (count == 0) return const SizedBox.shrink();
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Text(
+                              '$count 字',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: t.ink3,
+                                fontFeatures: const <FontFeature>[
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                   ),
-                  Pill(label: '保存', filled: true, color: t.qing, onTap: _save),
+                  if (_draftBlocked)
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text('关闭并保留草稿'),
+                    )
+                  else
+                    Pill(
+                      label: _staleDraft ? '另存为新笔记' : '保存',
+                      filled: true,
+                      color: t.qing,
+                      onTap: _save,
+                    ),
                 ],
               ),
             ),

@@ -263,9 +263,9 @@ extension RunnerLoops on Runner {
     int finalized = pending.length;
     if (done == segs.length && limit != 0) finishQualityRetry();
     publish();
-    status(done < segs.length ? 'running' : 'done', done);
+    status(completedState(done), done);
     int processed = 0;
-    for (int i = done; i < segs.length; i++) {
+    for (int i = done; i < targetSegments; i++) {
       checkpoint();
       if (limit != null && processed >= limit) break;
       Json? rec;
@@ -297,7 +297,7 @@ extension RunnerLoops on Runner {
       done = i + 1;
       processed++;
       if (done == segs.length) finishQualityRetry();
-      status(done < segs.length ? 'running' : 'done', done);
+      status(completedState(done), done);
     }
   }
 
@@ -390,15 +390,15 @@ extension RunnerLoops on Runner {
     int finalized = pending.length;
     publish();
     status(
-      done < segs.length
+      done < targetSegments
           ? 'running'
           : pending.isNotEmpty
           ? 'finalizing'
-          : 'done',
+          : completedState(done),
       done,
     );
     final int end =
-        limit == null ? segs.length : math.min(segs.length, done + limit);
+        limit == null ? targetSegments : math.min(targetSegments, done + limit);
     localPool = _RunPool(concurrency);
     final Map<int, Future<Json>> futures = {};
     int nextJob = done;
@@ -499,13 +499,13 @@ extension RunnerLoops on Runner {
       }
       done = i + 1;
       if (done % 3 == 0 || done == end) publish();
-      status(done < segs.length ? 'running' : 'finalizing', done);
+      status(done < targetSegments ? 'running' : 'finalizing', done);
     }
     await localPool!.close();
     await waitForFinalJobs(pending.skip(finalized), done);
     publish();
     if (done == segs.length && limit != 0) finishQualityRetry();
-    status(done < segs.length ? 'running' : 'done', done);
+    status(completedState(done), done);
   }
 }
 
@@ -540,6 +540,15 @@ Future<void> runBook(
         (runner.segPath(0).existsSync() &&
             _read(runner.segPath(0))['mode'] != 'two-phase');
     final File retry = File('${runner.work.path}/quality-retry.json');
+    final bool rebuildingQuality =
+        retryQuality ||
+        retry.existsSync() &&
+            <String>{'archiving', 'rebuilding'}.contains(_read(retry)['state']);
+    if (rebuildingQuality &&
+        runner.planEndOffset != null &&
+        runner.planEndOffset! < _int(runner.book['len'])) {
+      throw const llm.LLMError('当前范围不能重建全书关联；请扩大范围后再重试质量检查');
+    }
     if (retryQuality ||
         retry.existsSync() && _read(retry)['state'] == 'archiving')
       runner.prepareQualityRetry();
