@@ -75,7 +75,7 @@ adb logcat -v threadtime ThusfarProcessing:I ActivityManager:I flutter:I '*:S'
 
 每次测试同时记录 fixture 的请求开始、首/末字节、正常完成与断开时间，并在任务页导出整理诊断。应用诊断只保留白名单状态、次数、时间戳和错误类型，不包含书名、正文、URL、密钥或完整异常消息。系统 logcat/dumpsys 可能含其他应用信息，分享前由测试者检查和裁剪。
 
-当前 PR 不生成或发布 APK。正式覆盖安装必须使用已有签名证书；没有原签名材料时只做编译和测试，不创建新密钥、不使用 debug 签名冒充正式包。
+云端自动化检查不生成或发布 APK。原签名真机测试结果见下方记录。后续正式覆盖安装仍须使用已有签名证书；没有原签名材料时只做编译和测试，不创建新密钥、不使用 debug 签名冒充正式包。
 
 ## 系统边界
 
@@ -84,3 +84,19 @@ adb logcat -v threadtime ThusfarProcessing:I ActivityManager:I flutter:I '*:S'
 Android 15+ 对 `dataSync` 后台执行有共享时长限制，超时后服务必须及时停止，不能用重新启动服务规避。[前台服务超时文档](https://developer.android.com/develop/background-work/services/fgs/timeout)
 
 Activity 与 engine 所有权的处理遵循 Flutter 的提供 engine / 宿主销毁约定。[FlutterActivity API](https://api.flutter.dev/javadoc/io/flutter/embedding/android/FlutterActivity.html)
+
+
+## 首轮真机结果与判断错误复测
+
+`7924e3b` 的原签名 APK 已在 Redmi Note 8 Pro / Android 11 / MIUI 12.5.3 完成首轮测试（[报告与 APK](https://github.com/athemeroy/thusfar/releases/tag/v2.0.13-background-7924e3b)）。切应用和锁屏期间 engine/PID、前台服务与 CPU 锁保持；但免费本地 Qwen 的判断回答验证失败，`done=0/24`、`frontier=0`。这不能证明持续后台进度已通过。
+
+后续窄修复保留原始验证错误，不再被收尾和 worker 的 `request_outcome_unknown` 提示覆盖。收到完整响应但结果未提交时，仍保留请求日志、禁止自动重放并要求显式继续；没有放宽概率范围、字段完整性、合计或所选选项检查，也没有增加修复请求数。
+
+判断失败现在记录最近一次耗尽双次判断尝试的安全诊断：`work/judge/model-answer-failure.json`，并进入任务页导出诊断的 `last_model_judge_failure`。只有时间、该次问题数、未完成数、尝试数和固定原因计数；不含正文、问题/选项 ID、回答、概率原值、模型 URL 或密钥。短批次拆分后的单问题失败会记录该单问题的双次尝试，次数不是整本书的累计请求数。该字段表示最近失败，复测时请按时间确认归属。
+
+复测固定新的候选 SHA，不追加广泛审查：
+
+1. 仍使用合成书和已获授权的免费模型。如果 Qwen 再失败，导出安全诊断，报告 `last_model_judge_failure` 的原因及计数；不提交原始书籍、提示词、回复或凭据。当前证据不足以声称 Qwen 兼容性已修复。
+2. 为分离模型格式问题与 Android 生命周期问题，可以使用无计费、确定性、返回完整且严格合法判断分布的本地 HTTP fixture。必须报告这是模拟模型，不把它作为 Qwen 通过证明。
+3. 需要看到 `done` 和 `frontier` 非零增长，然后执行切应用、至少两分钟活跃锁屏、暂停与恢复；确认进度不回退、已有抽取缓存不重发、暂停后服务与 CPU 锁释放。保留 SHA、时间、计数和裁剪后的生命周期证据。
+4. PR 保持未合并；本补丁不发布正式版本，不代替真机验收。

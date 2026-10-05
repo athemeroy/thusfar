@@ -94,6 +94,63 @@ void main() {
   );
 
   test(
+    'invalid judgment survives runner finalization and worker restart without replay',
+    () async {
+      final Directory root = minimalBook(books, 'invalid-judgment');
+      environ.addAll(<String, String>{
+        'JEV_ROUTE': 'model',
+        'JUDGE_MODEL': 'fixture',
+        'VERIFY_RECORDS': '1',
+        'EVENT_CHECK_ONE_IN': '1',
+      });
+      final FixtureTransport fake = FixtureTransport(
+        (int call) async => streamReply(
+          call == 1
+              ? '{"people":[],"same":[],"events":[{"text":"小林回到家中","para":1,"quote":"小林回到家中","who":[],"imp":3}],"facts":[],"rels":[]}'
+              : '{"v_e0":{"choice":"supported","probabilities":{"supported":0.9,"not_in_passage":0.9,"contradicted":0.1}}}',
+        ),
+      );
+      llm.transport = fake;
+      final jobs.Worker worker = realWorker();
+      await worker.startBook(root);
+      await worker.waitIdle();
+      expect(
+        fake.calls,
+        3,
+        reason: 'one extraction and the existing two bounded judge attempts',
+      );
+      final Json status = read(root, 'status.json');
+      expect(status['state'], 'paused');
+      expect(status['pause_reason'], 'request_outcome_unknown');
+      expect(status['error'], contains('概率合计不为 1'));
+      expect(status['done'], 0);
+      expect(status['retryable'], false);
+      expect(status.containsKey('retry_at'), false);
+      expect(read(root, 'meta.json')['auto'], false);
+      final String cached =
+          File('${root.path}/work/local/0000.json').readAsStringSync();
+      expect(cached, contains('概率合计不为 1'));
+      expect(
+        read(root, 'work/judge/model-answer-failure.json')['reasons'],
+        <String, int>{'inconsistent_sum': 1},
+      );
+      expect(hasUnsettledModelRequests(root), true);
+      await worker.processBook(root);
+      await worker.close();
+      final jobs.Worker restarted = realWorker();
+      await restarted.start();
+      await restarted.waitIdle();
+      expect(fake.calls, 3);
+      expect(read(root, 'status.json')['error'], status['error']);
+      expect(
+        File('${root.path}/work/local/0000.json').readAsStringSync(),
+        cached,
+      );
+      expect(hasUnsettledModelRequests(root), true);
+    },
+  );
+
+  test(
     'cache-write failure retains received evidence and never replays inside the run',
     () async {
       final Directory root = minimalBook(books, 'cache-failure');

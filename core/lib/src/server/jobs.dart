@@ -842,7 +842,10 @@ class Worker {
       'request_outcome': 'unknown',
       'retryable': false,
       'updated': _clock(),
-      'error': '模型请求结果无法确认，已暂停；继续前请检查服务商记录，重新请求可能重复计费',
+      'error':
+          _truth(state['error'])
+              ? state['error']
+              : '模型请求结果无法确认，已暂停；继续前请检查服务商记录，重新请求可能重复计费',
     });
     state.remove('retry_at');
     _save(root, 'status.json', state);

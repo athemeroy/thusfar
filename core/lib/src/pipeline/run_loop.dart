@@ -692,10 +692,14 @@ Future<void> _runBook(
             'pause_reason': 'request_outcome_unknown',
             'retryable': false,
             'request_outcome': 'unknown',
+            // A received but uncommitted response still requires explicit
+            // resume, but must not hide the validation/storage failure.
             'error':
-                const llm.UnknownOutcomeLLMError(
-                  'interrupted_before_commit',
-                ).message,
+                _truth(state['error'])
+                    ? state['error']
+                    : const llm.UnknownOutcomeLLMError(
+                      'interrupted_before_commit',
+                    ).message,
             'updated': backend.now(),
           });
           state.remove('retry_at');
