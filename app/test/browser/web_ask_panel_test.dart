@@ -270,6 +270,9 @@ void main() {
       expect(scroll.position.extentAfter, lessThan(1));
       await send(tester, 'Second?');
       await tester.pump(const Duration(milliseconds: 300));
+      // Lazy slivers reveal the new row during the first 220 ms scroll, then
+      // _showLatest corrects to the measured bottom with a second animation.
+      await tester.pump(const Duration(milliseconds: 300));
       expect(
         find.byType(LinearProgressIndicator).hitTestable(),
         findsOneWidget,

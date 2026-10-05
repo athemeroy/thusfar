@@ -173,10 +173,32 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(() async {
+      // A failed assertion must not leave the browser's real Web Lock held by
+      // an unresolved fixture response and invalidate every following test.
+      await tester.pumpWidget(const SizedBox.shrink());
+      for (final Completer<bool> gate in library.renewalGates.values) {
+        if (!gate.isCompleted) gate.complete(true);
+      }
+      final Completer<void>? reply = model.reply;
+      if (reply != null && !reply.isCompleted) reply.complete();
+      await until(tester, () => library.releases == library.acquisitions);
+      // Release of the JS Promise wrapping the operation follows the lease
+      // callback, outside Flutter's fake clock.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump();
+    });
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navigator,
-        theme: buildTheme(Brightness.light),
+        // flutter test's Chrome server does not serve compiled shader assets.
+        // Keep the application theme and real taps, but use Flutter's normal
+        // paint-based ripple rather than fetching ink_sparkle.frag in runAsync.
+        theme: buildTheme(
+          Brightness.light,
+        ).copyWith(splashFactory: InkRipple.splashFactory),
         home: const Scaffold(body: Text('Reader')),
       ),
     );
@@ -212,7 +234,9 @@ void main() {
         matching: find.text('开始整理'),
       ),
     );
-    await tester.pump();
+    // The accepted dialog is still mounted during its reverse transition.
+    // Finish that transition before any test taps the preparation underneath.
+    await tester.pumpAndSettle();
   }
 
   testWidgets('reading above preparation keeps the same run alive', (
@@ -224,6 +248,7 @@ void main() {
     await start(tester);
     await until(tester, () => model.calls == 1);
     await tester.tap(find.text('边读边整理'));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Reading while preparing'), findsOneWidget);
     response.complete();
@@ -248,6 +273,7 @@ void main() {
       await start(tester);
       await until(tester, () => model.calls == 1);
       await tester.tap(find.text('边读边整理'));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(find.byTooltip('停止整理'));
       response.complete();
