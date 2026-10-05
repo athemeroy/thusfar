@@ -1,7 +1,7 @@
 name: thusfar_app
 description: 页读 / Thusfar — reads only up to your page.
 publish_to: none
-version: 2.0.14+58
+version: 2.0.14+59
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
