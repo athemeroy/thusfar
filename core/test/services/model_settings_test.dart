@@ -512,6 +512,23 @@ void main() {
   }
 
   for (final String variant in <String>['think', 'nothink']) {
+    test('Qwen +$variant uses the chat template thinking option', () async {
+      settings.save(<String, Object?>{
+        'base_url': 'https://offline.invalid/v1',
+        'model': 'huihui-swift-qwen3.8-flash-next-iq3_xxs+$variant',
+        'api_key': 'offline-variant-key',
+      });
+      final ProtocolTransport transport = ProtocolTransport('openai');
+      llm.transport = transport;
+      expect((await settings.test())['ok'], true);
+      final Json body = jsonDecode(transport.requests.single.body) as Json;
+      expect(body['model'], 'huihui-swift-qwen3.8-flash-next-iq3_xxs');
+      expect(body['chat_template_kwargs'], <String, Object?>{
+        'enable_thinking': variant == 'think',
+      });
+      expect(body.containsKey('thinking'), false);
+    });
+
     test(
       'explicit +$variant stays saved and sets the OpenAI thinking flag',
       () async {
