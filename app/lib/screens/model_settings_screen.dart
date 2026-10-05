@@ -334,9 +334,9 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     setState(() {
       test = (result['seconds'] as num? ?? 0) > 8 ? _Test.slow : _Test.ok;
       testMessage =
-          '模型${result['message']}。'
-          '${saved ? '已保存的设置未改变' : '当前输入尚未保存'}；'
-          '此测试未验证 classifier.dev 或 Jev 网关密钥';
+          '${customJudge ? '写作和内容检查都已连接成功' : 'AI 服务已连接成功'}。'
+          '${saved ? '已保存的设置未改变' : '当前输入尚未保存'}。'
+          '${customJudge ? '' : '其他服务的密钥需要单独测试'}';
     });
     _showResult();
   }
@@ -344,7 +344,14 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   void _failure(Object error) {
     setState(() {
       test = _Test.failed;
-      final String detail = llm.explain(error) ?? '$error';
+      final String raw = llm.explain(error) ?? '$error';
+      final String detail = raw.contains('判断回答') || raw.contains('System One')
+          ? '检查模型没有给出可用的答案，请检查服务地址和模型名称，或换一个检查模型'
+          : raw.contains('HTTP 401')
+          ? 'AI 服务密钥无效，请重新填写'
+          : RegExp(r'Exception|HTTP \d|概率|Traceback').hasMatch(raw)
+          ? '连接测试没有成功，请检查服务地址、模型名称和密钥后再试'
+          : raw;
       testMessage =
           '${detail.length > 240 ? detail.substring(0, 240) : detail}。'
           '未保存，原有设置保持不变';
@@ -420,9 +427,9 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         test = verified ? _Test.saved : _Test.unverified;
         testMessage = verified
             ? customJudge
-                  ? '生成模型与核对接口均测试通过，设置已生效。'
-                  : '连接测试通过，设置已保存并生效。此测试未验证 classifier.dev 或 Jev 网关密钥。'
-            : '设置已保存并生效，但未验证连接。classifier.dev 和 Jev 网关密钥也未验证。';
+                  ? '写作和内容检查都已连接成功，设置已生效。'
+                  : 'AI 服务已连接成功，设置已生效。其他服务的密钥需要单独测试。'
+            : '设置已保存并生效，但未验证连接。';
       });
       _showResult();
       if (verified &&
@@ -481,7 +488,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    '服务商快捷预设',
+                    '选择 AI 服务',
                     style: TextStyle(
                       fontSize: 13,
                       color: t.ink2,
@@ -509,7 +516,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             ),
             DropdownButtonFormField<String>(
               initialValue: protocol,
-              decoration: deco('接口协议'),
+              decoration: deco('接口类型'),
               items: <DropdownMenuItem<String>>[
                 for (final MapEntry<String, String> item
                     in ModelSettings.protocolLabels.entries)
@@ -637,17 +644,11 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             const SizedBox(height: 20),
             DropdownButtonFormField<String>(
               initialValue: judgeMode,
-              decoration: deco('核对方式'),
+              decoration: deco('用什么检查整理结果'),
               items: const [
-                DropdownMenuItem(value: 'free', child: Text('免费判断接口')),
-                DropdownMenuItem(
-                  value: 'systemone',
-                  child: Text('System One 兼容接口'),
-                ),
-                DropdownMenuItem(
-                  value: 'model',
-                  child: Text('System Two 对话模型'),
-                ),
+                DropdownMenuItem(value: 'free', child: Text('免费服务')),
+                DropdownMenuItem(value: 'systemone', child: Text('专用检查模型')),
+                DropdownMenuItem(value: 'model', child: Text('通用对话模型')),
               ],
               onChanged: _busy
                   ? null
@@ -667,8 +668,8 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
               const SizedBox(height: 12),
               Text(
                 judgeMode == 'systemone'
-                    ? '使用你选择的判断模型。生成、人物小传和问答仍用上方模型。'
-                    : '使用对话模型回答判断题；测试会检查回答格式和概率。生成和问答仍用上方模型。',
+                    ? '检查人物、事件等内容是否符合原文。支持 System One 接口；模型由你选择。人物小传和问答仍用上方模型。'
+                    : '让对话模型检查内容是否符合原文。人物小传和问答仍用上方模型。保存前可测试是否兼容。',
                 style: TextStyle(fontSize: 12, color: t.ink2),
               ),
               const SizedBox(height: 12),
@@ -677,10 +678,10 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 enabled: !_busy,
                 onChanged: (_) => _edited(),
                 decoration: deco(
-                  '核对接口地址',
+                  '检查服务地址',
                   helper: judgeMode == 'systemone'
-                      ? '填写完整的 /v1/systemone 地址；留空使用上方地址加 /systemone'
-                      : '留空使用上方接口；自定义接口使用上方选择的协议',
+                      ? '与上方使用同一服务时可留空；否则填写服务商提供的完整 System One 地址'
+                      : '留空使用上方服务。另填地址时，接口类型需与上方一致',
                 ),
               ),
               const SizedBox(height: 12),
@@ -689,7 +690,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 enabled: !_busy,
                 onChanged: (_) => _edited(),
                 decoration: deco(
-                  '核对模型（可选）',
+                  '检查用的模型（可选）',
                   helper: judgeMode == 'systemone' ? '留空使用服务默认模型' : '留空使用上方模型',
                 ),
               ),
@@ -703,13 +704,13 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                   _edited();
                 },
                 decoration: deco(
-                  '核对 API 密钥（可选）',
+                  '检查服务密钥（可选）',
                   helper: widget.settings.hasJudgeKey && !clearJudgeKey
                       ? '已保存 ****${widget.settings.judgeKeyLast4}；留空保留'
                       : '留空使用上方 API 密钥',
                   suffix: widget.settings.hasJudgeKey && !clearJudgeKey
                       ? IconButton(
-                          tooltip: '清除核对密钥',
+                          tooltip: '清除检查服务密钥',
                           icon: const Icon(Icons.clear),
                           onPressed: _busy
                               ? null
@@ -731,9 +732,9 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: SwitchListTile.adaptive(
-                  title: const Text('免费判断不可用时，使用已配置模型继续'),
+                  title: const Text('免费服务不可用时，改用上方模型检查'),
                   subtitle: Text(
-                    '使用上方模型的 API 额度。每本书初始最多 ${budget.modelJudgeInitialCalls} 次判断，用完可在书籍详情追加。',
+                    '可能产生模型费用。每本书先允许检查 ${budget.modelJudgeInitialCalls} 次，达到后会暂停；你可以增加次数。',
                   ),
                   value: judgeFallback,
                   onChanged: _busy
@@ -745,130 +746,141 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 18),
-            Text(
-              'classifier.dev 已充值工作区密钥（可选）',
-              style: TextStyle(
-                fontSize: 14,
-                color: t.ink,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              '匿名额度用完时，需有余额的 classifier.dev 工作区密钥。会使用该工作区额度；它与上方模型密钥、Jev 网关密钥不同。',
-              style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
-            ),
-            const SizedBox(height: 10),
-            if (widget.settings.hasClassifierKey &&
-                !replacingClassifierKey &&
-                !clearClassifierKey)
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text('已保存 ···${widget.settings.classifierKeyLast4}'),
-                  ),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => setState(() => replacingClassifierKey = true),
-                    child: const Text('更换'),
-                  ),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => setState(() {
-                            clearClassifierKey = true;
-                            _edited();
-                          }),
-                    child: Text('清除', style: TextStyle(color: t.danger)),
-                  ),
-                ],
-              )
-            else
-              TextField(
-                controller: classifierKey,
-                enabled: !_busy,
-                obscureText: !showClassifierKey,
-                onChanged: (String value) {
-                  if (value.isNotEmpty) clearClassifierKey = false;
-                  _edited();
-                },
-                decoration: deco(
-                  'classifier.dev 密钥',
-                  suffix: IconButton(
-                    tooltip: showClassifierKey ? '隐藏密钥' : '显示密钥',
-                    icon: Icon(
-                      showClassifierKey
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () =>
-                        setState(() => showClassifierKey = !showClassifierKey),
+            ExpansionTile(
+              title: const Text('其他服务的密钥（可选）'),
+              children: <Widget>[
+                const SizedBox(height: 18),
+                Text(
+                  'classifier.dev 密钥（可选）',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: t.ink,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            const SizedBox(height: 18),
-            Text(
-              'Jev 网关密钥（可选）',
-              style: TextStyle(
-                fontSize: 14,
-                color: t.ink,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              '填写 TypeSafe AI / Jev 官网的 API 密钥。保存密钥不会自动启用 Jev 判断；你需要在书籍详情中单独选择。它与 classifier.dev 工作区密钥、上方模型密钥不同。',
-              style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
-            ),
-            const SizedBox(height: 10),
-            if (widget.settings.hasJevApiKey &&
-                !replacingJevApiKey &&
-                !clearJevApiKey)
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text('已保存 ···${widget.settings.jevApiKeyLast4}'),
-                  ),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => setState(() => replacingJevApiKey = true),
-                    child: const Text('更换'),
-                  ),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => setState(() {
-                            clearJevApiKey = true;
-                            _edited();
-                          }),
-                    child: Text('清除', style: TextStyle(color: t.danger)),
-                  ),
-                ],
-              )
-            else
-              TextField(
-                controller: jevApiKey,
-                enabled: !_busy,
-                obscureText: !showJevApiKey,
-                onChanged: (String value) {
-                  if (value.isNotEmpty) clearJevApiKey = false;
-                  _edited();
-                },
-                decoration: deco(
-                  'TypeSafe AI / Jev API 密钥',
-                  suffix: IconButton(
-                    tooltip: showJevApiKey ? '隐藏密钥' : '显示密钥',
-                    icon: Icon(
-                      showJevApiKey ? Icons.visibility_off : Icons.visibility,
+                const SizedBox(height: 5),
+                Text(
+                  '仅使用 classifier.dev 付费服务时填写，请使用该服务提供的密钥。',
+                  style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
+                ),
+                const SizedBox(height: 10),
+                if (widget.settings.hasClassifierKey &&
+                    !replacingClassifierKey &&
+                    !clearClassifierKey)
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text(
+                          '已保存 ···${widget.settings.classifierKeyLast4}',
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () =>
+                                  setState(() => replacingClassifierKey = true),
+                        child: const Text('更换'),
+                      ),
+                      TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () => setState(() {
+                                clearClassifierKey = true;
+                                _edited();
+                              }),
+                        child: Text('清除', style: TextStyle(color: t.danger)),
+                      ),
+                    ],
+                  )
+                else
+                  TextField(
+                    controller: classifierKey,
+                    enabled: !_busy,
+                    obscureText: !showClassifierKey,
+                    onChanged: (String value) {
+                      if (value.isNotEmpty) clearClassifierKey = false;
+                      _edited();
+                    },
+                    decoration: deco(
+                      'classifier.dev 密钥',
+                      suffix: IconButton(
+                        tooltip: showClassifierKey ? '隐藏密钥' : '显示密钥',
+                        icon: Icon(
+                          showClassifierKey
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => showClassifierKey = !showClassifierKey,
+                        ),
+                      ),
                     ),
-                    onPressed: () =>
-                        setState(() => showJevApiKey = !showJevApiKey),
+                  ),
+                const SizedBox(height: 18),
+                Text(
+                  'Jev 密钥（可选）',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: t.ink,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
+                const SizedBox(height: 5),
+                Text(
+                  '仅使用 TypeSafe AI / Jev 时填写。保存后，可在书籍详情中选择用它检查内容。',
+                  style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
+                ),
+                const SizedBox(height: 10),
+                if (widget.settings.hasJevApiKey &&
+                    !replacingJevApiKey &&
+                    !clearJevApiKey)
+                  Row(
+                    children: <Widget>[
+                      Expanded(
+                        child: Text('已保存 ···${widget.settings.jevApiKeyLast4}'),
+                      ),
+                      TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () => setState(() => replacingJevApiKey = true),
+                        child: const Text('更换'),
+                      ),
+                      TextButton(
+                        onPressed: _busy
+                            ? null
+                            : () => setState(() {
+                                clearJevApiKey = true;
+                                _edited();
+                              }),
+                        child: Text('清除', style: TextStyle(color: t.danger)),
+                      ),
+                    ],
+                  )
+                else
+                  TextField(
+                    controller: jevApiKey,
+                    enabled: !_busy,
+                    obscureText: !showJevApiKey,
+                    onChanged: (String value) {
+                      if (value.isNotEmpty) clearJevApiKey = false;
+                      _edited();
+                    },
+                    decoration: deco(
+                      'TypeSafe AI / Jev API 密钥',
+                      suffix: IconButton(
+                        tooltip: showJevApiKey ? '隐藏密钥' : '显示密钥',
+                        icon: Icon(
+                          showJevApiKey
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => showJevApiKey = !showJevApiKey),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             if (error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 12),
@@ -905,7 +917,7 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 ),
                 TextButton(
                   onPressed: _busy ? null : _saveUnverified,
-                  child: const Text('仅保存（未验证）'),
+                  child: const Text('跳过测试，直接保存'),
                 ),
               ],
             ),

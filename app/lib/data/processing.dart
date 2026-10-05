@@ -97,7 +97,7 @@ Future<void> reconcileStoppedWorker(Library library, String reason) async {
         book.dir,
         resume ? 'queued' : 'paused',
         uncertain
-            ? '上次模型请求结果未确认，已保留进度，请检查后手动继续'
+            ? '没有收到完整结果，已完成的内容已保留。可以点“继续整理”再试'
             : resume
             ? '整理任务意外中断，重新打开应用后自动继续'
             : '整理任务意外中断，等待手动继续',

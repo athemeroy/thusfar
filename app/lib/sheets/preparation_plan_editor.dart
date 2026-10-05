@@ -103,13 +103,13 @@ class PreparationPlanEditor extends StatelessWidget {
         ],
         const SizedBox(height: 8),
         Text(
-          '目标：${plan.label} · 尚未覆盖约 ${plan.pendingCharacters(frontier)} 字符',
+          '目标：${plan.label} · 还有约 ${plan.pendingCharacters(frontier)} 字',
           style: TextStyle(color: t.ink, fontSize: 13),
         ),
         const SizedBox(height: 5),
         Text(
           prerequisites > 0
-              ? '前面约 $prerequisites 字符还未整理，人物身份和关系依赖它们。本次会先从已保存进度补齐，再处理目标章节；这部分也会发送并计费。'
+              ? '前面约 $prerequisites 字还未整理，人物身份和关系依赖它们。本次会先从已保存进度补齐，再处理目标章节；这部分也会发送并计费。'
               : '从已保存进度继续，已完成的片段不会重复发送。达到本次范围后停止，扩大范围需要你再次开始。',
           style: TextStyle(
             color: prerequisites > 0 ? t.amber : t.ink2,

@@ -129,6 +129,17 @@ void main() {
     expect(scope.hasUnknown, isTrue);
   });
 
+  test(
+    'a connection that never sent the judge request remains retryable',
+    () async {
+      fixture.respond =
+          (_) async => throw const llm.ConnectionNotSent(HandshakeException());
+      await expectLater(run(), throwsA(isA<llm.ConnectionNotSent>()));
+      expect(scope.hasUnknown, isFalse);
+      expect(hasUnsettledModelRequests(root), isFalse);
+    },
+  );
+
   test('an expired job does not trigger another inference', () async {
     fixture.respond =
         (r) async =>

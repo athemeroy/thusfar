@@ -794,6 +794,9 @@ Future<Object?> _postJson(
   } on UnknownOutcomeLLMError catch (e) {
     receipt?.unknown(e.code);
     rethrow;
+  } on ConnectionNotSent {
+    receipt?.rejected();
+    rethrow;
   } on TimeoutException {
     if (!paid) rethrow;
     receipt?.unknown('timeout');
@@ -895,6 +898,8 @@ Future<Object?> _pollSystemOneResult(
         unawaited(chunks.cancel());
       }
       return pyJsonLoads(utf8.decode(bytes));
+    } on ConnectionNotSent {
+      continue;
     } on IOException {
       // The server retains the result; re-reading it creates no new inference.
       continue;

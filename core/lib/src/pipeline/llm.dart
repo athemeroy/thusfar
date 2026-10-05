@@ -33,10 +33,15 @@ final class TransientLLMError extends LLMError {
   const TransientLLMError(super.message);
 }
 
+/// The connection failed before any HTTP request could be sent.
+final class ConnectionNotSent extends LLMError {
+  const ConnectionNotSent(this.cause) : super('暂时连不上 AI 服务，正在重新连接');
+  final Object cause;
+}
+
 /// The provider may have processed a dispatched request. Never retry implicitly.
 final class UnknownOutcomeLLMError extends LLMError {
-  const UnknownOutcomeLLMError(this.code)
-    : super('模型请求结果无法确认，已暂停；继续前请检查服务商记录，重新请求可能重复计费');
+  const UnknownOutcomeLLMError(this.code) : super('没有收到完整结果，整理已暂停。已完成的内容已保留。');
   final String code;
 }
 
@@ -408,6 +413,7 @@ final class IoTransport implements ChatTransport {
     cancellation?.checkpoint();
     final ModelRequestTrace? trace = ModelRequestTrace.current;
     HttpClientRequest? active;
+    bool opened = false;
     bool abandoned = false;
     final void Function()? remove = cancellation?.onCancel(() {
       abandoned = true;
@@ -433,6 +439,7 @@ final class IoTransport implements ChatTransport {
         }, onError: (Object _, StackTrace __) {}),
       );
       final HttpClientRequest req = await wait(opening.timeout(timeout));
+      opened = true;
       // Result polling must never forward credentials to a redirect target.
       if (request.method == 'GET') req.followRedirects = false;
       cancellation?.checkpoint();
@@ -460,6 +467,12 @@ final class IoTransport implements ChatTransport {
         );
       }
       active?.abort();
+      if (!opened &&
+          (error is SocketException ||
+              error is HandshakeException ||
+              error is TimeoutException)) {
+        throw ConnectionNotSent(error);
+      }
       rethrow;
     } finally {
       remove?.call();
@@ -570,7 +583,9 @@ Future<ChatResponse> postRequest(
   } on Object catch (error) {
     trace?.record(
       'transport_error',
-      code: ModelRequestTrace.exceptionCode(error),
+      code: ModelRequestTrace.exceptionCode(
+        error is ConnectionNotSent ? error.cause : error,
+      ),
     );
     abandoned = true;
     if (arrived != null) unawaited(_disposeResponseBody(arrived!.body, trace));
@@ -597,6 +612,7 @@ double stallTimeout(String model) {
 bool transientFailure(Object error) {
   if (error is UnknownOutcomeLLMError) return false;
   if (error is DeadlineExceeded ||
+      error is ConnectionNotSent ||
       error is TransientLLMError ||
       error is TimeoutException ||
       error is SocketException ||
@@ -842,6 +858,9 @@ Future<ChatResult> chat(
       throw f.error;
     } on DeadlineExceeded catch (e) {
       throw DeadlineExceeded(redactSecrets(e.message, <String>[key]));
+    } on ConnectionNotSent catch (e) {
+      receipt?.rejected();
+      last = e;
     } on LLMError catch (e) {
       if (!responseSettled) {
         receipt?.unknown('provider_outcome_unknown');

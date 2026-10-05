@@ -184,24 +184,24 @@ void main() {
       await open(tester);
       expect(settings.judgeRoute, 'free-only');
       await tester.scrollUntilVisible(
-        find.text('免费判断接口'),
+        find.text('免费服务'),
         240,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.ensureVisible(find.text('免费判断接口').first);
-      await tester.tap(find.text('免费判断接口').first);
+      await tester.ensureVisible(find.text('免费服务').first);
+      await tester.tap(find.text('免费服务').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('System One 兼容接口').last);
+      await tester.tap(find.text('专用检查模型').last);
       await tester.pumpAndSettle();
-      await tester.ensureVisible(field('核对接口地址'));
+      await tester.ensureVisible(field('检查服务地址'));
       await tester.enterText(
-        field('核对接口地址'),
+        field('检查服务地址'),
         'https://my-model.invalid/v1/systemone',
       );
-      await tester.ensureVisible(field('核对模型（可选）'));
-      await tester.enterText(field('核对模型（可选）'), 'my-model');
+      await tester.ensureVisible(field('检查用的模型（可选）'));
+      await tester.enterText(field('检查用的模型（可选）'), 'my-model');
       expect(settings.judgeRoute, 'free-only');
-      await tap(tester, '仅保存（未验证）');
+      await tap(tester, '跳过测试，直接保存');
       await tester.pumpAndSettle();
       expect(settings.judgeRoute, 'systemone');
       expect(settings.judgeModel, 'my-model');
@@ -246,7 +246,7 @@ void main() {
       );
       expect(
         tester
-            .widget<TextButton>(find.widgetWithText(TextButton, '仅保存（未验证）'))
+            .widget<TextButton>(find.widgetWithText(TextButton, '跳过测试，直接保存'))
             .onPressed,
         isNull,
       );
@@ -276,7 +276,7 @@ void main() {
       expect(environ, env);
       expect(find.textContaining('未保存，原有设置保持不变'), findsOneWidget);
       expect(find.text('broken-model'), findsOneWidget);
-      await tap(tester, '仅保存（未验证）');
+      await tap(tester, '跳过测试，直接保存');
       await tester.pumpAndSettle();
       expect(pending.calls, 1);
       expect(settings.read().$2, 'broken-model');
@@ -354,7 +354,7 @@ void main() {
     seed();
     await open(tester);
     await tap(tester, '清除');
-    await tap(tester, '仅保存（未验证）');
+    await tap(tester, '跳过测试，直接保存');
     await tester.pumpAndSettle();
     expect(settings.hasKey, false);
     expect(environ['LLM_API_KEY'], '');
@@ -365,6 +365,13 @@ void main() {
     'Jev gateway key alone saves explicitly without enabling paid calls',
     (tester) async {
       await open(tester);
+      await tester.scrollUntilVisible(
+        find.text('其他服务的密钥（可选）'),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('其他服务的密钥（可选）'));
+      await tester.pumpAndSettle();
       final Finder jev = field('TypeSafe AI / Jev API 密钥');
       await tester.scrollUntilVisible(
         jev,
@@ -372,7 +379,7 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.enterText(jev, 'offline-jev-fixture-key');
-      await tap(tester, '仅保存（未验证）');
+      await tap(tester, '跳过测试，直接保存');
       await tester.pumpAndSettle();
       expect(settings.hasJevApiKey, true);
       expect(settings.judgeFallbackEnabled, false);

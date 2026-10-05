@@ -11,6 +11,7 @@ import 'package:thusfar_core/jobs.dart' show hasUnsettledModelRequests;
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/processing.dart';
+import '../data/processing_copy.dart';
 import '../data/preparation_plan.dart';
 import '../data/processing_diagnostics.dart';
 import '../data/processing_notification_bridge.dart';
@@ -251,15 +252,37 @@ class _BookSheetState extends State<BookSheet> {
   }
 
   String _stageName(Object? value) => switch (value) {
-    'extract' => '正文抽取',
-    'relation' => '人物关联',
+    'extract' => '整理人物和事件',
+    'relation' => '整理人物关系',
     'recap' => '前情整理',
     'finalize' => '人物资料',
     _ => '当前阶段',
   };
 
   String _activityDescription(Json row) {
-    if (row['phase'] != 'stage_heartbeat') return '${row['message']}';
+    if (row['phase'] != 'stage_heartbeat') {
+      return switch (row['phase']) {
+        'queued' => '等待开始整理',
+        'running' => row['done'] is num ? '已整理 ${row['done']} 段' : '准备整理',
+        'detect_kind' || 'classify_chapters' => '整理章节目录',
+        'check_titles' => '检查章节标题',
+        'check_titles_pending' => '部分章节标题还需要检查',
+        'resume_final_jobs' || 'finalizing' => '汇总人物资料',
+        'waiting_for_model' => '等待 AI 的整理结果',
+        'model_attempt' => _lastStageSummary(row),
+        'retry' => '暂时没有完成，稍后自动再试',
+        'bio_generating' => '正在写人物小传',
+        'bio_review' => '检查人物小传是否符合原文',
+        'bio_complete' => '人物小传已保存',
+        'bio_no_candidates' => '这一部分没有需要新增的小传',
+        'bio_failed' => '人物小传暂未完成，已完成的内容已保留',
+        'done' => '整理完成',
+        'paused' => '整理已暂停',
+        'cancelling' => '正在暂停',
+        'error' => processingErrorMessage(row['message'] as String?),
+        _ => '整理进度已更新',
+      };
+    }
     final Object? segment = row['segment'];
     final String prefix = segment is num && segment > 0
         ? '第 ${segment.toInt()} 段 · '
@@ -279,7 +302,7 @@ class _BookSheetState extends State<BookSheet> {
       final Object? segment = row['segment'];
       final Object? attempt = row['attempt'];
       if (segment is num && attempt is num) {
-        return '第 ${segment.toInt()} 段 · 第 ${attempt.toInt()} 次模型请求';
+        return '第 ${segment.toInt()} 段 · 第 ${attempt.toInt()} 次尝试';
       }
     }
     if (row['phase'] == 'waiting_for_model' || row['phase'] == 'retry') {
@@ -406,9 +429,9 @@ class _BookSheetState extends State<BookSheet> {
       final bool? approved = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: const Text('上次模型请求结果未确认'),
+          title: const Text('继续未完成的整理？'),
           content: const Text(
-            '服务器可能已经处理并计费，但页读没有保存到完整结果。已完成的整理会保留；继续未确认的部分可能再次产生模型费用。',
+            '已完成的内容会保留。上次未收到结果的部分可能需要重新处理；如果你使用付费服务，这部分可能再次收费。',
           ),
           actions: <Widget>[
             TextButton(
@@ -417,7 +440,7 @@ class _BookSheetState extends State<BookSheet> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('确认继续'),
+              child: const Text('继续整理'),
             ),
           ],
         ),
@@ -432,16 +455,16 @@ class _BookSheetState extends State<BookSheet> {
   }
 
   Future<void> _continueWithModel() =>
-      _setBookJudgeFallback('model', '正在为这本书启用模型判断并继续整理…');
+      _setBookJudgeFallback('model', '正在用当前模型检查内容并继续整理…');
 
   Future<void> _continueWithJev() =>
-      _setBookJudgeFallback('jev', '正在为这本书启用 Jev 网关并继续整理…');
+      _setBookJudgeFallback('jev', '正在改用 Jev 检查内容并继续整理…');
 
   Future<void> _retryWithDirectModel() =>
-      _setBookJudgeFallback('model-direct', '正在用已配置模型重新核对并继续整理…');
+      _setBookJudgeFallback('model-direct', '正在用当前模型重新检查内容…');
 
   Future<void> _retryWithDirectJev() =>
-      _setBookJudgeFallback('jev-direct', '正在用 Jev 网关重新核对并继续整理…');
+      _setBookJudgeFallback('jev-direct', '正在用 Jev 重新检查内容…');
 
   Future<void> _setBookJudgeFallback(String route, String label) =>
       _action(label, () async {
@@ -449,7 +472,7 @@ class _BookSheetState extends State<BookSheet> {
           throw StateError('请先保存可用的模型和 API 密钥');
         }
         if (route.startsWith('jev') && !widget.settings.hasJevApiKey) {
-          throw StateError('请先在模型设置中保存 Jev 网关密钥');
+          throw StateError('请先在模型设置中填写 Jev 密钥');
         }
         final File metaFile = File('${widget.entry.dir.path}/meta.json');
         final Json meta = (readJson(metaFile) as Json?) ?? <String, Object?>{};
@@ -481,7 +504,7 @@ class _BookSheetState extends State<BookSheet> {
   }
 
   Future<void> _disableBookJudgeFallback() =>
-      _action('正在停用这本书的判断兜底…', () async {
+      _action('正在恢复使用设置中的检查方式…', () async {
         await widget.processing.pauseBookUntilIdle(widget.entry);
         final File metaFile = File('${widget.entry.dir.path}/meta.json');
         final Json meta = (readJson(metaFile) as Json?) ?? <String, Object?>{};
@@ -490,7 +513,7 @@ class _BookSheetState extends State<BookSheet> {
         writeJson(metaFile, meta);
       });
 
-  Future<void> _extendJudgeBudget() => _action('正在追加本书的模型判断额度…', () async {
+  Future<void> _extendJudgeBudget() => _action('正在增加本书允许检查的次数…', () async {
     judge_budget.extendModelJudgeBudget(
       File('${widget.entry.dir.path}/work/judge/model-budget.json'),
     );
@@ -498,7 +521,7 @@ class _BookSheetState extends State<BookSheet> {
   });
 
   Future<void> _extendPaidJudgeBudget() =>
-      _action('正在追加本书的 Jev 网关判断额度…', () async {
+      _action('正在增加本书允许使用 Jev 的次数…', () async {
         judge_budget.extendPaidJudgeBudget(
           File('${widget.entry.dir.path}/work/judge/paid-budget.json'),
         );
@@ -522,7 +545,7 @@ class _BookSheetState extends State<BookSheet> {
       final Map<String, Object?> runtime =
           await ProcessingNotificationBridge.diagnostics();
       final String? path = await FilePicker.platform.saveFile(
-        dialogTitle: '导出整理诊断',
+        dialogTitle: '导出问题记录',
         fileName: ProcessingDiagnostics.fileName(now),
         bytes: ProcessingDiagnostics.bytes(
           bookDirectory: widget.entry.dir,
@@ -531,17 +554,18 @@ class _BookSheetState extends State<BookSheet> {
           now: now,
         ),
       );
-      message = path == null ? '没有导出整理诊断' : '整理诊断已导出';
+      message = path == null ? '没有导出问题记录' : '问题记录已导出';
     } on Object {
-      message = '整理诊断导出没有完成，请检查存储空间后重试。';
+      message = '问题记录导出没有完成，请检查存储空间后重试。';
     }
     if (!mounted) return;
     setState(() {
       acting = false;
       actionLabel = null;
     });
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _remove() => _action('正在停止整理，完成后移除…', () async {
@@ -713,7 +737,7 @@ class _BookSheetState extends State<BookSheet> {
             ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-              title: const Text('导出整理诊断'),
+              title: const Text('导出问题记录'),
               subtitle: const Text('仅含进度与阶段记录，不含正文或模型密钥'),
               trailing: Icon(Icons.chevron_right, color: t.ink3),
               onTap: acting
@@ -882,7 +906,9 @@ class _BookSheetState extends State<BookSheet> {
           widget.settings.hasJevApiKey &&
           !directPaid &&
           !paidBudgetExceeded;
-      if (!(biographyNeedsReview || s.isPaused || s.isError) ||
+      if (!(biographyNeedsReview ||
+              statusError?.contains('判断回答不完整') == true ||
+              statusError?.contains('核对失败') == true) ||
           (!canChooseModel && !canChooseJev)) {
         return const <Widget>[];
       }
@@ -890,8 +916,8 @@ class _BookSheetState extends State<BookSheet> {
         const SizedBox(height: 10),
         Text(
           biographyNeedsReview
-              ? '未通过事实核对的小传不会展示。可为本书改选直接核对路线；此后的人物整理、问书和前情核对都会使用它，直到你停用。调用会计入本书额度。'
-              : '可以为本书改选直接核对路线；此后的人物整理、问书和前情核对都会使用它，直到你停用。调用会计入本书额度。',
+              ? '这些小传暂时无法确认是否符合原文，因此还没有显示。你可以换一个模型重新检查；只影响这本书，可能产生模型费用。'
+              : '可以换一个模型检查这本书的整理结果。只影响这本书，可能产生模型费用。',
           style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
         ),
         const SizedBox(height: 8),
@@ -901,12 +927,12 @@ class _BookSheetState extends State<BookSheet> {
           children: <Widget>[
             if (canChooseModel)
               Pill(
-                label: '本书用已配置模型直接核对',
+                label: '用当前模型重新检查',
                 onTap: acting ? null : _retryWithDirectModel,
               ),
             if (canChooseJev)
               Pill(
-                label: '本书用 Jev 网关直接核对',
+                label: '用 Jev 重新检查',
                 onTap: acting ? null : _retryWithDirectJev,
               ),
           ],
@@ -917,7 +943,7 @@ class _BookSheetState extends State<BookSheet> {
     if (workerStopped && s.isActive) {
       body.add(
         Text(
-          '整理任务意外停止，正在核对书籍状态。请重新打开应用后继续。',
+          '整理意外停止。请重新打开页读，再点“继续整理”。',
           style: TextStyle(fontSize: 14, height: 1.5, color: t.amber),
         ),
       );
@@ -937,7 +963,7 @@ class _BookSheetState extends State<BookSheet> {
     } else if (s.isCancelling) {
       body.addAll(<Widget>[
         Text(
-          '正在暂停，等待当前步骤结束。已经整理好的内容会保留；不再发起新请求，已发出的请求仍可能计费。',
+          '正在暂停，已完成的内容会保留。如果使用付费服务，已经开始的处理仍可能收费。',
           style: TextStyle(fontSize: 14, height: 1.6, color: t.ink),
         ),
         const SizedBox(height: 10),
@@ -984,7 +1010,7 @@ class _BookSheetState extends State<BookSheet> {
         if (thisBookIsRunning && s.done == 0) ...<Widget>[
           const SizedBox(height: 5),
           Text(
-            '首段结果尚未返回，段数不会增加；模型可能在单次请求内重试。',
+            '正在等待第一段的整理结果，完成后会更新进度。',
             style: TextStyle(fontSize: 12, color: t.ink3),
           ),
         ],
@@ -996,8 +1022,9 @@ class _BookSheetState extends State<BookSheet> {
               'model_attempt',
               'retry',
             }.contains(activity.last['phase']) &&
-            _activityAge(activity.last['started_at'] ?? activity.last['at'])
-                .isNotEmpty) ...<Widget>[
+            _activityAge(
+              activity.last['started_at'] ?? activity.last['at'],
+            ).isNotEmpty) ...<Widget>[
           const SizedBox(height: 5),
           Text(
             '${_activityAge(activity.last['started_at'] ?? activity.last['at'])}；等待时长不代表已完成新段落。',
@@ -1007,14 +1034,14 @@ class _BookSheetState extends State<BookSheet> {
         if (s.done > 0 && bios.count == 0) ...<Widget>[
           const SizedBox(height: 5),
           Text(
-            '段数是正文进度；人物小传还需按章汇总和核对。',
+            '正文按段整理，人物小传在章节整理后生成。',
             style: TextStyle(fontSize: 12, color: t.ink3),
           ),
         ],
         if (pendingBiographyCount > 0) ...<Widget>[
           const SizedBox(height: 5),
           Text(
-            '$pendingBiographyCount 章人物小传待核对；正文继续整理，未通过的小传不会展示。',
+            '$pendingBiographyCount 章的人物小传还需要检查，正文会继续整理。',
             style: TextStyle(fontSize: 12, color: t.amber),
           ),
         ],
@@ -1056,7 +1083,7 @@ class _BookSheetState extends State<BookSheet> {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              '人物数量不等于小传数量；未核对通过的小传不会展示。',
+              '发现人物后，还需要整理资料才能生成人物小传。',
               style: TextStyle(fontSize: 13, color: t.ink2),
             ),
           ),
@@ -1079,13 +1106,13 @@ class _BookSheetState extends State<BookSheet> {
           const SizedBox(height: 8),
           Text(
             pendingBiographyCount > 0
-                ? '正文已整理完，$pendingBiographyCount 章人物小传待核对'
-                : '部分资料待核对',
+                ? '正文已整理完，$pendingBiographyCount 章人物小传待检查'
+                : '部分资料还需要检查',
             style: TextStyle(fontSize: 13, color: t.ink2),
           ),
           const SizedBox(height: 8),
           Pill(
-            label: '重试待核对部分',
+            label: '重新检查未完成的资料',
             onTap: acting
                 ? null
                 : () {
@@ -1144,7 +1171,7 @@ class _BookSheetState extends State<BookSheet> {
         if (s.error != null && s.error!.trim().isNotEmpty) ...<Widget>[
           const SizedBox(height: 6),
           Text(
-            s.error!,
+            processingErrorMessage(s.error),
             style: TextStyle(fontSize: 13, height: 1.5, color: t.amber),
           ),
         ],
@@ -1185,7 +1212,7 @@ class _BookSheetState extends State<BookSheet> {
               DateTime.now().millisecondsSinceEpoch / 1000;
       body.addAll(<Widget>[
         Text(
-          autoRetry ? '模型请求遇到问题，等待自动重试' : '整理遇到问题',
+          autoRetry ? '暂时连不上 AI 服务，稍后会自动再试' : '整理遇到问题',
           style: TextStyle(
             fontSize: 15,
             color: t.amber,
@@ -1196,17 +1223,17 @@ class _BookSheetState extends State<BookSheet> {
         Text(
           freeAccessBlocked
               ? deniedWorkspaceKey
-                    ? '上次 classifier.dev 工作区密钥被拒绝，请检查密钥和工作区余额。已完成的段落会保留，可选择其他判断路线继续。'
+                    ? 'classifier.dev 暂时无法使用。请在模型设置中检查该服务的密钥和余额，或换一个检查服务。进度已保留。'
                     : deniedAnonymous
-                    ? '上次匿名判断请求被拒绝。已完成的段落和核对结果会保留。可选已配置模型、Jev 网关，或填写有余额的 classifier.dev 工作区密钥。'
-                    : '上次 classifier.dev 判断请求被拒绝。已完成的段落会保留；可检查工作区密钥或选择其他判断路线。'
+                    ? '免费检查服务暂时无法使用。进度已保留，可以换一个检查服务继续。'
+                    : 'classifier.dev 暂时无法使用。请检查该服务的设置，或换一个检查服务。进度已保留。'
               : jevAuthFailed
-              ? 'TypeSafe AI 拒绝了已保存的 Jev 密钥（HTTP 401）。已完成的内容和草稿都已保留。请确认填写的是 TypeSafe AI / Jev 官网密钥；也可以改用已配置模型直接核对。'
+              ? 'Jev 密钥无效，请在模型设置中重新填写，或改用当前模型检查。进度已保留。'
               : modelBudgetExceeded
-              ? '本书的模型判断额度已用完。已完成的段落会保留；追加额度后可从当前进度继续。'
+              ? '本书已达到你允许检查的次数。进度已保留，增加次数后可以继续。'
               : paidBudgetExceeded
-              ? '本书的 Jev 网关判断额度已用完。已完成的段落会保留；追加额度后可从当前进度继续。'
-              : s.error ?? '请稍后重试。',
+              ? '本书已达到你允许使用 Jev 的次数。进度已保留，增加次数后可以继续。'
+              : processingErrorMessage(s.error),
           style: TextStyle(fontSize: 14, height: 1.5, color: t.ink),
         ),
         if (freeAccessBlocked &&
@@ -1214,7 +1241,7 @@ class _BookSheetState extends State<BookSheet> {
             widget.settings.hasKey) ...<Widget>[
           const SizedBox(height: 8),
           Text(
-            '只为这本书启用 ${widget.settings.read().$2} 判断，会消耗你的模型额度。本书初始限制 ${judge_budget.modelJudgeInitialCalls} 次、${judge_budget.modelJudgeInitialChars ~/ 10000} 万字符，可在此追加。',
+            '用 ${widget.settings.read().$2} 检查这本书的内容，可能产生模型费用。先允许检查 ${judge_budget.modelJudgeInitialCalls} 次，之后可以增加。',
             style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
           ),
           const SizedBox(height: 8),
@@ -1230,12 +1257,12 @@ class _BookSheetState extends State<BookSheet> {
             widget.settings.hasJevApiKey) ...<Widget>[
           const SizedBox(height: 10),
           Text(
-            '只为这本书启用 Jev 判断，会使用你在 TypeSafe AI 的账户额度；每书有单独调用上限，实际费用以服务商账单为准。',
+            '用 Jev 检查这本书的内容，会使用你在 TypeSafe AI 的账户余额。',
             style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
           ),
           const SizedBox(height: 8),
           Pill(
-            label: '用 Jev 网关继续整理',
+            label: '用 Jev 继续整理',
             filled: true,
             color: t.zhu,
             onTap: acting ? null : _continueWithJev,
@@ -1247,15 +1274,12 @@ class _BookSheetState extends State<BookSheet> {
             !directModel &&
             !modelBudgetExceeded) ...<Widget>[
           const SizedBox(height: 10),
-          Pill(
-            label: '本书改用已配置模型直接核对',
-            onTap: acting ? null : _retryWithDirectModel,
-          ),
+          Pill(label: '改用当前模型检查', onTap: acting ? null : _retryWithDirectModel),
         ],
         if (modelBudgetExceeded) ...<Widget>[
           const SizedBox(height: 8),
           Pill(
-            label: '追加 ${judge_budget.modelJudgeTopUpCalls} 次额度并继续',
+            label: '再允许检查 ${judge_budget.modelJudgeTopUpCalls} 次',
             filled: true,
             color: t.zhu,
             onTap: acting ? null : _extendJudgeBudget,
@@ -1264,7 +1288,7 @@ class _BookSheetState extends State<BookSheet> {
         if (paidBudgetExceeded) ...<Widget>[
           const SizedBox(height: 8),
           Pill(
-            label: '追加 ${judge_budget.paidJudgeTopUpCalls} 次 Jev 网关额度并继续',
+            label: '再允许使用 Jev ${judge_budget.paidJudgeTopUpCalls} 次',
             filled: true,
             color: t.zhu,
             onTap: acting ? null : _extendPaidJudgeBudget,
@@ -1378,7 +1402,7 @@ class _BookSheetState extends State<BookSheet> {
           ),
           const SizedBox(height: 10),
           Text(
-            '会调用你的模型接口，$cost${modelFallback ? ' 若免费判断不可用，还会额外使用该模型判断；调用量受本书判断额度限制，实际账单以服务商为准。' : ''}${paidFallback ? ' 若免费判断不可用，会使用本书选择的 Jev 额度；实际账单以 TypeSafe AI 为准。' : ''}${directModel ? ' 本书核对直接使用已配置模型和单书额度。' : ''}${directPaid ? ' 本书核对直接使用 Jev 和单书额度。' : ''}',
+            '$cost${modelFallback || directModel ? ' 用当前模型检查内容也可能产生费用。' : ''}${paidFallback || directPaid ? ' 使用 Jev 检查内容会按该服务的价格收费。' : ''}',
             style: TextStyle(fontSize: 13, color: t.ink2),
           ),
           const SizedBox(height: 8),
@@ -1437,25 +1461,25 @@ class _BookSheetState extends State<BookSheet> {
       body.insertAll(0, <Widget>[
         Text(
           effectiveJudgeRoute == 'systemone'
-              ? '判断路线：System One · ${widget.settings.judgeModel.isEmpty ? '服务默认模型' : widget.settings.judgeModel}'
+              ? '内容检查： ${widget.settings.judgeModel.isEmpty ? '服务默认模型' : widget.settings.judgeModel}'
               : directPaid
-              ? '判断路线：直接使用 Jev 网关（仅本书）'
+              ? '内容检查：Jev（仅本书）'
               : directModel
-              ? '判断路线：直接使用 $modelName（仅本书）'
+              ? '内容检查：$modelName（仅本书）'
               : paidFallback
-              ? '判断路线：免费优先，失败后使用 Jev 网关（仅本书）'
+              ? '内容检查：免费服务不可用时，改用 Jev（仅本书）'
               : modelFallback
-              ? '判断路线：免费优先，失败后使用 $modelName'
+              ? '内容检查：免费服务不可用时，改用 $modelName'
               : widget.settings.hasClassifierKey
-              ? '判断路线：classifier.dev 已配置工作区密钥'
-              : '判断路线：classifier.dev 匿名免费',
+              ? '内容检查：classifier.dev'
+              : '内容检查：免费服务',
           style: TextStyle(fontSize: 12, color: t.ink2),
         ),
         if (modelUsesBudget && modelBudget.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Text(
-              '本书模型判断额度：${modelBudget['calls']}/${modelBudget['max_calls']} 次 · ${modelBudget['chars']}/${modelBudget['max_chars']} 字符',
+              '本书已检查 ${modelBudget['calls']} 次，最多允许 ${modelBudget['max_calls']} 次（不是账户余额）',
               style: TextStyle(fontSize: 12, color: t.ink3),
             ),
           )
@@ -1463,7 +1487,7 @@ class _BookSheetState extends State<BookSheet> {
           Padding(
             padding: const EdgeInsets.only(top: 4, bottom: 8),
             child: Text(
-              '本书 Jev 网关额度：${paidBudget['calls'] ?? 0}/${paidBudget['max_calls'] ?? judge_budget.paidJudgeDefaultCalls} 次 · ${paidBudget['chars'] ?? 0}/${paidBudget['max_chars'] ?? judge_budget.paidJudgeDefaultChars} 字符',
+              '本书已使用 Jev ${paidBudget['calls'] ?? 0} 次，最多允许 ${paidBudget['max_calls'] ?? judge_budget.paidJudgeDefaultCalls} 次（不是账户余额）',
               style: TextStyle(fontSize: 12, color: t.ink3),
             ),
           )
@@ -1475,21 +1499,9 @@ class _BookSheetState extends State<BookSheet> {
           bookJudgeRoute == 'model-direct' ||
           (bookJudgeRoute == 'model' &&
               !widget.settings.judgeFallbackEnabled)) {
-        final bool directRoute =
-            bookJudgeRoute == 'jev-direct' || bookJudgeRoute == 'model-direct';
         body.add(
           Pill(
-            label: widget.settings.judgeFallbackEnabled
-                ? s.isActive
-                      ? '暂停并恢复全局模型判断'
-                      : '恢复全局模型判断'
-                : s.isActive
-                ? directRoute
-                      ? '暂停并停用本书直接核对'
-                      : '暂停并停用本书判断兜底'
-                : directRoute
-                ? '停用本书直接核对'
-                : '停用本书判断兜底',
+            label: s.isActive ? '暂停并使用设置中的检查方式' : '使用设置中的检查方式',
             onTap: acting ? null : _disableBookJudgeFallback,
           ),
         );
@@ -1502,7 +1514,7 @@ class _BookSheetState extends State<BookSheet> {
         Padding(
           padding: const EdgeInsets.only(top: 10),
           child: Text(
-            '已有 ${bios.count} 篇核对通过的人物小传。首批在$unlockAt解锁；阅读页只显示你读到的部分。',
+            '已生成 ${bios.count} 篇人物小传。读到$unlockAt可查看首批内容，不会提前透露后面的情节。',
             style: TextStyle(fontSize: 13, height: 1.5, color: t.zhu),
           ),
         ),
