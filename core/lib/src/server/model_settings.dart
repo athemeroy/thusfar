@@ -8,8 +8,8 @@ import 'dart:math';
 
 import '../env.dart';
 import '../errors.dart';
-import '../pipeline/llm.dart' as llm;
 import '../pipeline/jev.dart' as judge;
+import '../pipeline/llm.dart' as llm;
 import '../py/py_compat.dart';
 import '../py/py_re.dart';
 
