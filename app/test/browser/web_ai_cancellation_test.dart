@@ -120,21 +120,30 @@ WebBook _book({int chunks = 2, int chapters = 1}) {
   );
 }
 
-Future<void> _until(WidgetTester tester, bool Function() condition) async {
-  for (int i = 0; i < 100 && !condition(); i++) {
-    // Browser Web Locks settle outside Flutter's fake clock.
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
-    );
-    await tester.pump(const Duration(milliseconds: 10));
-  }
-  expect(condition(), isTrue);
-}
-
 void main() {
   late _Library library;
   late _Model model;
   late GlobalKey<NavigatorState> navigator;
+
+  Future<void> until(WidgetTester tester, bool Function() condition) async {
+    for (int i = 0; i < 100 && !condition(); i++) {
+      // Browser Web Locks settle outside Flutter's fake clock.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      );
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    expect(
+      condition(),
+      isTrue,
+      reason:
+          'Fixture state: acquisitions=${library.acquisitions}, '
+          'renewals=${library.renewals}, releases=${library.releases}, '
+          'analyses=${model.analyses}, calls=${model.calls}, '
+          'phase=${library.saved?['phase']}, '
+          'configuration dialogs=${find.byType(AlertDialog).evaluate().length}',
+    );
+  }
 
   setUp(() {
     library = _Library();
@@ -213,12 +222,12 @@ void main() {
     model.reply = response;
     await open(tester, chunks: 3);
     await start(tester);
-    await _until(tester, () => model.calls == 1);
+    await until(tester, () => model.calls == 1);
     await tester.tap(find.text('边读边整理'));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Reading while preparing'), findsOneWidget);
     response.complete();
-    await _until(tester, () => library.releases == 1);
+    await until(tester, () => library.releases == 1);
     expect(model.calls, 3);
     expect(library.acquisitions, 1);
     expect(library.saves.last['phase'], 'complete');
@@ -237,12 +246,12 @@ void main() {
       model.reply = response;
       await open(tester, chunks: 3);
       await start(tester);
-      await _until(tester, () => model.calls == 1);
+      await until(tester, () => model.calls == 1);
       await tester.tap(find.text('边读边整理'));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(find.byTooltip('停止整理'));
       response.complete();
-      await _until(tester, () => library.releases == 1);
+      await until(tester, () => library.releases == 1);
       expect(model.calls, 1);
       expect(library.saves.last['phase'], 'paused');
       expect((library.saves.last['results'] as Map).length, 1);
@@ -257,7 +266,7 @@ void main() {
     library.saved = <String, Object?>{'scope': 'range:1:1'};
     await open(tester, chunks: 1, chapters: 3);
     await start(tester);
-    await _until(tester, () => library.releases == 1);
+    await until(tester, () => library.releases == 1);
     expect(model.chunks.map((WebAiChunk c) => c.chapterIndex), <int>[1]);
     expect(library.saves.last['scope'], 'range:1:1');
     expect(library.saves.last['phase'], 'complete');
@@ -271,7 +280,7 @@ void main() {
       library.saved = <String, Object?>{'scope': 'read:${firstEnd + 20}'};
       await open(tester, chunks: 3, cutoff: 999999);
       await start(tester);
-      await _until(tester, () => library.releases == 1);
+      await until(tester, () => library.releases == 1);
       expect(model.calls, 1);
       expect(model.chunks.single.endOffset, firstEnd);
       expect(library.saves.last['scope'], 'read:${firstEnd + 20}');
@@ -314,11 +323,11 @@ void main() {
     library.renewalGates[1] = renewal;
     await open(tester);
     await start(tester);
-    await _until(tester, () => library.renewals == 1);
+    await until(tester, () => library.renewals == 1);
     await tester.pumpAndSettle();
     navigator.currentState!.pop();
     renewal.complete(true);
-    await _until(tester, () => library.releases == 1);
+    await until(tester, () => library.releases == 1);
     await tester.pumpAndSettle();
     expect(model.analyses, 0);
     expect(model.calls, 0);
@@ -334,7 +343,7 @@ void main() {
         library.renewalGates[4] = renewal;
         await open(tester);
         await start(tester);
-        await _until(tester, () => library.renewals == 4);
+        await until(tester, () => library.renewals == 4);
         await tester.pumpAndSettle();
         if (leave) {
           final State<StatefulWidget> panel = tester.state(
@@ -346,7 +355,7 @@ void main() {
           await tester.tap(find.text('暂停整理'));
         }
         renewal.complete(true);
-        await _until(tester, () => library.releases == 1);
+        await until(tester, () => library.releases == 1);
         await tester.pumpAndSettle();
         expect(model.calls, 0);
         expect(library.saves.last['phase'], 'paused');
@@ -363,12 +372,12 @@ void main() {
     library.renewalGates[5] = renewal;
     await open(tester);
     await start(tester);
-    await _until(tester, () => library.renewals == 5);
+    await until(tester, () => library.renewals == 5);
     await tester.pumpAndSettle();
     expect(model.calls, 1);
     navigator.currentState!.pop();
     renewal.complete(true);
-    await _until(tester, () => library.releases == 1);
+    await until(tester, () => library.releases == 1);
     await tester.pumpAndSettle();
     expect(model.calls, 1);
     expect(library.saves.last['phase'], 'paused');
@@ -381,12 +390,12 @@ void main() {
       model.reply = response;
       await open(tester, chunks: 3);
       await start(tester);
-      await _until(tester, () => model.calls == 1);
+      await until(tester, () => model.calls == 1);
       await tester.pumpAndSettle();
       navigator.currentState!.pop();
       await tester.pumpAndSettle();
       response.complete();
-      await _until(tester, () => library.releases == 1);
+      await until(tester, () => library.releases == 1);
       expect(model.calls, 1);
       expect(library.saves.last['phase'], 'paused');
       expect((library.saves.last['results'] as Map<String, Object?>).length, 1);

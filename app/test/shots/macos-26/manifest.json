@@ -79,15 +79,25 @@
       "height": 2340,
       "different_pixels": 294,
       "max_channel_delta": 11,
-      "sha256": "30fe2bc785fb64b4e5f251e84d1a64f7140a610e3f8f570b1c6d31b5e601b09a"
+      "sha256": "92e380e77bd363382b032b0451a088c0aa4e427c252bf3a6d5828abf84f2d229",
+      "source_commit": "0add9b1a41f7078e59ba85f383d1cc351c9fa630",
+      "source_run": "https://github.com/athemeroy/thusfar/actions/runs/37259557281",
+      "source_artifact_id": 11323674732,
+      "source_artifact_sha256": "ff4336f30cac457eba190cd8462502667dc135915d37bf98fecf77d9519fa8bd",
+      "review_date": "2026-10-05"
     },
     {
       "file": "10-ask.png",
       "width": 1080,
       "height": 2340,
-      "different_pixels": 59,
+      "different_pixels": 71,
       "max_channel_delta": 4,
-      "sha256": "53444050dcd39ce60cf64b28bef5bcb3c68f7d8e33bb8eeb421ab5762464fef4"
+      "sha256": "f42109568375a346fc2f45417314728369e8247ceb9ce5c254030bd0f78c44dc",
+      "source_commit": "0add9b1a41f7078e59ba85f383d1cc351c9fa630",
+      "source_run": "https://github.com/athemeroy/thusfar/actions/runs/37259557281",
+      "source_artifact_id": 11323674732,
+      "source_artifact_sha256": "ff4336f30cac457eba190cd8462502667dc135915d37bf98fecf77d9519fa8bd",
+      "review_date": "2026-10-05"
     },
     {
       "file": "11-search-empty.png",

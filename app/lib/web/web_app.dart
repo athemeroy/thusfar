@@ -2498,7 +2498,10 @@ class _WebReaderState extends State<WebReader> {
               _pageIndex = 0;
             }
             _restoring = true;
-            _jumpOffset = source;
+            // Page-to-page reflow must keep the original source anchor. The
+            // current page can start earlier after a font change; using that
+            // new start as an explicit jump makes repeated changes drift.
+            _jumpOffset = wasPageMode && _prefs.pageMode ? null : source;
             setState(() {});
             _prefs.save();
             _queueSave();
