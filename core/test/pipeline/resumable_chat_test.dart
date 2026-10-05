@@ -100,6 +100,51 @@ void main() {
   );
 
   test(
+    'accepted result outlives the live-stream deadline without becoming unknown',
+    () async {
+      // The first scheduled result read is two seconds after acceptance.
+      // A suspended phone has the same ordering: dispatch deadline first,
+      // then the saved response. Never settle unknown before that safe read.
+      environ['LLM_WALL_TIMEOUT'] = '0.1';
+      final body =
+          await streamReply('保存的人物小传').body.transform(utf8.decoder).join();
+      transport.reply = (request) async {
+        if (request.method == 'POST') {
+          return const llm.ChatResponse(
+            202,
+            'application/json',
+            Stream.empty(),
+            headers: {
+              'preference-applied': 'respond-async',
+              'location': '/v1/chat/completions?job=retained',
+            },
+          );
+        }
+        return llm.ChatResponse(
+          200,
+          'application/json',
+          Stream.value(
+            utf8.encode(
+              jsonEncode({
+                'status': 200,
+                'content_type': 'text/event-stream',
+                'body': body,
+              }),
+            ),
+          ),
+        );
+      };
+      final scope = ModelRequestScope(root);
+      final answer = await scope.run(() => llm.chat('fixture', const []));
+      expect(answer.text, '保存的人物小传');
+      expect(transport.requests.map((r) => r.method), ['POST', 'GET']);
+      expect(scope.hasUnknown, isFalse);
+      scope.settle(receivedCommitted: true);
+      expect(hasUnsettledModelRequests(root), isFalse);
+    },
+  );
+
+  test(
     'interactive calls keep ordinary live streaming without async opt in',
     () async {
       transport.reply = (request) async {

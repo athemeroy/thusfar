@@ -616,11 +616,25 @@ Future<Object?> pollRetainedResult(
   }
   final RunCancellation? cancellation = RunCancellation.current;
   Future<T> wait<T>(Future<T> future) => cancellation?.wait(future) ?? future;
-  final Stopwatch clock = Stopwatch()..start();
-  const Duration limit = Duration(minutes: 10);
-  while (clock.elapsed < limit) {
-    await wait(Future<void>.delayed(const Duration(seconds: 2)));
+  // Android can suspend every thread while an accepted server job completes.
+  // Charge scheduled polling and bounded reads, not that suspended wall time.
+  // Each read has its own deadline; retries can only fetch the accepted job.
+  const Duration interval = Duration(seconds: 2);
+  const Duration readLimit = Duration(seconds: 15);
+  Duration budget = const Duration(minutes: 10);
+  while (budget > Duration.zero) {
+    await wait(Future<void>.delayed(interval));
+    budget -= interval;
     cancellation?.checkpoint();
+    final Stopwatch readClock = Stopwatch()..start();
+    Duration readRemaining() {
+      final Duration remaining = readLimit - readClock.elapsed;
+      if (remaining <= Duration.zero) {
+        throw TimeoutException('读取保存结果超时');
+      }
+      return remaining;
+    }
+
     try {
       final ChatResponse response = await wait(
         postRequest(
@@ -634,7 +648,7 @@ Future<Object?> pollRetainedResult(
             '',
             method: 'GET',
           ),
-          const Duration(seconds: 15),
+          readLimit,
           trace: trace,
         ),
       );
@@ -652,9 +666,7 @@ Future<Object?> pollRetainedResult(
       final List<int> bytes = [];
       final StreamIterator<List<int>> chunks = StreamIterator(response.body);
       try {
-        while (await wait(
-          chunks.moveNext().timeout(const Duration(seconds: 15)),
-        )) {
+        while (await wait(chunks.moveNext().timeout(readRemaining()))) {
           bytes.addAll(chunks.current);
           if (bytes.length > 16 * 1024 * 1024) {
             throw const LLMError('保存的结果超过大小上限');
@@ -671,6 +683,10 @@ Future<Object?> pollRetainedResult(
       continue;
     } on TimeoutException {
       continue;
+    } finally {
+      // A timer can fire late after suspension. Count at most this read's
+      // advertised deadline; the next GET must get a chance to recover.
+      budget -= readClock.elapsed > readLimit ? readLimit : readClock.elapsed;
     }
   }
   throw TimeoutException('等待保存的结果超过十分钟');
@@ -775,9 +791,11 @@ Future<ChatResult> chat(
         baseUrl: baseUrl,
       );
       final Stopwatch clock = Stopwatch()..start();
+      final Stopwatch deadline = Stopwatch()..start();
+      bool retained = false;
       Duration remaining() {
         final int milliseconds =
-            (wall * 1000).round() - clock.elapsedMilliseconds;
+            (wall * 1000).round() - deadline.elapsedMilliseconds;
         if (milliseconds <= 0) {
           throw TimeoutException('模型请求超过 ${wall.round()} 秒总时限');
         }
@@ -807,14 +825,13 @@ Future<ChatResult> chat(
         ).timeout(remaining()),
       );
       if (receipt != null && resp.status == 202) {
+        retained = true;
         final Object? result = await waitFor(
-          pollRetainedResult(
-            req.url,
-            resp,
-            req.headers,
-            receipt.trace,
-          ).timeout(remaining()),
+          pollRetainedResult(req.url, resp, req.headers, receipt.trace),
         );
+        // This is now a complete, retained reply. A wall timer left over from
+        // dispatch must not discard it or race a still-running polling future.
+        deadline.reset();
         if (result is! Map<String, Object?> ||
             result['status'] is! int ||
             result['content_type'] is! String ||
@@ -952,7 +969,7 @@ Future<ChatResult> chat(
         '_secs': (secs * 100).round() / 100,
         '_ttft': ((first ?? secs) * 100).round() / 100,
       };
-      if (adaptive) {
+      if (adaptive && !retained) {
         final List<double> seen = _replySeconds.putIfAbsent(
           fullModel,
           () => <double>[],
