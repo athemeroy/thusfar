@@ -24,6 +24,8 @@ import 'lang.dart' as lang;
 import 'link.dart' as linking;
 import 'llm.dart' as llm;
 import 'local.dart' as local;
+import 'preparation_plan.dart'
+    show validatePreparationPlan, preparationBookPrefix;
 import 'provenance.dart';
 import 'run_lease.dart';
 import 'run_prompts.dart' as prompts;
@@ -400,6 +402,21 @@ class Runner {
   final bool activity;
   late Json book;
   late List<Json> segs;
+  Json? preparationPlan;
+  int? get planEndOffset => preparationPlan?['end_offset'] as int?;
+  int get targetSegments =>
+      planEndOffset == null
+          ? segs.length
+          : segs.takeWhile((s) => _int(s['o1']) <= planEndOffset!).length;
+
+  bool permitsEnd(int end) => planEndOffset == null || end <= planEndOffset!;
+
+  String completedState(int done) =>
+      done >= segs.length
+          ? 'done'
+          : preparationPlan != null && done >= targetSegments
+          ? 'paused'
+          : 'running';
   late KG kg;
   late Directory work;
   bool replaying = false;
@@ -440,13 +457,44 @@ class Runner {
       activity,
     );
     r.book = _read(File('${root.path}/book.json'));
+    final File metaFile = File('${root.path}/meta.json');
+    final Json meta = metaFile.existsSync() ? _read(metaFile) : {};
+    if (meta.containsKey('preparation_plan')) {
+      r.preparationPlan = validatePreparationPlan(
+        meta['preparation_plan'],
+        r.book,
+      );
+      // A bounded task must never send future chapter samples while deciding
+      // which chapters to process. Freeze the importer's local structure.
+      if (!_truth(r.book['classified']) &&
+          r.planEndOffset! < _int(r.book['len'])) {
+        for (final Json chapter in _rows(r.book['chapters'])) {
+          chapter.putIfAbsent('kind', () => 'body');
+        }
+        r.book['classified'] = true;
+        r.book['classification_source'] = 'local-bounded';
+        writeJson(File('${root.path}/book.json'), r.book);
+      }
+    }
+    if (r.preparationPlan != null) {
+      final List<int> body = <int>[
+        for (final (int i, Json c) in _rows(r.book['chapters']).indexed)
+          if ((c['kind'] ?? 'body') == 'body') i,
+      ];
+      final List<Json> preview = extraction.segments(r.book, body);
+      if (preview.isEmpty || _int(preview.first['o1']) > r.planEndOffset!) {
+        throw const ValueError('所选范围尚无完整正文片段；请读到下一片段末尾或选择章节末尾');
+      }
+    }
     final bool legacy = Directory('${root.path}/work/segs').existsSync();
     final _PolicyBackend pb = _PolicyBackend(backend);
     if ((!_truth(r.book['genre']) && !legacy) ||
         _truth(r.book['genre_provisional'])) {
       if (activity) recordBookActivity(root, 'detect_kind', '正在识别书籍类型');
       final (String genre, num confidence) = await policy.detectKind(
-        r.book,
+        r.planEndOffset == null
+            ? r.book
+            : preparationBookPrefix(r.book, r.planEndOffset!),
         backend: pb,
       );
       if (confidence > 0) {
@@ -481,6 +529,9 @@ class Runner {
       throw const ValueError('未找到正文段落；请检查解析和章节分类，不能将 0/0 标记为完成');
     if (r.segs.any((s) => _cp(extraction.segText(r.book, s)) > 12000)) {
       throw const ValueError('正文含超过核对上限的长段落；请先拆分段落，避免截断证据');
+    }
+    if (r.preparationPlan != null && r.targetSegments == 0) {
+      throw const ValueError('所选范围尚无完整正文片段；请读到下一片段末尾或选择章节末尾');
     }
     r.kg = KG(r.book);
     r.work = Directory('${root.path}/work');
@@ -840,6 +891,26 @@ class Runner {
     writeJson(usagePath, snapshot, compact: false);
     final Json out = {
       'state': state,
+      if (preparationPlan != null)
+        'plan': <String, Object?>{
+          ...preparationPlan!,
+          'target_segments': targetSegments,
+          'completed_segments': math.min(done, targetSegments),
+          'state':
+              done >= targetSegments && (state == 'done' || state == 'paused')
+                  ? 'complete'
+                  : state == 'finalizing'
+                  ? 'finalizing'
+                  : 'running',
+          'effective_end_offset':
+              targetSegments == 0 ? 0 : segs[targetSegments - 1]['o1'],
+          if (book['classification_source'] == 'local-bounded')
+            'classification_source': 'local',
+        },
+      if (state == 'paused' &&
+          preparationPlan != null &&
+          done >= targetSegments)
+        'pause_reason': 'scope_complete',
       'done': done,
       'total': segs.length,
       'frontier': seg?['o1'] ?? 0,
@@ -864,6 +935,8 @@ class Runner {
         state,
         switch (state) {
           'done' => '整理完成',
+          'paused' when preparationPlan != null && done >= targetSegments =>
+            '所选范围已整理完成，已停止；后续章节尚未整理',
           'finalizing' => '正在整理本章人物与前情',
           'error' => '整理出错，请查看状态详情',
           _ => '已完成 $done / ${segs.length} 段',

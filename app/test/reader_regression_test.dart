@@ -8,12 +8,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
+import 'package:thusfar_app/data/prefs.dart';
 import 'package:thusfar_app/main.dart';
 import 'package:thusfar_app/reader/paginator.dart';
 import 'package:thusfar_app/reader/page_body.dart';
 import 'package:thusfar_app/reader/reader_controller.dart';
 import 'package:thusfar_app/reader/reader_screen.dart';
 import 'package:thusfar_app/sheets/common.dart';
+import 'package:thusfar_app/sheets/ask_sheet.dart';
 import 'package:thusfar_app/sheets/footnotes_sheet.dart';
 import 'package:thusfar_app/sheets/note_editor.dart';
 import 'package:thusfar_app/sheets/preview_sheet.dart';
@@ -266,6 +268,194 @@ void main() {
         body.pager.book.textBetween(note['start']! as int, note['end']! as int),
       );
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'both selection handles adjust exact source bounds and theme repaint keeps anchor',
+    (tester) async {
+      await setTestViewport(tester, const Size(430, 900));
+      addTearDown(() => setTestViewport(tester, null));
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Regression book').first);
+      await tester.pumpAndSettle();
+      PageBody body() => tester.widget<PageBody>(find.byType(PageBody).first);
+      final int anchor = body().page.start;
+      final Color original = body().pager.spec.color;
+      model.prefs.update((prefs) => prefs.night = NightMode.always);
+      await tester.pumpAndSettle();
+      expect(body().pager.spec.color, Tokens.night.ink);
+      expect(body().pager.spec.color, isNot(original));
+      expect(body().page.start, anchor);
+      final TextPainter painter = body().pager.painterFor(
+        body().pager.book.blocks.first,
+      );
+      Offset point(int offset) => painter.getOffsetForCaret(
+        TextPosition(offset: offset + indentShift),
+        Rect.zero,
+      );
+      final Offset pageOrigin = tester.getTopLeft(find.byType(PageBody).first);
+      await tester.longPressAt(
+        pageOrigin + point(2) + Offset(1, body().pager.spec.line / 2),
+      );
+      await tester.pumpAndSettle();
+      expect(body().layers.selection, (0, 5));
+      final Finder end = find.byKey(
+        const ValueKey<String>('reader-selection-end'),
+      );
+      final TestGesture endDrag = await tester.startGesture(
+        tester.getCenter(end),
+      );
+      await endDrag.moveBy(const Offset(1, 0));
+      await endDrag.moveBy(point(11) - point(4));
+      await endDrag.up();
+      await tester.pumpAndSettle();
+      expect(body().layers.selection, (0, 12));
+      final Finder start = find.byKey(
+        const ValueKey<String>('reader-selection-start'),
+      );
+      final TestGesture startDrag = await tester.startGesture(
+        tester.getCenter(start),
+      );
+      await startDrag.moveBy(const Offset(1, 0));
+      await startDrag.moveBy(point(6) - point(0));
+      await startDrag.up();
+      await tester.pumpAndSettle();
+      expect(body().layers.selection, (6, 12));
+      painter.dispose();
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'selection end handle crosses visible paragraphs and shrinks back exactly',
+    (tester) async {
+      final File source = File(
+        '${model.library.books.single.dir.path}/book.json',
+      );
+      final Json raw = readJson(source)! as Json;
+      raw['chapters'] = <Json>[
+        <String, Object?>{
+          'title': 'One page',
+          'kind': 'body',
+          'b0': 0,
+          'b1': 2,
+          'o0': 0,
+          'o1': first.length + future.length,
+        },
+      ];
+      writeJson(source, raw);
+      await setTestViewport(tester, const Size(430, 900));
+      addTearDown(() => setTestViewport(tester, null));
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Regression book').first);
+      await tester.pumpAndSettle();
+      PageBody body() => tester.widget<PageBody>(find.byType(PageBody).first);
+      Offset sourcePoint(int blockIndex, int offset) {
+        final PageBody current = body();
+        double y = 0;
+        for (final Frag fragment in current.page.frags) {
+          if (fragment.block == blockIndex) {
+            final TextPainter painter = current.pager.painterFor(
+              current.pager.book.blocks[blockIndex],
+            );
+            final Offset caret = painter.getOffsetForCaret(
+              TextPosition(offset: offset + indentShift),
+              Rect.zero,
+            );
+            painter.dispose();
+            return caret + Offset(0, y - fragment.top);
+          }
+          y += fragment.lines * current.pager.spec.line;
+        }
+        throw StateError('Expected visible source fragment');
+      }
+
+      final Offset origin = tester.getTopLeft(find.byType(PageBody).first);
+      await tester.longPressAt(
+        origin + sourcePoint(0, 2) + Offset(1, body().pager.spec.line / 2),
+      );
+      await tester.pumpAndSettle();
+      final Finder end = find.byKey(
+        const ValueKey<String>('reader-selection-end'),
+      );
+      final TestGesture extend = await tester.startGesture(
+        tester.getCenter(end),
+      );
+      await extend.moveBy(const Offset(1, 0));
+      await extend.moveBy(sourcePoint(1, 6) - sourcePoint(0, 4));
+      await extend.up();
+      await tester.pumpAndSettle();
+      expect(body().layers.selection, (0, first.length + 7));
+      expect(
+        body().pager.book.textBetween(0, first.length + 7),
+        '$first\n${future.substring(0, 7)}',
+      );
+      final TestGesture shrink = await tester.startGesture(
+        tester.getCenter(end),
+      );
+      await shrink.moveBy(const Offset(1, 0));
+      await shrink.moveBy(sourcePoint(0, 11) - sourcePoint(1, 6));
+      await shrink.up();
+      await tester.pumpAndSettle();
+      expect(body().layers.selection, (0, 12));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+    },
+  );
+
+  testWidgets(
+    'source return reopens Ask at original cutoff with the unfinished question',
+    (tester) async {
+      await setTestViewport(tester, const Size(430, 900));
+      addTearDown(() => setTestViewport(tester, null));
+      model.library.saveProgress(
+        model.library.books.single.id,
+        first.length,
+        first.length + future.length,
+        first.length + future.length,
+      );
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Regression book').first);
+      await tester.pumpAndSettle();
+      final int original = tester
+          .widget<PageBody>(find.byType(PageBody).first)
+          .page
+          .start;
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await tester.pumpAndSettle();
+      final AskPage ask = tester.widget<AskPage>(find.byType(AskPage));
+      final int cutoff = ask.link.c.cutoff;
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('ask-input')),
+        'Keep this follow-up',
+      );
+      ask.link.c.returnToAsk = true;
+      ask.link.jump(0, highlight: (0, 5));
+      await tester.pumpAndSettle();
+      expect(find.byType(AskPage), findsNothing);
+      expect(
+        tester.widget<PageBody>(find.byType(PageBody).first).page.start,
+        0,
+      );
+      await tester.tap(find.textContaining('↩ 回到第'));
+      await tester.pumpAndSettle();
+      final AskPage restored = tester.widget<AskPage>(find.byType(AskPage));
+      expect(restored.link.c.start, original);
+      expect(restored.link.c.cutoff, cutoff);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey<String>('ask-input')))
+            .controller!
+            .text,
+        'Keep this follow-up',
+      );
+      expect(restored.link.c.returnToAsk, isFalse);
       await tester.pumpWidget(const SizedBox());
     },
   );

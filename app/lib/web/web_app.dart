@@ -18,13 +18,19 @@ import 'package:thusfar_core/thusfar_core.dart' as knowledge;
 import 'package:thusfar_core/chapter_verdicts.dart' show titleCheckPending;
 
 import '../data/library_zip.dart';
+import '../data/restore_report.dart';
+import '../ui/restore_report_view.dart';
 import '../ui/theme.dart';
+import '../reader/image_viewer.dart';
+import '../reader/source_selection.dart';
 import 'reading_boundary.dart';
 import 'web_ai_panel.dart';
 import 'web_ai_engine.dart';
 import 'web_ask_panel.dart';
 import 'web_model_session.dart';
 import 'web_storage.dart';
+import 'web_reader_search.dart';
+import 'web_recovery_page.dart';
 import 'webdav_sync.dart';
 
 const double _wideShelf = 1140;
@@ -198,11 +204,13 @@ class _WebShelfState extends State<WebShelf> {
           context: context,
           builder: (BuildContext dialogContext) => AlertDialog(
             title: const Text('恢复整个书库'),
-            content: Text(
-              '这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
-              '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
-              '已有书籍保留此浏览器的逐书整理和付费路由，继续前请核对。'
-              '是否同时使用备份里的阅读清单、排版和模型设置？',
+            content: SingleChildScrollView(
+              child: Text(
+                '${archive.books.map((bytes) => '• ${BackupSummary.read(bytes).title}').join('\n')}\n\n这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
+                '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
+                '已有书籍保留此浏览器的逐书整理和付费路由，继续前请核对。'
+                '是否同时使用备份里的阅读清单、排版和模型设置？',
+              ),
             ),
             actions: <Widget>[
               TextButton(
@@ -228,15 +236,28 @@ class _WebShelfState extends State<WebShelf> {
           WebModelSession.current.clear();
         }
         await _refresh();
-        _message(
-          restored.settingsError != null
-              ? '已导入 ${restored.imported} 本、合并 ${restored.existing} 本；${restored.settingsError}'
-              : restored.complete
-              ? '已恢复 ${restored.total} 本书；'
-                    '${applySettings ? '设置已导入，模型密钥需重填' : '保留了当前设置'}'
-              : '已导入 ${restored.imported} 本、合并 ${restored.existing} 本；'
-                    '${restored.failures.length} 本有冲突。${restored.failures.first}',
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              duration: const Duration(seconds: 10),
+              content: Text(
+                '${restored.report.summary}。${restored.reportError ?? '完整结果已保存，可从回收站与恢复报告查看。'}',
+              ),
+              action: SnackBarAction(
+                label: '查看报告',
+                onPressed: () {
+                  if (!mounted) return;
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          RestoreReportView(report: restored.report),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        }
         return;
       } else if (file.name.toLowerCase().endsWith('.json')) {
         final String id = await library.importBackup(bytes);
@@ -325,8 +346,13 @@ class _WebShelfState extends State<WebShelf> {
       if (book == null) throw StateError('书籍内容已不存在');
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
-          builder: (_) =>
-              WebAiPanel(book: book, reading: reading, library: library),
+          builder: (_) => WebAiPanel(
+            book: book,
+            reading: reading,
+            library: library,
+            readingBuilder: (_, _) =>
+                WebReader(book: book, state: reading, library: library),
+          ),
         ),
       );
       await _refresh();
@@ -351,6 +377,24 @@ class _WebShelfState extends State<WebShelf> {
       await _refresh();
     } on Object catch (error) {
       _message('打开 WebDAV 失败：$error');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _openRecovery() async {
+    final WebLibrary? library = _library;
+    if (library == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => WebRecoveryPage(library: library),
+        ),
+      );
+      await _refresh();
+    } on Object catch (error) {
+      _message('打开恢复中心失败：$error');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -389,7 +433,7 @@ class _WebShelfState extends State<WebShelf> {
               ),
               ListTile(
                 leading: const Icon(Icons.delete_outline),
-                title: const Text('从此浏览器移除'),
+                title: const Text('移到回收站'),
                 onTap: () => Navigator.pop(context, 'remove'),
               ),
             ],
@@ -409,8 +453,8 @@ class _WebShelfState extends State<WebShelf> {
       final bool? confirmed = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: const Text('移除这本书？'),
-          content: const Text('浏览器里的书籍、进度、书签和摘记会一起删除。建议先导出备份。'),
+          title: const Text('移到回收站？'),
+          content: const Text('书籍、进度、书签和摘记会保留，可从书架的回收站恢复；仍占用浏览器存储空间。'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -418,15 +462,23 @@ class _WebShelfState extends State<WebShelf> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('移除'),
+              child: const Text('移到回收站'),
             ),
           ],
         ),
       );
-      if (confirmed == true) {
-        await library.remove(book.id);
-        if (_importedBook?.id == book.id) _importedBook = null;
-        await _refresh();
+      if (confirmed == true && mounted) {
+        setState(() => _busy = true);
+        try {
+          await library.remove(book.id);
+          if (_importedBook?.id == book.id) _importedBook = null;
+          await _refresh();
+          _message('已移到回收站，书籍和阅读记录可恢复');
+        } on Object catch (error) {
+          _message('未能移到回收站：$error');
+        } finally {
+          if (mounted) setState(() => _busy = false);
+        }
       }
     }
   }
@@ -522,6 +574,15 @@ class _WebShelfState extends State<WebShelf> {
                                   : _exportLibrary,
                               icon: const Icon(Icons.archive_outlined),
                               label: const Text('整库备份'),
+                            ),
+                            IconButton(
+                              onPressed: _busy || _library == null
+                                  ? null
+                                  : _openRecovery,
+                              tooltip: '回收站与恢复报告',
+                              icon: const Icon(
+                                Icons.restore_from_trash_outlined,
+                              ),
                             ),
                             IconButton(
                               onPressed: _busy || _library == null
@@ -1222,6 +1283,8 @@ class _WebReaderState extends State<WebReader> {
   bool _controls = false;
   bool _restoring = true;
   bool _openingPanel = false;
+  int _navigationEpoch = 0;
+  VoidCallback? _returnToAsk;
   String? _selectedText;
   String? _selectionActionQuote;
   Map<String, int> _draftPersonNames = const <String, int>{};
@@ -1237,10 +1300,36 @@ class _WebReaderState extends State<WebReader> {
   late final Map<String, int> _nativePersonFirst = _readNativePersonFirst();
   late final Map<int, List<_WebPersonMention>> _nativePersonMentions =
       _readNativePersonMentions();
-  ({int chapter, double fraction})? _returnPosition;
+  ({int chapter, double fraction})? get _returnPosition {
+    final int? chapter = widget.state.returnChapter;
+    final double? fraction = widget.state.returnFraction;
+    if (chapter == null ||
+        fraction == null ||
+        chapter < 0 ||
+        chapter >= _chapters.length) {
+      return null;
+    }
+    return (chapter: chapter, fraction: fraction);
+  }
+
+  set _returnPosition(({int chapter, double fraction})? value) {
+    widget.state.returnChapter = value?.chapter;
+    widget.state.returnFraction = value?.fraction;
+    if (value == null) widget.state.returnOffset = null;
+  }
+
+  void _rememberPosition() {
+    if (_returnPosition != null) return;
+    _returnPosition = (chapter: _chapter, fraction: _fraction);
+    widget.state.returnOffset = _readingSourceOffset();
+    // Persist the return anchor before scroll-mode seeks enter their debounce.
+    unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
+  }
+
   double? _seekPreview;
   late int _chapter;
   int? _jumpBlock;
+  int? _jumpOffset;
 
   List<Json> get _chapters => widget.book.chapters;
   List<Json> get _blocks => widget.book.blocks;
@@ -1263,7 +1352,7 @@ class _WebReaderState extends State<WebReader> {
     html.window.addEventListener('wheel', _domWheel, true);
     if (!_prefs.pageMode) {
       WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _restoreFraction(widget.state.fraction),
+        (_) => _restoreFraction(widget.state.fraction, epoch: 0),
       );
     }
   }
@@ -1483,46 +1572,108 @@ class _WebReaderState extends State<WebReader> {
     });
   }
 
-  Future<void> _restoreFraction(double fraction) async {
-    if (!mounted) return;
-    // Lay out the selected chapter first. A second frame accounts for fonts.
+  int? _readingSourceOffset() {
+    if (_prefs.pageMode) {
+      final anchor = _pageSourceAnchor();
+      return anchor == null || anchor.block < 0
+          ? null
+          : (_blocks[anchor.block]['o'] as num).toInt() + anchor.offset;
+    }
+    final List<SourceSlice> slices = _visibleSourceSlices();
+    return slices.isEmpty ? null : slices.first.start;
+  }
+
+  RenderParagraph? _sourceParagraph(int block) {
+    final RenderObject? root = _blockKeys[block]?.currentContext
+        ?.findRenderObject();
+    RenderParagraph? result;
+    void visit(RenderObject node) {
+      if (node is RenderParagraph) {
+        result ??= node;
+      } else {
+        node.visitChildren(visit);
+      }
+    }
+
+    if (root != null) visit(root);
+    return result;
+  }
+
+  Future<void> _restoreFraction(double fraction, {required int epoch}) async {
+    if (!mounted || epoch != _navigationEpoch) return;
     await WidgetsBinding.instance.endOfFrame;
-    if (!mounted || !_scroll.hasClients) return;
-    final int? jumpBlock = _jumpBlock;
-    final BuildContext? target = jumpBlock == null
-        ? null
-        : _blockKeys[jumpBlock]?.currentContext;
-    if (target != null && target.mounted) {
-      await Scrollable.ensureVisible(
-        target,
-        duration: const Duration(milliseconds: 250),
-        alignment: 0.12,
+    if (!mounted ||
+        epoch != _navigationEpoch ||
+        !_scroll.hasClients ||
+        _prefs.pageMode) {
+      return;
+    }
+    final int? source = _jumpOffset;
+    int? block = _jumpBlock;
+    if (source != null) {
+      final int found = _blocks.lastIndexWhere(
+        (Json raw) => ((raw['o'] as num?)?.toInt() ?? 0) <= source,
       );
-    } else {
+      if (found >= 0) block = found;
+    }
+    final RenderParagraph? paragraph = block == null
+        ? null
+        : _sourceParagraph(block);
+    if (source != null &&
+        block != null &&
+        paragraph != null &&
+        paragraph.hasSize) {
+      final Json raw = _blocks[block];
+      final int offset = (source - (raw['o'] as num).toInt()).clamp(
+        0,
+        '${raw['t'] ?? ''}'.length,
+      );
+      final Offset caret = paragraph.getOffsetForCaret(
+        TextPosition(offset: offset + (raw['k'] == 'p' ? 2 : 0)),
+        Rect.zero,
+      );
+      final double top = MediaQuery.paddingOf(context).top + 58;
       _scroll.jumpTo(
-        (_scroll.position.maxScrollExtent * fraction).clamp(
+        (_scroll.offset + paragraph.localToGlobal(caret).dy - top).clamp(
           0.0,
           _scroll.position.maxScrollExtent,
         ),
       );
+    } else {
+      final BuildContext? target = block == null
+          ? null
+          : _blockKeys[block]?.currentContext;
+      if (target != null && target.mounted) {
+        // Instant positioning cannot keep animating after a newer navigation.
+        await Scrollable.ensureVisible(target, alignment: 0.12);
+      } else {
+        _scroll.jumpTo(
+          (_scroll.position.maxScrollExtent * fraction).clamp(
+            0.0,
+            _scroll.position.maxScrollExtent,
+          ),
+        );
+      }
     }
+    if (!mounted || epoch != _navigationEpoch) return;
     _jumpBlock = null;
+    _jumpOffset = null;
     _restoring = false;
-    // The first layout has no RenderBoxes from which scroll mode can derive
-    // its spoiler cutoff. Refresh links once those boxes have been laid out.
-    if (mounted && !_prefs.pageMode) setState(() {});
+    widget.state.fraction = _fraction;
+    _queueSave();
+    setState(() {});
   }
 
   void _go(
     int chapter, {
     double fraction = 0,
     int? block,
+    int? sourceOffset,
     bool remember = false,
   }) {
     if (chapter < 0 || chapter >= _chapters.length) return;
-    if (remember && _returnPosition == null) {
-      _returnPosition = (chapter: _chapter, fraction: _fraction);
-    }
+    if (remember) _rememberPosition();
+    final int epoch = ++_navigationEpoch;
     _selectionCaptureTimer?.cancel();
     _selectionTimer?.cancel();
     _pageTapTimer?.cancel();
@@ -1530,6 +1681,7 @@ class _WebReaderState extends State<WebReader> {
     _saveTimer?.cancel();
     _restoring = true;
     _jumpBlock = block;
+    _jumpOffset = sourceOffset;
     _seekPreview = null;
     _blockKeys.clear();
     _pageLayoutKey = null;
@@ -1547,7 +1699,7 @@ class _WebReaderState extends State<WebReader> {
     unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
     if (!_prefs.pageMode) {
       WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _restoreFraction(fraction),
+        (_) => _restoreFraction(fraction, epoch: epoch),
       );
     }
   }
@@ -1555,8 +1707,27 @@ class _WebReaderState extends State<WebReader> {
   void _returnToReadingPosition() {
     final ({int chapter, double fraction})? target = _returnPosition;
     if (target == null) return;
+    final int? source = widget.state.returnOffset;
     _returnPosition = null;
-    _go(target.chapter, fraction: target.fraction);
+    final VoidCallback? reopen = _returnToAsk;
+    _returnToAsk = null;
+    _go(target.chapter, fraction: target.fraction, sourceOffset: source);
+    final int epoch = _navigationEpoch;
+    if (reopen != null) {
+      Future<void> reopenWhenPositioned() async {
+        await WidgetsBinding.instance.endOfFrame;
+        if (!mounted || epoch != _navigationEpoch) return;
+        if (_restoring) {
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => reopenWhenPositioned(),
+          );
+        } else {
+          reopen();
+        }
+      }
+
+      unawaited(reopenWhenPositioned());
+    }
   }
 
   void _selectionChanged(SelectedContent? content) {
@@ -1594,8 +1765,8 @@ class _WebReaderState extends State<WebReader> {
     });
   }
 
-  String _boundedSelection(String text) =>
-      text.length > 1500 ? text.substring(0, 1500) : text;
+  // Keep the original selection intact; Ask validates length explicitly.
+  String _boundedSelection(String text) => text;
 
   String? _browserSelectionText() {
     final html.Selection? selection = html.window.getSelection();
@@ -1652,7 +1823,7 @@ class _WebReaderState extends State<WebReader> {
       if (next == _pageIndex) return;
       final int direction = next > _pageIndex ? 1 : -1;
       setState(() {
-        _returnPosition ??= (chapter: _chapter, fraction: _fraction);
+        _rememberPosition();
         _reflowAnchor = null;
         _pageIndex = next;
         _turnDirection = direction;
@@ -1665,7 +1836,7 @@ class _WebReaderState extends State<WebReader> {
     if ((fraction - _fraction).abs() < 0.001) return;
     if (!_scroll.hasClients || _scroll.position.maxScrollExtent <= 0) return;
     setState(() {
-      _returnPosition ??= (chapter: _chapter, fraction: _fraction);
+      _rememberPosition();
     });
     _scroll.jumpTo(_scroll.position.maxScrollExtent * fraction);
   }
@@ -1699,6 +1870,7 @@ class _WebReaderState extends State<WebReader> {
       widget.state.toJson(),
     );
     final int cutoff = _visibleCutoffOffset();
+    final int epoch = _navigationEpoch;
     _openingPanel = true;
     _saveTimer?.cancel();
     try {
@@ -1715,6 +1887,23 @@ class _WebReaderState extends State<WebReader> {
       await Navigator.of(
         context,
       ).push<void>(MaterialPageRoute<void>(builder: (_) => builder(reading)));
+      if (!mounted) return;
+      final WebReadingState latest = await widget.library.state(
+        widget.book.meta.id,
+      );
+      if (!mounted || epoch != _navigationEpoch) return;
+      widget.state.items
+        ..clear()
+        ..addAll(latest.items);
+      widget.state.returnChapter = latest.returnChapter;
+      widget.state.returnFraction = latest.returnFraction;
+      widget.state.returnOffset = latest.returnOffset;
+      if (latest.chapter != widget.state.chapter ||
+          latest.fraction != widget.state.fraction) {
+        _go(latest.chapter, fraction: latest.fraction);
+      } else {
+        setState(() {});
+      }
     } on Object {
       if (mounted && route?.isCurrent == true) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1738,6 +1927,11 @@ class _WebReaderState extends State<WebReader> {
         cutoffOffset: cutoff,
         focusPersonId: id,
         focusPersonName: name,
+        readingBuilder: (_, _) => WebReader(
+          book: widget.book,
+          state: reading,
+          library: widget.library,
+        ),
       ),
     );
     if (mounted) unawaited(_loadPersonPreparation());
@@ -1776,14 +1970,94 @@ class _WebReaderState extends State<WebReader> {
     return last;
   }
 
-  Future<void> _openAsk({String? selectedText}) async {
+  List<SourceSlice> _visibleSourceSlices() {
+    final List<SourceSlice> slices = <SourceSlice>[];
+    void add(int block, int start, int end) {
+      if (block < 0 || block >= _blocks.length) return;
+      final Json raw = _blocks[block];
+      if (raw['k'] != 'p' && raw['k'] != 'h') return;
+      final String text = '${raw['t'] ?? ''}';
+      start = start.clamp(0, text.length);
+      end = end.clamp(start, text.length);
+      if (start < end) {
+        slices.add(
+          SourceSlice(
+            text: text.substring(start, end),
+            start: (raw['o'] as num).toInt() + start,
+          ),
+        );
+      }
+    }
+
+    if (_prefs.pageMode && _pages.isNotEmpty) {
+      for (final _WebPageFragment fragment in _pages[_pageIndex]) {
+        add(fragment.block, fragment.sourceStart, fragment.sourceEnd);
+      }
+    } else {
+      final double top = MediaQuery.paddingOf(context).top + 58;
+      final double bottom =
+          MediaQuery.sizeOf(context).height -
+          MediaQuery.paddingOf(context).bottom -
+          (_controls ? 168 : 70);
+      for (final MapEntry<int, GlobalKey> entry in _blockKeys.entries) {
+        final RenderObject? root = entry.value.currentContext
+            ?.findRenderObject();
+        RenderParagraph? paragraph;
+        void visit(RenderObject node) {
+          if (node is RenderParagraph) {
+            paragraph = node;
+            return;
+          }
+          node.visitChildren(visit);
+        }
+
+        if (root == null) continue;
+        visit(root);
+        final RenderParagraph? render = paragraph;
+        if (render == null || !render.hasSize) continue;
+        final double y = render.localToGlobal(Offset.zero).dy;
+        if (y >= bottom || y + render.size.height <= top) continue;
+        final String text = '${_blocks[entry.key]['t'] ?? ''}';
+        final int indent = _blocks[entry.key]['k'] == 'p' ? 2 : 0;
+        final int start = y >= top
+            ? 0
+            : render.getPositionForOffset(Offset(0, top - y)).offset - indent;
+        final int end = y + render.size.height <= bottom
+            ? text.length
+            : render.getPositionForOffset(Offset(0, bottom - y)).offset -
+                  indent;
+        add(entry.key, start, end);
+      }
+    }
+    return slices;
+  }
+
+  Future<void> _openAsk({
+    String? selectedText,
+    SourceSelection? restoredSelection,
+    bool restoreDraft = false,
+  }) async {
     final int safeBlock = _askCutoffBlockExclusive();
+    final SourceSelection? selected = restoreDraft && restoredSelection != null
+        ? restoredSelection
+        : selectedText == null
+        ? null
+        : resolveSourceSelection(selectedText, _visibleSourceSlices());
+    if (selectedText?.trim().isNotEmpty == true && selected == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('这段选文的位置不够明确，请缩小选择范围后再问书。')));
+      return;
+    }
     await _openReaderPanel(
       (WebReadingState reading) => WebAskPanel(
         book: widget.book,
         chapterIndex: reading.chapter,
         cutoffBlockExclusive: safeBlock,
-        selectedText: selectedText,
+        selectedText: selected?.text,
+        selectedStart: selected?.start,
+        selectedEnd: selected?.end,
+        restoreDraft: restoreDraft,
         onCitationTap: (int blockIndex) {
           final int targetChapter = _chapters.indexWhere((Json chapter) {
             final int start = (chapter['b0'] as num?)?.toInt() ?? 0;
@@ -1791,6 +2065,11 @@ class _WebReaderState extends State<WebReader> {
             return start <= blockIndex && blockIndex < end;
           });
           if (targetChapter < 0) return;
+          _returnToAsk = () => _openAsk(
+            selectedText: selected?.text,
+            restoredSelection: selected,
+            restoreDraft: true,
+          );
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
@@ -2176,160 +2455,26 @@ class _WebReaderState extends State<WebReader> {
   }
 
   void _searchSheet() {
-    final TextEditingController search = TextEditingController();
-    final int readBlockExclusive = _askCutoffBlockExclusive();
-    bool wholeBook = false;
-    List<({int chapter, int block, String snippet})> results = const [];
+    final int cutoff = _visibleCutoffOffset();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       constraints: const BoxConstraints(maxWidth: 720),
-      builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter update) {
-          void run(String value) {
-            final String query = value.trim().toLowerCase();
-            if (query.isEmpty) {
-              update(() => results = const []);
-              return;
-            }
-            final List<({int chapter, int block, String snippet})> found = [];
-            final int limit = wholeBook ? _blocks.length : readBlockExclusive;
-            for (int ci = 0; ci < _chapters.length && found.length < 80; ci++) {
-              final Json chapter = _chapters[ci];
-              for (
-                int bi = (chapter['b0'] as num).toInt();
-                bi < (chapter['b1'] as num).toInt() &&
-                    bi < limit &&
-                    found.length < 80;
-                bi++
-              ) {
-                final String body = '${_blocks[bi]['t'] ?? ''}';
-                final int at = body.toLowerCase().indexOf(query);
-                if (at < 0) continue;
-                final int start = math.max(0, at - 24);
-                final int end = math.min(body.length, at + query.length + 50);
-                found.add((
-                  chapter: ci,
-                  block: bi,
-                  snippet: body.substring(start, end),
-                ));
-              }
-            }
-            update(() => results = found);
-          }
-
-          return SafeArea(
-            child: Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewInsetsOf(context).bottom,
-              ),
-              child: SizedBox(
-                height: math.min(
-                  math.max(
-                        0,
-                        MediaQuery.sizeOf(context).height -
-                            MediaQuery.viewInsetsOf(context).bottom -
-                            MediaQuery.paddingOf(context).vertical,
-                      ) *
-                      0.88,
-                  700,
-                ),
-                child: ListView(
-                  children: <Widget>[
-                    _sheetHeader(context, '搜索正文'),
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: TextField(
-                        controller: search,
-                        autofocus: true,
-                        onChanged: run,
-                        decoration: InputDecoration(
-                          prefixIcon: const Icon(Icons.search),
-                          labelText: '搜索读到这里的正文',
-                          suffixIcon: search.text.isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: '清空正文搜索',
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    search.clear();
-                                    run('');
-                                  },
-                                ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Wrap(
-                            spacing: 8,
-                            children: <Widget>[
-                              ChoiceChip(
-                                label: const Text('读到这里'),
-                                selected: !wholeBook,
-                                onSelected: (_) {
-                                  if (!wholeBook) return;
-                                  update(() => wholeBook = false);
-                                  run(search.text);
-                                },
-                              ),
-                              ChoiceChip(
-                                label: const Text('全书'),
-                                selected: wholeBook,
-                                onSelected: (_) {
-                                  if (wholeBook) return;
-                                  update(() => wholeBook = true);
-                                  run(search.text);
-                                },
-                              ),
-                            ],
-                          ),
-                          if (wholeBook)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 6),
-                              child: Text('会搜到还没读的内容'),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (search.text.trim().isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('输入人物、地点或一句话', textAlign: TextAlign.center),
-                      )
-                    else if (results.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          wholeBook ? '全书没有找到' : '读到这里没有找到。可以选择全书搜索。',
-                          textAlign: TextAlign.center,
-                        ),
-                      )
-                    else
-                      for (final row in results)
-                        ListTile(
-                          title: Text(
-                            row.snippet,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(_safeChapterTitle(row.chapter)),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _go(row.chapter, block: row.block, remember: true);
-                          },
-                        ),
-                  ],
-                ),
-              ),
-            ),
+      builder: (BuildContext sheetContext) => WebReaderSearch(
+        book: widget.book,
+        cutoff: cutoff,
+        chapterTitle: _safeChapterTitle,
+        onHit: (hit) {
+          Navigator.pop(sheetContext);
+          _go(
+            hit.chapter,
+            block: hit.block,
+            sourceOffset: hit.start,
+            remember: true,
           );
         },
       ),
-    ).whenComplete(search.dispose);
+    );
   }
 
   void _typographySheet() {
@@ -2341,6 +2486,8 @@ class _WebReaderState extends State<WebReader> {
         builder: (BuildContext context, StateSetter update) {
           void change(void Function() action) {
             final double fraction = _fraction;
+            final int? source = _readingSourceOffset();
+            final int epoch = ++_navigationEpoch;
             final bool wasPageMode = _prefs.pageMode;
             update(action);
             widget.state.fraction = fraction;
@@ -2351,12 +2498,13 @@ class _WebReaderState extends State<WebReader> {
               _pageIndex = 0;
             }
             _restoring = true;
+            _jumpOffset = source;
             setState(() {});
             _prefs.save();
             _queueSave();
             if (!_prefs.pageMode) {
               WidgetsBinding.instance.addPostFrameCallback(
-                (_) => _restoreFraction(fraction),
+                (_) => _restoreFraction(fraction, epoch: epoch),
               );
             }
           }
@@ -3033,18 +3181,32 @@ class _WebReaderState extends State<WebReader> {
     return alt is String && alt.trim().isNotEmpty ? alt : null;
   }
 
+  Widget _bookImage(Json block, String? encoded, TextStyle style) {
+    if (encoded == null) return Center(child: Text('[图片未保存]', style: style));
+    try {
+      final MemoryImage image = MemoryImage(base64Decode(encoded));
+      final String? label = _imageSemanticLabel(block);
+      return InkWell(
+        onTap: () => openReaderImage(context, image, label: label),
+        child: Image(
+          image: image,
+          fit: BoxFit.contain,
+          semanticLabel: label,
+          errorBuilder: (_, _, _) =>
+              Center(child: Text('图片无法加载', style: style)),
+        ),
+      );
+    } on FormatException {
+      return Center(child: Text('图片无法加载', style: style));
+    }
+  }
+
   Widget _paragraph(int index, TextStyle style, int cutoff) {
     final Json block = _blocks[index];
     final String kind = '${block['k'] ?? 'p'}';
     if (kind == 'img') {
       final String? encoded = widget.book.images['${block['src']}'];
-      return encoded == null
-          ? Text('[图片未保存]', style: style.copyWith(color: _prefs.muted))
-          : Image.memory(
-              base64Decode(encoded),
-              fit: BoxFit.contain,
-              semanticLabel: _imageSemanticLabel(block),
-            );
+      return _bookImage(block, encoded, style.copyWith(color: _prefs.muted));
     }
     final String text = '${block['t'] ?? ''}';
     if (kind == 'h') {
@@ -3423,7 +3585,17 @@ class _WebReaderState extends State<WebReader> {
     final anchor = _reflowAnchor ?? _pageSourceAnchor();
     _pages = _paginate(width, height, bodyStyle);
     int target = -1;
-    if (_jumpBlock != null) {
+    if (_jumpOffset != null) {
+      target = _pages.indexWhere(
+        (List<_WebPageFragment> page) => page.any((fragment) {
+          if (fragment.block < 0) return false;
+          final int origin = (_blocks[fragment.block]['o'] as num).toInt();
+          return origin + fragment.sourceStart <= _jumpOffset! &&
+              _jumpOffset! < origin + fragment.sourceEnd;
+        }),
+      );
+    }
+    if (target < 0 && _jumpBlock != null) {
       target = _pages.indexWhere(
         (List<_WebPageFragment> page) => page.any(
           (_WebPageFragment fragment) => fragment.block == _jumpBlock,
@@ -3453,6 +3625,7 @@ class _WebReaderState extends State<WebReader> {
       _queueSave();
     }
     _jumpBlock = null;
+    _jumpOffset = null;
     _pageLayoutKey = key;
     _restoring = false;
   }
@@ -3712,13 +3885,7 @@ class _WebReaderState extends State<WebReader> {
           widget.book.images['${_blocks[fragment.block]['src']}'];
       return SizedBox(
         height: fragment.height,
-        child: encoded == null
-            ? Center(child: Text('[图片未保存]', style: body))
-            : Image.memory(
-                base64Decode(encoded),
-                fit: BoxFit.contain,
-                semanticLabel: _imageSemanticLabel(_blocks[fragment.block]),
-              ),
+        child: _bookImage(_blocks[fragment.block], encoded, body),
       );
     }
     final TextStyle style = _fragmentStyle(fragment, body);

@@ -5,6 +5,7 @@ publish_to: none
 environment:
   sdk: '>=3.7.0 <4.0.0'
 dependencies:
+  characters: ^1.4.0
   archive: ^4.3.0
   crypto: ^3.0.7
   enough_convert: ^1.6.0

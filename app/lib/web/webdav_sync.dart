@@ -11,6 +11,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../ui/theme.dart';
+import '../data/restore_report.dart';
 import 'web_storage.dart';
 
 const int _maxSnapshotBytes = 144 * 1024 * 1024;
@@ -261,10 +262,17 @@ class WebDavClient {
 }
 
 class WebDavSyncPage extends StatefulWidget {
-  const WebDavSyncPage({super.key, required this.library, required this.books});
+  const WebDavSyncPage({
+    super.key,
+    required this.library,
+    required this.books,
+    this.clientFactory,
+  });
 
   final WebLibrary library;
   final List<WebBookMeta> books;
+  final WebDavClient Function(String url, String username, String password)?
+  clientFactory;
 
   @override
   State<WebDavSyncPage> createState() => _WebDavSyncPageState();
@@ -280,6 +288,8 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
   String? _error;
   String? _activity;
   bool _busy = false;
+  bool _committing = false;
+  int _operation = 0;
   int _sent = 0;
   int _total = 0;
 
@@ -296,7 +306,48 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
   }
 
   WebDavClient _connection() {
-    return _client ??= WebDavClient(_url.text, _username.text, _password.text);
+    return _client ??=
+        widget.clientFactory?.call(_url.text, _username.text, _password.text) ??
+        WebDavClient(_url.text, _username.text, _password.text);
+  }
+
+  void _checkCurrent(WebDavClient client) {
+    if (!mounted || !identical(_client, client)) {
+      throw const WebDavException('WebDAV 操作已取消。');
+    }
+  }
+
+  Future<void> _cancel({bool leave = false}) async {
+    if (!_busy || _committing) return;
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(leave ? '停止当前任务并离开？' : '停止当前 WebDAV 任务？'),
+        content: const Text(
+          '停止等待与传输，不再导入本地资料。已经到达服务器的上传可能仍会完成；再次上传前，请重新列出快照以免重复。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('继续任务'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('停止任务'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || _committing) return;
+    _operation++;
+    _client?.dispose();
+    _client = null;
+    setState(() {
+      _busy = false;
+      _activity = '已停止等待；本地未导入。若正在上传，请重新列出远端快照确认结果。';
+      _error = null;
+    });
+    if (leave) Navigator.of(context).pop();
   }
 
   Future<void> _run(
@@ -304,6 +355,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     Future<void> Function(WebDavClient client) action,
   ) async {
     if (_busy) return;
+    final int operation = ++_operation;
     setState(() {
       _busy = true;
       _activity = activity;
@@ -314,7 +366,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     try {
       await action(_connection());
     } on Object catch (error) {
-      if (mounted) {
+      if (mounted && operation == _operation) {
         setState(
           () => _error = error is WebDavException
               ? error.message
@@ -326,10 +378,11 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         );
       }
     } finally {
-      if (mounted) {
+      if (mounted && operation == _operation) {
         setState(() {
           _busy = false;
-          _activity = null;
+          _committing = false;
+          if (_error != null) _activity = '任务未完成';
         });
       }
     }
@@ -337,17 +390,24 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
 
   Future<void> _list() => _run('读取远端快照', (WebDavClient client) async {
     final List<WebDavSnapshot> snapshots = await client.list();
-    if (mounted) setState(() => _snapshots = snapshots);
+    _checkCurrent(client);
+    setState(() {
+      _snapshots = snapshots;
+      _activity = snapshots.isEmpty
+          ? '云端文件夹中没有快照。'
+          : '找到 ${snapshots.length} 个快照。点击可校验并预览。';
+    });
   });
 
   Future<void> _upload() => _run('上传新的完整备份', (WebDavClient client) async {
     final String? id = _selectedBook;
     if (id == null) throw const WebDavException('请先选择本地书籍。');
     final Uint8List bytes = await widget.library.exportBackupBytes(id);
+    _checkCurrent(client);
     final WebDavSnapshot uploaded = await client.upload(
       bytes,
       onProgress: (int sent, int total) {
-        if (mounted) {
+        if (mounted && identical(_client, client)) {
           setState(() {
             _sent = sent;
             _total = total;
@@ -355,11 +415,12 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         }
       },
     );
-    if (!mounted) return;
+    _checkCurrent(client);
     setState(() {
       _snapshots = <WebDavSnapshot>[uploaded, ..._snapshots];
       _activity = '已上传新快照 ${uploaded.name}；远端旧快照未被覆盖。';
     });
+    if (!mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('已上传独立快照；旧版本仍保留在 WebDAV。')));
@@ -369,29 +430,32 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     WebDavClient client,
   ) async {
     final Uint8List bytes = await client.download(snapshot);
-    if (mounted) setState(() => _activity = '校验远端快照');
-    final Object? decoded = jsonDecode(utf8.decode(bytes));
-    if (decoded is! Json) {
-      throw const WebDavException('远端文件不是页读书籍备份，未导入。');
+    _checkCurrent(client);
+    setState(() => _activity = '校验远端快照');
+    final BackupSummary summary = BackupSummary.read(
+      bytes,
+      fallback: snapshot.name,
+    );
+    String? previewError;
+    try {
+      await widget.library.importBackup(bytes, previewOnly: true);
+    } on Object catch (error) {
+      previewError = error is WebBackupConflict
+          ? error.message
+          : error is FormatException
+          ? '远端文件格式或编码无效。'
+          : '无法校验，请检查浏览器存储空间。';
     }
-    final String format = '${decoded['format'] ?? ''}';
-    final Json? meta = decoded['meta'] is Json ? decoded['meta'] as Json : null;
-    final Json? book = decoded['book'] is Json ? decoded['book'] as Json : null;
-    if (format != 'thusfar-web-backup-v1' && format != 'yedu-book/2') {
-      throw const WebDavException('远端文件不是受支持的页读单书备份，未导入。');
-    }
-    final String title = format == 'yedu-book/2'
-        ? '${book?['title'] ?? '未命名书籍'}'
-        : '${meta?['title'] ?? '未命名书籍'}';
-    if (!mounted) return;
+    _checkCurrent(client);
     setState(() => _activity = '等待确认');
+    if (!mounted) return;
     final String? choice = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
         title: const Text('远端书籍快照'),
         content: Text(
-          '$title\n${snapshot.label}\n${(bytes.length / (1024 * 1024)).toStringAsFixed(1)} MB\n\n'
-          '导入会核对内容。同一本书只合并可兼容的阅读记录与整理结果；冲突的原文或资料不会覆盖本地。',
+          '${summary.title}\n${summary.exported == null ? snapshot.label : summary.dateLabel}\n${summary.sizeLabel}\n\n'
+          '${previewError ?? '校验通过。同一本书只合并兼容的阅读记录与整理结果；确认前不会修改本地。'}',
         ),
         actions: <Widget>[
           TextButton(
@@ -402,13 +466,15 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
             onPressed: () => Navigator.pop(context, 'download'),
             child: const Text('另存文件'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, 'import'),
-            child: const Text('导入到此浏览器'),
-          ),
+          if (previewError == null)
+            FilledButton(
+              onPressed: () => Navigator.pop(context, 'import'),
+              child: const Text('导入到此浏览器'),
+            ),
         ],
       ),
     );
+    _checkCurrent(client);
     if (choice == 'download') {
       final html.Blob blob = html.Blob(<Object>[bytes], 'application/json');
       final String url = html.Url.createObjectUrlFromBlob(blob);
@@ -421,14 +487,22 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         const Duration(seconds: 2),
         () => html.Url.revokeObjectUrl(url),
       );
+      setState(() => _activity = '已请求浏览器另存快照，请检查下载列表。');
     } else if (choice == 'import') {
-      if (mounted) setState(() => _activity = '合并本地资料');
+      setState(() {
+        _committing = true;
+        _activity = '正在合并本地资料，完成后可离开';
+      });
       await widget.library.importBackup(bytes);
+      _checkCurrent(client);
+      setState(() => _activity = '快照已导入，可继续阅读。');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('快照已导入；本地原书和记录已安全保留或合并。')));
       }
+    } else {
+      setState(() => _activity = '已取消导入，本地书籍未改动。');
     }
   });
 
@@ -445,140 +519,162 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    return Scaffold(
-      backgroundColor: t.paper,
-      appBar: AppBar(title: const Text('WebDAV 快照')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 20, 18, 36),
-            children: <Widget>[
-              Text(
-                '手动上传和导入完整书籍快照',
-                style: TextStyle(
-                  color: t.ink,
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '上传会把书籍正文、图片、阅读记录和已有整理结果发送到你填写的 WebDAV 文件夹。每次生成新文件，旧版本保留；关闭页面后不会自动同步。',
-                style: TextStyle(color: t.ink2, height: 1.5),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _url,
-                enabled: !_busy,
-                keyboardType: TextInputType.url,
-                decoration: const InputDecoration(
-                  labelText: 'WebDAV 文件夹 HTTPS 地址（以 / 结尾）',
-                  hintText: 'https://example.com/dav/books/',
-                ),
-                onChanged: (_) => _invalidateConnection(),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _username,
-                enabled: !_busy,
-                autocorrect: false,
-                decoration: const InputDecoration(labelText: '用户名'),
-                onChanged: (_) => _invalidateConnection(),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _password,
-                enabled: !_busy,
-                obscureText: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: const InputDecoration(labelText: '密码或应用专用密码'),
-                onChanged: (_) => _invalidateConnection(),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '凭据只留在此页面内存，不进入备份或浏览器存储。浏览器直连要求 WebDAV 服务允许本网页跨域访问；若服务端不允许，请使用安装版或手动下载备份。',
-                style: TextStyle(color: t.ink2, fontSize: 12, height: 1.5),
-              ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                isExpanded: true,
-                value: _selectedBook,
-                decoration: const InputDecoration(labelText: '本地要上传的书'),
-                items: <DropdownMenuItem<String>>[
-                  for (final WebBookMeta book in widget.books)
-                    DropdownMenuItem<String>(
-                      value: book.id,
-                      child: Text(book.title, overflow: TextOverflow.ellipsis),
-                    ),
-                ],
-                onChanged: _busy
-                    ? null
-                    : (String? value) => setState(() => _selectedBook = value),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 8,
-                children: <Widget>[
-                  FilledButton.icon(
-                    onPressed: _busy || _selectedBook == null ? null : _upload,
-                    icon: const Icon(Icons.cloud_upload_outlined),
-                    label: const Text('上传新快照'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: _busy ? null : _list,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('列出远端快照'),
-                  ),
-                ],
-              ),
-              if (_busy) ...<Widget>[
-                const SizedBox(height: 15),
-                LinearProgressIndicator(
-                  value: _total > 0 ? (_sent / _total).clamp(0.0, 1.0) : null,
-                ),
-                const SizedBox(height: 6),
+    return PopScope<void>(
+      canPop: !_busy,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _busy) _cancel(leave: true);
+      },
+      child: Scaffold(
+        backgroundColor: t.paper,
+        appBar: AppBar(title: const Text('WebDAV 快照')),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 36),
+              children: <Widget>[
                 Text(
-                  _total > 0
-                      ? '$_activity · $_sent / $_total 字节'
-                      : (_activity ?? '处理中…'),
-                  style: TextStyle(color: t.ink2, fontSize: 12),
-                ),
-              ],
-              if (_error != null) ...<Widget>[
-                const SizedBox(height: 15),
-                Text(_error!, style: TextStyle(color: t.danger, height: 1.5)),
-              ],
-              const SizedBox(height: 26),
-              Text(
-                '远端快照  ${_snapshots.length}',
-                style: TextStyle(
-                  color: t.ink,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if (_snapshots.isEmpty)
-                Text(
-                  '先点击“列出远端快照”。如果文件夹为空，这里不会显示书籍。',
-                  style: TextStyle(color: t.ink2),
-                )
-              else
-                for (final WebDavSnapshot snapshot in _snapshots)
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.history_edu_outlined),
-                      title: Text(snapshot.label),
-                      subtitle: Text(snapshot.name),
-                      trailing: const Icon(Icons.chevron_right),
-                      enabled: !_busy,
-                      onTap: _busy ? null : () => _openSnapshot(snapshot),
-                    ),
+                  '手动上传和导入完整书籍快照',
+                  style: TextStyle(
+                    color: t.ink,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w700,
                   ),
-            ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '上传会把书籍正文、图片、阅读记录和已有整理结果发送到你填写的 WebDAV 文件夹。每次生成新文件，旧版本保留；关闭页面后不会自动同步。',
+                  style: TextStyle(color: t.ink2, height: 1.5),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _url,
+                  enabled: !_busy,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'WebDAV 文件夹 HTTPS 地址（以 / 结尾）',
+                    hintText: 'https://example.com/dav/books/',
+                  ),
+                  onChanged: (_) => _invalidateConnection(),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _username,
+                  enabled: !_busy,
+                  autocorrect: false,
+                  decoration: const InputDecoration(labelText: '用户名'),
+                  onChanged: (_) => _invalidateConnection(),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _password,
+                  enabled: !_busy,
+                  obscureText: true,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: const InputDecoration(labelText: '密码或应用专用密码'),
+                  onChanged: (_) => _invalidateConnection(),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '凭据只留在此页面内存，不进入备份或浏览器存储。浏览器直连要求 WebDAV 服务允许本网页跨域访问；若服务端不允许，请使用安装版或手动下载备份。',
+                  style: TextStyle(color: t.ink2, fontSize: 12, height: 1.5),
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  isExpanded: true,
+                  value: _selectedBook,
+                  decoration: const InputDecoration(labelText: '本地要上传的书'),
+                  items: <DropdownMenuItem<String>>[
+                    for (final WebBookMeta book in widget.books)
+                      DropdownMenuItem<String>(
+                        value: book.id,
+                        child: Text(
+                          book.title,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: _busy
+                      ? null
+                      : (String? value) =>
+                            setState(() => _selectedBook = value),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: <Widget>[
+                    FilledButton.icon(
+                      onPressed: _busy || _selectedBook == null
+                          ? null
+                          : _upload,
+                      icon: const Icon(Icons.cloud_upload_outlined),
+                      label: const Text('上传新快照'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _busy ? null : _list,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('列出远端快照'),
+                    ),
+                  ],
+                ),
+                if (_busy) ...<Widget>[
+                  const SizedBox(height: 15),
+                  LinearProgressIndicator(
+                    value: _total > 0 ? (_sent / _total).clamp(0.0, 1.0) : null,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _total > 0
+                        ? '$_activity · $_sent / $_total 字节'
+                        : (_activity ?? '处理中…'),
+                    style: TextStyle(color: t.ink2, fontSize: 12),
+                  ),
+                ],
+                if (_busy)
+                  TextButton(
+                    onPressed: _committing ? null : _cancel,
+                    child: const Text('停止当前任务'),
+                  ),
+                if (!_busy && _activity != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(_activity!),
+                  ),
+                if (_error != null) ...<Widget>[
+                  const SizedBox(height: 15),
+                  Text(_error!, style: TextStyle(color: t.danger, height: 1.5)),
+                ],
+                const SizedBox(height: 26),
+                Text(
+                  '远端快照  ${_snapshots.length}',
+                  style: TextStyle(
+                    color: t.ink,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (_snapshots.isEmpty)
+                  Text(
+                    '先点击“列出远端快照”。如果文件夹为空，这里不会显示书籍。',
+                    style: TextStyle(color: t.ink2),
+                  )
+                else
+                  for (final WebDavSnapshot snapshot in _snapshots)
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.history_edu_outlined),
+                        title: Text(snapshot.label),
+                        subtitle: Text(snapshot.name),
+                        trailing: const Icon(Icons.chevron_right),
+                        enabled: !_busy,
+                        onTap: _busy ? null : () => _openSnapshot(snapshot),
+                      ),
+                    ),
+              ],
+            ),
           ),
         ),
       ),

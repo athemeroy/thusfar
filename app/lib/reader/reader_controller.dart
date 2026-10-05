@@ -7,6 +7,7 @@ import 'paginator.dart';
 /// Where the reader is, what they know there, and how to get back.
 class ReaderController extends ChangeNotifier {
   ReaderController({required this.library, required this.book}) {
+    returnTo = library.progressOf(book.id)?.returnTo;
     book.addListener(touch);
   }
 
@@ -30,6 +31,7 @@ class ReaderController extends ChangeNotifier {
 
   /// Offset to return to after a jump (「↩ 回到第 9 页」).
   int? returnTo;
+  bool returnToAsk = false;
   (int, int)? selection;
   (int, int)? flash;
   bool toolbar = false;
@@ -80,7 +82,13 @@ class ReaderController extends ChangeNotifier {
     page = next;
     selection = null;
     toolbar = false;
-    library.saveProgress(book.id, next.start, next.end, book.length);
+    library.saveProgress(
+      book.id,
+      next.start,
+      next.end,
+      book.length,
+      returnTo: returnTo,
+    );
     notifyListeners();
   }
 
@@ -97,13 +105,23 @@ class ReaderController extends ChangeNotifier {
     page = p.pages(c)[_anchorPage];
     flash = highlight;
     selection = null;
-    library.saveProgress(book.id, page!.start, page!.end, book.length);
+    library.saveProgress(
+      book.id,
+      page!.start,
+      page!.end,
+      book.length,
+      returnTo: returnTo,
+    );
     notifyListeners();
     return base;
   }
 
   void clearReturn() {
     returnTo = null;
+    returnToAsk = false;
+    if (page != null) {
+      library.saveProgress(book.id, start, cutoff, book.length, returnTo: null);
+    }
     notifyListeners();
   }
 
@@ -112,32 +130,32 @@ class ReaderController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Source selections stay on this page and in the textual block where the
-  /// gesture began. Off-page word expansion and cross-block drags are clipped.
+  /// A selection may cross textual paragraphs visible on this page. Source
+  /// offsets remain exact; hidden page tails and surrogate halves are excluded.
   void select((int, int)? range, {int? anchor}) {
     selection = null;
     if (range != null && page != null && start < cutoff) {
-      final int point = (anchor ?? range.$1).clamp(start, cutoff - 1);
-      final Block block = book.blocks[book.blockAt(point)];
-      if (block.kind == 'p' || block.kind == 'h') {
-        final int low = start > block.o ? start : block.o;
-        final int blockEnd = block.o + block.text.length;
-        final int high = cutoff < blockEnd ? cutoff : blockEnd;
-        if (low < high) {
-          int a = range.$1.clamp(low, high);
-          int z = range.$2.clamp(low, high);
-          bool splitsPair(int at) =>
-              at > block.o &&
-              at < blockEnd &&
-              block.text.codeUnitAt(at - block.o - 1) >= 0xd800 &&
-              block.text.codeUnitAt(at - block.o - 1) <= 0xdbff &&
-              block.text.codeUnitAt(at - block.o) >= 0xdc00 &&
-              block.text.codeUnitAt(at - block.o) <= 0xdfff;
-          // Include the full visible character when a drag lands inside an
-          // emoji; clip inward if the page itself ends inside that character.
-          if (splitsPair(a)) a += a > low ? -1 : 1;
-          if (splitsPair(z)) z += z < high ? 1 : -1;
-          if (a < z) selection = (a, z);
+      int a = range.$1.clamp(start, cutoff);
+      int z = range.$2.clamp(start, cutoff);
+      if (a < z) {
+        final Block first = book.blocks[book.blockAt(a)];
+        final Block last = book.blocks[book.blockAt(z - 1)];
+        bool splitsPair(int at, Block block) {
+          final int i = at - block.o;
+          return i > 0 &&
+              i < block.text.length &&
+              block.text.codeUnitAt(i - 1) >= 0xd800 &&
+              block.text.codeUnitAt(i - 1) <= 0xdbff &&
+              block.text.codeUnitAt(i) >= 0xdc00 &&
+              block.text.codeUnitAt(i) <= 0xdfff;
+        }
+
+        if (splitsPair(a, first)) a += a > start ? -1 : 1;
+        if (splitsPair(z, last)) z += z < cutoff ? 1 : -1;
+        if (a < z &&
+            (first.kind == 'p' || first.kind == 'h') &&
+            (last.kind == 'p' || last.kind == 'h')) {
+          selection = (a, z);
         }
       }
     }

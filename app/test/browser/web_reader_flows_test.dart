@@ -27,6 +27,10 @@ class _Library extends Fake implements WebLibrary {
   }
 
   @override
+  Future<WebReadingState> state(String id) async =>
+      WebReadingState.fromJson(reading?.toJson() ?? <String, Object?>{});
+
+  @override
   Future<Json?> loadPreparation(String id) async => null;
 
   @override
@@ -330,6 +334,62 @@ void main() {
       expect(find.text('Chapter 0'), findsWidgets);
     });
   }
+
+  testWidgets(
+    'citation jump restores the original source and retained Ask draft',
+    (tester) async {
+      final _Library library = _Library();
+      await open(tester, library);
+      final original = _visibleRanges(tester).first;
+      final VoidCallback action = await panelAction(tester, '问书');
+      action();
+      await tester.pumpAndSettle();
+      final WebAskPanel ask = tester.widget<WebAskPanel>(
+        find.byType(WebAskPanel),
+      );
+      final int cutoff = ask.cutoffBlockExclusive;
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('web-ask-input')),
+        'Keep my next question',
+      );
+      ask.onCitationTap!(0);
+      await tester.pumpAndSettle();
+      expect(find.byType(WebAskPanel), findsNothing);
+      expect(library.reading!.returnOffset, isNotNull);
+      expect(_visibleRanges(tester).first.block, 0);
+      await tester.tap(find.text('↩ 回到跳转前的位置'));
+      await tester.pumpAndSettle();
+      expect(find.byType(WebAskPanel), findsOneWidget);
+      expect(
+        tester
+            .widget<WebAskPanel>(find.byType(WebAskPanel))
+            .cutoffBlockExclusive,
+        cutoff,
+      );
+      expect(
+        tester
+            .widget<TextField>(
+              find.byKey(const ValueKey<String>('web-ask-input')),
+            )
+            .controller!
+            .text,
+        'Keep my next question',
+      );
+      expect(library.reading!.returnOffset, isNull);
+      // Dismissing the restored conversation exposes the same source page.
+      Navigator.of(tester.element(find.byType(WebAskPanel))).pop();
+      await tester.pumpAndSettle();
+      expect(
+        _visibleRanges(tester).any(
+          (range) =>
+              range.block == original.block &&
+              range.start <= original.start &&
+              original.start < range.end,
+        ),
+        isTrue,
+      );
+    },
+  );
 
   testWidgets('failed save is visible and panel can be retried', (
     tester,

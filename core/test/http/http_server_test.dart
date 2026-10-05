@@ -56,6 +56,8 @@ class OfflineAsk extends ask.AskService {
     ask.AskEvent? onEvent,
     ask.AskCancellation? cancellation,
     void Function()? onSettled,
+    List<ask.AskTurn> history = const <ask.AskTurn>[],
+    String? selectedText,
   }) async {
     onEvent?.call('stage', <String, Object?>{'text': '检索已读原文'});
     final Json result = <String, Object?>{
@@ -773,6 +775,42 @@ void main() {
       expect(process.connection, isNotNull);
       expect(next.connection!.localPort, process.connection!.localPort);
       expect(next.json, isA<List<Object?>>());
+    },
+  );
+
+  test(
+    'process persists an explicit bounded plan and rejects malformed scope',
+    () async {
+      await start(localMode: false);
+      final File metaFile = File('${data.path}/books/aq_complete/meta.json');
+      final Json plan = <String, Object?>{
+        'version': 1,
+        'scope': 'read',
+        'end_offset': 900,
+      };
+      final Reply process = await request(
+        'POST',
+        '/api/books/aq_complete/process',
+        json: <String, Object?>{'plan': plan},
+      );
+      expect(process.code, 200);
+      expect(
+        (jsonDecode(metaFile.readAsStringSync()) as Json)['preparation_plan'],
+        plan,
+      );
+      final String saved = metaFile.readAsStringSync();
+      for (final Object malformed in <Object>[
+        'all',
+        <String, Object?>{...plan, 'end_offset': 99999999},
+      ]) {
+        final Reply rejected = await request(
+          'POST',
+          '/api/books/aq_complete/process',
+          json: <String, Object?>{'plan': malformed},
+        );
+        expect(rejected.code, 400);
+        expect(metaFile.readAsStringSync(), saved);
+      }
     },
   );
 

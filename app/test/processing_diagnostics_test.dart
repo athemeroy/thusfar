@@ -16,6 +16,15 @@ void main() {
 
   tearDown(() => root.deleteSync(recursive: true));
 
+  test('bounded completion has its own pause explanation', () {
+    expect(
+      ProcessingDiagnostics.pauseReasonLabel(book, <String, Object?>{
+        'pause_reason': 'scope_complete',
+      }),
+      '本次范围已完成',
+    );
+  });
+
   test('file name is stable and does not include a book title', () {
     expect(
       ProcessingDiagnostics.fileName(DateTime(2026, 9, 27, 16, 8, 9)),

@@ -17,6 +17,11 @@ abstract class BookProcessing extends ChangeNotifier {
   Map<String, Object?> get health => const <String, Object?>{};
   Future<void> initialize();
   Future<void> startBook(BookEntry book);
+
+  /// Explicit bounded authorization. Older implementations must not silently
+  /// turn a limited request into an all-book run.
+  Future<void> startBookWithPlan(BookEntry book, Json plan) =>
+      Future<void>.error(UnsupportedError('当前整理器不支持范围，请更新后重试'));
   Future<void> pauseBook(BookEntry book);
 
   /// Used before changing a paid route: returns only when this book is idle.
@@ -203,7 +208,7 @@ class ProcessingController extends BookProcessing {
     notifyListeners();
   }
 
-  Future<void> _send(String operation, [BookEntry? book]) async {
+  Future<void> _send(String operation, [BookEntry? book, Json? plan]) async {
     if (_closing && operation != 'close') throw const llm.LLMError('整理任务正在停止');
     if (operation == 'close') {
       await _initializing;
@@ -219,12 +224,17 @@ class ProcessingController extends BookProcessing {
       'id': id,
       'operation': operation,
       if (book != null) 'book': book.id,
+      'plan': ?plan,
     });
     await done.future;
   }
 
   @override
   Future<void> startBook(BookEntry book) => _send('start', book);
+
+  @override
+  Future<void> startBookWithPlan(BookEntry book, Json plan) =>
+      _send('start', book, plan);
 
   @override
   Future<void> pauseBook(BookEntry book) => _send('pause', book);
@@ -326,7 +336,7 @@ Future<void> _processingIsolate(List<Object?> args) async {
         if (!settings.hasKey) {
           throw const llm.LLMError('还没有填写模型 API 密钥，请先到「模型设置」填写');
         }
-        await worker.startBook(root);
+        await worker.startBook(root, plan: message['plan'] as Json?);
       } else if (operation == 'pause' ||
           operation == 'pauseAndWait' ||
           operation == 'pauseBackgroundLimit' ||

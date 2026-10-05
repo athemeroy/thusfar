@@ -15,6 +15,8 @@ import 'package:thusfar_core/thusfar_core.dart' as knowledge;
 import 'package:thusfar_core/chapter_verdicts.dart' show titleCheckPending;
 
 import '../ui/theme.dart';
+import '../data/preparation_scope.dart';
+import 'web_preparation_activity.dart';
 import 'reading_boundary.dart';
 import 'web_ai_engine.dart';
 import 'web_model_provider.dart';
@@ -67,7 +69,10 @@ class WebAiPanel extends StatefulWidget {
     this.focusPersonId,
     this.focusPersonName,
     this.analyze = WebAiEngine.analyze,
+    this.readingBuilder,
   });
+
+  final Widget Function(BuildContext, WebPreparationActivity)? readingBuilder;
 
   final WebBook book;
   final WebReadingState reading;
@@ -113,6 +118,10 @@ class _WebAiPanelState extends State<WebAiPanel> {
   String _model = _officialModel;
   WebModelProtocol _protocol = WebModelProtocol.gemini;
   String _scope = 'first';
+  final WebPreparationActivity _readingActivity = WebPreparationActivity();
+  String _requestStage = 'idle';
+  bool _openingReader = false;
+  bool _activityDisposed = false;
   String _phase = 'idle';
   String? _lastError;
   String? _inFlight;
@@ -188,15 +197,26 @@ class _WebAiPanelState extends State<WebAiPanel> {
   List<WebAiChunk> _targets(String scope) {
     final List<WebAiChunk> chunks = _bodyChunks;
     if (chunks.isEmpty) return const <WebAiChunk>[];
-    if (scope == 'all') return chunks;
-    if (scope == 'read') {
-      return <WebAiChunk>[
-        for (final WebAiChunk chunk in chunks)
-          if (chunk.chapterIndex < widget.reading.chapter ||
-              (chunk.chapterIndex == widget.reading.chapter &&
-                  widget.reading.fraction >= 0.99))
-            chunk,
-      ];
+    final PreparationScope selected = PreparationScope.parse(scope);
+    if (selected.kind == 'all') return chunks;
+    if (selected.kind == 'range') {
+      return chunks
+          .where(
+            (WebAiChunk chunk) =>
+                chunk.chapterIndex >= selected.fromChapter &&
+                chunk.chapterIndex <= selected.toChapter,
+          )
+          .toList();
+    }
+    if (selected.kind == 'read') {
+      final int cutoff = selected.cutoff ?? _readingCutoff;
+      return chunks
+          .where(
+            (WebAiChunk chunk) =>
+                chunk.endOffset > chunk.startOffset &&
+                chunk.endOffset <= cutoff,
+          )
+          .toList();
     }
     final int firstChapter = chunks
         .firstWhere(
@@ -208,6 +228,57 @@ class _WebAiPanelState extends State<WebAiPanel> {
       for (final WebAiChunk chunk in chunks)
         if (chunk.chapterIndex == firstChapter) chunk,
     ];
+  }
+
+  int get _readingCutoff {
+    if (widget.cutoffOffset != null) return widget.cutoffOffset!;
+    if (widget.book.chapters.isEmpty) return 0;
+    final Json chapter =
+        widget.book.chapters[widget.reading.chapter.clamp(
+          0,
+          widget.book.chapters.length - 1,
+        )];
+    return ((chapter[widget.reading.fraction >= 0.99 ? 'o1' : 'o0'] as num?)
+            ?.toInt() ??
+        0);
+  }
+
+  void _publishReadingActivity() {
+    if (_activityDisposed) return;
+    final List<WebAiChunk> targets = _targets(_scope);
+    _readingActivity.update(
+      running: _running,
+      stopping: _stopRequested,
+      done: _done(targets),
+      total: targets.length,
+      label: _running
+          ? (_stopRequested ? '停止中，等待当前请求' : '正在整理')
+          : _phase == 'complete'
+          ? '本次整理完成'
+          : _phase == 'error'
+          ? '整理遇到问题'
+          : '整理已暂停',
+      stop: _pause,
+    );
+  }
+
+  Future<void> _readWhilePreparing() async {
+    if (_openingReader || widget.readingBuilder == null || !mounted) return;
+    _openingReader = true;
+    _publishReadingActivity();
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (BuildContext context) => WebPreparationReader(
+            activity: _readingActivity,
+            child: widget.readingBuilder!(context, _readingActivity),
+          ),
+        ),
+      );
+    } finally {
+      _openingReader = false;
+      if (mounted) setState(() {});
+    }
   }
 
   int _done(List<WebAiChunk> targets) => targets
@@ -382,7 +453,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         : oldUnusedDefault
         ? WebModelProtocol.gemini
         : WebModelProtocol.fromName(saved?['protocol'] as String?, _endpoint);
-    _scope = const <String>{'first', 'read', 'all'}.contains(saved?['scope'])
+    _scope = validPreparationScope(saved?['scope'])
         ? saved!['scope']! as String
         : 'first';
     _phase = saved?['phase'] is String ? saved!['phase']! as String : 'idle';
@@ -417,6 +488,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       'message': message,
     });
     if (_events.length > 120) _events.removeRange(0, _events.length - 120);
+    _publishReadingActivity();
   }
 
   String _safeError(Object error) {
@@ -533,6 +605,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
     _model = config.model;
     _protocol = config.protocol;
     _phase = 'running';
+    _requestStage = 'preparing';
     _lastError = null;
     if (_inFlight != null && !_results.containsKey(_inFlight)) {
       _event('warning', '上次有一段请求未确认结果；继续时该段可能重新计费。');
@@ -553,6 +626,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         }
         if (!_canStartRequest) break;
         _activeChunk = key;
+        _requestStage = 'model';
         _inFlight = key;
         _event(
           'request',
@@ -574,6 +648,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
         if (!await _renewLease()) {
           throw const WebAiException('模型已回复，但整理锁失效；本段没有保存，重试可能再次计费。');
         }
+        _requestStage = 'saving';
+        if (mounted) setState(() {});
         _results[key] = <String, Object?>{
           'chapter_index': chunk.chapterIndex,
           'chunk_index': chunk.chunkIndex,
@@ -607,6 +683,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       }
     } finally {
       _running = false;
+      _requestStage = 'idle';
       _activeChunk = null;
       _activeConfig = null;
       if (!_leaseLost && await _renewLease()) {
@@ -621,6 +698,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         _lastError = '整理锁失效，已停止；未保存的模型回复可能已计费。请刷新查看另一标签页的进度。';
       }
       await _releaseLease();
+      _publishReadingActivity();
       if (mounted) setState(() {});
     }
   }
@@ -638,6 +716,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
   void _pause() {
     if (!_running) return;
     setState(() => _stopRequested = true);
+    _publishReadingActivity();
     _message('当前模型请求结束后暂停；已完成的片段会保留。');
   }
 
@@ -694,7 +773,20 @@ class _WebAiPanelState extends State<WebAiPanel> {
     String provider =
         WebModelPreset.matching(protocol, endpoint.text, model.text)?.id ??
         'custom';
-    String scope = _scope;
+    String scope = _scope == 'read' ? 'read:$_readingCutoff' : _scope;
+    final int lastChapter = math.max(0, widget.book.chapters.length - 1);
+    final PreparationScope previousScope = PreparationScope.parse(scope);
+    if (previousScope.kind == 'read') {
+      scope =
+          'read:${math.min(previousScope.cutoff ?? _readingCutoff, _readingCutoff)}';
+    }
+    int rangeFrom = previousScope.fromChapter.clamp(0, lastChapter);
+    int rangeTo = previousScope.toChapter.clamp(rangeFrom, lastChapter);
+    if (previousScope.kind == 'range') {
+      scope = widget.book.chapters.isEmpty
+          ? 'first'
+          : 'range:$rangeFrom:$rangeTo';
+    }
     String? error;
     bool showKey = false;
     _RunChoice? choice;
@@ -755,37 +847,129 @@ class _WebAiPanelState extends State<WebAiPanel> {
                               for (final String option in const <String>[
                                 'first',
                                 'read',
+                                'range',
                                 'all',
                               ])
-                                ChoiceChip(
-                                  label: Text(
-                                    '${switch (option) {
+                                if (option != 'range' ||
+                                    widget.book.chapters.isNotEmpty)
+                                  ChoiceChip(
+                                    label: Text(switch (option) {
                                       'first' => '首章',
-                                      'read' => '已读',
+                                      'read' => '读到这里',
+                                      'range' => '选章节',
                                       _ => '全书',
-                                    }} · ${_targets(option).length}',
+                                    }),
+                                    selected:
+                                        PreparationScope.parse(scope).kind ==
+                                        option,
+                                    showCheckmark: false,
+                                    visualDensity: VisualDensity.compact,
+                                    onSelected: (bool selected) {
+                                      if (selected) {
+                                        redraw(
+                                          () => scope = option == 'range'
+                                              ? 'range:$rangeFrom:$rangeTo'
+                                              : option == 'read'
+                                              ? 'read:$_readingCutoff'
+                                              : option,
+                                        );
+                                      }
+                                    },
                                   ),
-                                  selected: scope == option,
-                                  showCheckmark: false,
-                                  visualDensity: VisualDensity.compact,
-                                  onSelected: (bool selected) {
-                                    if (selected) redraw(() => scope = option);
-                                  },
-                                ),
                             ],
                           ),
+                          if (PreparationScope.parse(scope).kind == 'range')
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: DropdownButtonFormField<int>(
+                                    initialValue: rangeFrom.clamp(
+                                      0,
+                                      widget.book.chapters.length - 1,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      labelText: '从哪一章',
+                                    ),
+                                    items: <DropdownMenuItem<int>>[
+                                      for (
+                                        int i = 0;
+                                        i < widget.book.chapters.length;
+                                        i++
+                                      )
+                                        DropdownMenuItem(
+                                          value: i,
+                                          child: Text('第 ${i + 1} 章'),
+                                        ),
+                                    ],
+                                    onChanged: (int? v) {
+                                      if (v != null) {
+                                        redraw(() {
+                                          rangeFrom = v;
+                                          if (rangeTo < v) rangeTo = v;
+                                          scope = 'range:$rangeFrom:$rangeTo';
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: DropdownButtonFormField<int>(
+                                    key: ValueKey<String>(
+                                      'web-plan-to-$rangeFrom-$rangeTo',
+                                    ),
+                                    initialValue: rangeTo.clamp(
+                                      rangeFrom,
+                                      widget.book.chapters.length - 1,
+                                    ),
+                                    decoration: const InputDecoration(
+                                      labelText: '到哪一章',
+                                    ),
+                                    items: <DropdownMenuItem<int>>[
+                                      for (
+                                        int i = rangeFrom;
+                                        i < widget.book.chapters.length;
+                                        i++
+                                      )
+                                        DropdownMenuItem(
+                                          value: i,
+                                          child: Text('第 ${i + 1} 章'),
+                                        ),
+                                    ],
+                                    onChanged: (int? v) {
+                                      if (v != null) {
+                                        redraw(() {
+                                          rangeTo = v;
+                                          scope = 'range:$rangeFrom:$rangeTo';
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
                           const SizedBox(height: 4),
                           Text(
-                            '${switch (scope) {
+                            '${switch (PreparationScope.parse(scope).kind) {
                               'first' => '先试首章，未读结果仍隐藏。',
-                              'read' => '只整理已经读完的章节。',
+                              'read' => '仅发送本次已确认阅读终点之前的完整片段。继续阅读不会自行扩大本次范围。',
+                              'range' => '仅整理选中章节的独立引文草稿，前面未处理的章节保持空缺，不会补齐或收费。',
                               _ => '整理全书，未读结果仍隐藏。',
                             }}  $remaining 段待处理。',
                             style: TextStyle(color: t.ink2, fontSize: 12),
                           ),
-                          if (scope == 'read' && _targets('read').isEmpty)
+                          if (PreparationScope.parse(scope).kind == 'read' &&
+                              (PreparationScope.parse(scope).cutoff ?? 0) <
+                                  _readingCutoff)
+                            TextButton(
+                              onPressed: () =>
+                                  redraw(() => scope = 'read:$_readingCutoff'),
+                              child: const Text('把终点更新到当前阅读位置'),
+                            ),
+                          if (PreparationScope.parse(scope).kind == 'read' &&
+                              _targets(scope).isEmpty)
                             Text(
-                              '还没有读完的章节，请选首章试整理或继续阅读。',
+                              '当前阅读位置之前还没有完整片段，请继续阅读或明确选择首章试整理。',
                               style: TextStyle(color: t.amber, fontSize: 12),
                             ),
                           const SizedBox(height: 16),
@@ -814,7 +998,9 @@ class _WebAiPanelState extends State<WebAiPanel> {
                                   showCheckmark: false,
                                   visualDensity: VisualDensity.compact,
                                   onSelected: (bool selected) {
-                                    if (!selected || provider == value) return;
+                                    if (!selected || provider == value) {
+                                      return;
+                                    }
                                     redraw(() {
                                       provider = value;
                                       key.clear();
@@ -1074,11 +1260,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
     await _run(selected.config, selected.scope);
   }
 
-  String _scopeLabel(String scope) => switch (scope) {
-    'all' => '整本书',
-    'read' => '已读完的章节',
-    _ => '第一章试整理',
-  };
+  String _scopeLabel(String scope) => PreparationScope.parse(scope).label;
 
   Future<void> _clear() async {
     if (_running || _starting || _clearing) {
@@ -1245,6 +1427,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
     _routeExited = true;
     _stopRequested = true;
     _observeTimer?.cancel();
+    _activityDisposed = true;
+    _readingActivity.dispose();
     // An in-flight request retains its lease until _runLocked's finally.
     // During setup/clear, those async paths also release it on completion.
     super.dispose();
@@ -1435,6 +1619,22 @@ class _WebAiPanelState extends State<WebAiPanel> {
           ),
           const SizedBox(height: 9),
           Text(
+            '全书已保存 ${_results.length} / ${_bodyChunks.length} 段；本次范围与全书覆盖分开计算。',
+            style: TextStyle(fontSize: 12, color: t.ink2),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '选择片段 → 模型抽取 → 引文校验 → 本地保存',
+            style: TextStyle(fontSize: 12, color: t.ink2),
+          ),
+          if (_running)
+            Text(switch (_requestStage) {
+              'saving' => '当前：本地保存。引文已通过连续原文校验，内容判断仍是草稿。',
+              'model' => '当前：等待模型回复与引文校验。单次请求没有可测百分比。',
+              _ => '当前：核对范围与已保存片段。',
+            }, style: TextStyle(fontSize: 12, color: t.ink2)),
+          const SizedBox(height: 5),
+          Text(
             _activeChunk == null
                 ? '服务商：$provider · 关闭页面后不会继续处理'
                 : '服务商：$provider · 正在等待第 ${int.parse(_activeChunk!.split(':').first) + 1} 章的模型回复（本次最多 90 秒）',
@@ -1489,6 +1689,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
             spacing: 10,
             runSpacing: 8,
             children: <Widget>[
+              if (widget.readingBuilder != null)
+                OutlinedButton.icon(
+                  onPressed: _openingReader ? null : _readWhilePreparing,
+                  icon: const Icon(Icons.menu_book_outlined),
+                  label: const Text('边读边整理'),
+                ),
               if (_running)
                 OutlinedButton.icon(
                   onPressed: _stopRequested ? null : _pause,

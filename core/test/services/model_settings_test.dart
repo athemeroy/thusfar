@@ -155,6 +155,50 @@ void main() {
     },
   );
 
+  for (final Json change in <Json>[
+    <String, Object?>{'base_url': 'https://other.invalid/v1'},
+    <String, Object?>{'protocol': 'anthropic'},
+  ]) {
+    test('endpoint changes reject inherited credentials before any request: $change', () async {
+      settings.save(<String, Object?>{
+        'base_url': 'https://saved.invalid/v1',
+        'model': 'saved',
+        'api_key': 'saved-fixture-key',
+        'classifier_key': 'classifier-fixture-key',
+        'jev_api_key': 'jev-fixture-key',
+      });
+      final String bytes = settings.file.readAsStringSync();
+      final Map<String, String> environment = Map<String, String>.of(environ);
+      final ProtocolTransport transport = ProtocolTransport('openai');
+      llm.transport = transport;
+      final Json draft = <String, Object?>{...change, 'api_key': ''};
+      expect(() => settings.preview(draft), throwsA(isA<ValueError>()));
+      expect(() => settings.save(draft), throwsA(isA<ValueError>()));
+      await expectLater(settings.test(payload: draft), throwsA(isA<ValueError>()));
+      expect(transport.requests, isEmpty);
+      expect(settings.file.readAsStringSync(), bytes);
+      expect(environ, environment);
+      final Json original = settings.preview(<String, Object?>{
+        'protocol': 'openai',
+        'base_url': 'https://saved.invalid',
+        'api_key': '',
+      });
+      expect(original['api_key'], 'saved-fixture-key');
+      expect(original['classifier_key'], 'classifier-fixture-key');
+      expect(original['jev_api_key'], 'jev-fixture-key');
+    });
+  }
+
+  test('missing-model test asks for input without requiring a premature save', () async {
+    settings.file.writeAsStringSync('LLM_API_KEY=offline-fixture-key\n');
+    final ProtocolTransport transport = ProtocolTransport('openai');
+    llm.transport = transport;
+    final Json result = await settings.test();
+    expect(result['ok'], false);
+    expect(result['message'], '请先填写模型名称');
+    expect(transport.requests, isEmpty);
+  });
+
   test('unconfigured defaults expose only the three requested protocols', () {
     expect(ModelSettings.protocolLabels.values, <String>[
       'OpenAI Compatible',
@@ -216,20 +260,28 @@ void main() {
     },
   );
 
-  for (final String protocol in ModelSettings.protocolLabels.keys) {
+  for (final (String protocol, String model) in [
+    for (final String protocol in ModelSettings.protocolLabels.keys)
+      for (final String model in <String>[
+        'fixture-model',
+        'deepseek-test',
+        'Vendor/DeepSeek-V4.1:Preview',
+      ])
+        (protocol, model),
+  ]) {
     test(
-      '$protocol custom endpoint is used by actual chat/test requests',
+      '$protocol custom endpoint preserves $model in actual chat/test requests',
       () async {
         final Directory home = Directory('${root.path}/home')..createSync();
         environ['HOME'] = home.path;
         File('${home.path}/.env').writeAsStringSync(
-          'LLM_PROTOCOL_MAP=fixture=${protocol == 'anthropic' ? 'gemini' : 'anthropic'}\n'
-          'LLM_KEY_MAP=fixture=UNRELATED_KEY\n'
+          'LLM_PROTOCOL_MAP=$model=${protocol == 'anthropic' ? 'gemini' : 'anthropic'}\n'
+          'LLM_KEY_MAP=$model=UNRELATED_KEY\n'
           'UNRELATED_KEY=unrelated-home-secret\n',
         );
         environ.addAll(<String, String>{
-          'LLM_PROTOCOL_MAP': 'fixture=wrong',
-          'LLM_KEY_MAP': 'fixture=WRONG_KEY',
+          'LLM_PROTOCOL_MAP': '$model=wrong',
+          'LLM_KEY_MAP': '$model=WRONG_KEY',
           'LLM_KEY_NAME': 'WRONG_KEY',
           'WRONG_KEY': 'wrong-offline-secret',
           'LLM_BASE_URL_ANTHROPIC': 'https://wrong.invalid/v1',
@@ -238,16 +290,20 @@ void main() {
         final Json result = settings.save(<String, Object?>{
           'protocol': protocol,
           'base_url': 'https://custom.invalid/proxy',
-          'model': 'fixture-model',
+          'model': model,
           'api_key': 'offline-test-secret',
         });
         expect(result['protocol'], protocol);
+        expect(result['model'], model);
+        expect(settings.read()['model'], model);
+        expect(environ['QA_MODEL'], model);
+        expect(environ['JUDGE_MODEL'], model);
         expect(result.containsKey('api_key'), false);
         expect(result['api_key_last4'], 'cret');
         final ProtocolTransport transport = ProtocolTransport(protocol);
         llm.transport = transport;
         expect((await settings.test())['ok'], true);
-        await llm.chat('fixture-model', <Map<String, String>>[
+        await llm.chat(model, <Map<String, String>>[
           <String, String>{'role': 'user', 'content': 'offline routing check'},
         ], retries: 0);
         expect(transport.requests, hasLength(2));
@@ -256,6 +312,12 @@ void main() {
           transport.requests.last.headers,
           transport.requests.first.headers,
         );
+        if (protocol != 'gemini') {
+          final Json probeBody =
+              jsonDecode(transport.requests.first.body) as Json;
+          expect(probeBody['model'], model);
+          expect(probeBody.containsKey('thinking'), false);
+        }
         final llm.ChatRequest request = transport.requests.last;
         expect(request.url.host, 'custom.invalid');
         final Json body = jsonDecode(request.body) as Json;
@@ -263,7 +325,7 @@ void main() {
           case 'gemini':
             expect(
               request.url.path,
-              '/proxy/models/fixture-model:streamGenerateContent',
+              '/proxy/models/$model:streamGenerateContent',
             );
             expect(request.url.queryParameters, <String, String>{'alt': 'sse'});
             expect(request.headers['x-goog-api-key'], 'offline-test-secret');
@@ -272,16 +334,25 @@ void main() {
             expect(request.url.path, '/proxy/messages');
             expect(request.headers['x-api-key'], 'offline-test-secret');
             expect(request.headers['anthropic-version'], '2023-06-01');
-            expect(body['model'], 'fixture-model');
+            expect(body['model'], model);
           case 'openai':
             expect(request.url.path, '/proxy/chat/completions');
             expect(
               request.headers['Authorization'],
               'Bearer offline-test-secret',
             );
-            expect(body['model'], 'fixture-model');
+            expect(body['model'], model);
+            expect(body.containsKey('thinking'), false);
         }
+        expect(
+          request.headers.keys.where(
+            <String>{'Authorization', 'x-api-key', 'x-goog-api-key'}.contains,
+          ),
+          hasLength(1),
+          reason: 'credentials must use only the selected provider protocol',
+        );
         expect(request.url.toString(), isNot(contains('offline-test-secret')));
+        expect(request.body, isNot(contains('offline-test-secret')));
         expect(body['stream'] ?? protocol == 'gemini', true);
         if (!Platform.isWindows)
           expect(settings.file.statSync().mode & 511, 384);
@@ -313,6 +384,80 @@ void main() {
     );
     expect(settings.read()['model'], 'deepseek-flash');
   });
+
+  for (final String protocol in ModelSettings.protocolLabels.keys) {
+    test(
+      '$protocol normalization only migrates legacy OpenAI DeepSeek names',
+      () {
+        for (final String model in <String>[
+          'deepseek-test',
+          'DeepSeek-Test',
+          'deepseek-flash',
+          'Vendor/DeepSeek-V4.1:Preview',
+          'models/deepseek-flash',
+          'deepseek-chat-v2',
+          'deepseek-reasoner-v2',
+          'deepseek-test+think',
+          'deepseek-test+nothink',
+          'deepseek-chat+think',
+          'deepseek-reasoner+nothink',
+        ]) {
+          expect(
+            ModelSettings.normalize(
+              ' https://provider.invalid/proxy/ ',
+              ' $model ',
+              protocol: protocol,
+            ),
+            ('https://provider.invalid/proxy', model),
+          );
+        }
+        for (final String legacy in <String>[
+          'deepseek-chat',
+          'DeepSeek-Chat',
+          'deepseek-reasoner',
+          'DeepSeek-Reasoner',
+        ]) {
+          expect(
+            ModelSettings.normalize(
+              'https://provider.invalid',
+              legacy,
+              protocol: protocol,
+            ),
+            (
+              'https://provider.invalid/${protocol == 'gemini' ? 'v1beta' : 'v1'}',
+              protocol == 'openai' ? '$legacy+nothink' : legacy,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  for (final String variant in <String>['think', 'nothink']) {
+    test(
+      'explicit +$variant stays saved and sets the OpenAI thinking flag',
+      () async {
+        final String model = 'deepseek-test+$variant';
+        settings.save(<String, Object?>{
+          'base_url': 'https://offline.invalid/v1',
+          'model': model,
+          'api_key': 'offline-variant-key',
+        });
+        expect(settings.read()['model'], model);
+        expect(environ['JUDGE_MODEL'], model);
+        final ProtocolTransport transport = ProtocolTransport('openai');
+        llm.transport = transport;
+        expect((await settings.test())['ok'], true);
+        final llm.ChatRequest request = transport.requests.single;
+        final Json body = jsonDecode(request.body) as Json;
+        expect(body['model'], 'deepseek-test');
+        expect(body['thinking'], <String, Object?>{
+          'type': variant == 'think' ? 'enabled' : 'disabled',
+        });
+        expect(request.headers['Authorization'], 'Bearer offline-variant-key');
+      },
+    );
+  }
 
   test(
     'configured-model route and separate classifier key are explicit and private',

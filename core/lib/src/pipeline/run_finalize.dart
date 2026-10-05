@@ -89,6 +89,8 @@ extension RunnerFinalization on Runner {
     List<Object?> args,
     _RunPool target,
   ) {
+    final int dependencyEnd = _int(args[kind == 'saga' ? 0 : 1]);
+    if (!permitsEnd(dependencyEnd)) return null;
     final File path = File('${work.path}/jobs/$kind-$key.json');
     Json job = {
       'kind': kind,
@@ -131,13 +133,11 @@ extension RunnerFinalization on Runner {
       if (job['kind'] == 'bio') {
         // A legacy interrupted job may have recorded one failed draft before
         // this counter existed. An explicit retry resets only this counter.
-        int contentFailures =
-            job['content_failures'] is int
-                ? _int(job['content_failures']).clamp(0, 2).toInt()
-                : job['state'] == 'pending' &&
-                    job['failure_kind'] == 'bio_content'
-                ? _int(job['generation_attempt']).clamp(0, 2).toInt()
-                : 0;
+        int contentFailures = job['content_failures'] is int
+            ? _int(job['content_failures']).clamp(0, 2).toInt()
+            : job['state'] == 'pending' && job['failure_kind'] == 'bio_content'
+            ? _int(job['generation_attempt']).clamp(0, 2).toInt()
+            : 0;
         if (contentFailures >= 2) {
           job['state'] = 'deferred';
           job['content_failures'] = 2;
@@ -321,15 +321,12 @@ extension RunnerFinalization on Runner {
         return;
       }
     }
-    final List<Json> events =
-        kg.log
-            .where(
-              (e) =>
-                  e['t'] == 'event' &&
-                  start <= _num(e['p']) &&
-                  _num(e['p']) <= end,
-            )
-            .toList();
+    final List<Json> events = kg.log
+        .where(
+          (e) =>
+              e['t'] == 'event' && start <= _num(e['p']) && _num(e['p']) <= end,
+        )
+        .toList();
     final Json names = {
       for (final Json e in events)
         for (final Object? x in _list(e['who']))
@@ -456,12 +453,11 @@ extension RunnerFinalization on Runner {
       if (quarantined(recapPath(ci)))
         throw const llm.LLMError('前情提要依赖的章节摘要仍在隔离中');
       final Future<Object?>? f = recapFutures[ci];
-      final Json? r =
-          f != null
-              ? (await f) as Json?
-              : recapPath(ci).existsSync()
-              ? _read(recapPath(ci))
-              : null;
+      final Json? r = f != null
+          ? (await f) as Json?
+          : recapPath(ci).existsSync()
+          ? _read(recapPath(ci))
+          : null;
       if (r == null || !Runner.verifiedSummary(r, ['recap']))
         throw const llm.LLMError('前情提要所需的章节摘要尚未通过验证');
       if (_truth(r['recap'])) recaps.add('【${chapterName(ci)}】${r['recap']}');
@@ -583,8 +579,9 @@ extension RunnerFinalization on Runner {
       }
       if (_obj(v['saga'])['verdict'] == 'flag') {
         r['saga_flagged'] = r['saga'];
-        r['saga'] =
-            _truth(r['recap']) ? _trim('$before\n${r['recap']}') : before;
+        r['saga'] = _truth(r['recap'])
+            ? _trim('$before\n${r['recap']}')
+            : before;
         r['fallback_kind'] = 'verified-input-excerpt';
       }
     } on Cancelled {
@@ -614,10 +611,8 @@ extension RunnerFinalization on Runner {
       ];
       out = {'pairs': merged, 'merged': merged};
     } else {
-      final (
-        List<List<String>> pairs,
-        Map<String, String> dossiers,
-      ) = dedupeCandidates(end, start);
+      final (List<List<String>> pairs, Map<String, String> dossiers) =
+          dedupeCandidates(end, start);
       out = {
         'chapter': ci,
         'end': end,
@@ -677,10 +672,12 @@ extension RunnerFinalization on Runner {
     final Set<(String, String)> together = {};
     for (final Json row in kg.log) {
       if (row['t'] == 'event' && _list(row['who']).length > 1) {
-        final List<String> ws =
-            _list(
-              row['who'],
-            ).cast<String>().map(kg.canon).whereType<String>().toSet().toList();
+        final List<String> ws = _list(row['who'])
+            .cast<String>()
+            .map(kg.canon)
+            .whereType<String>()
+            .toSet()
+            .toList();
         for (int x = 0; x < ws.length; x++) {
           for (int y = x + 1; y < ws.length; y++)
             together.add(sortedPair(ws[x], ws[y]));
@@ -698,9 +695,9 @@ extension RunnerFinalization on Runner {
             _num(e.value['last_seg'], -1) >= kg.seg - 6)
           e.key,
     };
-    Set<String> names(Json p) =>
-        (_set(p['aliases'])
-          ..add(_str(p['name']))).where((n) => _cp(n) >= 2).toSet();
+    Set<String> names(Json p) => (_set(
+      p['aliases'],
+    )..add(_str(p['name']))).where((n) => _cp(n) >= 2).toSet();
     int firstCompare(String a, String b) => PyCompat.compare(
       [people[a]!['first'] ?? 0, a],
       [people[b]!['first'] ?? 0, b],
@@ -742,9 +739,10 @@ extension RunnerFinalization on Runner {
             _str(e['text']),
       ].join(' ');
       final Set<String> en =
-          pyRe(
-              r'[A-Za-z]{4,}',
-            ).allMatches(text).map((m) => m[0]!.toLowerCase()).toSet()
+          pyRe(r'[A-Za-z]{4,}')
+              .allMatches(text)
+              .map((m) => m[0]!.toLowerCase())
+              .toSet()
             ..removeAll(_stopwords);
       final String zhText = text.replaceAll(pyRe(r'[^\u4e00-\u9fff]'), '');
       return {
@@ -753,19 +751,17 @@ extension RunnerFinalization on Runner {
       };
     }
 
-    final List<String> nameless =
-        _sorted(recent)
-            .where((a) => !names(people[a]!).any((n) => !linking.isGeneric(n)))
-            .toList();
-    final List<String> named =
-        people.keys
-            .where(
-              (b) =>
-                  !nameless.contains(b) &&
-                  names(people[b]!).any((n) => !linking.isGeneric(n)) &&
-                  (recent.contains(b) || _num(people[b]!['first']) >= start),
-            )
-            .toList();
+    final List<String> nameless = _sorted(recent)
+        .where((a) => !names(people[a]!).any((n) => !linking.isGeneric(n)))
+        .toList();
+    final List<String> named = people.keys
+        .where(
+          (b) =>
+              !nameless.contains(b) &&
+              names(people[b]!).any((n) => !linking.isGeneric(n)) &&
+              (recent.contains(b) || _num(people[b]!['first']) >= start),
+        )
+        .toList();
     for (final String a in nameless) {
       final Set<String> wa = words(a);
       final List<(int, String)> scores = [];
@@ -779,10 +775,9 @@ extension RunnerFinalization on Runner {
       }
       scores.sort((a, b) => PyCompat.compare([b.$1, b.$2], [a.$1, a.$2]));
       for (final (_, String b) in scores.take(2)) {
-        final pair =
-            _num(people[a]!['first']) > _num(people[b]!['first'])
-                ? (a, b)
-                : (b, a);
+        final pair = _num(people[a]!['first']) > _num(people[b]!['first'])
+            ? (a, b)
+            : (b, a);
         pairs.add(pair);
         descPairs.add(pair);
       }
@@ -872,10 +867,8 @@ extension RunnerFinalization on Runner {
           'instructions':
               "Two character records were built from a novel, read up to the same point. Record A: ${dossiers[p[0]]}\nRecord B: ${dossiers[p[1]]}\nAre A and B the same character recorded twice? A story may keep a stranger's identity secret on purpose: similar descriptions are not enough — say \"same\" only if the records themselves establish it (same name, or the text says who that person is).",
           'criteria': {
-            'same':
-                'Clearly one character, established by the records: compatible names, same role and situation, nothing contradicts.',
-            'different':
-                'Different characters: e.g. relatives sharing a surname, two people with the same job or title, or anything contradicts.',
+            'same': 'Clearly one character, established by the records: compatible names, same role and situation, nothing contradicts.',
+            'different': 'Different characters: e.g. relatives sharing a surname, two people with the same job or title, or anything contradicts.',
             'unclear': 'Cannot tell from these records.',
           },
         };
@@ -937,12 +930,9 @@ extension RunnerFinalization on Runner {
       return;
     final File saved = File('${work.path}/finalize/$end-importance.json');
     if (saved.existsSync() || replaying) {
-      final List<Json> records =
-          saved.existsSync()
-              ? _rows(_read(saved)['records'])
-              : priorLog
-                  .where((r) => r['t'] == 'imp' && r['p'] == end)
-                  .toList();
+      final List<Json> records = saved.existsSync()
+          ? _rows(_read(saved)['records'])
+          : priorLog.where((r) => r['t'] == 'imp' && r['p'] == end).toList();
       for (final Json r in records) {
         if (kg.people.containsKey(r['id'])) {
           kg.people[r['id']]!.addAll({'imp': r['imp'], 'imp_p': end});
@@ -951,30 +941,26 @@ extension RunnerFinalization on Runner {
       }
       return;
     }
-    final List<Json> fresh =
-        PyCompat.stableSorted(
-          kg.people.values.where(
-            (p) =>
-                !_truth(p['merged_into']) &&
-                _num(p['first']) <= end &&
-                _num(p['imp_p'], -1) < start &&
-                (_num(p['mentions']) >= 2 || _num(p['first']) >= start),
-          ),
-          key: (p) => -_num(p['mentions']),
-        ).take(judge.batch).toList();
+    final List<Json> fresh = PyCompat.stableSorted(
+      kg.people.values.where(
+        (p) =>
+            !_truth(p['merged_into']) &&
+            _num(p['first']) <= end &&
+            _num(p['imp_p'], -1) < start &&
+            (_num(p['mentions']) >= 2 || _num(p['first']) >= start),
+      ),
+      key: (p) => -_num(p['mentions']),
+    ).take(judge.batch).toList();
     if (fresh.isEmpty) return;
     final Map<String, String> records = {};
     for (final Json p in fresh) {
-      final List<String> ev =
-          [
-            for (final Json e in kg.log)
-              if (e['t'] == 'event' &&
-                  _num(e['p']) <= end &&
-                  _list(
-                    e['who'],
-                  ).cast<String>().map(kg.canon).contains(p['id']))
-                _str(e['text']),
-          ].take(6).toList();
+      final List<String> ev = [
+        for (final Json e in kg.log)
+          if (e['t'] == 'event' &&
+              _num(e['p']) <= end &&
+              _list(e['who']).cast<String>().map(kg.canon).contains(p['id']))
+            _str(e['text']),
+      ].take(6).toList();
       records[p['id']! as String] = _cut(
         "${p['name']}（${_str(p['tagline'], _str(p['intro']))}；出现 ${p['mentions'] ?? 0} 次）：${_str(ev.join('；'), '本段之前没有记录到事件')}",
         600,
@@ -1017,9 +1003,9 @@ extension RunnerFinalization on Runner {
         (saved.existsSync()
                 ? _rows(_read(saved)['records'])
                 : priorLog.where(
-                  (r) =>
-                      r['t'] == 'attr' && r['by'] == 'judge' && r['p'] == end,
-                ))
+                    (r) =>
+                        r['t'] == 'attr' && r['by'] == 'judge' && r['p'] == end,
+                  ))
             .map((r) => <String, Object?>{...r}),
       );
       return;
@@ -1038,15 +1024,13 @@ extension RunnerFinalization on Runner {
     final Map<String, (String, String, List<String>)> items = {};
     for (final e in seen.entries) {
       if (e.value.length < 2 || e.value.last.$1 < start) continue;
-      final List<(int, String)> ordered =
-          e.value.toList()
-            ..sort((a, b) => PyCompat.compare([a.$1, a.$2], [b.$1, b.$2]));
-      final List<String> values =
-          ordered
-              .skip(math.max(0, ordered.length - 4))
-              .map((v) => v.$2)
-              .toSet()
-              .toList();
+      final List<(int, String)> ordered = e.value.toList()
+        ..sort((a, b) => PyCompat.compare([a.$1, a.$2], [b.$1, b.$2]));
+      final List<String> values = ordered
+          .skip(math.max(0, ordered.length - 4))
+          .map((v) => v.$2)
+          .toSet()
+          .toList();
       if (values.length < 2) continue;
       items['${e.key.$1}|${e.key.$2}'] = (
         kg.people[e.key.$1]!['name']! as String,
@@ -1089,12 +1073,9 @@ extension RunnerFinalization on Runner {
         });
     }
     writeJson(saved, {
-      'records':
-          kg.log
-              .where(
-                (r) => r['t'] == 'attr' && r['by'] == 'judge' && r['p'] == end,
-              )
-              .toList(),
+      'records': kg.log
+          .where((r) => r['t'] == 'attr' && r['by'] == 'judge' && r['p'] == end)
+          .toList(),
     });
   }
 
@@ -1108,16 +1089,15 @@ extension RunnerFinalization on Runner {
         }
       }
     }
-    final List<String> chosen =
-        PyCompat.stableSorted(
-          active.keys.where(
-            (id) =>
-                kg.people.containsKey(id) &&
-                (active[id]! >= 2 ||
-                    _num(kg.people[id]!['imp'], 1) >= 3 && active[id]! > 0),
-          ),
-          key: (id) => -active[id]!,
-        ).take(10).toList();
+    final List<String> chosen = PyCompat.stableSorted(
+      active.keys.where(
+        (id) =>
+            kg.people.containsKey(id) &&
+            (active[id]! >= 2 ||
+                _num(kg.people[id]!['imp'], 1) >= 3 && active[id]! > 0),
+      ),
+      key: (id) => -active[id]!,
+    ).take(10).toList();
     final List<String> blocks = [];
     for (final String id in chosen) {
       final Json p = kg.people[id]!, attrs = {};
@@ -1144,9 +1124,9 @@ extension RunnerFinalization on Runner {
         ),
         key: (e) => e['p'],
       );
-      final String aliases = _sorted(
-        _set(p['aliases'])..remove(p['name']),
-      ).take(6).join('、');
+      final String aliases = _sorted(_set(p['aliases'])..remove(p['name']))
+          .take(6)
+          .join('、');
       blocks.add(
         "【$id｜${p['name']}】\n别称：${_str(aliases, '无')}\n当前一句话身份：${_str(p['tagline'])}\n档案（最新）：${_str(attrs.entries.map((e) => '${e.key}：${e.value}').join('；'), '无')}\n关系：${_str(rels.join('、'), '无')}\n至今经历（按时间）：\n${history.skip(math.max(0, history.length - 45)).map((e) => '- ${e['text']}').join('\n')}",
       );
@@ -1314,8 +1294,9 @@ extension RunnerFinalization on Runner {
       final Json p = kg.people[e.key]!;
       if (end >= _num(p['profile_p'], -1)) {
         p.addAll({
-          'tagline':
-              _truth(rec['tagline']) ? rec['tagline'] : p['tagline'] ?? '',
+          'tagline': _truth(rec['tagline'])
+              ? rec['tagline']
+              : p['tagline'] ?? '',
           'bio': rec['bio'],
           'profile_p': end,
         });

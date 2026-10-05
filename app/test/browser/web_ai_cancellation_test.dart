@@ -20,9 +20,10 @@ class _Library extends Fake implements WebLibrary {
   int acquisitions = 0;
   int renewals = 0;
   int releases = 0;
+  Json? saved;
 
   @override
-  Future<Json?> loadPreparation(String bookId) async => null;
+  Future<Json?> loadPreparation(String bookId) async => saved;
 
   @override
   Future<bool> otherPreparationLeaseActive(String bookId, String owner) async =>
@@ -47,13 +48,15 @@ class _Library extends Fake implements WebLibrary {
 
   @override
   Future<void> savePreparation(String bookId, Json value) async {
-    saves.add(jsonDecode(jsonEncode(value)) as Json);
+    saved = jsonDecode(jsonEncode(value)) as Json;
+    saves.add(saved!);
   }
 }
 
 class _Model {
   int calls = 0;
   int analyses = 0;
+  final List<WebAiChunk> chunks = <WebAiChunk>[];
   bool retry = false;
   Completer<void>? reply;
 
@@ -65,6 +68,7 @@ class _Model {
     analyses++;
     if (!await beforeRequest!()) throw const WebAiException('cancelled');
     calls++;
+    chunks.add(chunk);
     if (reply != null) await reply!.future;
     if (retry) {
       if (!await beforeRequest()) throw const WebAiException('cancelled retry');
@@ -80,7 +84,7 @@ class _Model {
   }
 }
 
-WebBook _book({int chunks = 2}) {
+WebBook _book({int chunks = 2, int chapters = 1}) {
   const String passage = '林远读完来信。';
   final String text = List<String>.filled(
     (WebAiEngine.maxChunkChars * (chunks - 1) + 100) ~/ passage.length + 1,
@@ -91,23 +95,25 @@ WebBook _book({int chunks = 2}) {
       id: 'cancellation-fixture',
       title: 'Cancellation fixture',
       author: '',
-      length: text.length,
-      chapters: 1,
+      length: text.length * chapters,
+      chapters: chapters,
       added: 0,
     ),
     data: <String, Object?>{
       'blocks': <Json>[
-        <String, Object?>{'k': 'p', 't': text, 'o': 0},
+        for (int i = 0; i < chapters; i++)
+          <String, Object?>{'k': 'p', 't': text, 'o': i * text.length},
       ],
       'chapters': <Json>[
-        <String, Object?>{
-          'title': '第一章',
-          'kind': 'body',
-          'b0': 0,
-          'b1': 1,
-          'o0': 0,
-          'o1': text.length,
-        },
+        for (int i = 0; i < chapters; i++)
+          <String, Object?>{
+            'title': '第 ${i + 1} 章',
+            'kind': 'body',
+            'b0': i,
+            'b1': i + 1,
+            'o0': i * text.length,
+            'o1': (i + 1) * text.length,
+          },
       ],
     },
     images: <String, String>{},
@@ -148,7 +154,12 @@ void main() {
     html.window.localStorage.remove('thusfar-web-model-profile-v1');
   });
 
-  Future<void> open(WidgetTester tester, {int chunks = 2}) async {
+  Future<void> open(
+    WidgetTester tester, {
+    int chunks = 2,
+    int chapters = 1,
+    int? cutoff,
+  }) async {
     tester.view.physicalSize = const Size(1100, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -164,10 +175,13 @@ void main() {
       navigator.currentState!.push<void>(
         MaterialPageRoute<void>(
           builder: (_) => WebAiPanel(
-            book: _book(chunks: chunks),
+            book: _book(chunks: chunks, chapters: chapters),
+            cutoffOffset: cutoff,
             reading: WebReadingState(),
             library: library,
             analyze: model.analyze,
+            readingBuilder: (_, _) =>
+                const Scaffold(body: Text('Reading while preparing')),
           ),
         ),
       ),
@@ -191,6 +205,79 @@ void main() {
     );
     await tester.pump();
   }
+
+  testWidgets('reading above preparation keeps the same run alive', (
+    WidgetTester tester,
+  ) async {
+    final Completer<void> response = Completer<void>();
+    model.reply = response;
+    await open(tester, chunks: 3);
+    await start(tester);
+    await _until(tester, () => model.calls == 1);
+    await tester.tap(find.text('边读边整理'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Reading while preparing'), findsOneWidget);
+    response.complete();
+    await _until(tester, () => library.releases == 1);
+    expect(model.calls, 3);
+    expect(library.acquisitions, 1);
+    expect(library.saves.last['phase'], 'complete');
+    expect(find.textContaining('本次整理完成'), findsOneWidget);
+    await tester.tap(find.text('查看整理'));
+    await tester.pumpAndSettle();
+    expect(find.byType(WebAiPanel), findsOneWidget);
+    expect(model.calls, 3);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+    'stop from reading saves current chunk without scheduling another',
+    (WidgetTester tester) async {
+      final Completer<void> response = Completer<void>();
+      model.reply = response;
+      await open(tester, chunks: 3);
+      await start(tester);
+      await _until(tester, () => model.calls == 1);
+      await tester.tap(find.text('边读边整理'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.tap(find.byTooltip('停止整理'));
+      response.complete();
+      await _until(tester, () => library.releases == 1);
+      expect(model.calls, 1);
+      expect(library.saves.last['phase'], 'paused');
+      expect((library.saves.last['results'] as Map).length, 1);
+      expect(find.text('Reading while preparing'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('selected chapter range skips earlier and later chunks', (
+    WidgetTester tester,
+  ) async {
+    library.saved = <String, Object?>{'scope': 'range:1:1'};
+    await open(tester, chunks: 1, chapters: 3);
+    await start(tester);
+    await _until(tester, () => library.releases == 1);
+    expect(model.chunks.map((WebAiChunk c) => c.chapterIndex), <int>[1]);
+    expect(library.saves.last['scope'], 'range:1:1');
+    expect(library.saves.last['phase'], 'complete');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets(
+    'read scope freezes boundary and sends only complete earlier chunks',
+    (WidgetTester tester) async {
+      final int firstEnd = WebAiEngine.chunks(_book(chunks: 3)).first.endOffset;
+      library.saved = <String, Object?>{'scope': 'read:${firstEnd + 20}'};
+      await open(tester, chunks: 3, cutoff: 999999);
+      await start(tester);
+      await _until(tester, () => library.releases == 1);
+      expect(model.calls, 1);
+      expect(model.chunks.single.endOffset, firstEnd);
+      expect(library.saves.last['scope'], 'read:${firstEnd + 20}');
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   testWidgets(
     'cancelling configuration never acquires a lease or calls a model',

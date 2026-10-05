@@ -11,6 +11,7 @@ import '../data/prefs.dart';
 import '../sheets/typography_sheet.dart';
 import '../ui/device.dart';
 import '../ui/theme.dart';
+import 'recovery_screen.dart';
 
 /// S18 设置.
 class SettingsScreen extends StatefulWidget {
@@ -285,6 +286,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ]),
                     group('数据', <Widget>[
+                      ListTile(
+                        title: const Text('回收站'),
+                        subtitle: const Text('恢复移除的书籍，或确认永久删除以释放空间'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => TrashScreen(library: library),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('未保存笔记草稿'),
+                        subtitle: const Text('继续上次未保存的笔记或修改'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => NoteDraftsScreen(library: library),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('上次恢复报告'),
+                        subtitle: const Text('逐本查看导入、合并、冲突与设置结果'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => RestoreReportView(
+                              report: library.lastRestoreReport,
+                            ),
+                          ),
+                        ),
+                      ),
                       ListTile(
                         title: const Text('导出整个书库 ZIP'),
                         subtitle: const Text('一本文件带走书籍、摘记、阅读进度和设置'),

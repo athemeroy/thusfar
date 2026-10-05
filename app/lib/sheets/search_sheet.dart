@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/library.dart';
-import '../data/seen.dart';
+import '../reader/source_search.dart';
 import '../ui/theme.dart';
 import 'chapter_title.dart';
 import 'common.dart';
@@ -41,6 +41,7 @@ class _SearchPageState extends State<SearchPage> {
   int _epoch = 0;
   int _lastLimit = 0;
   bool _searching = false;
+  int _visibleCount = 100;
   List<_Hit> _hits = const <_Hit>[];
 
   @override
@@ -48,6 +49,17 @@ class _SearchPageState extends State<SearchPage> {
     super.initState();
     _lastLimit = widget.link.c.cutoff;
     widget.link.c.addListener(_positionChanged);
+    _input.addListener(_inputChanged);
+  }
+
+  void _inputChanged() {
+    if (_input.value.composing.isValid && !_input.value.composing.isCollapsed) {
+      return;
+    }
+    final String next = _input.text.trim();
+    if (next == query) return;
+    query = next;
+    _scheduleSearch();
   }
 
   void _positionChanged() {
@@ -60,6 +72,7 @@ class _SearchPageState extends State<SearchPage> {
     _epoch++;
     _debounce?.cancel();
     widget.link.c.removeListener(_positionChanged);
+    _input.removeListener(_inputChanged);
     _input.dispose();
     _focus.dispose();
     super.dispose();
@@ -75,9 +88,10 @@ class _SearchPageState extends State<SearchPage> {
   void _scheduleSearch() {
     final int epoch = ++_epoch;
     _debounce?.cancel();
-    final String q = query.toLowerCase();
+    final String q = query;
     final int limit = whole ? widget.link.c.book.length : widget.link.c.cutoff;
     _lastLimit = limit;
+    _visibleCount = 100;
     setState(() {
       _hits = const <_Hit>[];
       _searching = q.isNotEmpty;
@@ -95,39 +109,25 @@ class _SearchPageState extends State<SearchPage> {
 
   Future<List<_Hit>> _search(int epoch, String q, int limit) async {
     final BookData book = widget.link.c.book;
-    final List<_Hit> out = <_Hit>[];
-    int scanned = 0;
-    for (final Block b in book.blocks) {
-      if (++scanned % 64 == 0) {
-        await Future<void>.delayed(Duration.zero);
-        if (!mounted || epoch != _epoch) return const <_Hit>[];
-      }
-      if (b.o >= limit) break;
-      if (b.kind == 'img') continue;
-      final String lower = b.text.toLowerCase();
-      int from = 0;
-      while (true) {
-        final int i = lower.indexOf(q, from);
-        if (i < 0 || b.o + i + q.length > limit) break;
-        final int s = (i - 24).clamp(0, b.text.length);
-        final int e = (i + q.length + 36).clamp(
-          0,
-          (limit - b.o).clamp(0, b.text.length),
-        );
-        out.add(
-          _Hit(
-            book.chapterAt(b.o + i),
-            b.o + i,
-            book.textBetween(b.o + s, b.o + i),
-            b.text.substring(i, i + q.length),
-            book.textBetween(b.o + i + q.length, b.o + e),
-          ),
-        );
-        if (out.length >= 500) return out;
-        from = i + q.length;
-      }
-    }
-    return out;
+    final List<SourceSearchHit> found = await searchSourceText(
+      <SourceSearchBlock>[
+        for (int index = 0; index < book.blocks.length; index++)
+          if (book.blocks[index].kind == 'p' || book.blocks[index].kind == 'h')
+            SourceSearchBlock(
+              chapter: book.chapterAt(book.blocks[index].o),
+              block: index,
+              start: book.blocks[index].o,
+              text: book.blocks[index].text,
+            ),
+      ],
+      q,
+      limit,
+      cancelled: () => !mounted || epoch != _epoch,
+    );
+    return <_Hit>[
+      for (final SourceSearchHit hit in found)
+        _Hit(hit.chapter, hit.start, hit.before, hit.match, hit.after),
+    ];
   }
 
   @override
@@ -145,10 +145,10 @@ class _SearchPageState extends State<SearchPage> {
         _scheduleSearch();
       },
     );
-    final int read = SeenStore.instance.maxRead(book.id, widget.link.c.cutoff);
+    final int read = widget.link.c.cutoff;
     final List<Widget> rows = <Widget>[];
     int? lastChapter;
-    for (final _Hit h in hits) {
+    for (final _Hit h in hits.take(_visibleCount)) {
       if (h.chapter != lastChapter) {
         lastChapter = h.chapter;
         rows.add(
@@ -232,7 +232,7 @@ class _SearchPageState extends State<SearchPage> {
           ? '正在搜索…'
           : query.isEmpty
           ? '搜索原文'
-          : '找到 ${hits.length}${hits.length >= 500 ? '+' : ''} 处',
+          : '找到 ${hits.length} 处',
       titleWidget: query.isEmpty || _searching
           ? null
           : Text.rich(
@@ -240,7 +240,7 @@ class _SearchPageState extends State<SearchPage> {
                 children: <InlineSpan>[
                   const TextSpan(text: '找到 '),
                   TextSpan(
-                    text: '${hits.length}${hits.length >= 500 ? '+' : ''}',
+                    text: '${hits.length}',
                     style: TextStyle(
                       color: t.zhu,
                       fontWeight: FontWeight.w600,
@@ -285,10 +285,7 @@ class _SearchPageState extends State<SearchPage> {
                   focusNode: _focus,
                   autofocus: true,
                   textInputAction: TextInputAction.search,
-                  onChanged: (String v) {
-                    query = v.trim();
-                    _scheduleSearch();
-                  },
+
                   decoration: InputDecoration(
                     hintText: '搜索书里的一句话',
                     prefixIcon: const Icon(Icons.search, size: 20),
@@ -352,8 +349,22 @@ class _SearchPageState extends State<SearchPage> {
                     },
                   ),
           )
-        else
+        else ...<Widget>[
           SliverList.list(children: rows),
+          if (_visibleCount < hits.length)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextButton(
+                  key: const ValueKey<String>('reader-search-more'),
+                  onPressed: () => setState(() => _visibleCount += 100),
+                  child: Text(
+                    '显示更多（已显示 ${math.min(_visibleCount, hits.length)} / ${hits.length}）',
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }

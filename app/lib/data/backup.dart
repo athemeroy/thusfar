@@ -15,6 +15,8 @@ import 'package:thusfar_core/manual_entities.dart' as manual_entities;
 import 'library.dart';
 import 'library_zip.dart';
 import 'portable_work.dart';
+import 'restore_report.dart';
+import 'preparation_scope.dart';
 
 const String exportFormat = 'yedu-book/2';
 const String webExportFormat = 'thusfar-web-backup-v1';
@@ -462,7 +464,7 @@ Json? _validatedWebPreparation(Object? raw) {
     throw const ValueError('网页版整理草稿包含疑似密钥，未导入');
   }
   if (raw['schema'] != 'thusfar-web-ai-v1' ||
-      !const <String>{'first', 'read', 'all'}.contains(raw['scope']) ||
+      !validPreparationScope(raw['scope']) ||
       !const <String>{
         'idle',
         'running',
@@ -1126,6 +1128,7 @@ class LibraryZipRestoreResult {
     required this.settings,
     required this.ids,
     this.firstNewId,
+    this.entries = const <RestoreReportEntry>[],
   });
 
   final int total;
@@ -1137,6 +1140,7 @@ class LibraryZipRestoreResult {
   /// One restored local book ID per archive position, null on conflict.
   final List<String?> ids;
   final String? firstNewId;
+  final List<RestoreReportEntry> entries;
 
   bool get complete => failures.isEmpty;
 }
@@ -1158,15 +1162,16 @@ LibraryZipRestoreResult restoreLibraryZipData(
   String? firstNewId;
   final List<String> failures = <String>[];
   final List<String?> ids = <String?>[];
+  final List<RestoreReportEntry> entries = <RestoreReportEntry>[];
   for (int i = 0; i < archive.books.length; i++) {
-    final ImportResult result = restoreBackup(
-      lib,
-      '第 ${i + 1} 本书',
+    final String title = BackupSummary.read(
       archive.books[i],
-    );
+      fallback: '第 ${i + 1} 本书',
+    ).title;
+    final ImportResult result = restoreBackup(lib, title, archive.books[i]);
     if (result.error != null) {
       ids.add(null);
-      failures.add('第 ${i + 1} 本：${result.error}');
+      failures.add('《$title》：${result.error}');
     } else if (result.existed) {
       ids.add(result.id);
       existing++;
@@ -1175,6 +1180,17 @@ LibraryZipRestoreResult restoreLibraryZipData(
       imported++;
       firstNewId ??= result.id;
     }
+    entries.add(
+      RestoreReportEntry(
+        title: title,
+        status: result.error != null
+            ? 'conflict'
+            : result.existed
+            ? 'merged'
+            : 'imported',
+        detail: result.error,
+      ),
+    );
   }
   return LibraryZipRestoreResult(
     total: archive.books.length,
@@ -1184,6 +1200,7 @@ LibraryZipRestoreResult restoreLibraryZipData(
     settings: archive.settings,
     ids: ids,
     firstNewId: firstNewId,
+    entries: entries,
   );
 }
 
@@ -1339,7 +1356,12 @@ int recoverPendingBackupMerges(Directory root) {
 
 /// Import validates before publication. New books use an atomic directory
 /// rename; same-book merges retain a rollback marker until all writes finish.
-ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
+ImportResult restoreBackup(
+  Library lib,
+  String name,
+  Uint8List raw, {
+  bool previewOnly = false,
+}) {
   final Object? decoded;
   try {
     decoded = jsonDecode(utf8.decode(raw));
@@ -1754,6 +1776,9 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
             };
       final bool transferChanged =
           nextTransfer != null && !_same(oldTransfer, nextTransfer);
+      // A preview runs every semantic merge check but does not publish, create
+      // rollback copies, or touch the existing progress and notebook.
+      if (previewOnly) return ImportResult(name: name, id: id, existed: true);
       if (bookChanged ||
           notesChanged ||
           manualChanged ||
@@ -1842,6 +1867,7 @@ ImportResult restoreBackup(Library lib, String name, Uint8List raw) {
     if (dest.existsSync()) {
       return ImportResult(name: name, error: '书籍目录不完整，请先检查已有文件');
     }
+    if (previewOnly) return ImportResult(name: name, id: id);
     final Directory tmp = Directory(
       '${lib.booksDir.path}/.$id.${DateTime.now().microsecondsSinceEpoch}.tmp',
     )..createSync(recursive: true);

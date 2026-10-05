@@ -298,7 +298,7 @@ class ModelSettings {
       };
     }
     if ((settings['model']! as String).isEmpty) {
-      return <String, Object?>{'ok': false, 'message': '请先填写模型名称并保存'};
+      return <String, Object?>{'ok': false, 'message': '请先填写模型名称'};
     }
     final Stopwatch watch = Stopwatch()..start();
     try {

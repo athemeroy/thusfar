@@ -47,8 +47,12 @@ class WebAiChunk {
     required this.chunkIndex,
     required this.title,
     required this.text,
+    this.startOffset = 0,
+    this.endOffset = 0,
   });
 
+  final int startOffset;
+  final int endOffset;
   final int chapterIndex;
   final int chunkIndex;
   final String title;
@@ -162,6 +166,7 @@ class WebAiEngine {
       final StringBuffer buffer = StringBuffer();
       int length = 0;
       int chunkIndex = 0;
+      int sourceStart = 0, sourceEnd = 0;
 
       void emit() {
         if (length == 0) return;
@@ -171,6 +176,8 @@ class WebAiEngine {
             chunkIndex: chunkIndex++,
             title: title,
             text: buffer.toString(),
+            startOffset: sourceStart,
+            endOffset: sourceEnd,
           ),
         );
         buffer.clear();
@@ -180,7 +187,12 @@ class WebAiEngine {
       for (int bi = start; bi < end; bi++) {
         final Json block = book.blocks[bi];
         if (block['k'] != 'p') continue;
-        final String paragraph = (block['t'] as String? ?? '').trim();
+        final String rawParagraph = block['t'] as String? ?? '';
+        final String paragraph = rawParagraph.trim();
+        final int paragraphOffset =
+            ((block['o'] as num?)?.toInt() ?? 0) +
+            rawParagraph.length -
+            rawParagraph.trimLeft().length;
         if (paragraph.isEmpty) continue;
         int at = 0;
         while (at < paragraph.length) {
@@ -206,6 +218,8 @@ class WebAiEngine {
             emit();
             continue;
           }
+          if (length == 0) sourceStart = paragraphOffset + at;
+          sourceEnd = paragraphOffset + stop;
           if (separator != 0) {
             buffer.write('\n');
             length++;

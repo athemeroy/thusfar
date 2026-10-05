@@ -9,6 +9,8 @@ import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
 
+import '../../ask_context.dart';
+
 import '../env.dart';
 import '../errors.dart';
 import '../pipeline/judge.dart' as judge;
@@ -20,6 +22,7 @@ import '../py/py_re.dart';
 import 'storage.dart';
 import 'temporal.dart';
 
+export '../../ask_context.dart';
 export 'temporal.dart' show Json;
 
 typedef AskEvent = void Function(String kind, Json value);
@@ -311,9 +314,11 @@ class AskService {
   AskService({
     this.backend = const AskBackend(),
     this.timeout = const Duration(seconds: 180),
+    this.maxConcurrent = 2,
   });
   final AskBackend backend;
   final Duration timeout;
+  final int maxConcurrent;
   final LinkedHashMap<String, Json> _answers = LinkedHashMap<String, Json>();
   final LinkedHashMap<String, (List<Json>, int)> _indexes =
       LinkedHashMap<String, (List<Json>, int)>();
@@ -328,17 +333,29 @@ class AskService {
     AskEvent? onEvent,
     AskCancellation? cancellation,
     void Function()? onSettled,
-  }) => withBookJudgeContext(
-    directory,
-    () => _answer(
-      directory,
-      question,
-      pos,
-      onEvent: onEvent,
-      cancellation: cancellation,
-      onSettled: onSettled,
-    ),
-  );
+    List<AskTurn> history = const <AskTurn>[],
+    String? selectedText,
+  }) async {
+    bool entered = false;
+    try {
+      return await withBookJudgeContext(directory, () {
+        entered = true;
+        return _answer(
+          directory,
+          question,
+          pos,
+          onEvent: onEvent,
+          cancellation: cancellation,
+          onSettled: onSettled,
+          history: history,
+          selectedText: selectedText,
+        );
+      });
+    } finally {
+      // Metadata can fail before the request acquires a transport permit.
+      if (!entered) onSettled?.call();
+    }
+  }
 
   Future<Json> _answer(
     Directory directory,
@@ -347,12 +364,20 @@ class AskService {
     AskEvent? onEvent,
     AskCancellation? cancellation,
     void Function()? onSettled,
+    List<AskTurn> history = const <AskTurn>[],
+    String? selectedText,
   }) async {
     bool handedOff = false;
     try {
-      if (_running >= 2) throw const llm.LLMError('正在回答其他问题，请稍后重试');
-      final String q = _head(question.trim(), 500);
-      if (q.isEmpty) throw const ValueError('问题是空的');
+      if (_running >= maxConcurrent) throw const llm.LLMError('正在回答其他问题，请稍后重试');
+      final String q = question.trim();
+      final String? invalid = validateAskInput(q, selection: selectedText);
+      if (invalid != null) throw ValueError(invalid);
+      final String context = boundedAskContext(
+        history,
+        directory.absolute.path,
+        pos,
+      );
       final List<List<int>> source = <List<int>>[];
       Json read(String name, {bool required = false}) {
         final File file = File('${directory.path}/$name');
@@ -383,6 +408,8 @@ class AskService {
                       (List<int> b) => sha256.convert(b).toString(),
                     ),
                     q,
+                    if (context.isNotEmpty) context,
+                    if (selectedText != null) selectedText,
                     pos,
                     config,
                   ]),
@@ -431,6 +458,8 @@ class AskService {
         cancellation: token,
         onEvent: onEvent,
         auditDirectory: directory,
+        referenceContext: context,
+        selectedText: selectedText,
       );
       // A timeout stops publication, but the transport may still be unwinding.
       // Keep its concurrency permit until that work actually settles.
@@ -484,6 +513,8 @@ Future<Json> answerSnapshot(
   AskCancellation? cancellation,
   AskEvent? onEvent,
   Directory? auditDirectory,
+  String referenceContext = '',
+  String? selectedText,
 }) async {
   final Stopwatch clock = Stopwatch()..start();
   final AskCancellation token = cancellation ?? AskCancellation();
@@ -579,7 +610,11 @@ Future<Json> answerSnapshot(
   }
   final List<String> names = named.expand(_names).toList();
   final String query = await retrievalQuery(
-    question,
+    [
+      question,
+      if (referenceContext.isNotEmpty) referenceContext,
+      if (selectedText != null) selectedText,
+    ].join('\n'),
     book,
     backend: backend,
     model: qaModel,
@@ -652,7 +687,9 @@ Future<Json> answerSnapshot(
     RegExp(r'\{(title|where)\}'),
     (Match m) => m[1] == 'title' ? book['title']! as String : where,
   );
-  String user = '【材料】\n$material\n\n【读者的问题】$question';
+  final String references = askReferenceSection(referenceContext, selectedText);
+  String user =
+      '【材料】\n$material\n\n${references.isEmpty ? '' : '$references\n\n'}【读者的问题】$question';
   if (frontier != 0 && pos > frontier)
     user += '\n\n（说明：人物资料目前只整理到读者位置之前的一部分，原文材料是完整的。）';
   stage('组织回答');

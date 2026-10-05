@@ -81,9 +81,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Rect _toolsBounds = Rect.zero;
   bool _sheetOpen = false;
   Offset? _pressAt;
-  int? _anchor;
+  (int, int)? _selectionSeed;
   Timer? _flashTimer;
   final FocusNode _focus = FocusNode();
+  VoidCallback? _reopenAsk;
+  Offset? _handleDragPointer;
+  Offset? _handleDragSource;
   int? _drag;
   bool _whoIsActive = false;
   bool _whoIsLoading = false;
@@ -276,12 +279,35 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  void _openAsk({String? prefill, String? quote, Offset? anchorPoint}) =>
-      _sheet(
-        AskPage(link: link, prefill: prefill, quote: quote),
-        full: true,
-        anchorPoint: anchorPoint,
-      );
+  void _openAsk({
+    String? prefill,
+    String? quote,
+    int? selectedStart,
+    int? selectedEnd,
+    Offset? anchorPoint,
+    bool restoreDraft = false,
+  }) {
+    _reopenAsk = () => _openAsk(
+      prefill: prefill,
+      quote: quote,
+      selectedStart: selectedStart,
+      selectedEnd: selectedEnd,
+      anchorPoint: anchorPoint,
+      restoreDraft: true,
+    );
+    _sheet(
+      AskPage(
+        link: link,
+        prefill: prefill,
+        quote: quote,
+        selectedStart: selectedStart,
+        selectedEnd: selectedEnd,
+        restoreDraft: restoreDraft,
+      ),
+      full: true,
+      anchorPoint: anchorPoint,
+    );
+  }
 
   void _startProcessing() {
     Navigator.of(context).popUntil((Route<dynamic> r) => r is PageRoute);
@@ -406,23 +432,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _pressAt = d.localPosition;
     final (int s, int e) = _wordAt(at);
     c.select((s, e));
-    _anchor = c.selection?.$1;
+    _selectionSeed = c.selection;
   }
 
   void _longPressMove(LongPressMoveUpdateDetails d) {
     final int? at = _hitOffset(d.localPosition);
-    final int? a = _anchor;
-    if (at == null || a == null || c.selection == null) return;
+    final (int, int)? seed = _selectionSeed;
+    if (at == null || seed == null || c.selection == null) return;
     HapticFeedback.selectionClick();
     if (_whoIsActive) {
       _whoIsActive = false;
       _whoIsResult = null;
       _whoIsLoading = false;
     }
-    c.select(
-      at >= a ? (a, math.max(at + 1, c.selection!.$2)) : (at, c.selection!.$2),
-      anchor: a,
-    );
+    c.select(at < seed.$1 ? (at, seed.$2) : (seed.$1, at + 1), anchor: seed.$1);
   }
 
   bool _changeNote(void Function() action) {
@@ -814,7 +837,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   bottom: box.maxHeight - reading.bottom + safeBottom + 48,
                   child: Center(child: _returnPill(context)),
                 ),
-              if (c.selection != null) _selectionBar(context, top),
+              if (c.selection != null) ...<Widget>[
+                _selectionHandle(context, top, start: true),
+                _selectionHandle(context, top, start: false),
+                _selectionBar(context, top),
+              ],
               if (tools != reading && !c.toolbar)
                 Positioned.fromRect(
                   rect: tools,
@@ -1169,8 +1196,20 @@ class _ReaderScreenState extends State<ReaderScreen> {
             customBorder: const StadiumBorder(),
             onTap: () {
               HapticFeedback.lightImpact();
+              final bool reopen = c.returnToAsk;
               c.returnTo = null;
+              c.returnToAsk = false;
               _jump(back, remember: false, highlight: (back, back));
+              final int generation = c.generation;
+              if (reopen) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted &&
+                      c.generation == generation &&
+                      c.returnTo == null) {
+                    _reopenAsk?.call();
+                  }
+                });
+              }
             },
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 9, 6, 9),
@@ -1200,6 +1239,105 @@ class _ReaderScreenState extends State<ReaderScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  /// Handles use the same source painter as the visible page, so either end
+  /// can be corrected independently without rebuilding a quote from text.
+  Widget _selectionHandle(
+    BuildContext context,
+    double top, {
+    required bool start,
+  }) {
+    final (int a, int z) = c.selection!;
+    final Paginator pager = c.pager!;
+    final int offset = start ? a : z;
+    double y = 0;
+    Offset? caret;
+    Offset? sourcePoint;
+    for (final Frag fragment in c.page!.frags) {
+      final Block block = book.blocks[fragment.block];
+      final int local = offset - block.o;
+      if (!fragment.image &&
+          (start
+              ? local >= fragment.start && local < fragment.end
+              : local > fragment.start && local <= fragment.end)) {
+        final TextPainter painter = pager.painterFor(block);
+        final int shift = block.kind == 'h' ? 0 : indentShift;
+        caret =
+            painter.getOffsetForCaret(
+              TextPosition(
+                offset: local + shift,
+                affinity: start
+                    ? TextAffinity.downstream
+                    : TextAffinity.upstream,
+              ),
+              Rect.zero,
+            ) +
+            Offset(_readingBounds.left + _contentLeft, top + y - fragment.top);
+        sourcePoint =
+            painter.getOffsetForCaret(
+              TextPosition(offset: local + shift - (start ? 0 : 1)),
+              Rect.zero,
+            ) +
+            Offset(_contentLeft, y - fragment.top + pager.spec.line / 2);
+        painter.dispose();
+        break;
+      }
+      y += fragment.lines * pager.spec.line;
+    }
+    if (caret == null) return const SizedBox.shrink();
+    final double line = pager.spec.line;
+    return Positioned(
+      left: (caret.dx - 22).clamp(
+        _readingBounds.left,
+        _readingBounds.right - 44,
+      ),
+      top: caret.dy + line - 12,
+      width: 44,
+      height: 44,
+      child: Semantics(
+        label: start ? '调整选文起点' : '调整选文终点',
+        child: GestureDetector(
+          key: ValueKey<String>(
+            start ? 'reader-selection-start' : 'reader-selection-end',
+          ),
+          behavior: HitTestBehavior.opaque,
+          onPanStart: (DragStartDetails details) {
+            _handleDragPointer = details.globalPosition;
+            _handleDragSource = sourcePoint;
+            HapticFeedback.selectionClick();
+          },
+          onPanUpdate: (DragUpdateDetails details) {
+            if (c.selection == null ||
+                _handleDragPointer == null ||
+                _handleDragSource == null) {
+              return;
+            }
+            final Offset local =
+                _handleDragSource! +
+                details.globalPosition -
+                _handleDragPointer!;
+            final int? at = _hitOffset(local);
+            if (at == null) return;
+            final (int s, int e) = c.selection!;
+            c.select(
+              start ? (math.min(at, e - 1), e) : (s, math.max(s + 1, at + 1)),
+            );
+          },
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              width: 14,
+              height: 22,
+              decoration: BoxDecoration(
+                color: context.tk.qing,
+                borderRadius: BorderRadius.circular(7),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1257,7 +1395,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   action('问书', () {
                     final String quote = book.textBetween(s, e);
                     _clearSelection();
-                    _openAsk(quote: quote);
+                    _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
                   }),
                   action('复制', () {
                     HapticFeedback.lightImpact();
@@ -1341,7 +1479,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onTap: () {
                   final String quote = book.textBetween(s, e);
                   _clearSelection();
-                  _openAsk(quote: quote);
+                  _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
                 },
               ),
             ],

@@ -9,6 +9,8 @@ import 'package:thusfar_core/jobs.dart' show RunLease;
 import 'package:thusfar_core/manual_entities.dart' as manual;
 import 'package:thusfar_core/notebook.dart' as notebook;
 
+import 'restore_report.dart';
+
 export 'package:thusfar_core/thusfar_core.dart' show Json;
 
 Object? readJson(File f) {
@@ -35,6 +37,7 @@ class Progress {
     required this.cutoff,
     required this.t,
     required this.pct,
+    this.returnTo,
   });
 
   factory Progress.fromJson(Json j) => Progress(
@@ -42,18 +45,21 @@ class Progress {
     cutoff: (j['cutoff'] as num?)?.toInt() ?? 0,
     t: (j['t'] as num?)?.toDouble() ?? 0,
     pct: (j['pct'] as num?)?.toDouble() ?? 0,
+    returnTo: (j['returnTo'] as num?)?.toInt(),
   );
 
   final int pos;
   final int cutoff;
   final double t;
   final double pct;
+  final int? returnTo;
 
   Json toJson() => <String, Object?>{
     'pos': pos,
     'cutoff': cutoff,
     't': t,
     'pct': pct,
+    if (returnTo != null) 'returnTo': returnTo,
   };
 }
 
@@ -162,6 +168,25 @@ class BookEntry {
   String get lang => '${meta['lang'] ?? 'zh'}';
 }
 
+class TrashedBook {
+  const TrashedBook({
+    required this.id,
+    required this.title,
+    required this.dir,
+    required this.removed,
+    required this.bytes,
+    this.issue,
+    this.canRestore = true,
+  });
+  final String? issue;
+  final bool canRestore;
+  final String id;
+  final String title;
+  final Directory dir;
+  final DateTime removed;
+  final int bytes;
+}
+
 /// All books under `<data>/books`, laid out exactly as 1.7.x wrote them.
 class Library extends ChangeNotifier {
   Library(this.root);
@@ -172,6 +197,21 @@ class Library extends ChangeNotifier {
   Map<String, Progress> progress = <String, Progress>{};
   List<String> readingList = <String>[];
   bool loaded = false;
+
+  File get _restoreReportFile => File('${root.path}/restore-report.json');
+  RestoreReport? get lastRestoreReport {
+    try {
+      final Object? raw = readJson(_restoreReportFile);
+      return raw is Json ? RestoreReport.fromJson(raw) : null;
+    } on Object {
+      return null;
+    }
+  }
+
+  void saveRestoreReport(RestoreReport report) {
+    writeJson(_restoreReportFile, report.toJson());
+    notifyListeners();
+  }
 
   File get _progressFile => File('${root.path}/progress.json');
   File get _readingListFile => File('${root.path}/reading-list.json');
@@ -308,9 +348,11 @@ class Library extends ChangeNotifier {
     int cutoff,
     int length, {
     double? timestamp,
+    int? returnTo,
   }) {
     progress[id] = Progress(
       pos: pos,
+      returnTo: returnTo?.clamp(0, length),
       cutoff: cutoff,
       t: timestamp ?? DateTime.now().millisecondsSinceEpoch / 1000,
       pct: (cutoff / math.max(1, length) * 100 * 1000).round() / 1000,
@@ -355,11 +397,17 @@ class Library extends ChangeNotifier {
         ..createSync(recursive: true);
       final String dest =
           '${trash.path}/${b.id}-${DateTime.now().microsecondsSinceEpoch * 1000}';
-      b.dir.renameSync(dest);
-      final Progress? old = progress.remove(b.id);
+      final Progress? old = progress[b.id];
       if (old != null) {
-        writeJson(File('$dest/reading-progress.json'), old.toJson());
+        writeJson(File('${b.dir.path}/reading-progress.json'), old.toJson());
       }
+      writeJson(File('${b.dir.path}/trash-info.json'), <String, Object?>{
+        'id': b.id,
+        'removed': DateTime.now().toIso8601String(),
+        'queueIndex': readingList.indexOf(b.id),
+      });
+      b.dir.renameSync(dest);
+      progress.remove(b.id);
       writeJson(_progressFile, <String, Object?>{
         for (final MapEntry<String, Progress> e in progress.entries)
           e.key: e.value.toJson(),
@@ -372,6 +420,178 @@ class Library extends ChangeNotifier {
     } finally {
       lease.release();
     }
+  }
+
+  List<TrashedBook> listTrash() {
+    final Directory trash = Directory('${root.path}/trash');
+    if (!trash.existsSync()) return <TrashedBook>[];
+    final List<TrashedBook> result = <TrashedBook>[];
+    Object? safeRead(File file) {
+      try {
+        return readJson(file);
+      } on Object {
+        return null;
+      }
+    }
+
+    for (final FileSystemEntity entity in trash.listSync(followLinks: false)) {
+      if (entity is! Directory || FileSystemEntity.isLinkSync(entity.path)) {
+        continue;
+      }
+      final String folder = entity.uri.pathSegments
+          .where((s) => s.isNotEmpty)
+          .last;
+      final Object? rawBook = safeRead(File('${entity.path}/book.json'));
+      final Object? rawInfo = safeRead(File('${entity.path}/trash-info.json'));
+      final Json? book = rawBook is Json ? rawBook : null;
+      final Json? info = rawInfo is Json ? rawInfo : null;
+      final String id = info?['id'] is String
+          ? info!['id'] as String
+          : folder.split('-').first;
+      final bool validId = RegExp(r'^[0-9a-f]{16,64}$').hasMatch(id);
+      String? issue;
+      if (book == null || !validId) {
+        issue = '书籍信息损坏，暂不能自动恢复。原始文件仍保留，其他书籍可正常恢复。';
+      } else if (File('${entity.path}/trash-info.json').existsSync() &&
+          info == null) {
+        issue = '回收信息损坏，恢复时将保留书籍，但无法找回原阅读清单位置。';
+      }
+      int bytes = 0;
+      try {
+        for (final FileSystemEntity file in entity.listSync(
+          recursive: true,
+          followLinks: false,
+        )) {
+          if (file is File) bytes += file.lengthSync();
+        }
+      } on Object {
+        issue = '${issue ?? ''} 部分文件大小无法读取。'.trim();
+      }
+      result.add(
+        TrashedBook(
+          id: id,
+          title: '${book?['title'] ?? '无法读取书名 ($folder)'}',
+          dir: entity,
+          removed:
+              DateTime.tryParse('${info?['removed']}') ??
+              entity.statSync().modified,
+          bytes: bytes,
+          issue: issue,
+          canRestore: book != null && validId,
+        ),
+      );
+    }
+    return result..sort((a, b) => b.removed.compareTo(a.removed));
+  }
+
+  void _checkTrashTarget(TrashedBook book) {
+    final Directory trash = Directory('${root.path}/trash');
+    if (FileSystemEntity.isLinkSync(book.dir.path) ||
+        book.dir.parent.absolute.path != trash.absolute.path ||
+        !book.dir.existsSync()) {
+      throw StateError('回收站记录已变化，请刷新后重试');
+    }
+  }
+
+  Future<void> restoreFromTrash(TrashedBook book) async {
+    _checkTrashTarget(book);
+    if (!book.canRestore || !RegExp(r'^[0-9a-f]{16,64}$').hasMatch(book.id)) {
+      throw StateError('书籍信息损坏，无法自动恢复；原始文件仍保留。');
+    }
+    final Directory target = Directory('${booksDir.path}/${book.id}');
+    if (target.existsSync()) {
+      throw StateError('书架已有同一本书。为避免覆盖，回收站中的版本仍保留；请先导出两个版本。');
+    }
+    final Json restoredBook = storage.validateBook(
+      readJson(File('${book.dir.path}/book.json')),
+    );
+    final File progressFile = File('${book.dir.path}/reading-progress.json');
+    final Object? rawProgress = readJson(progressFile);
+    if (progressFile.existsSync()) {
+      final int length = restoredBook['len'] as int;
+      if (rawProgress is! Json ||
+          rawProgress['pos'] is! num ||
+          rawProgress['cutoff'] is! num ||
+          !(rawProgress['pos'] as num).isFinite ||
+          !(rawProgress['cutoff'] as num).isFinite ||
+          (rawProgress['pos'] as num) < 0 ||
+          (rawProgress['pos'] as num) > length ||
+          (rawProgress['cutoff'] as num) < 0 ||
+          (rawProgress['cutoff'] as num) > length) {
+        throw StateError('保存的阅读进度损坏，未恢复任何资料。原始书籍与进度仍保留在回收站，请先检查备份。');
+      }
+    }
+    final Object? rawInfo = readJson(File('${book.dir.path}/trash-info.json'));
+    final Json? info = rawInfo is Json ? rawInfo : null;
+    final Progress? restored = rawProgress is Json
+        ? Progress.fromJson(rawProgress)
+        : null;
+    final Progress? old = progress[book.id];
+    final List<String> oldQueue = List<String>.of(readingList);
+    // Read rollback bytes before any mutation. An unreadable settings path
+    // must not leave a moved book or partially restored progress on disk.
+    final List<int>? progressBefore = _progressFile.existsSync()
+        ? _progressFile.readAsBytesSync()
+        : null;
+    final List<int>? queueBefore = _readingListFile.existsSync()
+        ? _readingListFile.readAsBytesSync()
+        : null;
+    void rollbackFile(File file, List<int>? bytes) {
+      if (bytes == null) {
+        if (file.existsSync()) file.deleteSync();
+      } else {
+        final File temporary = File('${file.path}.trash-rollback');
+        temporary.writeAsBytesSync(bytes, flush: true);
+        temporary.renameSync(file.path);
+      }
+    }
+
+    book.dir.renameSync(target.path);
+    try {
+      if (restored != null) progress[book.id] = restored;
+      writeJson(_progressFile, <String, Object?>{
+        for (final e in progress.entries) e.key: e.value.toJson(),
+      });
+      final int index = (info?['queueIndex'] as num?)?.toInt() ?? -1;
+      if (index >= 0 && !readingList.contains(book.id)) {
+        final List<String> queue = List<String>.of(readingList)
+          ..insert(index.clamp(0, readingList.length), book.id);
+        setReadingList(queue);
+      }
+    } on Object {
+      if (old == null) {
+        progress.remove(book.id);
+      } else {
+        progress[book.id] = old;
+      }
+      readingList = oldQueue;
+      final List<String> rollbackErrors = [];
+      try {
+        rollbackFile(_progressFile, progressBefore);
+      } on Object {
+        rollbackErrors.add('阅读进度');
+      }
+      try {
+        rollbackFile(_readingListFile, queueBefore);
+      } on Object {
+        rollbackErrors.add('阅读清单');
+      }
+      if (target.existsSync()) target.renameSync(book.dir.path);
+      if (rollbackErrors.isNotEmpty) {
+        throw StateError(
+          '恢复未完成，书籍已保留在回收站；${rollbackErrors.join('、')}未能完整回滚，请检查存储空间后重试。',
+        );
+      }
+      rethrow;
+    }
+    await scan();
+  }
+
+  /// Only call after explicit confirmation in the recovery UI.
+  Future<void> permanentlyDelete(TrashedBook book) async {
+    _checkTrashTarget(book);
+    await book.dir.delete(recursive: true);
+    notifyListeners();
   }
 
   /// Refresh processing state and signal changes to the currently open reader.

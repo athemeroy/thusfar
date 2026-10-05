@@ -9,6 +9,8 @@ import 'package:thusfar_core/thusfar_core.dart' show PyException;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/backup.dart';
+import 'data/restore_report.dart';
+import 'ui/restore_report_view.dart';
 import 'data/library_zip.dart';
 import 'data/library.dart';
 import 'data/model_settings.dart';
@@ -1144,11 +1146,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             context: context,
             builder: (BuildContext dialogContext) => AlertDialog(
               title: const Text('恢复整个书库'),
-              content: Text(
-                '这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
-                '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
-                '已有书籍保留本机逐书整理和付费路由，继续前请核对。'
-                '是否同时使用备份里的阅读清单、排版和模型设置？',
+              content: SingleChildScrollView(
+                child: Text(
+                  '${archive.books.map((bytes) => '• ${BackupSummary.read(bytes).title}').join('\n')}\n\n这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
+                  '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
+                  '已有书籍保留本机逐书整理和付费路由，继续前请核对。'
+                  '是否同时使用备份里的阅读清单、排版和模型设置？',
+                ),
               ),
               actions: <Widget>[
                 TextButton(
@@ -1177,10 +1181,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               ..bookId = restored.firstNewId
               ..existed = restored.imported == 0
               ..progress = 1;
+            String settingsStatus = applySettings
+                ? '因书籍冲突而跳过，当前设置保留；可处理冲突后重试'
+                : '按你的选择保留当前设置';
             if (restored.failures.isNotEmpty) {
               item.error =
                   '已导入 ${restored.imported} 本，合并 ${restored.existing} 本；'
-                  '${restored.failures.length} 本有冲突。${restored.failures.first}';
+                  '${restored.failures.length} 本未导入。${applySettings ? '设置因存在冲突而未导入。' : '保留当前设置。'}详见设置 → 上次恢复报告。';
             } else {
               String? settingError;
               if (applySettings) {
@@ -1211,19 +1218,48 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   settingError = '部分设置未能保存；请检查可用存储空间后重试';
                 }
               }
+              settingsStatus = settingError != null
+                  ? '未完整恢复：$settingError'
+                  : applySettings
+                  ? '已导入阅读清单、排版和模型设置；模型密钥需重填'
+                  : '按你的选择保留当前设置';
               if (settingError != null) {
                 item.error = '书籍已恢复 ${restored.total} 本，但设置未恢复：$settingError';
-              } else {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      '已恢复 ${restored.total} 本书；'
-                      '${applySettings ? '设置已导入，模型密钥需重填' : '保留了当前设置'}',
-                    ),
-                  ),
-                );
               }
+            }
+            final RestoreReport report = RestoreReport(
+              created: DateTime.now(),
+              entries: restored.entries,
+              settingsStatus: settingsStatus,
+            );
+            bool reportSaved = true;
+            try {
+              m.library.saveRestoreReport(report);
+            } on Object {
+              reportSaved = false;
+              item.error =
+                  '${item.error ?? '书籍恢复已处理'}；恢复报告未能保存，请查看并保留完整结果，再检查存储空间。\n${restored.failures.join('\n')}';
+            }
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  duration: const Duration(seconds: 10),
+                  content: Text(
+                    '${report.summary}。${reportSaved ? '完整报告可在设置中再次查看。' : '报告未能保存，请查看并保留结果。'}',
+                  ),
+                  action: SnackBarAction(
+                    label: '查看报告',
+                    onPressed: () {
+                      if (!mounted) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => RestoreReportView(report: report),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
             }
           }
         } else if (lower.endsWith('.json')) {

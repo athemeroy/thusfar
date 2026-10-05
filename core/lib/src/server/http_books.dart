@@ -298,7 +298,12 @@ extension _BookEndpoints on YeduHttpServer {
       if (method == 'POST') {
         if (localMode && !_truth(settings.read()['api_key']))
           return x.error(409, '还没有填写模型 API 密钥，请先到「模型设置」填写');
-        await worker.startBook(root);
+        final HttpJson payload = await x.object();
+        final Object? rawPlan = payload['plan'];
+        if (rawPlan != null && rawPlan is! HttpJson) {
+          throw const ValueError('整理范围格式无效，请重新选择范围');
+        }
+        await worker.startBook(root, plan: rawPlan as HttpJson?);
       } else {
         await worker.pauseBook(root);
       }
