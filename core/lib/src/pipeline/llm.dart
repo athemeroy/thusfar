@@ -593,6 +593,89 @@ Future<ChatResponse> postRequest(
   }
 }
 
+/// An explicitly accepted asynchronous job survives a dropped client socket.
+/// Only GET is retried; never resubmit an uncertain inference POST.
+Future<Object?> pollRetainedResult(
+  Uri origin,
+  ChatResponse accepted,
+  Map<String, String> headers,
+  ModelRequestTrace? trace,
+) async {
+  final String? location = accepted.headers['location'];
+  final Uri resultUrl = origin.resolve(location ?? '');
+  unawaited(discardChatResponse(accepted));
+  if (accepted.headers['preference-applied'] != 'respond-async' ||
+      location == null ||
+      location.isEmpty ||
+      resultUrl.scheme != origin.scheme ||
+      resultUrl.host != origin.host ||
+      resultUrl.port != origin.port ||
+      resultUrl.userInfo.isNotEmpty ||
+      resultUrl.fragment.isNotEmpty) {
+    throw const LLMError('AI 服务没有返回有效的结果地址');
+  }
+  final RunCancellation? cancellation = RunCancellation.current;
+  Future<T> wait<T>(Future<T> future) => cancellation?.wait(future) ?? future;
+  final Stopwatch clock = Stopwatch()..start();
+  const Duration limit = Duration(minutes: 10);
+  while (clock.elapsed < limit) {
+    await wait(Future<void>.delayed(const Duration(seconds: 2)));
+    cancellation?.checkpoint();
+    try {
+      final ChatResponse response = await wait(
+        postRequest(
+          ChatRequest(
+            resultUrl,
+            <String, String>{
+              'Accept': 'application/json',
+              if (headers['Authorization'] case final String key)
+                'Authorization': key,
+            },
+            '',
+            method: 'GET',
+          ),
+          const Duration(seconds: 15),
+          trace: trace,
+        ),
+      );
+      if (response.status == 202 ||
+          response.status == 408 ||
+          response.status == 429 ||
+          response.status >= 500) {
+        unawaited(discardChatResponse(response));
+        continue;
+      }
+      if (response.status != 200) {
+        unawaited(discardChatResponse(response));
+        throw LLMError('读取保存的结果失败：HTTP ${response.status}');
+      }
+      final List<int> bytes = [];
+      final StreamIterator<List<int>> chunks = StreamIterator(response.body);
+      try {
+        while (await wait(
+          chunks.moveNext().timeout(const Duration(seconds: 15)),
+        )) {
+          bytes.addAll(chunks.current);
+          if (bytes.length > 16 * 1024 * 1024) {
+            throw const LLMError('保存的结果超过大小上限');
+          }
+        }
+      } finally {
+        unawaited(chunks.cancel());
+      }
+      return jsonDecode(utf8.decode(bytes));
+    } on ConnectionNotSent {
+      continue;
+    } on IOException {
+      // The server retains the result; re-reading it creates no new inference.
+      continue;
+    } on TimeoutException {
+      continue;
+    }
+  }
+  throw TimeoutException('等待保存的结果超过十分钟');
+}
+
 /// Injected wait for retries; tests make it instant.
 Future<void> Function(Duration) sleep = Future<void>.delayed;
 math.Random random = math.Random();
@@ -681,7 +764,7 @@ Future<ChatResult> chat(
     ModelRequestReceipt? receipt;
     bool responseSettled = false;
     try {
-      final ChatRequest req = buildRequest(
+      ChatRequest req = buildRequest(
         protocol,
         model,
         messages,
@@ -703,7 +786,15 @@ Future<ChatResult> chat(
 
       double? first;
       receipt = ModelRequestScope.current?.begin();
-      final ChatResponse resp = await waitFor(
+      // Only book processing asks for retained results. Interactive chat and
+      // ordinary providers retain their normal streaming behaviour.
+      if (receipt != null) {
+        req = ChatRequest(req.url, {
+          ...req.headers,
+          'Prefer': 'respond-async',
+        }, req.body);
+      }
+      ChatResponse resp = await waitFor(
         postRequest(
           req,
           Duration(
@@ -715,6 +806,27 @@ Future<ChatResult> chat(
           trace: receipt?.trace,
         ).timeout(remaining()),
       );
+      if (receipt != null && resp.status == 202) {
+        final Object? result = await waitFor(
+          pollRetainedResult(
+            req.url,
+            resp,
+            req.headers,
+            receipt.trace,
+          ).timeout(remaining()),
+        );
+        if (result is! Map<String, Object?> ||
+            result['status'] is! int ||
+            result['content_type'] is! String ||
+            result['body'] is! String) {
+          throw const UnknownOutcomeLLMError('response_interrupted');
+        }
+        resp = ChatResponse(
+          result['status']! as int,
+          result['content_type']! as String,
+          Stream.value(utf8.encode(result['body']! as String)),
+        );
+      }
       if (resp.status >= 400) {
         if (!const <int>{
           400,

@@ -738,7 +738,7 @@ Future<Object?> _postJson(
       ),
     );
     if (allowAsync && resp.status == 202) {
-      final Object? result = await _pollSystemOneResult(
+      final Object? result = await pollRetainedResult(
         Uri.parse(url),
         resp,
         headers,
@@ -825,89 +825,6 @@ Future<Object?> _postJson(
     throw _HttpFailure(resp.status, detail, resp.headers);
   }
   return pyJsonLoads(utf8.decode(raw, allowMalformed: true));
-}
-
-/// An explicitly accepted asynchronous job survives a dropped client socket.
-/// Only GET is retried; never resubmit an uncertain inference POST.
-Future<Object?> _pollSystemOneResult(
-  Uri origin,
-  ChatResponse accepted,
-  Map<String, String> headers,
-  ModelRequestTrace? trace,
-) async {
-  final String? location = accepted.headers['location'];
-  final Uri resultUrl = origin.resolve(location ?? '');
-  unawaited(discardChatResponse(accepted));
-  if (accepted.headers['preference-applied'] != 'respond-async' ||
-      location == null ||
-      location.isEmpty ||
-      resultUrl.scheme != origin.scheme ||
-      resultUrl.host != origin.host ||
-      resultUrl.port != origin.port ||
-      resultUrl.userInfo.isNotEmpty ||
-      resultUrl.fragment.isNotEmpty) {
-    throw const LLMError('检查接口没有返回有效的结果查询地址');
-  }
-  final RunCancellation? cancellation = RunCancellation.current;
-  Future<T> wait<T>(Future<T> future) => cancellation?.wait(future) ?? future;
-  final Stopwatch clock = Stopwatch()..start();
-  const Duration limit = Duration(minutes: 10);
-  while (clock.elapsed < limit) {
-    await wait(Future<void>.delayed(const Duration(seconds: 2)));
-    cancellation?.checkpoint();
-    try {
-      final ChatResponse response = await wait(
-        postRequest(
-          ChatRequest(
-            resultUrl,
-            <String, String>{
-              'Accept': 'application/json',
-              if (headers['Authorization'] case final String key)
-                'Authorization': key,
-            },
-            '',
-            method: 'GET',
-          ),
-          const Duration(seconds: 15),
-          trace: trace,
-        ),
-      );
-      if (response.status == 202 ||
-          response.status == 408 ||
-          response.status == 429 ||
-          response.status >= 500) {
-        unawaited(discardChatResponse(response));
-        continue;
-      }
-      if (response.status != 200) {
-        unawaited(discardChatResponse(response));
-        throw LLMError('读取检查结果失败：HTTP ${response.status}');
-      }
-      final List<int> bytes = [];
-      final StreamIterator<List<int>> chunks = StreamIterator(response.body);
-      try {
-        while (await wait(
-          chunks.moveNext().timeout(const Duration(seconds: 15)),
-        )) {
-          bytes.addAll(chunks.current);
-          if (bytes.length > 16 * 1024 * 1024) {
-            throw const LLMError('检查结果超过大小上限');
-          }
-        }
-      } finally {
-        unawaited(chunks.cancel());
-      }
-      return pyJsonLoads(utf8.decode(bytes));
-    } on ConnectionNotSent {
-      continue;
-    } on IOException {
-      // The server retains the result; re-reading it creates no new inference.
-      continue;
-    } on TimeoutException {
-      continue;
-    }
-  }
-  throw TimeoutException('等待检查结果超过十分钟');
 }
 
 /// A classifier.dev failure that knows when the daily quota reopens.

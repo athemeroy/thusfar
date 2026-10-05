@@ -166,7 +166,7 @@ reads that result with GET. Dropped reads, temporary server errors and partial
 responses retry GET for up to ten minutes; they do not replay inference POSTs.
 Explicit pause still cancels client work. Initial acceptance lost before headers,
 process death and expired server results retain the existing uncertain-outcome
-handling. Chat generation and other providers' retry policy are unchanged.
+handling. Book-generation support is described below; ordinary providers keep their existing streaming path.
 
 The personal service implementation is in `tools/systemone/`: it computes accepted
 checks independently of the HTTP connection and retains the latest 256 completed
@@ -184,3 +184,30 @@ cross-origin result URLs are rejected; initial POST failure and expired jobs nev
 resubmit inference; explicit pause stops polling; completed server results survive
 a service restart; observer suspension does not immediately cancel healthy work,
 and truly missing workers still expire. Device confirmation remains necessary.
+
+## Retaining book-generation results
+
+The next Find N5 reproduction advanced to 24/603 segments and completed a
+chapter biography. Its System One polls returned 202 then 200 successfully.
+The failing request was a Qwen stream started at 22:40:01: it had HTTP 200 and
+329,887 received bytes before `http_exception` at 22:41:05, just as the activity
+resumed. It had no explicit user cancellation. This is a different path from
+the earlier pre-connection failure and the synchronous System One requests.
+
+Book-processing chat now offers the same optional asynchronous protocol.
+The personal NAS relay in `tools/resumable_chat` completes the original Qwen
+request independently of the phone, saves the entire response, and returns it
+in a status/content-type/body envelope. The shared result poller retries reads
+of that saved response, including interrupted downloads. The client parses the
+original SSE only after the entire envelope is available, preserving completion
+checks and avoiding partial text or duplicate generation. Interactive chat does
+not opt in. Other providers can ignore the preference and return their usual
+stream. Neither the model nor book extraction/biography validation changed.
+
+Validation includes a local upstream continuing after the original connection
+closes, a truncated result read, retrieval after restart, authentication, and
+exactly one upstream generation. A real Dart client through NAS TLS to Qwen
+recovered from an injected first GET failure: one inference POST, two result
+GETs, nonempty completed response, no uncertain request left. Find N5 hardware
+confirmation remains necessary. Initial lost acceptance, process death, expired
+results and a broken NAS-to-Qwen connection retain explicit recovery semantics.
