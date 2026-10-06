@@ -5,7 +5,7 @@ library;
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart' as crypto;
-import 'package:thusfar_core/thusfar_core.dart' show Json, PyJson;
+import 'package:thusfar_core/thusfar_core.dart' show Json;
 
 import '../reader/text_purification.dart';
 
@@ -352,10 +352,10 @@ Json? validatedReaderDirectory(
     ...(_canonical(raw)! as Json),
     'bookId': destination,
   };
-  if (utf8
-          .encode(PyJson.encode(result, ensureAscii: false, compact: true))
-          .length >
-      readerDirectoryByteLimit) {
+  // This schema contains only strings, integers, booleans and lists/maps.
+  // Dart's compact UTF-8 JSON matches native sidecar byte escaping, without
+  // invoking PyJson's native collection-type checks on JavaScript maps.
+  if (utf8.encode(jsonEncode(result)).length > readerDirectoryByteLimit) {
     _invalid('目录数据超过 4 MB');
   }
   return result;

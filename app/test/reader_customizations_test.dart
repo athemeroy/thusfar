@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_core/storage.dart' as storage;
+import 'package:thusfar_core/thusfar_core.dart' show PyJson;
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/data/purification_store.dart';
 import 'package:thusfar_app/data/reader_customizations.dart';
@@ -93,6 +94,36 @@ Json? _validate(Json payload, Json book, {String? destination}) =>
     );
 
 void main() {
+  test(
+    'shared byte-limit encoding matches the native compact sidecar writer',
+    () {
+      final String text = String.fromCharCodes(<int>[
+        for (int i = 0; i < 128; i++) i,
+        0x2028,
+        0x2029,
+        0x4e00,
+        0xffff,
+        0x1f600,
+        0x10ffff,
+      ]);
+      final Json payload = <String, Object?>{
+        'version': 1,
+        'bookId': 'book-a',
+        'length': 1234567,
+        'enabled': true,
+        'rule': 'prefix',
+        'prefix': '章节😀',
+        'rows': <Json>[
+          <String, Object?>{'title': text, 'offset': 0},
+        ],
+      };
+      expect(
+        utf8.encode(jsonEncode(payload)),
+        utf8.encode(PyJson.encode(payload, ensureAscii: false, compact: true)),
+      );
+    },
+  );
+
   group('immutable source identities', () {
     test(
       'key order, title metadata and AI verdict changes preserve identity',
