@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import '../async_util.dart';
 import '../env.dart';
 import '../errors.dart';
 import '../py/py_json_decode.dart';
@@ -661,7 +662,8 @@ Future<Object?> pollRetainedResult(
         unawaited(discardChatResponse(response));
         continue;
       }
-      if (response.status == 408 ||
+      if (response.status == 404 ||
+          response.status == 408 ||
           response.status == 429 ||
           response.status >= 500) {
         unawaited(discardChatResponse(response));
@@ -747,7 +749,38 @@ final class ChatResult {
 }
 
 /// Streamed chat completion in any supported protocol (`chat`).
+final Semaphore _bookModelSlot = Semaphore(1);
+
 Future<ChatResult> chat(
+  String fullModel,
+  List<Map<String, String>> messages, {
+  int maxTokens = 8000,
+  double temperature = 0.2,
+  double? timeout,
+  int? retries,
+  String? keyName,
+  void Function(String partial)? onText,
+  ChatEndpoint? endpoint,
+}) {
+  Future<ChatResult> request() => _chat(
+    fullModel,
+    messages,
+    maxTokens: maxTokens,
+    temperature: temperature,
+    timeout: timeout,
+    retries: retries,
+    keyName: keyName,
+    onText: onText,
+    endpoint: endpoint,
+  );
+  if (ModelRequestScope.current != null &&
+      environ['LLM_MAX_CONCURRENT'] == '1') {
+    return _bookModelSlot.run(request);
+  }
+  return request();
+}
+
+Future<ChatResult> _chat(
   String fullModel,
   List<Map<String, String>> messages, {
   int maxTokens = 8000,

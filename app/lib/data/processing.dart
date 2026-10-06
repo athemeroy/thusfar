@@ -112,7 +112,7 @@ Future<void> reconcileStoppedWorker(Library library, String reason) async {
 /// UI widgets only issue explicit commands and observe durable status files.
 
 /// Model requests a phone runs at once while reading a book.
-const int phoneConcurrency = 4;
+const int phoneConcurrency = 1;
 
 class ProcessingController extends BookProcessing {
   ProcessingController(
@@ -378,7 +378,8 @@ Future<void> _processingIsolate(List<Object?> args) async {
   WorkerSettings snapshot() {
     settings.applyEnvironment();
     final String model = settings.read().$2;
-    environ['LOCAL_CONCURRENCY'] = '4';
+    environ['LOCAL_CONCURRENCY'] = '$phoneConcurrency';
+    environ['LLM_MAX_CONCURRENT'] = '1';
     // These limits apply to this worker isolate only. The UI isolate retains
     // its own environment, including the model settings probe behavior.
     environ['LLM_RETRIES'] = '1';

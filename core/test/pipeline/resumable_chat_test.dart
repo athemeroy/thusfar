@@ -203,40 +203,45 @@ void main() {
     },
   );
 
-  test('healthy pending results reset the outage backoff', () async {
-    final oldSleep = llm.sleep;
-    final waits = <Duration>[];
-    llm.sleep = (delay) async {
-      waits.add(delay);
-    };
-    addTearDown(() {
-      llm.sleep = oldSleep;
-    });
-    final statuses = [503, 503, 202, 503, 200];
-    transport.reply = (request) async {
-      final status = statuses.removeAt(0);
-      return llm.ChatResponse(
-        status,
-        'application/json',
-        status == 200 ? Stream.value(utf8.encode('{}')) : const Stream.empty(),
+  test(
+    'gateway 404 retries the saved job and healthy pending resets backoff',
+    () async {
+      final oldSleep = llm.sleep;
+      final waits = <Duration>[];
+      llm.sleep = (delay) async {
+        waits.add(delay);
+      };
+      addTearDown(() {
+        llm.sleep = oldSleep;
+      });
+      final statuses = [404, 503, 202, 503, 200];
+      transport.reply = (request) async {
+        final status = statuses.removeAt(0);
+        return llm.ChatResponse(
+          status,
+          'application/json',
+          status == 200
+              ? Stream.value(utf8.encode('{}'))
+              : const Stream.empty(),
+        );
+      };
+      await llm.pollRetainedResult(
+        Uri.parse('https://fixture.invalid/v1'),
+        const llm.ChatResponse(
+          202,
+          'application/json',
+          Stream.empty(),
+          headers: {
+            'preference-applied': 'respond-async',
+            'location': '/v1/result',
+          },
+        ),
+        {},
+        null,
       );
-    };
-    await llm.pollRetainedResult(
-      Uri.parse('https://fixture.invalid/v1'),
-      const llm.ChatResponse(
-        202,
-        'application/json',
-        Stream.empty(),
-        headers: {
-          'preference-applied': 'respond-async',
-          'location': '/v1/result',
-        },
-      ),
-      {},
-      null,
-    );
-    expect(waits.map((d) => d.inSeconds), [2, 4, 8, 2, 4]);
-  });
+      expect(waits.map((d) => d.inSeconds), [2, 4, 8, 2, 4]);
+    },
+  );
 
   test(
     'unreachable saved result stops at two hours without new inference',
@@ -271,6 +276,64 @@ void main() {
       );
       expect(waited.inSeconds, closeTo(7200, 1));
       expect(transport.requests.every((r) => r.method == 'GET'), isTrue);
+    },
+  );
+
+  test(
+    'phone model slot waits for a saved result before the next inference',
+    () async {
+      environ['LLM_MAX_CONCURRENT'] = '1';
+      final oldSleep = llm.sleep;
+      llm.sleep = (_) async {};
+      addTearDown(() {
+        llm.sleep = oldSleep;
+      });
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      int posts = 0;
+      final body =
+          await streamReply('serial').body.transform(utf8.decoder).join();
+      transport.reply = (request) async {
+        if (request.method == 'POST') {
+          posts++;
+          return const llm.ChatResponse(
+            202,
+            'application/json',
+            Stream.empty(),
+            headers: {
+              'preference-applied': 'respond-async',
+              'location': '/v1/result',
+            },
+          );
+        }
+        if (!entered.isCompleted) {
+          entered.complete();
+          await release.future;
+        }
+        return llm.ChatResponse(
+          200,
+          'application/json',
+          Stream.value(
+            utf8.encode(
+              jsonEncode({
+                'status': 200,
+                'content_type': 'text/event-stream',
+                'body': body,
+              }),
+            ),
+          ),
+        );
+      };
+      final scope = ModelRequestScope(root);
+      final first = scope.run(() => llm.chat('fixture', const []));
+      await entered.future;
+      final second = scope.run(() => llm.chat('fixture', const []));
+      await Future<void>.delayed(Duration.zero);
+      expect(posts, 1);
+      release.complete();
+      final results = await Future.wait([first, second]);
+      expect(results.map((r) => r.text), ['serial', 'serial']);
+      expect(posts, 2);
     },
   );
 
