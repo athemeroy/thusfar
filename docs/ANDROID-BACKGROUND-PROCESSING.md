@@ -251,3 +251,26 @@ recovered from an injected first GET failure: one inference POST, two result
 GETs, nonempty completed response, no uncertain request left. Find N5 hardware
 confirmation remains necessary. Initial lost acceptance, process death, expired
 results and a broken NAS-to-Qwen connection retain explicit recovery semantics.
+
+## Find N5 observation on 2026-10-06
+
+APK 2.0.14 (66), built from `85e9095` on MINI with the existing release signature,
+was installed over version 64 without clearing reader data. Existing processing
+was resumed. With the app in the background, notification progress increased
+from 29 to 31 of 603 segments. While charging with the screen locked, processing
+continued. After unplugging, screen-off progress increased from 38 to 44.
+
+For about three minutes of the unplugged test, both ADB connections (explicit
+endpoint and mDNS alias) were disconnected and zero connected devices were
+confirmed on the build host. Progress increased from 40 to 44 during that
+interval. Reconnecting did not foreground the app. Retrieved native and worker
+heartbeats covered the interval, with a maximum observed worker gap of 15,032 ms.
+The final system snapshot confirmed screen off, no connected power source, and
+foreground-service process state. The temporary five-minute display timeout was
+restored to the user's original 30 seconds and read back.
+
+This short run did not reproduce the earlier whole-process suspension. It does
+not establish that long unattended operation, other network conditions, or the
+previous OEM interruption are fixed. No new app behavior change was made based
+on this non-reproduction. Raw system logs stay in the private NAS report; only
+sanitized timing and state are recorded here.
