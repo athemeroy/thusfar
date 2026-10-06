@@ -183,7 +183,13 @@ Future<void> _tapForTransfer(
   _SnapshotLibrary library,
 ) async {
   await tester.ensureVisible(action);
-  await tester.pumpAndSettle();
+  if (stage == 'import') {
+    // The dialog deliberately leaves the transfer's indeterminate spinner
+    // active until the user chooses. Waiting for global quiescence deadlocks.
+    await tester.pump(const Duration(milliseconds: 400));
+  } else {
+    await tester.pumpAndSettle();
+  }
   await tester.tap(action);
   await tester.pump();
   // Storage delegates run in the root event zone so native IndexedDB
@@ -563,7 +569,11 @@ void main() {
         'preview',
         transferLibrary,
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('远端书籍快照'), findsOneWidget);
+      expect(find.text('导入到此浏览器'), findsOneWidget);
+      expect(transferLibrary.previewed.isCompleted, isTrue);
+      expect(transferLibrary.imported.isCompleted, isFalse);
       await _tapForTransfer(
         tester,
         find.text('导入到此浏览器'),
