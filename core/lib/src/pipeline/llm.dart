@@ -621,10 +621,14 @@ Future<Object?> pollRetainedResult(
   // Each read has its own deadline; retries can only fetch the accepted job.
   const Duration interval = Duration(seconds: 2);
   const Duration readLimit = Duration(seconds: 15);
-  Duration budget = const Duration(minutes: 10);
+  Duration budget = const Duration(hours: 2);
+  Duration retryDelay = interval;
   while (budget > Duration.zero) {
-    await wait(Future<void>.delayed(interval));
-    budget -= interval;
+    final Duration delay = retryDelay < budget ? retryDelay : budget;
+    await wait(sleep(delay));
+    budget -= delay;
+    if (budget <= Duration.zero) break;
+    retryDelay = Duration(seconds: math.min(60, retryDelay.inSeconds * 2));
     cancellation?.checkpoint();
     final Stopwatch readClock = Stopwatch()..start();
     Duration readRemaining() {
@@ -652,8 +656,12 @@ Future<Object?> pollRetainedResult(
           trace: trace,
         ),
       );
-      if (response.status == 202 ||
-          response.status == 408 ||
+      if (response.status == 202) {
+        retryDelay = interval;
+        unawaited(discardChatResponse(response));
+        continue;
+      }
+      if (response.status == 408 ||
           response.status == 429 ||
           response.status >= 500) {
         unawaited(discardChatResponse(response));
@@ -689,7 +697,7 @@ Future<Object?> pollRetainedResult(
       budget -= readClock.elapsed > readLimit ? readLimit : readClock.elapsed;
     }
   }
-  throw TimeoutException('等待保存的结果超过十分钟');
+  throw TimeoutException('等待保存的结果超过两小时');
 }
 
 /// Injected wait for retries; tests make it instant.

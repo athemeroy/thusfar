@@ -145,6 +145,136 @@ void main() {
   );
 
   test(
+    'result reads back off through a long outage and recover one job',
+    () async {
+      final oldSleep = llm.sleep;
+      final waits = <Duration>[];
+      llm.sleep = (delay) async {
+        waits.add(delay);
+      };
+      addTearDown(() {
+        llm.sleep = oldSleep;
+      });
+      int polls = 0;
+      final body =
+          await streamReply('恢复的小传').body.transform(utf8.decoder).join();
+      transport.reply = (request) async {
+        if (request.method == 'POST') {
+          return const llm.ChatResponse(
+            202,
+            'application/json',
+            Stream.empty(),
+            headers: {
+              'preference-applied': 'respond-async',
+              'location': '/v1/chat/completions?job=outage',
+            },
+          );
+        }
+        if (++polls <= 70) {
+          if (polls.isEven) throw const SocketException('offline');
+          return const llm.ChatResponse(
+            503,
+            'application/json',
+            Stream.empty(),
+          );
+        }
+        return llm.ChatResponse(
+          200,
+          'application/json',
+          Stream.value(
+            utf8.encode(
+              jsonEncode({
+                'status': 200,
+                'content_type': 'text/event-stream',
+                'body': body,
+              }),
+            ),
+          ),
+        );
+      };
+      final answer = await ModelRequestScope(
+        root,
+      ).run(() => llm.chat('fixture', const []));
+      expect(answer.text, '恢复的小传');
+      expect(transport.requests.where((r) => r.method == 'POST').length, 1);
+      expect(waits.take(7).map((d) => d.inSeconds), [2, 4, 8, 16, 32, 60, 60]);
+      expect(waits.fold<int>(0, (n, d) => n + d.inSeconds), greaterThan(3600));
+      expect(waits.every((d) => d <= const Duration(minutes: 1)), isTrue);
+    },
+  );
+
+  test('healthy pending results reset the outage backoff', () async {
+    final oldSleep = llm.sleep;
+    final waits = <Duration>[];
+    llm.sleep = (delay) async {
+      waits.add(delay);
+    };
+    addTearDown(() {
+      llm.sleep = oldSleep;
+    });
+    final statuses = [503, 503, 202, 503, 200];
+    transport.reply = (request) async {
+      final status = statuses.removeAt(0);
+      return llm.ChatResponse(
+        status,
+        'application/json',
+        status == 200 ? Stream.value(utf8.encode('{}')) : const Stream.empty(),
+      );
+    };
+    await llm.pollRetainedResult(
+      Uri.parse('https://fixture.invalid/v1'),
+      const llm.ChatResponse(
+        202,
+        'application/json',
+        Stream.empty(),
+        headers: {
+          'preference-applied': 'respond-async',
+          'location': '/v1/result',
+        },
+      ),
+      {},
+      null,
+    );
+    expect(waits.map((d) => d.inSeconds), [2, 4, 8, 2, 4]);
+  });
+
+  test(
+    'unreachable saved result stops at two hours without new inference',
+    () async {
+      final oldSleep = llm.sleep;
+      Duration waited = Duration.zero;
+      llm.sleep = (delay) async {
+        waited += delay;
+      };
+      addTearDown(() {
+        llm.sleep = oldSleep;
+      });
+      transport.reply = (request) async {
+        throw const SocketException('offline');
+      };
+      await expectLater(
+        llm.pollRetainedResult(
+          Uri.parse('https://fixture.invalid/v1'),
+          const llm.ChatResponse(
+            202,
+            'application/json',
+            Stream.empty(),
+            headers: {
+              'preference-applied': 'respond-async',
+              'location': '/v1/result',
+            },
+          ),
+          {},
+          null,
+        ),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(waited.inSeconds, closeTo(7200, 1));
+      expect(transport.requests.every((r) => r.method == 'GET'), isTrue);
+    },
+  );
+
+  test(
     'interactive calls keep ordinary live streaming without async opt in',
     () async {
       transport.reply = (request) async {

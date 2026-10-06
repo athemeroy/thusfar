@@ -274,3 +274,11 @@ not establish that long unattended operation, other network conditions, or the
 previous OEM interruption are fixed. No new app behavior change was made based
 on this non-reproduction. Raw system logs stay in the private NAS report; only
 sanitized timing and state are recorded here.
+
+### 2026-10-06：长时间断网后的结果恢复
+
+已受理的模型结果读取由十分钟改为两小时的运行时间预算。临时网络错误和 408/429/5xx 后按 2、4、8、16、32、60 秒退避，最长一分钟；正常的 202 等待仍每两秒读取，恢复后重置退避。仍只重读同一结果，不重发推理请求。手动停止继续生效。
+
+Find N5 的另一段中断与 Clash 开启同时出现。将页读加入排除名单并正常退出保存后，系统 VPN 的 UID 范围确认排除页读。VPN 开启、锁屏时进度 58 → 59，后续读数 65，原息屏时间 30 秒已恢复。此结果不证明所有 OPPO 后台限制已消除。后续新包验证改用用户指定的小米。
+
+第 24 章截图中的人物已识别，完整小传缺失。该书小传批次在内部章序 19、25 等位置生成，不是逐章发布；后面的版本不会显示在第 24 章。10:11 导出的本机诊断确认这些批次完成，第 25 批候选 9、通过 6。诊断不含姓名，不能据此断言截图人物是哪一个候选。空白小传提示不再声称继续整理就一定能补齐这一页的小传。
