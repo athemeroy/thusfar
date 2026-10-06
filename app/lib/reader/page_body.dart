@@ -8,6 +8,7 @@ import 'package:thusfar_core/thusfar_core.dart';
 import '../data/library.dart';
 import '../ui/theme.dart';
 import 'paginator.dart';
+import 'text_purification.dart';
 import 'image_viewer.dart';
 
 /// What the page needs to draw its AI and personal layers.
@@ -62,6 +63,11 @@ class PageBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
+          if (page.frags.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('本章没有可显示的文字，可翻至下一章或在文本净化中停用规则'),
+            ),
           for (final Frag f in page.frags)
             if (f.image)
               SizedBox(
@@ -164,10 +170,16 @@ class _Fragment extends StatelessWidget {
 
   TextSpan buildSpan(Block b, bool heading, int shift) {
     final PageSpec spec = pager.spec;
-    final String text = b.text;
+    final PurifiedText mapped = pager.textFor(b);
+    final String text = mapped.text;
     final int o = b.o;
     // Boundaries where any styling changes.
-    final Set<int> cuts = <int>{0, frag.start, frag.end, text.length};
+    final Set<int> cuts = <int>{
+      0,
+      frag.displayStart,
+      frag.displayEnd,
+      text.length,
+    };
     final List<Mention> mentions = <Mention>[];
     final World? w = layers.world;
     if (w != null) {
@@ -179,8 +191,8 @@ class _Fragment extends StatelessWidget {
         mentions.add(m);
         last = m.end;
         cuts
-          ..add(m.start - o)
-          ..add(m.end - o);
+          ..add(mapped.displayStart(m.start - o))
+          ..add(mapped.displayEnd(m.end - o));
       }
     }
     final List<(int, int)> mine = <(int, int)>[];
@@ -191,21 +203,21 @@ class _Fragment extends StatelessWidget {
       if (e > s) {
         mine.add((s, e));
         cuts
-          ..add(s - o)
-          ..add(e - o);
+          ..add(mapped.displayStart(s - o))
+          ..add(mapped.displayEnd(e - o));
       }
     }
     final (int, int)? sel = layers.selection;
     if (sel != null && sel.$2 > o && sel.$1 < b.end) {
       cuts
-        ..add(math.max(0, sel.$1 - o))
-        ..add(math.min(text.length, sel.$2 - o));
+        ..add(mapped.displayStart(sel.$1 - o))
+        ..add(mapped.displayEnd(sel.$2 - o));
     }
     final (int, int)? flash = layers.flash;
     if (flash != null && flash.$2 > o && flash.$1 < b.end) {
       cuts
-        ..add(math.max(0, flash.$1 - o))
-        ..add(math.min(text.length, flash.$2 - o));
+        ..add(mapped.displayStart(flash.$1 - o))
+        ..add(mapped.displayEnd(flash.$2 - o));
     }
     final List<int> points =
         cuts.where((int x) => x >= 0 && x <= text.length).toList()..sort();
@@ -222,19 +234,20 @@ class _Fragment extends StatelessWidget {
       final int a = points[i];
       final int z = points[i + 1];
       if (z <= a) continue;
-      final int absA = o + a;
+      final int absA = o + mapped.sourceStart(a);
+      final int absZ = o + mapped.sourceEnd(z);
       Mention? m;
       for (final Mention x in mentions) {
-        if (x.start <= absA && absA < x.end) {
+        if (x.start < absZ && absA < x.end) {
           m = x;
           break;
         }
       }
       final bool isNote = mine.any(
-        ((int, int) r) => r.$1 <= absA && absA < r.$2,
+        ((int, int) r) => r.$1 < absZ && absA < r.$2,
       );
-      final bool isSel = sel != null && sel.$1 <= absA && absA < sel.$2;
-      final bool isFlash = flash != null && flash.$1 <= absA && absA < flash.$2;
+      final bool isSel = sel != null && sel.$1 < absZ && absA < sel.$2;
+      final bool isFlash = flash != null && flash.$1 < absZ && absA < flash.$2;
       Color? bg;
       if (isSel) {
         bg = tokens.qing.withValues(alpha: 0.30);
@@ -256,7 +269,7 @@ class _Fragment extends StatelessWidget {
         );
       }
       final String id = m?.id ?? '';
-      final bool visible = a >= frag.start && z <= frag.end;
+      final bool visible = a >= frag.displayStart && z <= frag.displayEnd;
       children.add(
         TextSpan(
           text: text.substring(a, z),

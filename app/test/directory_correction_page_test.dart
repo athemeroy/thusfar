@@ -8,6 +8,7 @@ import 'package:thusfar_app/data/reader_directory.dart';
 import 'package:thusfar_app/data/seen.dart';
 import 'package:thusfar_app/reader/paginator.dart';
 import 'package:thusfar_app/reader/reader_controller.dart';
+import 'package:thusfar_app/reader/text_purification.dart';
 import 'package:thusfar_app/sheets/common.dart';
 import 'package:thusfar_app/sheets/directory_correction_page.dart';
 import 'package:thusfar_app/sheets/sheet_host.dart';
@@ -487,6 +488,102 @@ void main() {
       expect(tester.takeException(), isNull);
     }
   });
+
+  for (final double font in <double>[16, 32]) {
+    testWidgets(
+      'purified-away corrected heading and citations navigate forward at $font',
+      (tester) async {
+        final File canonical = File('${book.entry.dir.path}/book.json');
+        final List<int> originalBytes = canonical.readAsBytesSync();
+        final int start = controller.start, cutoff = controller.cutoff;
+        final List<Chapter> originalChapters = book.chapters;
+        controller.onPage(ReaderController.base);
+        final File progressFile = File('${root.path}/progress.json');
+        final List<int> savedProgress = progressFile.readAsBytesSync();
+        book.notes.save(
+          kind: 'note',
+          start: 0,
+          end: 3,
+          cutoff: cutoff,
+          text: '原文摘记',
+        );
+        final File notebook = File('${book.entry.dir.path}/notebook.json');
+        final List<int> savedNotes = notebook.readAsBytesSync();
+        book.directory.apply(
+          detectDirectory(source, DirectoryRule.automatic, ''),
+        );
+        expect(controller.start, start);
+        expect(controller.cutoff, cutoff);
+        expect(progressFile.readAsBytesSync(), savedProgress);
+        final Chapter target = book.directory.chapters[450];
+        final Paginator pager = Paginator(
+          book,
+          PageSpec(
+            width: 280,
+            height: 220,
+            fontSize: font,
+            lineHeight: 1.6,
+            fontFamily: null,
+            color: Colors.black,
+            textScaler: TextScaler.noScaling,
+          ),
+          rules: <PurificationRule>[
+            PurificationRule(id: 'hide-target-heading', find: target.title),
+            const PurificationRule(
+              id: 'expand-body',
+              find: '这里是正文📕。',
+              replacement: '替换展示文字📚📚📚📚📚。',
+            ),
+          ],
+        );
+        controller.layout(pager, start);
+        expect(pager.textFor(book.blocks[900]).text, isEmpty);
+        expect(progressFile.readAsBytesSync(), savedProgress);
+        // Directory jumps and direct source citations inside the removed heading
+        // must land on text at/after that source, never on the previous page.
+        for (final int offset in <int>[
+          target.o0,
+          target.o0 + 2,
+          target.o0 + target.title.length - 1,
+        ]) {
+          final (int, int) sourceRange = (offset, offset + 1);
+          controller.jump(offset, highlight: sourceRange);
+          expect(controller.chapter, book.chapterAt(target.o0));
+          expect(controller.chapter, 4);
+          expect(controller.page!.end, greaterThan(offset));
+          expect(controller.page!.start, lessThanOrEqualTo(book.blocks[901].o));
+          expect(controller.flash, sourceRange);
+          expect(controller.returnTo, start);
+          expect(library.progressOf(book.id)!.pos, controller.start);
+          expect(library.progressOf(book.id)!.cutoff, controller.cutoff);
+          expect(controller.cutoff, lessThanOrEqualTo(book.length));
+        }
+        expect(book.directory.chapterAt(target.o0), 450);
+        expect(book.chapters, same(originalChapters));
+        final int jumpedStart = controller.start,
+            jumpedCutoff = controller.cutoff;
+        final List<int> jumpedProgress = progressFile.readAsBytesSync();
+        book.directory.reset();
+        expect(controller.start, jumpedStart);
+        expect(controller.cutoff, jumpedCutoff);
+        expect(progressFile.readAsBytesSync(), jumpedProgress);
+        expect(book.directory.chapters, same(originalChapters));
+        expect(pager.textFor(book.blocks[900]).text, isEmpty);
+        expect(canonical.readAsBytesSync(), originalBytes);
+        expect(notebook.readAsBytesSync(), savedNotes);
+        expect(book.status.state, 'paused');
+        expect(book.status.frontier, 20);
+        final List<PageData> pages = pager.pages(controller.chapter);
+        expect(
+          pager.pageOf(
+            controller.chapter,
+            book.chapters[controller.chapter].o1,
+          ),
+          pages.length - 1,
+        );
+      },
+    );
+  }
   for (final Size size in <Size>[
     const Size(320, 720),
     const Size(540, 720),

@@ -77,9 +77,9 @@
       "file": "09-select.png",
       "width": 1080,
       "height": 2340,
-      "different_pixels": 294,
+      "different_pixels": 279,
       "max_channel_delta": 11,
-      "sha256": "92e380e77bd363382b032b0451a088c0aa4e427c252bf3a6d5828abf84f2d229",
+      "sha256": "d07becf46cb178ac875c1a0ee391c07cf2a793556915bce48bbfa7246557bc85",
       "source_commit": "0add9b1a41f7078e59ba85f383d1cc351c9fa630",
       "source_run": "https://github.com/athemeroy/thusfar/actions/runs/37259557281",
       "source_artifact_id": 11323674732,
@@ -284,6 +284,22 @@
         "title-pending-toc.png"
       ],
       "review": "Full images and isolated differences reviewed on both macOS 15 and 26. The intentional changes are confined to the right end of the page-jump input and the new chapter-search button. No chapter text, row positioning, hidden titles, or reading content changed. The macOS 15 baselines were refreshed from the matching macOS 15 artifact; other baselines are unchanged. The updated per-image differences compare the new macOS 26 output with the new macOS 15 baseline; these are evidence, not test tolerances."
+    },
+    {
+      "source_commit": "53d9bdbe163685162fbba8e8cec782afab085133",
+      "source_run": "https://github.com/athemeroy/thusfar/actions/runs/37440851984",
+      "source_artifact_id": 11400793941,
+      "source_artifact_sha256": "f81571d5bab317bebfe83ee23e9eb5a589615df0a8332a544e0dbe7d5e6b0e68",
+      "macos_15_source_run": "https://github.com/athemeroy/thusfar/actions/runs/37440846187",
+      "macos_15_artifact_id": 11401451496,
+      "macos_15_artifact_sha256": "392a0f8f9e87cd05ac2a3aff34c96e4d8fae64da07f5d5cebfe6b264fbb2350b",
+      "platform": "macOS 26.6.2 arm64",
+      "flutter": "3.47.5",
+      "review_date": "2026-10-06",
+      "images": [
+        "09-select.png"
+      ],
+      "review": "Full actual images and masked differences independently reviewed on both macOS 15 and 26. The new purification action wraps the toolbar; measured-height positioning keeps the selected quote and both handles fully visible. All seven actions remain readable. Changes are confined to the toolbar rectangle (x73..1007, y645..896); paragraph layout, selection range and other controls are unchanged. The macOS 15 baseline is from its matching macOS 15 artifact. Updated per-image differences compare the two new platform images; these are evidence, not test tolerances. TOC baselines and all other images are preserved."
     }
   ]
 }
