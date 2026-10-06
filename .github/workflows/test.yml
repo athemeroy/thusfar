@@ -85,6 +85,7 @@ jobs:
             test/reading_overhaul_test.dart test/recovery_test.dart \
             test/screens_test.dart test/shared_import_test.dart \
             test/shelf_processing_action_test.dart \
+            test/shelf_accessibility_test.dart test/shelf_fallback_metrics_test.dart \
             test/typography_prefs_test.dart test/typography_sheet_test.dart \
             test/paragraph_typography_test.dart \
             test/update_checker_test.dart \
