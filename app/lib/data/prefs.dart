@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../reader/tap_layout.dart';
 import 'library.dart';
 
 enum PageAnim { slide, cover, none }
@@ -25,6 +26,7 @@ class Prefs extends ChangeNotifier {
     paper = (j['paper'] as num?)?.toInt() ?? 0;
     anim = PageAnim.values[(j['anim'] as num?)?.toInt() ?? 0];
     volumeKeys = j['volumeKeys'] as bool? ?? true;
+    tapLayout = ReaderTapLayout.fromJson(j['tapLayout']);
     night = NightMode.values[(j['night'] as num?)?.toInt() ?? 0];
     sort = (j['sort'] as num?)?.toInt() ?? 0;
     listView = j['listView'] as bool? ?? false;
@@ -49,6 +51,7 @@ class Prefs extends ChangeNotifier {
   late int paper;
   late PageAnim anim;
   late bool volumeKeys;
+  late ReaderTapLayout tapLayout;
   late NightMode night;
 
   /// Shelf sort: 0 最近阅读 · 1 书名 · 2 阅读进度 · 3 最近加入.
@@ -116,6 +119,7 @@ class Prefs extends ChangeNotifier {
       'paper': paper,
       'anim': anim.index,
       'volumeKeys': volumeKeys,
+      'tapLayout': tapLayout.toJson(),
       'night': night.index,
       'sort': sort,
       'listView': listView,
