@@ -110,17 +110,12 @@ extension RunnerLoops on Runner {
             await cachedGeneration(
               'rewrite-$i-$who',
               model,
-              [
-                {
-                  'role': 'user',
-                  'content': _fmt(prompts.rewrite, {
+              prompts.rewrite.messages({
                     'old': _str(earlier[who], '（无）'),
                     'text': text,
                     'tagline': p['tagline'] ?? '',
                     'bio': p['bio'] ?? '',
                   }),
-                },
-              ],
               maxTokens: 1500,
               temperature: 0.1,
               jsonOutput: true,
