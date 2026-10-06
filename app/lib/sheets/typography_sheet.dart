@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../data/prefs.dart';
 import '../ui/theme.dart';
+import 'reading_controls_sheet.dart';
 
 /// Keep part of the book visible while changing reading layout.
 Future<void> openTypography(
@@ -14,7 +15,8 @@ Future<void> openTypography(
 }) {
   final Widget panel = ListenableBuilder(
     listenable: prefs,
-    builder: (BuildContext context, _) => _TypographyPanel(prefs: prefs),
+    builder: (BuildContext context, _) =>
+        _TypographyPanel(prefs: prefs, anchorPoint: anchorPoint),
   );
   if (MediaQuery.sizeOf(context).width >= 720) {
     return showDialog<void>(
@@ -161,9 +163,10 @@ class _MetricControlState extends State<_MetricControl> {
 }
 
 class _TypographyPanel extends StatelessWidget {
-  const _TypographyPanel({required this.prefs});
+  const _TypographyPanel({required this.prefs, this.anchorPoint});
 
   final Prefs prefs;
+  final Offset? anchorPoint;
 
   @override
   Widget build(BuildContext context) {
@@ -485,6 +488,18 @@ class _TypographyPanel extends StatelessWidget {
                           (int i) => prefs.update(
                             (Prefs p) => p.anim = PageAnim.values[i],
                           ),
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('点击区域'),
+                        subtitle: Text(
+                          tapPresetLabel(prefs.tapLayout.matchingPreset),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => openReadingControls(
+                          context,
+                          prefs,
+                          anchorPoint: anchorPoint,
                         ),
                       ),
                       SwitchListTile(

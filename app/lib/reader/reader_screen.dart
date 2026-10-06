@@ -32,6 +32,7 @@ import '../sheets/footnotes_sheet.dart';
 import 'page_body.dart';
 import 'paginator.dart';
 import 'reader_controller.dart';
+import 'tap_layout.dart';
 
 /// S04 阅读页 with its toolbar (S04c), selection (S06) and drawers.
 class ReaderScreen extends StatefulWidget {
@@ -74,6 +75,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final GlobalKey<CoverPageTurnState> _coverTurnKey =
       GlobalKey<CoverPageTurnState>();
   PageSpec? spec;
+  late PageAnim _lastAnimation;
   int? _layoutAnchor;
   double _contentLeft = 0;
   double _contentWidth = 0;
@@ -96,6 +98,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
+    _lastAnimation = widget.prefs.anim;
     widget.prefs.addListener(_relayout);
     book.notes.addListener(_repaint);
     c.addListener(_repaint);
@@ -127,7 +130,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _relayout() {
-    spec = null;
+    // _ensureLayout compares every page metric; control-only changes do not
+    // need a new paginator or a reset of an in-flight selection. Switching
+    // page-turn widgets still rebases their controllers at the current page.
+    if (_lastAnimation != widget.prefs.anim) {
+      _lastAnimation = widget.prefs.anim;
+      spec = null;
+    }
     if (mounted) setState(() {});
   }
 
@@ -802,7 +811,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: _pages(
                     context,
                     paper,
-                    viewportWidth: reading.width,
+                    viewportSize: Size(reading.width, area.height),
                     contentInsets: EdgeInsets.only(
                       left: pageLeft,
                       right: pageRight,
@@ -921,7 +930,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget _pages(
     BuildContext context,
     Color paper, {
-    required double viewportWidth,
+    required Size viewportSize,
     required EdgeInsets contentInsets,
   }) {
     final PageController? p = pc;
@@ -978,13 +987,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _clearSelection();
             return;
           }
-          final double x = d.localPosition.dx / math.max(1, viewportWidth);
-          if (x < 1 / 3) {
-            _turn(-1);
-          } else if (x > 2 / 3) {
-            _turn(1);
-          } else {
-            c.setToolbar(!c.toolbar);
+          final ReaderTapAction action = widget.prefs.tapLayout.actionAt(
+            d.localPosition.dx / math.max(1, viewportSize.width),
+            d.localPosition.dy / math.max(1, viewportSize.height),
+          );
+          switch (action) {
+            case ReaderTapAction.previous:
+              _turn(-1);
+            case ReaderTapAction.next:
+              _turn(1);
+            case ReaderTapAction.tools:
+              c.setToolbar(!c.toolbar);
+            case ReaderTapAction.none:
+              break;
           }
         },
         onLongPressStart: _longPress,
