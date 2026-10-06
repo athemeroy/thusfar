@@ -206,6 +206,14 @@ void main() {
               expect(actionRect.left, greaterThanOrEqualTo(0));
               expect(actionRect.right, lessThanOrEqualTo(width));
               if (!listView) {
+                final IndexedSemantics item = tester.widget<IndexedSemantics>(
+                  find.ancestor(
+                    of: action,
+                    matching: find.byType(IndexedSemantics),
+                  ),
+                );
+                expect(item.index, i);
+                expect(item.child, isA<RepaintBoundary>());
                 final RenderParagraph label = tester
                     .renderObject<RenderParagraph>(
                       find.descendant(

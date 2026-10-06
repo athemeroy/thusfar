@@ -315,6 +315,9 @@ class _ShelfScreenState extends State<ShelfScreen> {
                               // and spacing for the default-size shelf.
                               sliver: SliverList.separated(
                                 addSemanticIndexes: false,
+                                // Preserve per-card layers, including their
+                                // fractional-pixel painting at default scale.
+                                addRepaintBoundaries: false,
                                 itemCount: (books.length / columns).ceil(),
                                 separatorBuilder: (_, _) =>
                                     SizedBox(height: compact ? 18 : 22),
@@ -336,16 +339,18 @@ class _ShelfScreenState extends State<ShelfScreen> {
                                                 ? IndexedSemantics(
                                                     index:
                                                         row * columns + column,
-                                                    child: ConstrainedBox(
-                                                      constraints:
-                                                          BoxConstraints(
-                                                            minHeight:
-                                                                tileHeight,
-                                                          ),
-                                                      child: _gridCell(
-                                                        context,
-                                                        books[row * columns +
-                                                            column],
+                                                    child: RepaintBoundary(
+                                                      child: ConstrainedBox(
+                                                        constraints:
+                                                            BoxConstraints(
+                                                              minHeight:
+                                                                  tileHeight,
+                                                            ),
+                                                        child: _gridCell(
+                                                          context,
+                                                          books[row * columns +
+                                                              column],
+                                                        ),
                                                       ),
                                                     ),
                                                   )
