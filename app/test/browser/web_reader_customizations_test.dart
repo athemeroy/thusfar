@@ -141,12 +141,19 @@ class _SnapshotClient extends Fake implements WebDavClient {
 class _SnapshotLibrary extends Fake implements WebLibrary {
   _SnapshotLibrary(this.library);
   final WebLibrary library;
+  Object? lastError;
   final Completer<void> previewed = Completer<void>();
   final Completer<void> imported = Completer<void>();
 
   @override
-  Future<Uint8List> exportBackupBytes(String id) =>
-      library.exportBackupBytes(id);
+  Future<Uint8List> exportBackupBytes(String id) async {
+    try {
+      return await library.exportBackupBytes(id);
+    } on Object catch (error) {
+      lastError = error;
+      rethrow;
+    }
+  }
 
   @override
   Future<String> importBackup(
@@ -162,21 +169,26 @@ class _SnapshotLibrary extends Fake implements WebLibrary {
   }
 }
 
-Future<void> _pumpForTransfer(
+Future<void> _tapForTransfer(
   WidgetTester tester,
-  bool Function() completed,
+  Finder action,
+  Completer<void> completed,
   String stage,
+  _SnapshotLibrary library,
 ) async {
-  // IndexedDB resumes in the UI's fake zone. Awaiting its completion inside
-  // runAsync alone never drains those microtasks; alternate real events and
-  // pumps like the existing browser interruption tests, with a bounded error.
-  for (int i = 0; i < 300 && !completed(); i++) {
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+  // Start the tap and every resulting IndexedDB await in the real zone. A
+  // fake-zone continuation can outlive IndexedDB's native transaction window,
+  // even when periodically pumped. Keep the real operation bounded and make
+  // any delegate failure visible rather than waiting forever on a completer.
+  await tester.runAsync(() async {
+    await tester.tap(action);
+    await completed.future.timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        throw StateError('WebDAV $stage did not finish: ${library.lastError}');
+      },
     );
-    await tester.pump(const Duration(milliseconds: 10));
-  }
-  expect(completed(), isTrue, reason: 'WebDAV $stage did not finish');
+  });
   expect(tester.takeException(), isNull);
 }
 
@@ -513,11 +525,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('上传新快照'));
-      await tester.tap(find.text('上传新快照'));
-      await _pumpForTransfer(
+      await _tapForTransfer(
         tester,
-        () => client.uploadedReady.isCompleted,
+        find.text('上传新快照'),
+        client.uploadedReady,
         'upload',
+        transferLibrary,
       );
       await tester.pumpAndSettle();
       expect(client.uploaded, isNotNull);
@@ -526,18 +539,20 @@ void main() {
         native['reader_customizations'],
       );
       await tester.ensureVisible(find.text('2026-10-06 01:02:03 UTC'));
-      await tester.tap(find.text('2026-10-06 01:02:03 UTC'));
-      await _pumpForTransfer(
+      await _tapForTransfer(
         tester,
-        () => transferLibrary.previewed.isCompleted,
+        find.text('2026-10-06 01:02:03 UTC'),
+        transferLibrary.previewed,
         'preview',
+        transferLibrary,
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('导入到此浏览器'));
-      await _pumpForTransfer(
+      await _tapForTransfer(
         tester,
-        () => transferLibrary.imported.isCompleted,
+        find.text('导入到此浏览器'),
+        transferLibrary.imported,
         'import',
+        transferLibrary,
       );
       await tester.pumpAndSettle();
       final Uint8List exported = (await tester.runAsync(
