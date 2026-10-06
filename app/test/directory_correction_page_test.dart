@@ -182,12 +182,13 @@ void main() {
           chapter = controller.chapter;
       await show(tester);
       await tapText(tester, '修正 TXT 目录');
+      expect(find.text('修正目录不包含在书籍导出、书库 ZIP 备份或 WebDAV 同步中'), findsOneWidget);
       await preview(tester);
       expect(book.directory.enabled, isFalse);
       await tapText(tester, '取消预览');
-      expect(find.text('应用本书目录'), findsNothing);
+      expect(find.text('应用目录'), findsNothing);
       await preview(tester);
-      await tapText(tester, '应用本书目录');
+      await tapText(tester, '应用目录');
       expect(book.directory.chapters.length, 600);
       expect(book.chapters.length, 6);
       expect(controller.start, start);
@@ -197,7 +198,7 @@ void main() {
       expect(book.status.frontier, 20);
       expect(jumps, isEmpty);
       await preview(tester);
-      await tapText(tester, '应用本书目录');
+      await tapText(tester, '应用目录');
       await tapText(tester, '恢复原目录');
       await tapText(tester, '取消恢复');
       expect(book.directory.enabled, isTrue);
@@ -236,7 +237,7 @@ void main() {
           .controller!
           .jumpTo(0);
       await tester.pumpAndSettle();
-      await tapText(tester, '应用本书目录');
+      await tapText(tester, '应用目录');
       await show(tester, page: TocSearchPage(link: link));
       final Finder input = find.byKey(
         const ValueKey<String>('toc-search-input'),
@@ -307,7 +308,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('自定义固定前缀').last);
       await tester.pumpAndSettle();
-      expect(find.text('应用本书目录'), findsNothing);
+      expect(find.text('应用目录'), findsNothing);
       final Finder input = find.byKey(
         const ValueKey<String>('directory-prefix'),
       );
@@ -324,7 +325,7 @@ void main() {
         await tester.pump();
       }
       expect(find.textContaining('没有找到标题。'), findsOneWidget);
-      expect(find.text('应用本书目录'), findsNothing);
+      expect(find.text('应用目录'), findsNothing);
       expect(book.directory.enabled, isFalse);
       await tester.enterText(input, '第');
       await tapText(tester, '预览目录');
@@ -341,7 +342,7 @@ void main() {
       expect(find.text('预览共 600 项 · 自定义固定前缀'), findsOneWidget);
       await tester.enterText(input, '不存在');
       await tester.pumpAndSettle();
-      expect(find.text('应用本书目录'), findsNothing);
+      expect(find.text('应用目录'), findsNothing);
       expect(book.directory.enabled, isFalse);
       expect(tester.takeException(), isNull);
     },
@@ -474,7 +475,7 @@ void main() {
           scale: 2,
         );
         await preview(tester);
-        await tapText(tester, '应用本书目录');
+        await tapText(tester, '应用目录');
         await tapText(tester, '恢复原目录');
         await tapText(tester, '确认恢复');
         expect(book.directory.enabled, isFalse);

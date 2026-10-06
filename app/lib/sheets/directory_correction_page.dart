@@ -137,10 +137,7 @@ class _DirectoryCorrectionPageState extends State<DirectoryCorrectionPage> {
                     child: const Text('取消预览'),
                   ),
                   if (_entries.isNotEmpty)
-                    FilledButton(
-                      onPressed: _apply,
-                      child: const Text('应用本书目录'),
-                    ),
+                    FilledButton(onPressed: _apply, child: const Text('应用目录')),
                 ],
               ),
         slivers: <Widget>[
@@ -153,6 +150,11 @@ class _DirectoryCorrectionPageState extends State<DirectoryCorrectionPage> {
                   Text(
                     '修正本书的目录与章节查找，仅保存在本机。原文、阅读位置、摘记和人物资料保留；AI 整理仍按原章节进行，不会重新调用模型。',
                     style: TextStyle(fontSize: 14, height: 1.6, color: t.ink2),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '修正目录不包含在书籍导出、书库 ZIP 备份或 WebDAV 同步中',
+                    style: TextStyle(fontSize: 12, height: 1.5, color: t.ink3),
                   ),
                   const SizedBox(height: 12),
                   Text(
