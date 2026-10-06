@@ -12,6 +12,7 @@ import 'common.dart';
 import 'preview_sheet.dart';
 import 'note_editor.dart';
 import 'sheet_host.dart';
+import 'toc_search_page.dart';
 
 export 'chapter_title.dart' show safeTitle;
 
@@ -111,41 +112,62 @@ class _TocPageState extends State<TocPage> {
           listenable: pageInput,
           builder: (BuildContext context, _) {
             final bool hasText = pageInput.text.isNotEmpty;
-            return TextField(
-              controller: pageInput,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.go,
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              onSubmitted: (String v) {
-                final int? n = int.tryParse(v);
-                if (n == null) return;
-                HapticFeedback.lightImpact();
-                widget.link.jump(_offsetOfPage(n.clamp(1, total)));
-              },
-              decoration: InputDecoration(
-                hintText: '跳到第 __ 页（共${exact ? '' : '约 '}$total 页）',
-                filled: true,
-                fillColor: t.paper,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
+            return Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: pageInput,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.go,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    onSubmitted: (String v) {
+                      final int? n = int.tryParse(v);
+                      if (n == null) return;
+                      HapticFeedback.lightImpact();
+                      widget.link.jump(_offsetOfPage(n.clamp(1, total)));
+                    },
+                    decoration: InputDecoration(
+                      hintText: '跳到第 __ 页（共${exact ? '' : '约 '}$total 页）',
+                      filled: true,
+                      fillColor: t.paper,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      suffixIcon: hasText
+                          ? IconButton(
+                              tooltip: '跳转到该页',
+                              icon: const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                final int? n = int.tryParse(pageInput.text);
+                                if (n == null) return;
+                                HapticFeedback.lightImpact();
+                                widget.link.jump(
+                                  _offsetOfPage(n.clamp(1, total)),
+                                );
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
                 ),
-                suffixIcon: hasText
-                    ? IconButton(
-                        tooltip: '跳转到该页',
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                        onPressed: () {
-                          final int? n = int.tryParse(pageInput.text);
-                          if (n == null) return;
-                          HapticFeedback.lightImpact();
-                          widget.link.jump(_offsetOfPage(n.clamp(1, total)));
-                        },
-                      )
-                    : null,
-              ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  tooltip: '搜索目录或按章节序号跳转',
+                  icon: const Icon(Icons.manage_search_rounded),
+                  onPressed: () => SheetScope.of(
+                    context,
+                  ).state.push(TocSearchPage(link: widget.link)),
+                ),
+              ],
             );
           },
         ),
