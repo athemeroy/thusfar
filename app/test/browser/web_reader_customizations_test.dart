@@ -162,6 +162,24 @@ class _SnapshotLibrary extends Fake implements WebLibrary {
   }
 }
 
+Future<void> _pumpForTransfer(
+  WidgetTester tester,
+  bool Function() completed,
+  String stage,
+) async {
+  // IndexedDB resumes in the UI's fake zone. Awaiting its completion inside
+  // runAsync alone never drains those microtasks; alternate real events and
+  // pumps like the existing browser interruption tests, with a bounded error.
+  for (int i = 0; i < 300 && !completed(); i++) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 10));
+  }
+  expect(completed(), isTrue, reason: 'WebDAV $stage did not finish');
+  expect(tester.takeException(), isNull);
+}
+
 void main() {
   late WebLibrary library;
   late String databaseName;
@@ -483,7 +501,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
         MaterialApp(
-          theme: buildTheme(Brightness.light),
+          theme: buildTheme(
+            Brightness.light,
+          ).copyWith(splashFactory: InkRipple.splashFactory),
           home: WebDavSyncPage(
             library: transferLibrary,
             books: books,
@@ -494,7 +514,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.text('上传新快照'));
       await tester.tap(find.text('上传新快照'));
-      await tester.runAsync(() => client.uploadedReady.future);
+      await _pumpForTransfer(
+        tester,
+        () => client.uploadedReady.isCompleted,
+        'upload',
+      );
       await tester.pumpAndSettle();
       expect(client.uploaded, isNotNull);
       expect(
@@ -503,10 +527,18 @@ void main() {
       );
       await tester.ensureVisible(find.text('2026-10-06 01:02:03 UTC'));
       await tester.tap(find.text('2026-10-06 01:02:03 UTC'));
-      await tester.runAsync(() => transferLibrary.previewed.future);
+      await _pumpForTransfer(
+        tester,
+        () => transferLibrary.previewed.isCompleted,
+        'preview',
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('导入到此浏览器'));
-      await tester.runAsync(() => transferLibrary.imported.future);
+      await _pumpForTransfer(
+        tester,
+        () => transferLibrary.imported.isCompleted,
+        'import',
+      );
       await tester.pumpAndSettle();
       final Uint8List exported = (await tester.runAsync(
         () => library.exportBackupBytes(id),
