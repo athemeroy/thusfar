@@ -54,3 +54,19 @@ Failed CI runs retain expected, actual, and diff images in the
 `flutter-golden-diagnostics-macos-15` / `macos-26` artifacts.
 
 Regression fixture checks are described in [reference/](../reference/README.md).
+
+## Local TXT directory correction
+
+In the native reader, open the directory and choose **修正 TXT 目录**. Confirmed
+TXT imports support bounded Chinese/English/numbered heading presets and a
+literal-prefix rule. Preview first, then apply to this book's directory and
+chapter search; **恢复原目录** returns to the import's original directory.
+Unread headings remain neutral until fully read, unless the exact original
+heading already has a model-verified safe verdict.
+
+This is a local navigation sidecar, not a reparse: source text, pagination,
+canonical chapter indexes, notes, reading progress, and AI preparation/results
+stay unchanged. It starts no model work. Current book exports, library ZIPs,
+and WebDAV sync do not include the sidecar. Moving a book to the recycle bin
+moves its sidecar with it; restoring that book retains the correction, while a
+fresh import starts with its original directory.

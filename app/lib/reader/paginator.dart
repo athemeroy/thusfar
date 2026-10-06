@@ -366,10 +366,14 @@ class Paginator {
     for (int i = 0; i < ps.length; i++) {
       if (ps[i].start <= offset && offset < ps[i].end) return i;
     }
-    for (int i = ps.length - 1; i >= 0; i--) {
-      if (ps[i].start <= offset) return i;
+    // A fully removed paragraph/heading leaves a gap in visible source ranges.
+    // Enter at the next visible text rather than jumping backward to a page
+    // that ends before the requested source. At a hidden chapter tail, keep
+    // the last page. The containing-page pass above still wins for expansions.
+    for (int i = 0; i < ps.length; i++) {
+      if (ps[i].start > offset) return i;
     }
-    return 0;
+    return ps.length - 1;
   }
 
   /// Characters per page, from what has been laid out so far.

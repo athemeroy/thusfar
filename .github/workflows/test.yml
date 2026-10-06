@@ -70,6 +70,7 @@ jobs:
             test/ask_selection_test.dart test/ask_sheet_test.dart test/backup_test.dart \
             test/chapter_titles_test.dart \
             test/toc_search_test.dart \
+            test/reader_directory_test.dart test/directory_correction_page_test.dart \
             test/foldable_screens_test.dart test/graph_view_test.dart test/graph_screens_test.dart test/import_test.dart \
             test/manual_entities_test.dart test/marginalia_sheet_test.dart \
             test/model_settings_test.dart test/notes_test.dart \

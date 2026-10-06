@@ -1,4 +1,5 @@
 import '../data/library.dart';
+import '../data/reader_directory.dart';
 import 'chapter_title.dart';
 
 /// Search exactly the title the reader is allowed to see. Matching the raw
@@ -15,7 +16,7 @@ List<Chapter> findTocChapters(
     for (final Chapter chapter in chapters)
       if (safeTitle(
         chapter,
-        chapter.o0 < readTo,
+        tocTitleRead(chapter, readTo),
         checkPending: checkPending,
       ).toLowerCase().contains(needle))
         chapter,

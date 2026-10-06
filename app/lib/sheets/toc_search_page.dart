@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/library.dart';
+import '../data/reader_directory.dart';
 import '../data/seen.dart';
 import '../ui/theme.dart';
 import 'chapter_title.dart';
@@ -78,7 +79,8 @@ class _TocSearchPageState extends State<TocSearchPage> {
       _byOrdinal = true;
       _confirm = null;
     });
-    _input.text = '${widget.link.c.chapter + 1}';
+    _input.text =
+        '${widget.link.c.book.directory.chapterAt(widget.link.c.start) + 1}';
     _focus.unfocus();
     _resetScroll();
   }
@@ -99,7 +101,10 @@ class _TocSearchPageState extends State<TocSearchPage> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: widget.link.c,
+    listenable: Listenable.merge(<Listenable>[
+      widget.link.c,
+      widget.link.c.book.directory,
+    ]),
     builder: (BuildContext context, _) {
       final ReaderLink link = widget.link;
       final BookData book = link.c.book;
@@ -108,12 +113,12 @@ class _TocSearchPageState extends State<TocSearchPage> {
       final int read = SeenStore.instance.maxRead(book.id, link.c.cutoff);
       final bool pending = book.status.titleCheckPending;
       final Chapter? numbered = _byOrdinal
-          ? tocChapterAtOrdinal(book.chapters, _query)
+          ? tocChapterAtOrdinal(book.directory.chapters, _query)
           : null;
       final List<Chapter> hits = _byOrdinal
           ? <Chapter>[?numbered]
           : findTocChapters(
-              book.chapters,
+              book.directory.chapters,
               _query,
               readTo: read,
               checkPending: pending,
@@ -154,14 +159,14 @@ class _TocSearchPageState extends State<TocSearchPage> {
                   onSubmitted: (_) {
                     if (!_byOrdinal) return;
                     final Chapter? target = tocChapterAtOrdinal(
-                      book.chapters,
+                      book.directory.chapters,
                       _input.text,
                     );
                     if (target != null) _select(target);
                   },
                   decoration: InputDecoration(
                     hintText: _byOrdinal
-                        ? '输入 1–${book.chapters.length} 的序号'
+                        ? '输入 1–${book.directory.chapters.length} 的序号'
                         : '输入目录中的标题',
                     filled: true,
                     fillColor: t.paper,
@@ -197,12 +202,14 @@ class _TocSearchPageState extends State<TocSearchPage> {
                 children: <Widget>[
                   Text(
                     _query.isEmpty
-                        ? '共 ${book.chapters.length} 项'
+                        ? '共 ${book.directory.chapters.length} 项'
                         : '找到 ${hits.length} 项',
                     style: TextStyle(fontSize: 13, color: t.ink3),
                   ),
                   TextButton.icon(
-                    onPressed: book.chapters.isEmpty ? null : _locateCurrent,
+                    onPressed: book.directory.chapters.isEmpty
+                        ? null
+                        : _locateCurrent,
                     icon: const Icon(Icons.my_location, size: 18),
                     label: const Text('定位当前章节'),
                   ),
@@ -223,12 +230,12 @@ class _TocSearchPageState extends State<TocSearchPage> {
           if (hits.isEmpty)
             emptyState(
               context,
-              book.chapters.isEmpty
+              book.directory.chapters.isEmpty
                   ? '这本书还没有目录'
                   : _query.isEmpty
                   ? (_byOrdinal ? '输入序号定位章节' : '输入标题查找章节；隐藏的标题不会参与搜索')
                   : _byOrdinal
-                  ? '请输入 1–${book.chapters.length} 之间的序号'
+                  ? '请输入 1–${book.directory.chapters.length} 之间的序号'
                   : '没有找到章节，试试标题中的其他字',
             )
           else
@@ -236,7 +243,8 @@ class _TocSearchPageState extends State<TocSearchPage> {
               itemCount: hits.length,
               itemBuilder: (BuildContext context, int index) {
                 final Chapter chapter = hits[index];
-                final bool current = chapter.index == link.c.chapter;
+                final bool current =
+                    chapter.index == book.directory.chapterAt(link.c.start);
                 return Column(
                   key: ValueKey<String>('toc-search-result-${chapter.index}'),
                   children: <Widget>[
@@ -249,7 +257,7 @@ class _TocSearchPageState extends State<TocSearchPage> {
                       title: Text(
                         safeTitle(
                           chapter,
-                          chapter.o0 < read,
+                          tocTitleRead(chapter, read),
                           checkPending: pending,
                         ),
                         maxLines: 2,
