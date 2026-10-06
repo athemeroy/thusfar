@@ -145,7 +145,7 @@ class _NotesScreenState extends State<NotesScreen> {
             if (result.$2 == null) {
               _errors.remove(book.id);
             } else {
-              _errors[book.id] = '${book.title}：摘记读取失败，原文件已保留。${result.$2}';
+              _errors[book.id] = '${book.title}：摘记暂时无法读取，请重试。';
             }
           }
           _errors.remove('_load');
@@ -192,7 +192,7 @@ class _NotesScreenState extends State<NotesScreen> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('$error')));
+      ).showSnackBar(SnackBar(content: Text('操作未完成，请稍后重试。')));
     }
   }
 
@@ -561,7 +561,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                   : null,
                               pageLabel: item['kind'] == 'bookmark'
                                   ? '书签'
-                                  : '原文位置 ${item['start']}',
+                                  : '摘记',
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 widget.onOpenAt(

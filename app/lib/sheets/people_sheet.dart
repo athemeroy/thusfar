@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
@@ -95,19 +96,21 @@ class _PeoplePageState extends State<PeoplePage> {
             : status.isError
             ? '\n整理停下了，可以查看原因。'
             : '';
-        message =
-            '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。$state';
+        message = '已有 ${bios.count} 篇人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。$state';
       } else if (status.isActive) {
         final String progress = status.total > 0
             ? '已完成 ${status.done}/${status.total} 段。'
             : '正在准备书籍。';
-        message = '这本书正在整理人物，$progress人物小传会在章节整理并核对后逐步出现。';
+        message = '这本书正在整理人物，$progress整理完一章后，会生成人物小传。';
       } else if (status.isPaused) {
         message = '人物整理已暂停。已经完成的内容仍会保留。';
       } else if (status.isError) {
         message = '人物整理停下了。请查看原因，再决定是否继续。';
       } else if (!link.c.book.hasKnowledge) {
-        message = link.c.book.manualError ?? '这本书还没有整理人物';
+        message = readerMessage(
+          link.c.book.manualError,
+          fallback: '这本书还没有可显示的人物资料',
+        );
       } else {
         message = '截至这一页，还没有可展示的人物资料。';
       }
@@ -216,7 +219,13 @@ class _PeoplePageState extends State<PeoplePage> {
           ),
           slivers: <Widget>[
             if (link.c.book.manualError != null)
-              emptyState(context, link.c.book.manualError!),
+              emptyState(
+                context,
+                readerMessage(
+                  link.c.book.manualError,
+                  fallback: '暂时无法读取手动补充的人物资料。',
+                ),
+              ),
             if (biosAhead)
               SliverToBoxAdapter(
                 child: Container(
@@ -233,7 +242,7 @@ class _PeoplePageState extends State<PeoplePage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。',
+                          '已有 ${bios.count} 篇人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。',
                           style: TextStyle(
                             fontSize: 13,
                             height: 1.5,

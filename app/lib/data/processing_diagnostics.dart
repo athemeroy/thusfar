@@ -97,14 +97,14 @@ final class ProcessingDiagnostics {
         _pauseReason(receipt['reason']);
     return switch (code) {
       'user' || 'manual' => '由你暂停',
-      'background_time_limit' => '系统后台整理时段已结束',
-      'background_unavailable' => '后台整理服务已停止',
-      'request_outcome_unknown' => '上次模型请求结果未确认，请检查后继续',
+      'background_time_limit' => '手机系统停止了后台整理，已完成的内容已保留',
+      'background_unavailable' => '后台整理已停止，已完成的内容已保留',
+      'request_outcome_unknown' => '没有收到完整结果，已完成的内容已保留。可以点“继续整理”再试',
       'reconciled' => '上次整理中断后已暂停',
       'interrupted' => '上次整理中断后已暂停',
       'worker_stopped' => '整理任务中断后已暂停',
       'scope_complete' => '本次范围已完成',
-      _ => '暂停原因未记录',
+      _ => '整理已暂停，已完成的内容已保留',
     };
   }
 

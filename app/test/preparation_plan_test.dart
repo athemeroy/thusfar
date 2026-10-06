@@ -77,11 +77,9 @@ void main() {
     );
     await tester.tap(find.text('选择章节'));
     await tester.pumpAndSettle();
-    expect(find.text('目标从'), findsOneWidget);
+    expect(find.text('从哪章开始'), findsOneWidget);
     expect(find.text('整理到'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('片段大小与缓存复用'), 120);
-    await tester.tap(find.text('片段大小与缓存复用'));
-    await tester.pumpAndSettle();
+    expect(find.text('片段大小与缓存复用'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -115,8 +113,9 @@ void main() {
         ),
       );
       expect(find.text('本次目标 · 范围已完成'), findsOneWidget);
-      expect(find.textContaining('全书正文覆盖 1 / 3 段'), findsOneWidget);
-      expect(find.textContaining('本次采用本地章节分类'), findsOneWidget);
+      expect(find.textContaining('全书已整理 1 / 3 段'), findsOneWidget);
+      expect(find.textContaining('本次采用本地章节分类'), findsNothing);
+      expect(find.textContaining('2 篇人物小传'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

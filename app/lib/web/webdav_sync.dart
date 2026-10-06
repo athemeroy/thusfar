@@ -1,3 +1,5 @@
+import '../ui/reader_message.dart';
+import '../ui/info_button.dart';
 // Browser-only WebDAV snapshot transfer. Credentials are kept in this route's
 // memory and are never written to IndexedDB, backups, or localStorage.
 // ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
@@ -62,9 +64,7 @@ class WebDavClient {
                   '127.0.0.1',
                   '::1',
                 }.contains(parsed.host.toLowerCase())))) {
-      throw const WebDavException(
-        '请填写以 / 结尾的 HTTPS WebDAV 文件夹地址，不含账号、参数或片段；本机 localhost 可用 HTTP。',
-      );
+      throw const WebDavException('请填写云端服务提供的文件夹地址。');
     }
     if (username.trim().isEmpty || password.isEmpty) {
       throw const WebDavException('请填写 WebDAV 用户名和密码。');
@@ -124,9 +124,7 @@ class WebDavClient {
       }
     });
     request.onError.listen((_) {
-      fail(
-        '浏览器无法访问 WebDAV。请检查地址、网络与证书，并让服务端允许此网页来源跨域使用 OPTIONS、PROPFIND、GET、PUT、Authorization、Depth 和 If-None-Match。',
-      );
+      fail('浏览器无法连接云端。请检查地址和网络，或使用安装版。');
     });
     request.onTimeout.listen((_) => fail('WebDAV 请求超时，请检查网络后手动重试。'));
     request.onAbort.listen((_) => fail('WebDAV 操作已取消。'));
@@ -155,7 +153,7 @@ class WebDavClient {
       return await done.future;
     } on Object catch (error) {
       if (error is WebDavException) rethrow;
-      throw const WebDavException('浏览器无法发起 WebDAV 请求，请检查地址和跨域设置。');
+      throw const WebDavException('浏览器无法发起 WebDAV 请求，请检查地址和服务设置。');
     } finally {
       completionGuard.cancel();
       _active.remove(request);
@@ -169,12 +167,10 @@ class WebDavClient {
       headers: const <String, String>{'Depth': '1'},
     );
     if (status == 401 || status == 403) {
-      throw WebDavException('WebDAV 认证或文件夹权限失败（HTTP $status）。');
+      throw WebDavException('WebDAV 认证或文件夹权限失败。');
     }
     if (status != 207) {
-      throw WebDavException(
-        'WebDAV 列表请求返回 HTTP $status；需要支持 PROPFIND Depth: 1。',
-      );
+      throw WebDavException('无法读取云端文件列表，请检查文件夹地址和访问权限。');
     }
     final html.Document document = html.DomParser().parseFromString(
       utf8.decode(data),
@@ -207,7 +203,7 @@ class WebDavClient {
     void Function(int sent, int total)? onProgress,
   }) async {
     if (bytes.length > _maxSnapshotBytes) {
-      throw const WebDavException('单个快照超过 144 MB，请使用安装版或缩小书籍图片。');
+      throw const WebDavException('单个备份超过 144 MB，请使用安装版或缩小书籍图片。');
     }
     final DateTime now = DateTime.now().toUtc();
     String two(int value) => value.toString().padLeft(2, '0');
@@ -233,13 +229,13 @@ class WebDavClient {
       onProgress: onProgress,
     );
     if (status == 412 || status == 409) {
-      throw const WebDavException('远端快照文件冲突，未覆盖；请重新点击上传生成新快照。');
+      throw const WebDavException('远端备份文件冲突，未覆盖；请重新点击上传生成新备份。');
     }
     if (status == 401 || status == 403) {
-      throw WebDavException('WebDAV 认证或写入权限失败（HTTP $status）。');
+      throw WebDavException('WebDAV 认证或写入权限失败。');
     }
     if (status < 200 || status >= 300) {
-      throw WebDavException('WebDAV 上传失败（HTTP $status），本地书籍未改动。');
+      throw WebDavException('WebDAV 上传失败，本地书籍未改动。');
     }
     return WebDavSnapshot(name, target);
   }
@@ -248,14 +244,14 @@ class WebDavClient {
     if (!_snapshotName.hasMatch(snapshot.name) ||
         snapshot.url.origin != collection.origin ||
         snapshot.url.path != '${collection.path}${snapshot.name}') {
-      throw const WebDavException('远端快照地址无效，未下载。');
+      throw const WebDavException('远端备份地址无效，未下载。');
     }
     final (int status, Uint8List data) = await _request('GET', snapshot.url);
     if (status == 401 || status == 403) {
-      throw WebDavException('WebDAV 认证或读取权限失败（HTTP $status）。');
+      throw WebDavException('WebDAV 认证或读取权限失败。');
     }
     if (status != 200) {
-      throw WebDavException('WebDAV 下载失败（HTTP $status），本地书籍未改动。');
+      throw WebDavException('WebDAV 下载失败，本地书籍未改动。');
     }
     return data;
   }
@@ -324,7 +320,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       builder: (context) => AlertDialog(
         title: Text(leave ? '停止当前任务并离开？' : '停止当前 WebDAV 任务？'),
         content: const Text(
-          '停止等待与传输，不再导入本地资料。已经到达服务器的上传可能仍会完成；再次上传前，请重新列出快照以免重复。',
+          '停止等待与传输，不再导入本地资料。已经到达服务器的上传可能仍会完成；再次上传前，请重新列出备份以免重复。',
         ),
         actions: [
           TextButton(
@@ -344,7 +340,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     _client = null;
     setState(() {
       _busy = false;
-      _activity = '已停止等待；本地未导入。若正在上传，请重新列出远端快照确认结果。';
+      _activity = '已停止等待；本地未导入。若正在上传，请重新列出远端备份确认结果。';
       _error = null;
     });
     if (leave) Navigator.of(context).pop();
@@ -369,11 +365,11 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       if (mounted && operation == _operation) {
         setState(
           () => _error = error is WebDavException
-              ? error.message
+              ? readerMessage(error.message, fallback: '操作未完成，请检查云端地址、账户和备份文件。')
               : error is WebBackupConflict
-              ? error.message
+              ? readerMessage(error.message, fallback: '操作未完成，请检查云端地址、账户和备份文件。')
               : error is FormatException
-              ? '远端文件格式或编码无效；本地书籍未被覆盖。'
+              ? '这份备份无法读取，现有书籍未改变。'
               : '操作失败；本地书籍未被覆盖。',
         );
       }
@@ -388,14 +384,14 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     }
   }
 
-  Future<void> _list() => _run('读取远端快照', (WebDavClient client) async {
+  Future<void> _list() => _run('读取远端备份', (WebDavClient client) async {
     final List<WebDavSnapshot> snapshots = await client.list();
     _checkCurrent(client);
     setState(() {
       _snapshots = snapshots;
       _activity = snapshots.isEmpty
-          ? '云端文件夹中没有快照。'
-          : '找到 ${snapshots.length} 个快照。点击可校验并预览。';
+          ? '云端文件夹中没有备份。'
+          : '找到 ${snapshots.length} 个备份。点击查看备份内容。';
     });
   });
 
@@ -418,20 +414,20 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     _checkCurrent(client);
     setState(() {
       _snapshots = <WebDavSnapshot>[uploaded, ..._snapshots];
-      _activity = '已上传新快照 ${uploaded.name}；远端旧快照未被覆盖。';
+      _activity = '已上传新备份 ${uploaded.name}；远端旧备份未被覆盖。';
     });
     if (!mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('已上传独立快照；旧版本仍保留在 WebDAV。')));
+    ).showSnackBar(const SnackBar(content: Text('已上传独立备份；旧版本仍保留在 WebDAV。')));
   });
 
-  Future<void> _openSnapshot(WebDavSnapshot snapshot) => _run('下载远端快照', (
+  Future<void> _openSnapshot(WebDavSnapshot snapshot) => _run('下载远端备份', (
     WebDavClient client,
   ) async {
     final Uint8List bytes = await client.download(snapshot);
     _checkCurrent(client);
-    setState(() => _activity = '校验远端快照');
+    setState(() => _activity = '正在检查备份');
     final BackupSummary summary = BackupSummary.read(
       bytes,
       fallback: snapshot.name,
@@ -441,10 +437,10 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       await widget.library.importBackup(bytes, previewOnly: true);
     } on Object catch (error) {
       previewError = error is WebBackupConflict
-          ? error.message
+          ? readerMessage(error.message, fallback: '这份备份与现有内容不同，请先分别保存两个版本。')
           : error is FormatException
-          ? '远端文件格式或编码无效。'
-          : '无法校验，请检查浏览器存储空间。';
+          ? '这份备份无法读取，请重新下载后再试。'
+          : '无法读取备份，请检查浏览器剩余空间。';
     }
     _checkCurrent(client);
     setState(() => _activity = '等待确认');
@@ -452,10 +448,10 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     final String? choice = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('远端书籍快照'),
+        title: const Text('远端书籍备份'),
         content: Text(
           '${summary.title}\n${summary.exported == null ? snapshot.label : summary.dateLabel}\n${summary.sizeLabel}\n\n'
-          '${previewError ?? '校验通过。同一本书只合并兼容的阅读记录与整理结果；确认前不会修改本地。'}',
+          '${previewError ?? '恢复时会保留已有阅读记录。确认前不会修改现有书籍。'}',
         ),
         actions: <Widget>[
           TextButton(
@@ -487,7 +483,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         const Duration(seconds: 2),
         () => html.Url.revokeObjectUrl(url),
       );
-      setState(() => _activity = '已请求浏览器另存快照，请检查下载列表。');
+      setState(() => _activity = '已请求浏览器另存备份，请检查下载列表。');
     } else if (choice == 'import') {
       setState(() {
         _committing = true;
@@ -495,11 +491,11 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       });
       await widget.library.importBackup(bytes);
       _checkCurrent(client);
-      setState(() => _activity = '快照已导入，可继续阅读。');
+      setState(() => _activity = '备份已导入，可继续阅读。');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('快照已导入；本地原书和记录已安全保留或合并。')));
+        ).showSnackBar(const SnackBar(content: Text('备份已导入；本地原书和记录已安全保留或合并。')));
       }
     } else {
       setState(() => _activity = '已取消导入，本地书籍未改动。');
@@ -526,7 +522,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       },
       child: Scaffold(
         backgroundColor: t.paper,
-        appBar: AppBar(title: const Text('WebDAV 快照')),
+        appBar: AppBar(title: const Text('WebDAV 备份')),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 900),
@@ -534,7 +530,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
               padding: const EdgeInsets.fromLTRB(18, 20, 18, 36),
               children: <Widget>[
                 Text(
-                  '手动上传和导入完整书籍快照',
+                  '手动上传和导入完整书籍备份',
                   style: TextStyle(
                     color: t.ink,
                     fontSize: 23,
@@ -546,13 +542,21 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
                   '上传会把书籍正文、图片、阅读记录和已有整理结果发送到你填写的 WebDAV 文件夹。每次生成新文件，旧版本保留；关闭页面后不会自动同步。',
                   style: TextStyle(color: t.ink2, height: 1.5),
                 ),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: InfoButton(
+                    title: '云端备份',
+                    message:
+                        '备份包含书籍、图片、阅读记录和整理资料，不包含模型密钥。需要手动上传。如果浏览器无法连接云端，请使用安装版，或手动下载备份后导入。',
+                  ),
+                ),
                 const SizedBox(height: 20),
                 TextField(
                   controller: _url,
                   enabled: !_busy,
                   keyboardType: TextInputType.url,
                   decoration: const InputDecoration(
-                    labelText: 'WebDAV 文件夹 HTTPS 地址（以 / 结尾）',
+                    labelText: '云端文件夹地址',
                     hintText: 'https://example.com/dav/books/',
                   ),
                   onChanged: (_) => _invalidateConnection(),
@@ -577,8 +581,16 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '凭据只留在此页面内存，不进入备份或浏览器存储。浏览器直连要求 WebDAV 服务允许本网页跨域访问；若服务端不允许，请使用安装版或手动下载备份。',
+                  '登录信息不会保存，离开后需重新填写。',
                   style: TextStyle(color: t.ink2, fontSize: 12, height: 1.5),
+                ),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: InfoButton(
+                    title: '云端备份',
+                    message:
+                        '备份包含书籍、图片、阅读记录和整理资料，不包含模型密钥。需要手动上传。如果浏览器无法连接云端，请使用安装版，或手动下载备份后导入。',
+                  ),
                 ),
                 const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
@@ -610,12 +622,12 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
                           ? null
                           : _upload,
                       icon: const Icon(Icons.cloud_upload_outlined),
-                      label: const Text('上传新快照'),
+                      label: const Text('上传新备份'),
                     ),
                     OutlinedButton.icon(
                       onPressed: _busy ? null : _list,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('列出远端快照'),
+                      label: const Text('列出远端备份'),
                     ),
                   ],
                 ),
@@ -627,7 +639,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
                   const SizedBox(height: 6),
                   Text(
                     _total > 0
-                        ? '$_activity · $_sent / $_total 字节'
+                        ? '$_activity · ${(_sent / _total * 100).clamp(0, 100).round()}%'
                         : (_activity ?? '处理中…'),
                     style: TextStyle(color: t.ink2, fontSize: 12),
                   ),
@@ -648,7 +660,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
                 ],
                 const SizedBox(height: 26),
                 Text(
-                  '远端快照  ${_snapshots.length}',
+                  '远端备份  ${_snapshots.length}',
                   style: TextStyle(
                     color: t.ink,
                     fontSize: 18,
@@ -658,7 +670,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
                 const SizedBox(height: 8),
                 if (_snapshots.isEmpty)
                   Text(
-                    '先点击“列出远端快照”。如果文件夹为空，这里不会显示书籍。',
+                    '先点击“列出远端备份”。如果文件夹为空，这里不会显示书籍。',
                     style: TextStyle(color: t.ink2),
                   )
                 else

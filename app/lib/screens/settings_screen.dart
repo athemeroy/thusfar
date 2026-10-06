@@ -1,3 +1,4 @@
+import '../ui/info_button.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
@@ -12,6 +13,7 @@ import '../sheets/typography_sheet.dart';
 import '../ui/device.dart';
 import '../ui/theme.dart';
 import 'recovery_screen.dart';
+import 'background_processing_screen.dart';
 
 /// S18 设置.
 class SettingsScreen extends StatefulWidget {
@@ -197,7 +199,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: <Widget>[
                     group('模型', <Widget>[
                       ListTile(
-                        title: const Text('模型接口'),
+                        title: const Text('AI 设置'),
                         subtitle: Text(
                           model.isEmpty
                               ? '$provider · 未配置模型'
@@ -223,6 +225,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                       ),
                     ]),
+                    if (Platform.isAndroid)
+                      group('整理', <Widget>[
+                        ListTile(
+                          title: const Text('切到后台继续整理'),
+                          subtitle: const Text('允许后台运行，查看手机的耗电设置'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  const BackgroundProcessingScreen(),
+                            ),
+                          ),
+                        ),
+                      ]),
                     group('阅读', <Widget>[
                       ListTile(
                         title: const Text('阅读排版'),
@@ -288,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     group('数据', <Widget>[
                       ListTile(
                         title: const Text('回收站'),
-                        subtitle: const Text('恢复移除的书籍，或确认永久删除以释放空间'),
+                        subtitle: const Text('恢复或永久删除书籍'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -308,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('上次恢复报告'),
-                        subtitle: const Text('逐本查看导入、合并、冲突与设置结果'),
+                        subtitle: const Text('查看哪些书籍和设置已恢复'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -319,8 +335,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       ListTile(
-                        title: const Text('导出整个书库 ZIP'),
-                        subtitle: const Text('一本文件带走书籍、摘记、阅读进度和设置'),
+                        title: const Text('备份整个书库'),
+                        subtitle: const Text('保存书籍、摘记、阅读进度和设置'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: () {
                           HapticFeedback.lightImpact();
@@ -329,7 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('导入书库或单书备份'),
-                        subtitle: const Text('同一本书安全合并；独立 API 密钥需在新设备重填'),
+                        subtitle: const Text('从备份恢复书籍和阅读记录'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: () {
                           HapticFeedback.lightImpact();
@@ -338,7 +354,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('WebDAV 同步'),
-                        subtitle: const Text('将书籍快照上传到自己的云端，在其他设备导入'),
+                        subtitle: const Text('上传备份，在其他设备恢复'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: onWebDav,
                       ),
@@ -366,7 +382,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('检查更新'),
-                        subtitle: const Text('查看 GitHub 最新正式版'),
+                        subtitle: const Text('查看是否有新版本'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: onCheckUpdate,
                       ),
@@ -405,8 +421,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('隐私'),
+                        trailing: const InfoButton(
+                          title: '数据与隐私',
+                          message:
+                              '测试连接会发送一条测试消息。备份不包含单独填写的服务密钥，换设备后需要重新填写。导出或分享时，由你选择保存位置和接收方。请妥善保管备份。',
+                        ),
                         subtitle: Text(
-                          '书和笔记保存在这台$deviceWord。整理、问书和 AI 批注会把所需原文发送到你配置的接口；测试连接会发送一条测试消息。导出和分享由你选择保存位置或接收方。',
+                          '书和笔记保存在这台$deviceWord。使用 AI 时，相关原文会发送给你选择的服务。',
                           style: TextStyle(color: t.ink2, height: 1.5),
                         ),
                       ),

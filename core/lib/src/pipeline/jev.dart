@@ -53,11 +53,13 @@ Future<Json> systemOneJudge(
       body,
       <String, String>{
         'Content-Type': 'application/json',
+        'Prefer': 'respond-async',
         if (key.isNotEmpty) 'Authorization': 'Bearer $key',
       },
       _envDouble('SYSTEMONE_TIMEOUT', '120'),
       0,
       paid: true,
+      allowAsync: true,
     );
     if (data is! Json) throw const ValueError('核对接口返回的不是 JSON 对象');
     final String responder =
@@ -714,6 +716,7 @@ Future<Object?> _postJson(
   double timeout,
   int detailBytes, {
   bool paid = false,
+  bool allowAsync = false,
 }) async {
   final RunCancellation? cancellation = RunCancellation.current;
   cancellation?.checkpoint();
@@ -734,6 +737,16 @@ Future<Object?> _postJson(
         trace: receipt?.trace,
       ),
     );
+    if (allowAsync && resp.status == 202) {
+      final Object? result = await pollRetainedResult(
+        Uri.parse(url),
+        resp,
+        headers,
+        receipt?.trace,
+      );
+      receipt?.received();
+      return result;
+    }
     if (resp.status >= 400) {
       if (paid &&
           !const <int>{
@@ -780,6 +793,9 @@ Future<Object?> _postJson(
     rethrow;
   } on UnknownOutcomeLLMError catch (e) {
     receipt?.unknown(e.code);
+    rethrow;
+  } on ConnectionNotSent {
+    receipt?.rejected();
     rethrow;
   } on TimeoutException {
     if (!paid) rethrow;

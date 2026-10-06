@@ -119,6 +119,64 @@ void main() {
     expect(diagnosticFile().readAsStringSync(), isNot(contains('private')));
   });
 
+  test('TLS failure before sending leaves no uncertain paid request', () async {
+    final ServerSocket server = await ServerSocket.bind('127.0.0.1', 0);
+    final subscription = server.listen((socket) {
+      socket.listen((_) {
+        socket.add(utf8.encode('HTTP/1.1 400 Bad Request\r\n\r\n'));
+        unawaited(socket.flush().then((_) => socket.destroy()));
+      }, onError: (Object _) => socket.destroy());
+    });
+    final HttpClient client = HttpClient()..findProxy = (_) => 'DIRECT';
+    llm.transport = llm.IoTransport(client);
+    environ['LLM_BASE_URL'] = 'https://127.0.0.1:${server.port}/v1';
+    final ModelRequestScope scope = ModelRequestScope(root);
+    try {
+      await expectLater(
+        scope.run(() => llm.chat('fixture', const [], retries: 0)),
+        throwsA(isA<llm.TransientLLMError>()),
+      );
+      expect(hasUnsettledModelRequests(root), isFalse);
+      expect(scope.hasUnknown, isFalse);
+      expect(attempts().single['phase'], 'rejected');
+      expect(
+        events(attempts().single).map((e) => e['event']),
+        isNot(contains('send_started')),
+      );
+      expect(
+        events(
+          attempts().single,
+        ).firstWhere((e) => e['event'] == 'transport_error')['code'],
+        'handshake_exception',
+      );
+    } finally {
+      client.close(force: true);
+      await subscription.cancel();
+      await server.close();
+    }
+  });
+
+  test('a failed connection can retry and then save the answer', () async {
+    int calls = 0;
+    final previousSleep = llm.sleep;
+    llm.sleep = (_) async {};
+    llm.transport = FixtureTransport((_) async {
+      if (++calls == 1) {
+        throw const llm.ConnectionNotSent(HandshakeException());
+      }
+      return streamReply('answer');
+    });
+    final ModelRequestScope scope = ModelRequestScope(root);
+    try {
+      expect((await chat(scope)).text, 'answer');
+      expect(calls, 2);
+      scope.settle(receivedCommitted: true);
+      expect(hasUnsettledModelRequests(root), isFalse);
+    } finally {
+      llm.sleep = previousSleep;
+    }
+  });
+
   test(
     'raw-byte and stream-error timestamps survive a partial response',
     () async {

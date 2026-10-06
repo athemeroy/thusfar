@@ -1,3 +1,4 @@
+import 'ui/reader_message.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show DisplayFeature, DisplayFeatureType, DisplayFeatureState;
@@ -800,7 +801,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       );
       message = path == null ? '没有导出' : '已导出《${b.title}》';
     } on PyException catch (error) {
-      message = error.message;
+      message = readerMessage(error.message, fallback: '操作未完成，请检查文件和剩余空间后重试。');
     } on Object {
       message = '导出没有完成，请检查书籍文件和可用存储空间后重试。';
     }
@@ -964,12 +965,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       );
       message = path == null
           ? '没有导出'
-          : '已导出 ${m.library.books.length} 本书及设置；独立 API 密钥未包含，请妥善保管 ZIP';
+          : '已导出 ${m.library.books.length} 本书及设置。服务密钥需要重新填写，请妥善保管备份';
     } on PyException catch (error) {
-      message = error.message;
+      message = readerMessage(error.message, fallback: '操作未完成，请检查文件和剩余空间后重试。');
     } on Object catch (error) {
       message = error is FormatException
-          ? error.message
+          ? readerMessage(error.message, fallback: '操作未完成，请检查文件和剩余空间后重试。')
           : '书库 ZIP 未能导出，请检查书籍文件和可用存储空间。';
     }
     if (!mounted) return;
@@ -1028,8 +1029,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               content: SingleChildScrollView(
                 child: Text(
                   '${archive.books.map((bytes) => '• ${BackupSummary.read(bytes).title}').join('\n')}\n\n这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
-                  '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
-                  '已有书籍保留本机逐书整理和付费路由，继续前请核对。'
+                  '服务密钥需要重新填写，请妥善保管备份。'
+                  '已有书籍会保留当前的整理和付费设置。'
                   '是否同时使用备份里的阅读清单、排版和模型设置？',
                 ),
               ),
@@ -1153,7 +1154,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             lower.endsWith('.azw')) {
           item.error = 'MOBI 请先转成 EPUB';
         } else if (backupsOnly) {
-          item.error = '请选择页读 ZIP 书库或 JSON 单书备份';
+          item.error = '请选择页读导出的书库或单书备份';
         } else if (lower.endsWith('.txt') || lower.endsWith('.epub')) {
           item.progress = 0.3;
           if (mounted) setState(() {});
@@ -1164,10 +1165,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             ..existed = r.existed
             ..progress = 1;
         } else {
-          item.error = '支持 TXT、EPUB、ZIP 或 JSON 备份';
+          item.error = '支持 TXT、EPUB 和页读备份';
         }
       } on PyException catch (error) {
-        item.error = error.message;
+        item.error = readerMessage(
+          error.message,
+          fallback: '无法导入，请检查文件和剩余空间后重试。',
+        );
       } on Object {
         item.error = '无法导入这个文件，请检查文件内容和存储空间后重试。';
       } finally {

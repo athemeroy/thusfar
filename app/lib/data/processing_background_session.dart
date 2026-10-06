@@ -40,6 +40,8 @@ class ProcessingBackgroundSession {
   bool _closed = false;
   final Duration Function() _elapsed;
   Duration? _lastWorkerHeartbeat;
+  Duration? _lastRefresh;
+  Duration? _resumeGraceUntil;
 
   void workerHeartbeat() => _lastWorkerHeartbeat = _elapsed();
 
@@ -77,6 +79,8 @@ class ProcessingBackgroundSession {
       _books[book.id] = book;
       _leases[book.id] = attempt;
       workerHeartbeat();
+      _lastRefresh = _elapsed();
+      _resumeGraceUntil = null;
       _current = book.id;
       _hasWork = true;
       _heartbeat ??= Timer.periodic(
@@ -116,10 +120,24 @@ class ProcessingBackgroundSession {
     if (_updating || _closed) return;
     _updating = true;
     try {
+      final Duration now = _elapsed();
+      final Duration? previousRefresh = _lastRefresh;
+      _lastRefresh = now;
+      if (previousRefresh != null &&
+          now - previousRefresh > const Duration(seconds: 60)) {
+        // If this observer was suspended too, queued worker messages need one
+        // interval to arrive. This is not a worker heartbeat or a CPU renewal.
+        _resumeGraceUntil = now + heartbeatInterval;
+      }
       final Duration? last = _lastWorkerHeartbeat;
       // A live UI is not evidence of a live worker. Release native protection
       // before asking an unresponsive worker to settle its durable state.
-      if (last == null || _elapsed() - last > const Duration(seconds: 60)) {
+      if (last == null || now - last > const Duration(seconds: 60)) {
+        if (last != null &&
+            _resumeGraceUntil != null &&
+            now < _resumeGraceUntil!) {
+          return;
+        }
         for (final MapEntry<String, Object> stale in _leases.entries.toList()) {
           if (identical(_leases[stale.key], stale.value)) {
             await _unavailable(stale.key);
@@ -127,6 +145,7 @@ class ProcessingBackgroundSession {
         }
         return;
       }
+      _resumeGraceUntil = null;
       for (final BookEntry book in _books.values.toList()) {
         final Object? lease = _leases[book.id];
         if (lease == null) continue;

@@ -218,10 +218,8 @@ class _PersonPageState extends State<PersonPage> {
                   : beyond
                   ? '正文还没整理到这一页；下面先看已有线索。'
                   : biosAhead
-                  ? '本书已有 ${bios.count} 篇核对通过的人物小传，首批读到$unlockAt后解锁。下面先看截至这一页的线索。'
-                  : link.c.book.status.isActive
-                  ? '这一页还没有核对通过的人物小传，整理仍在继续。下面先看已有线索。'
-                  : '这位人物暂无核对通过的小传。下面是截至这一页的线索。',
+                  ? '本书已有 ${bios.count} 篇人物小传，首批读到$unlockAt后解锁。下面先看截至这一页的线索。'
+                  : '截至这一页，还没有这位人物的小传。可以先看已有线索。',
               style: TextStyle(
                 fontFamily: p.bio.isNotEmpty ? serif : null,
                 fontSize: p.bio.isNotEmpty ? 16 : 14,

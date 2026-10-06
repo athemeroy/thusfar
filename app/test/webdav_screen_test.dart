@@ -82,7 +82,7 @@ void main() {
   }
 
   Future<void> list(WidgetTester tester) async {
-    await tester.tap(find.text('查看云端快照'));
+    await tester.tap(find.text('查看云端备份'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('2026-10-05 01:02 UTC'));
   }
@@ -96,7 +96,7 @@ void main() {
       await list(tester);
       await tester.tap(find.text('2026-10-05 01:02 UTC'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.text('WebDAV 快照预览'), findsOneWidget);
+      expect(find.text('WebDAV 备份预览'), findsOneWidget);
       expect(
         find.textContaining('Backup fixture\n2026-10-05 01:02 UTC\n'),
         findsOneWidget,
@@ -126,7 +126,7 @@ void main() {
       await list(tester);
       await tester.tap(find.text('2026-10-05 01:02 UTC'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(find.textContaining('未能通过校验'), findsOneWidget);
+      expect(find.textContaining('现有书籍未改变'), findsOneWidget);
       expect(find.text('确认导入'), findsNothing);
       expect(library.booksDir.listSync(), isEmpty);
       await tester.tap(find.text('取消'));
@@ -143,7 +143,7 @@ void main() {
       final _Client second = _Client()
         ..listing = Completer<List<WebDavSnapshot>>();
       final navigator = await open(tester, [first, second]);
-      await tester.tap(find.text('查看云端快照'));
+      await tester.tap(find.text('查看云端备份'));
       await tester.pump(const Duration(milliseconds: 100));
       await navigator.currentState!.maybePop();
       await tester.pump(const Duration(milliseconds: 300));
@@ -156,7 +156,7 @@ void main() {
       await tester.tap(find.text('停止任务'));
       await tester.pumpAndSettle();
       expect(first.disposed, 1);
-      await tester.tap(find.text('查看云端快照'));
+      await tester.tap(find.text('查看云端备份'));
       await tester.pump();
       first.listing!.complete([_snapshot]);
       await tester.pump(const Duration(milliseconds: 100));
@@ -164,7 +164,7 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
       second.listing!.complete([]);
       await tester.pumpAndSettle();
-      expect(find.text('这个文件夹还没有页读快照。'), findsOneWidget);
+      expect(find.text('这个文件夹还没有页读备份。'), findsOneWidget);
       await navigator.currentState!.maybePop();
       await tester.pumpAndSettle();
       expect(find.text('Shelf fixture'), findsOneWidget);
