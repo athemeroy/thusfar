@@ -61,9 +61,9 @@
       "file": "07-toc.png",
       "width": 1080,
       "height": 2340,
-      "different_pixels": 39,
+      "different_pixels": 40,
       "max_channel_delta": 8,
-      "sha256": "f41ba8442e0994c2329044e5c44dddb87cc217b2556922a49d17c665ef140fbf"
+      "sha256": "a361d277a5c2d07d1e190827cac6bd42ae7b4061f375cfb0ebb26e06f7e6bb24"
     },
     {
       "file": "08-recap.png",
@@ -257,7 +257,7 @@
       "height": 1000,
       "different_pixels": 8,
       "max_channel_delta": 5,
-      "sha256": "02e512f431668ac009aeb95f5240b7e492ddc0026894ecc75af8fb7f8d9fc5e3"
+      "sha256": "3706e0b6d6dd670b1fad8a377358038d0b8106558e242290c05fb6f43f65d0a0"
     },
     {
       "file": "typography-sheet-phone.png",
@@ -266,6 +266,24 @@
       "different_pixels": 32,
       "max_channel_delta": 3,
       "sha256": "52a5472388dd156e0c272829b327dafed35cdcc45f182943b6ef42890d157118"
+    }
+  ],
+  "updates": [
+    {
+      "source_commit": "2ec49cc5791307eb41b8257df4abb859ec34734e",
+      "source_run": "https://github.com/athemeroy/thusfar/actions/runs/37438561348",
+      "source_artifact_id": 11401051321,
+      "source_artifact_sha256": "5eaeb44ff7c723fb788fefefaf6470b00b60d448993335b2e4b3fa02ff5204f9",
+      "macos_15_artifact_id": 11400860557,
+      "macos_15_artifact_sha256": "547d77c697e02491c2094eb9a5e63ac53c521b1c039d8cc15075ec1cf8bf1dd5",
+      "platform": "macOS 26.6.2 arm64",
+      "flutter": "3.47.5",
+      "review_date": "2026-10-06",
+      "images": [
+        "07-toc.png",
+        "title-pending-toc.png"
+      ],
+      "review": "Full images and isolated differences reviewed on both macOS 15 and 26. The intentional changes are confined to the right end of the page-jump input and the new chapter-search button. No chapter text, row positioning, hidden titles, or reading content changed. The macOS 15 baselines were refreshed from the matching macOS 15 artifact; other baselines are unchanged. The updated per-image differences compare the new macOS 26 output with the new macOS 15 baseline; these are evidence, not test tolerances."
     }
   ]
 }
