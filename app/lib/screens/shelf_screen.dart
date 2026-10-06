@@ -164,6 +164,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
               color: t.zhu,
               onRefresh: lib.scan,
               child: CustomScrollView(
+                semanticChildCount: books.length,
                 slivers: <Widget>[
                   _appBar(context),
                   if (_showImports)
@@ -308,17 +309,51 @@ class _ShelfScreenState extends State<ShelfScreen> {
                                 (tileWidth - 4) * 4 / 3 + 32 + 56 * textScale;
                             return SliverPadding(
                               padding: EdgeInsets.fromLTRB(inset, 8, inset, 32),
-                              sliver: SliverGrid.builder(
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: columns,
-                                      crossAxisSpacing: gap,
-                                      mainAxisSpacing: compact ? 18 : 22,
-                                      mainAxisExtent: tileHeight,
+                              // Each row grows with its text instead of
+                              // squeezing scaled font metrics into a fixed
+                              // grid extent. Keep the existing minimum height
+                              // and spacing for the default-size shelf.
+                              sliver: SliverList.separated(
+                                addSemanticIndexes: false,
+                                itemCount: (books.length / columns).ceil(),
+                                separatorBuilder: (_, _) =>
+                                    SizedBox(height: compact ? 18 : 22),
+                                itemBuilder: (BuildContext context, int row) =>
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        for (
+                                          int column = 0;
+                                          column < columns;
+                                          column++
+                                        ) ...<Widget>[
+                                          if (column > 0) SizedBox(width: gap),
+                                          Expanded(
+                                            child:
+                                                row * columns + column <
+                                                    books.length
+                                                ? IndexedSemantics(
+                                                    index:
+                                                        row * columns + column,
+                                                    child: ConstrainedBox(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                            minHeight:
+                                                                tileHeight,
+                                                          ),
+                                                      child: _gridCell(
+                                                        context,
+                                                        books[row * columns +
+                                                            column],
+                                                      ),
+                                                    ),
+                                                  )
+                                                : const SizedBox(),
+                                          ),
+                                        ],
+                                      ],
                                     ),
-                                itemCount: books.length,
-                                itemBuilder: (BuildContext context, int i) =>
-                                    _gridCell(context, books[i]),
                               ),
                             );
                           },
@@ -605,7 +640,10 @@ class _ShelfScreenState extends State<ShelfScreen> {
             widget.onDrawer(b, focus: true);
           },
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 104, minHeight: 44),
+            constraints: BoxConstraints(
+              maxWidth: 104 * MediaQuery.textScalerOf(context).scale(11) / 11,
+              minHeight: 44,
+            ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 7),
               child: Row(
@@ -616,8 +654,6 @@ class _ShelfScreenState extends State<ShelfScreen> {
                   Flexible(
                     child: Text(
                       label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -940,15 +976,19 @@ class _ShelfScreenState extends State<ShelfScreen> {
                         children: <Widget>[
                           BookCover(entry: b, width: box.maxWidth - 4),
                           Positioned(
+                            left: 6,
                             right: 6,
                             bottom: 6,
-                            child: _coverProcessingAction(context, b),
+                            child: Align(
+                              alignment: Alignment.bottomRight,
+                              child: _coverProcessingAction(context, b),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 9),
-                      SizedBox(
-                        height: 42 * textScale,
+                      ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: 42 * textScale),
                         child: Text(
                           b.title,
                           maxLines: 2,
