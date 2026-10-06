@@ -11,6 +11,7 @@ import 'package:thusfar_app/main.dart';
 import 'package:thusfar_app/reader/page_body.dart';
 import 'package:thusfar_app/reader/paginator.dart';
 import 'package:thusfar_app/reader/reader_controller.dart';
+import 'package:thusfar_app/reader/reader_screen.dart';
 import 'package:thusfar_app/reader/text_purification.dart';
 import 'package:thusfar_app/ui/theme.dart';
 
@@ -90,6 +91,7 @@ void main() {
 
   PageSpec spec({
     double gap = 0,
+    double tracking = 0,
     double indent = 2,
     double width = 320,
     double height = 500,
@@ -103,6 +105,7 @@ void main() {
     fontSize: fontSize,
     lineHeight: leading,
     paragraphSpacing: gap,
+    letterSpacing: tracking,
     firstLineIndent: indent,
     fontFamily: family,
     color: Colors.black,
@@ -122,6 +125,51 @@ void main() {
     expect(indentWidth(spec(indent: 0)), 0);
     expect(indentWidth(spec(indent: 4, width: 80, fontSize: 32, scale: 2)), 16);
   });
+
+  testWidgets(
+    'narrow tracked and English paragraphs never create placeholder-only pages',
+    (tester) async {
+      for (final String family in <String>[
+        'NotoSerifSC',
+        'LXGWWenKaiScreen',
+        'NotoSansSC',
+      ]) {
+        for (final double tracking in <double>[0, 2.5]) {
+          for (final String replacement in <String>[
+            source.first,
+            'Hello world, keep the first line visible.',
+          ]) {
+            final Paginator pager = Paginator(
+              book,
+              spec(
+                width: 170,
+                height: 100,
+                fontSize: 32,
+                scale: 1.6,
+                gap: 2,
+                indent: 4,
+                tracking: tracking,
+                family: family,
+              ),
+              rules: <PurificationRule>[
+                PurificationRule(
+                  id: 'first',
+                  find: source.first,
+                  replacement: replacement,
+                ),
+              ],
+            );
+            for (final PageData page in pager.pages(0)) {
+              expect(page.end, greaterThan(page.start));
+              for (final Frag fragment in page.frags) {
+                expect(fragment.displayEnd, greaterThan(fragment.displayStart));
+              }
+            }
+          }
+        }
+      }
+    },
+  );
 
   testWidgets('old default page geometry remains unchanged', (tester) async {
     final PageSpec legacy = PageSpec(
@@ -245,165 +293,240 @@ void main() {
     },
   );
 
-  testWidgets('body uses the paginator gap and matching first-line painter', (
-    tester,
-  ) async {
-    final Paginator pager = Paginator(
-      book,
-      spec(gap: 1, indent: 0),
-      rules: rules,
-    );
-    final PageData page = pager.pages(0).first;
-    expect(page.frags[1].leading, 19);
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: buildTheme(Brightness.light),
-        home: Scaffold(
-          body: PageBody(
-            page: page,
-            pager: pager,
-            layers: PageLayers(
-              world: null,
-              cutoff: page.end,
-              notes: const <Json>[],
-            ),
-            onName: (_) {},
-          ),
-        ),
-      ),
-    );
-    final List<RenderParagraph> paragraphs = tester
-        .renderObjectList<RenderParagraph>(
-          find.descendant(
-            of: find.byType(PageBody),
-            matching: find.byType(RichText),
-          ),
-        )
-        .toList();
-    double y = 0;
-    for (int i = 0; i < page.frags.length; i++) {
-      final Frag frag = page.frags[i];
-      final RenderParagraph rendered = paragraphs[i];
-      final TextPainter measured = pager.painterFor(book.blocks[frag.block]);
-      expect(
-        rendered.localToGlobal(Offset.zero).dy,
-        closeTo(y + frag.leading - frag.top, 0.000001),
-      );
-      expect(
-        rendered.getOffsetForCaret(
-          const TextPosition(offset: indentShift),
-          Rect.zero,
-        ),
-        measured.getOffsetForCaret(
-          const TextPosition(offset: indentShift),
-          Rect.zero,
-        ),
-      );
-      measured.dispose();
-      y += frag.height(pager.spec);
+  for (final String family in <String>[
+    'NotoSerifSC',
+    'LXGWWenKaiScreen',
+    'NotoSansSC',
+  ]) {
+    for (final double scale in <double>[1, 1.6, 2]) {
+      for (final double indent in <double>[2, 4]) {
+        testWidgets(
+          'rendered paragraphs match measured carets: $family scale $scale indent $indent',
+          (tester) async {
+            await setTestViewport(tester, const Size(360, 780));
+            addTearDown(() => setTestViewport(tester, null));
+            late Paginator pager;
+            late PageData page;
+            for (int pageIndex = 0; pageIndex < 2; pageIndex++) {
+              await tester.pumpWidget(
+                MaterialApp(
+                  theme: buildTheme(Brightness.light),
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(
+                      context,
+                    ).copyWith(textScaler: TextScaler.linear(scale)),
+                    child: child!,
+                  ),
+                  home: Scaffold(
+                    body: Builder(
+                      builder: (context) {
+                        pager = Paginator(
+                          book,
+                          PageSpec(
+                            width: 320,
+                            height: 500,
+                            fontSize: 19,
+                            lineHeight: 1.85,
+                            paragraphSpacing: 1,
+                            firstLineIndent: indent,
+                            fontFamily: family,
+                            color: Colors.black,
+                            textScaler: MediaQuery.textScalerOf(context),
+                          ),
+                          rules: rules,
+                        );
+                        page = pager.pages(0)[pageIndex];
+                        return PageBody(
+                          page: page,
+                          pager: pager,
+                          layers: PageLayers(
+                            world: null,
+                            cutoff: page.end,
+                            notes: const <Json>[],
+                          ),
+                          onName: (_) {},
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              );
+              await tester.pumpAndSettle();
+              final List<RenderParagraph> paragraphs = tester
+                  .renderObjectList<RenderParagraph>(
+                    find.descendant(
+                      of: find.byType(PageBody),
+                      matching: find.byType(RichText),
+                    ),
+                  )
+                  .toList();
+              double y = 0;
+              for (int i = 0; i < page.frags.length; i++) {
+                final Frag frag = page.frags[i];
+                final RenderParagraph rendered = paragraphs[i];
+                final TextPainter measured = pager.painterFor(
+                  book.blocks[frag.block],
+                );
+                expect(
+                  rendered.localToGlobal(Offset.zero).dy,
+                  closeTo(y + frag.leading - frag.top, 0.000001),
+                );
+                // Every visible caret, including continuation lines and expanded
+                // purification replacements, must use the same layout geometry.
+                for (
+                  int offset = frag.displayStart;
+                  offset <= frag.displayEnd;
+                  offset++
+                ) {
+                  final TextPosition position = TextPosition(
+                    offset: offset + indentShift,
+                  );
+                  final Offset actual = rendered.getOffsetForCaret(
+                    position,
+                    Rect.zero,
+                  );
+                  final Offset expected = measured.getOffsetForCaret(
+                    position,
+                    Rect.zero,
+                  );
+                  expect(
+                    actual.dx,
+                    closeTo(expected.dx, 0.001),
+                    reason: 'caret $offset x',
+                  );
+                  expect(
+                    actual.dy,
+                    closeTo(expected.dy, 0.001),
+                    reason: 'caret $offset y',
+                  );
+                }
+                measured.dispose();
+                y += frag.height(pager.spec);
+              }
+              expect(tester.takeException(), isNull);
+            }
+            await tester.pumpWidget(const SizedBox.shrink());
+          },
+        );
+      }
     }
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
+  }
 
   for (final bool folded in <bool>[false, true]) {
-    testWidgets(
-      'gap hit-testing and selection handles retain source quotes; folded=$folded',
-      (tester) async {
-        await setTestViewport(
-          tester,
-          folded ? const Size(840, 900) : const Size(360, 780),
-        );
-        addTearDown(() => setTestViewport(tester, null));
-        if (folded) {
-          tester.view.displayFeatures = const <ui.DisplayFeature>[
-            ui.DisplayFeature(
-              bounds: Rect.fromLTWH(80, 0, 20, 900),
-              type: ui.DisplayFeatureType.hinge,
-              state: ui.DisplayFeatureState.postureHalfOpened,
+    for (final double scale in <double>[1, 1.6, 2]) {
+      testWidgets(
+        'gap hit-testing and selection handles retain source quotes; folded=$folded scale=$scale',
+        (tester) async {
+          await setTestViewport(
+            tester,
+            folded ? const Size(840, 900) : const Size(360, 780),
+          );
+          addTearDown(() => setTestViewport(tester, null));
+          if (folded) {
+            tester.view.displayFeatures = const <ui.DisplayFeature>[
+              ui.DisplayFeature(
+                bounds: Rect.fromLTWH(80, 0, 20, 900),
+                type: ui.DisplayFeatureType.hinge,
+                state: ui.DisplayFeatureState.postureHalfOpened,
+              ),
+            ];
+            addTearDown(tester.view.resetDisplayFeatures);
+          }
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          model.prefs.update((p) {
+            p.paragraphSpacing = 2;
+            p.firstLineIndent = 4;
+          });
+          final PurificationStore store = PurificationStore(
+            File('${root.path}/text-purification.json'),
+          );
+          for (final PurificationRule rule in rules) {
+            store.put(rule);
+          }
+          store.dispose();
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: buildTheme(Brightness.light),
+              home: ReaderScreen(
+                library: model.library,
+                entry: model.library.books.single,
+                prefs: model.prefs,
+                settings: model.settings,
+                processing: model.processing,
+                onModelSettings: () async {},
+                onExport: (_) async {},
+              ),
             ),
-          ];
-          addTearDown(tester.view.resetDisplayFeatures);
-        }
-        model.prefs.update((p) {
-          p.paragraphSpacing = 2;
-          p.firstLineIndent = 0;
-        });
-        final PurificationStore store = PurificationStore(
-          File('${root.path}/text-purification.json'),
-        );
-        for (final PurificationRule rule in rules) {
-          store.put(rule);
-        }
-        store.dispose();
-        await tester.pumpWidget(ThusfarApp(model: model));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('段落排版测试').first);
-        await tester.pumpAndSettle();
-        PageBody body() => tester.widget<PageBody>(find.byType(PageBody).first);
-        final PageBody initial = body();
-        final Frag second = initial.page.frags[1];
-        final double preceding = initial.page.frags.first.height(
-          initial.pager.spec,
-        );
-        final Offset origin = tester.getTopLeft(find.byType(PageBody).first);
-        // Blank paragraph space has no source character and must not select one.
-        await tester.longPressAt(
-          origin + Offset(40, preceding + second.leading / 2),
-        );
-        await tester.pumpAndSettle();
-        expect(body().layers.selection, isNull);
-        final Block block = initial.pager.book.blocks[second.block];
-        final TextPainter painter = initial.pager.painterFor(block);
-        Offset point(int display) =>
-            origin +
-            painter.getOffsetForCaret(
-              TextPosition(offset: display + indentShift),
-              Rect.zero,
-            ) +
-            Offset(
-              2,
-              preceding +
-                  second.leading -
-                  second.top +
-                  initial.pager.spec.line / 2,
-            );
-        final int name = initial.pager.textFor(block).text.indexOf('张三李四');
-        await tester.longPressAt(point(name + 1));
-        await tester.pumpAndSettle();
-        final (int, int) selected = body().layers.selection!;
-        expect(
-          selected.$1,
-          lessThanOrEqualTo(block.o + source[1].indexOf('名字')),
-        );
-        expect(
-          selected.$2,
-          greaterThanOrEqualTo(block.o + source[1].indexOf('名字') + 2),
-        );
-        final Finder handle = find.byKey(
-          const ValueKey<String>('reader-selection-end'),
-        );
-        expect(handle, findsOneWidget);
-        final TestGesture drag = await tester.startGesture(
-          tester.getCenter(handle),
-        );
-        await drag.moveBy(const Offset(12, 0));
-        await drag.up();
-        await tester.pumpAndSettle();
-        final (int, int) adjusted = body().layers.selection!;
-        final String quote = initial.pager.book.textBetween(
-          adjusted.$1,
-          adjusted.$2,
-        );
-        await tester.tap(find.text('摘录'));
-        await tester.pumpAndSettle();
-        expect(initial.pager.book.notes.notes.single['quote'], quote);
-        expect(quote, isNot(contains('张三李四')));
-        painter.dispose();
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox.shrink());
-      },
-    );
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          PageBody body() =>
+              tester.widget<PageBody>(find.byType(PageBody).first);
+          final PageBody initial = body();
+          final Frag second = initial.page.frags[1];
+          final double preceding = initial.page.frags.first.height(
+            initial.pager.spec,
+          );
+          final Offset origin = tester.getTopLeft(find.byType(PageBody).first);
+          // Blank paragraph space has no source character and must not select one.
+          await tester.longPressAt(
+            origin + Offset(40, preceding + second.leading / 2),
+          );
+          await tester.pumpAndSettle();
+          expect(body().layers.selection, isNull);
+          final Block block = initial.pager.book.blocks[second.block];
+          final TextPainter painter = initial.pager.painterFor(block);
+          Offset point(int display) =>
+              origin +
+              painter.getOffsetForCaret(
+                TextPosition(offset: display + indentShift),
+                Rect.zero,
+              ) +
+              Offset(
+                2,
+                preceding +
+                    second.leading -
+                    second.top +
+                    initial.pager.spec.line / 2,
+              );
+          final int name = initial.pager.textFor(block).text.indexOf('张三李四');
+          await tester.longPressAt(point(name + 1));
+          await tester.pumpAndSettle();
+          final (int, int) selected = body().layers.selection!;
+          expect(
+            selected.$1,
+            lessThanOrEqualTo(block.o + source[1].indexOf('名字')),
+          );
+          expect(
+            selected.$2,
+            greaterThanOrEqualTo(block.o + source[1].indexOf('名字') + 2),
+          );
+          final Finder handle = find.byKey(
+            const ValueKey<String>('reader-selection-end'),
+          );
+          expect(handle, findsOneWidget);
+          final TestGesture drag = await tester.startGesture(
+            tester.getCenter(handle),
+          );
+          await drag.moveBy(const Offset(12, 0));
+          await drag.up();
+          await tester.pumpAndSettle();
+          final (int, int) adjusted = body().layers.selection!;
+          final String quote = initial.pager.book.textBetween(
+            adjusted.$1,
+            adjusted.$2,
+          );
+          await tester.tap(find.text('摘录'));
+          await tester.pumpAndSettle();
+          expect(initial.pager.book.notes.notes.single['quote'], quote);
+          expect(quote, isNot(contains('张三李四')));
+          painter.dispose();
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
   }
 
   testWidgets(

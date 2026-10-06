@@ -103,6 +103,17 @@ double indentWidth(PageSpec spec) => math.min(
   math.max(0, spec.width - spec.textScaler.scale(spec.fontSize)),
 );
 
+/// RichText scales WidgetSpan children using the surrounding font size. Keep
+/// the child in unscaled units so its final dimensions match the explicit
+/// placeholder dimensions used by TextPainter during pagination/hit testing.
+WidgetSpan indentSpan(PageSpec spec, double width) {
+  final double scale = spec.textScaler.scale(spec.fontSize) / spec.fontSize;
+  return WidgetSpan(
+    alignment: PlaceholderAlignment.middle,
+    child: SizedBox(width: width / scale, height: 1 / scale),
+  );
+}
+
 /// A run of whole lines of one block on one page.
 class Frag {
   const Frag({
@@ -183,38 +194,63 @@ class Paginator {
 
   List<PageData> pages(int chapter) => _cache[chapter] ??= _layout(chapter);
 
+  final Map<Block, double> _indents = <Block, double>{};
+
+  /// Resolved per paragraph: a long first word may need the full line width.
+  double indentFor(Block block) {
+    if (!_indents.containsKey(block)) painterFor(block).dispose();
+    return _indents[block] ?? 0;
+  }
+
   /// Lines of text a block uses at this spec, and its painter.
   TextPainter painterFor(Block b) {
     final bool heading = b.kind == 'h';
     final String text = textFor(b).text;
-    final TextPainter tp = TextPainter(
-      text: heading
-          ? TextSpan(text: text, style: spec.heading)
-          : TextSpan(
-              style: spec.body,
-              children: <InlineSpan>[
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.middle,
-                  child: SizedBox(width: indentWidth(spec), height: 1),
-                ),
-                TextSpan(text: text),
-              ],
-            ),
-      textAlign: heading ? TextAlign.center : TextAlign.justify,
-      textDirection: TextDirection.ltr,
-      strutStyle: heading ? null : spec.strut,
-      textScaler: spec.textScaler,
-    );
-    if (!heading) {
-      tp.setPlaceholderDimensions(<PlaceholderDimensions>[
-        PlaceholderDimensions(
-          size: Size(indentWidth(spec), 1),
-          alignment: PlaceholderAlignment.middle,
-        ),
-      ]);
+    TextPainter measure(double indent) {
+      final TextPainter painter = TextPainter(
+        text: heading
+            ? TextSpan(text: text, style: spec.heading)
+            : TextSpan(
+                style: spec.body,
+                children: <InlineSpan>[
+                  indentSpan(spec, indent),
+                  TextSpan(text: text),
+                ],
+              ),
+        textAlign: heading ? TextAlign.center : TextAlign.justify,
+        textDirection: TextDirection.ltr,
+        strutStyle: heading ? null : spec.strut,
+        textScaler: spec.textScaler,
+      );
+      if (!heading) {
+        painter.setPlaceholderDimensions(<PlaceholderDimensions>[
+          PlaceholderDimensions(
+            size: Size(indent, 1),
+            alignment: PlaceholderAlignment.middle,
+          ),
+        ]);
+      }
+      painter.layout(minWidth: spec.width, maxWidth: spec.width);
+      return painter;
     }
-    tp.layout(minWidth: spec.width, maxWidth: spec.width);
-    return tp;
+
+    double indent = heading ? 0 : (_indents[b] ?? indentWidth(spec));
+    TextPainter painter = measure(indent);
+    if (!heading && !_indents.containsKey(b)) {
+      // Flutter may break a CJK glyph with positive tracking, or an entire
+      // English word, after the placeholder. Drop the indent in that paragraph
+      // rather than creating a blank first line (or a source-empty page).
+      if (indent > 0 &&
+          text.isNotEmpty &&
+          painter.getLineBoundary(const TextPosition(offset: 0)).end <=
+              indentShift) {
+        painter.dispose();
+        indent = 0;
+        painter = measure(indent);
+      }
+      _indents[b] = indent;
+    }
+    return painter;
   }
 
   int _imageLines() => math.min(
