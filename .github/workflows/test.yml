@@ -77,6 +77,7 @@ jobs:
             test/preparation_plan_test.dart \
             test/processing_diagnostics_test.dart \
             test/reader_regression_test.dart test/selection_bounds_test.dart \
+            test/text_purification_test.dart \
             test/reader_cover_transition_test.dart \
             test/reader_tap_layout_test.dart \
             test/reading_overhaul_test.dart test/recovery_test.dart \

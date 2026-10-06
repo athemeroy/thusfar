@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import '../data/library.dart';
+import 'text_purification.dart';
 
 /// Page geometry and type, fixed for one layout pass.
 class PageSpec {
@@ -96,13 +97,20 @@ class Frag {
     required this.top,
     required this.lines,
     required this.image,
-  });
+    int? displayStart,
+    int? displayEnd,
+  }) : _displayStart = displayStart,
+       _displayEnd = displayEnd;
 
   final int block;
 
-  /// UTF-16 offsets inside the block text.
+  /// Immutable source UTF-16 offsets inside the block text.
   final int start;
   final int end;
+  final int? _displayStart;
+  final int? _displayEnd;
+  int get displayStart => _displayStart ?? start;
+  int get displayEnd => _displayEnd ?? end;
 
   /// Offset of the first line inside the laid-out paragraph.
   final double top;
@@ -132,7 +140,18 @@ class PageData {
 
 /// Lays out chapters into pages on demand and caches them.
 class Paginator {
-  Paginator(this.book, this.spec);
+  Paginator(
+    this.book,
+    this.spec, {
+    Iterable<PurificationRule> rules = const <PurificationRule>[],
+  }) : _purifier = TextPurifier(rules);
+
+  final TextPurifier _purifier;
+  final Map<Block, PurifiedText> _text = <Block, PurifiedText>{};
+  PurifiedText textFor(Block block) =>
+      _text[block] ??= block.kind == 'p' || block.kind == 'h'
+      ? _purifier.apply(block.text)
+      : PurifiedText.original(block.text);
 
   final BookData book;
   final PageSpec spec;
@@ -147,9 +166,10 @@ class Paginator {
   /// Lines of text a block uses at this spec, and its painter.
   TextPainter painterFor(Block b) {
     final bool heading = b.kind == 'h';
+    final String text = textFor(b).text;
     final TextPainter tp = TextPainter(
       text: heading
-          ? TextSpan(text: b.text, style: spec.heading)
+          ? TextSpan(text: text, style: spec.heading)
           : TextSpan(
               style: spec.body,
               children: <InlineSpan>[
@@ -157,7 +177,7 @@ class Paginator {
                   alignment: PlaceholderAlignment.middle,
                   child: SizedBox(width: indentWidth(spec), height: 1),
                 ),
-                TextSpan(text: b.text),
+                TextSpan(text: text),
               ],
             ),
       textAlign: heading ? TextAlign.center : TextAlign.justify,
@@ -225,6 +245,18 @@ class Paginator {
         used += need;
         continue;
       }
+      final PurifiedText mapped = textFor(b);
+      if (mapped.text.isEmpty) continue;
+      Frag fragment(int a, int z, double top, int lines) => Frag(
+        block: bi,
+        start: mapped.sourceStart(a),
+        end: mapped.sourceEnd(z),
+        displayStart: a,
+        displayEnd: z,
+        top: top,
+        lines: lines,
+        image: false,
+      );
       final TextPainter tp = painterFor(b);
       final bool heading = b.kind == 'h';
       final int shift = heading ? 0 : indentShift;
@@ -237,14 +269,7 @@ class Paginator {
           if (used + textLines + (current.isEmpty ? 0 : 1) > capacity) flush();
           final int extra = current.isEmpty ? 0 : 1;
           current.add(
-            Frag(
-              block: bi,
-              start: 0,
-              end: b.text.length,
-              top: -extra * line,
-              lines: textLines + extra,
-              image: false,
-            ),
+            fragment(0, mapped.text.length, -extra * line, textLines + extra),
           );
           used += textLines + extra;
           tp.dispose();
@@ -276,16 +301,11 @@ class Paginator {
               )
               .start;
           current.add(
-            Frag(
-              block: bi,
-              start: from == 0 ? 0 : boundary(from),
-              end: to == metrics.length ? b.text.length : boundary(to),
-              top: top,
-              lines: math.min(
-                capacity,
-                math.max(1, ((bottom - top) / line).ceil()),
-              ),
-              image: false,
+            fragment(
+              from == 0 ? 0 : boundary(from),
+              to == metrics.length ? mapped.text.length : boundary(to),
+              top,
+              math.min(capacity, math.max(1, ((bottom - top) / line).ceil())),
             ),
           );
           used = current.last.lines;
@@ -314,18 +334,9 @@ class Paginator {
         final int take = math.min(capacity - used, total - from);
         final int a = from == 0 ? 0 : starts[from];
         final int z = from + take >= total
-            ? b.text.length
+            ? mapped.text.length
             : starts[from + take];
-        current.add(
-          Frag(
-            block: bi,
-            start: a,
-            end: z,
-            top: from * line,
-            lines: take,
-            image: false,
-          ),
-        );
+        current.add(fragment(a, z, from * line, take));
         used += take;
         from += take;
       }
@@ -370,7 +381,7 @@ class Paginator {
           math.max(1, spec.width / (spec.textScaler.scale(spec.fontSize))) *
           0.9;
     }
-    return chars / count;
+    return math.max(1.0, chars / count);
   }
 
   /// Global page number of chapter page, exact when every earlier chapter is laid out.

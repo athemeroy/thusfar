@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' show DisplayFeatureState, DisplayFeatureType;
 
@@ -13,6 +14,7 @@ import 'package:thusfar_core/ask.dart' as ask;
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/prefs.dart';
+import '../data/purification_store.dart';
 import '../data/processing.dart';
 import '../data/seen.dart';
 import '../sheets/ask_sheet.dart';
@@ -21,6 +23,7 @@ import '../sheets/common.dart';
 import '../sheets/marginalia_sheet.dart';
 import '../sheets/note_editor.dart';
 import '../sheets/people_sheet.dart';
+import '../sheets/purification_sheet.dart';
 import '../sheets/person_sheet.dart';
 import '../sheets/recap_sheet.dart';
 import '../sheets/search_sheet.dart';
@@ -33,6 +36,7 @@ import 'page_body.dart';
 import 'paginator.dart';
 import 'reader_controller.dart';
 import 'tap_layout.dart';
+import 'text_purification.dart';
 
 /// S04 阅读页 with its toolbar (S04c), selection (S06) and drawers.
 class ReaderScreen extends StatefulWidget {
@@ -71,6 +75,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     library: widget.library,
     book: book,
   );
+  late final PurificationStore _purification = PurificationStore(
+    File('${widget.library.root.path}/text-purification.json'),
+  );
   PageController? pc;
   final GlobalKey<CoverPageTurnState> _coverTurnKey =
       GlobalKey<CoverPageTurnState>();
@@ -100,6 +107,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     super.initState();
     _lastAnimation = widget.prefs.anim;
     widget.prefs.addListener(_relayout);
+    _purification.addListener(_purificationChanged);
     book.notes.addListener(_repaint);
     c.addListener(_repaint);
     widget.library.addListener(_refreshKnowledge);
@@ -108,6 +116,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void dispose() {
     widget.prefs.removeListener(_relayout);
+    _purification.removeListener(_purificationChanged);
+    _purification.dispose();
     book.notes.removeListener(_repaint);
     c.removeListener(_repaint);
     widget.library.removeListener(_refreshKnowledge);
@@ -138,6 +148,43 @@ class _ReaderScreenState extends State<ReaderScreen> {
       spec = null;
     }
     if (mounted) setState(() {});
+  }
+
+  void _purificationChanged() {
+    // Keep the same immutable-source anchor across every preview/rule change.
+    // Relayout does not rewrite the saved reading position or knowledge cutoff.
+    _layoutAnchor ??= c.start;
+    c.selection = null;
+    c.flash = null;
+    spec = null;
+    if (mounted) setState(() {});
+  }
+
+  void _openPurification({String? find}) {
+    final List<String> samples = <String>[
+      for (final Frag fragment in c.page?.frags ?? const <Frag>[])
+        if (!fragment.image)
+          book.blocks[fragment.block].text.substring(
+            fragment.start,
+            fragment.end,
+          ),
+    ];
+    _clearSelection();
+    _sheet(
+      find == null
+          ? PurificationPage(
+              store: _purification,
+              bookId: book.id,
+              samples: samples,
+            )
+          : PurificationEditor(
+              store: _purification,
+              bookId: book.id,
+              samples: samples,
+              initialFind: find,
+            ),
+      full: true,
+    );
   }
 
   int get _initialOffset {
@@ -171,7 +218,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         : (_layoutAnchor ?? c.start);
     _layoutAnchor = keep;
     spec = next;
-    c.layout(Paginator(book, next), keep);
+    c.layout(
+      Paginator(book, next, rules: _purification.forBook(book.id)),
+      keep,
+    );
     if (first && widget.openAt != null) {
       c.returnTo = _initialOffset;
       c.flash = (widget.openAt!, widget.openAt! + 1);
@@ -384,7 +434,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // ---------------------------------------------------------------- selection
 
-  int? _hitOffset(Offset local) {
+  (int, int)? _hitRange(Offset local) {
     final PageData? page = c.page;
     final Paginator? p = c.pager;
     if (page == null || p == null) return null;
@@ -401,7 +451,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
             tp.getPositionForOffset(Offset(x, f.top + (local.dy - y))).offset -
             shift;
         tp.dispose();
-        return b.o + pos.clamp(f.start, math.max(f.start, f.end - 1));
+        final (int, int)? range = p
+            .textFor(b)
+            .sourceCharacter(
+              pos.clamp(
+                f.displayStart,
+                math.max(f.displayStart, f.displayEnd - 1),
+              ),
+            );
+        return range == null ? null : (b.o + range.$1, b.o + range.$2);
       }
       y += h;
     }
@@ -435,26 +493,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _longPress(LongPressStartDetails d) {
-    final int? at = _hitOffset(d.localPosition);
-    if (at == null) return;
+    final (int, int)? hit = _hitRange(d.localPosition);
+    if (hit == null) return;
+    final int at = hit.$1;
     HapticFeedback.mediumImpact();
     _pressAt = d.localPosition;
     final (int s, int e) = _wordAt(at);
-    c.select((s, e));
+    c.select((s, math.max(e, hit.$2)));
     _selectionSeed = c.selection;
   }
 
   void _longPressMove(LongPressMoveUpdateDetails d) {
-    final int? at = _hitOffset(d.localPosition);
+    final (int, int)? hit = _hitRange(d.localPosition);
     final (int, int)? seed = _selectionSeed;
-    if (at == null || seed == null || c.selection == null) return;
+    if (hit == null || seed == null || c.selection == null) return;
+    final int at = hit.$1;
     HapticFeedback.selectionClick();
     if (_whoIsActive) {
       _whoIsActive = false;
       _whoIsResult = null;
       _whoIsLoading = false;
     }
-    c.select(at < seed.$1 ? (at, seed.$2) : (seed.$1, at + 1), anchor: seed.$1);
+    c.select(at < seed.$1 ? (at, seed.$2) : (seed.$1, hit.$2), anchor: seed.$1);
   }
 
   bool _changeNote(void Function() action) {
@@ -1280,10 +1340,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
               : local > fragment.start && local <= fragment.end)) {
         final TextPainter painter = pager.painterFor(block);
         final int shift = block.kind == 'h' ? 0 : indentShift;
+        final PurifiedText mapped = pager.textFor(block);
+        final int display =
+            (start ? mapped.displayStart(local) : mapped.displayEnd(local))
+                .clamp(fragment.displayStart, fragment.displayEnd);
         caret =
             painter.getOffsetForCaret(
               TextPosition(
-                offset: local + shift,
+                offset: display + shift,
                 affinity: start
                     ? TextAffinity.downstream
                     : TextAffinity.upstream,
@@ -1293,7 +1357,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
             Offset(_readingBounds.left + _contentLeft, top + y - fragment.top);
         sourcePoint =
             painter.getOffsetForCaret(
-              TextPosition(offset: local + shift - (start ? 0 : 1)),
+              TextPosition(
+                offset: math.max(0, display + shift - (start ? 0 : 1)),
+              ),
               Rect.zero,
             ) +
             Offset(_contentLeft, y - fragment.top + pager.spec.line / 2);
@@ -1334,11 +1400,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 _handleDragSource! +
                 details.globalPosition -
                 _handleDragPointer!;
-            final int? at = _hitOffset(local);
-            if (at == null) return;
+            final (int, int)? hit = _hitRange(local);
+            if (hit == null) return;
             final (int s, int e) = c.selection!;
             c.select(
-              start ? (math.min(at, e - 1), e) : (s, math.max(s + 1, at + 1)),
+              start
+                  ? (math.min(hit.$1, e - 1), e)
+                  : (s, math.max(s + 1, hit.$2)),
             );
           },
           child: Align(
@@ -1412,6 +1480,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     _clearSelection();
                     _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
                   }),
+                  action(
+                    '净化',
+                    () => _openPurification(find: book.textBetween(s, e)),
+                  ),
                   action('复制', () {
                     HapticFeedback.lightImpact();
                     Clipboard.setData(
@@ -1633,6 +1705,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     widget.prefs,
                     anchorPoint: _toolsBounds.center,
                   );
+                case 4:
+                  _openPurification();
                 case 3:
                   if (c.page != null) {
                     _sheet(
@@ -1652,6 +1726,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
               PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
               PopupMenuItem<int>(value: 3, child: Text('本页批注')),
+              PopupMenuItem<int>(value: 4, child: Text('文本净化')),
             ],
           ),
         ],
