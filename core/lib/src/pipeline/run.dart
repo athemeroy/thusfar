@@ -27,6 +27,7 @@ import 'local.dart' as local;
 import 'preparation_plan.dart'
     show validatePreparationPlan, preparationBookPrefix;
 import 'provenance.dart';
+import 'request_lifecycle.dart';
 import 'run_lease.dart';
 import 'run_prompts.dart' as prompts;
 
@@ -110,6 +111,7 @@ void writeJson(File file, Object? data, {bool compact = true}) {
   try {
     tmp.writeAsStringSync(
       PyJson.encode(data, ensureAscii: false, compact: compact),
+      flush: true,
     );
     tmp.renameSync(file.path);
   } finally {

@@ -20,11 +20,37 @@ final class AlreadyRunning implements Exception {
 }
 
 final class RunCancellation {
+  static final Object _zoneKey = Object();
+  static RunCancellation? get current =>
+      Zone.current[_zoneKey] as RunCancellation?;
+
   final Completer<void> _signal = Completer<void>();
+  final Set<void Function()> _listeners = <void Function()>{};
   bool get isCancelled => _signal.isCompleted;
   Future<void> get whenCancelled => _signal.future;
+
+  /// Scope all model requests to this run without process-global cancellation.
+  T run<T>(T Function() operation) =>
+      runZoned(operation, zoneValues: <Object, Object>{_zoneKey: this});
+
+  /// Returns a removal callback so settled requests do not retain listeners.
+  void Function() onCancel(void Function() listener) {
+    if (isCancelled) {
+      listener();
+      return () {};
+    }
+    _listeners.add(listener);
+    return () => _listeners.remove(listener);
+  }
+
   void cancel() {
-    if (!isCancelled) _signal.complete();
+    if (isCancelled) return;
+    _signal.complete();
+    final List<void Function()> listeners = _listeners.toList();
+    _listeners.clear();
+    for (final void Function() listener in listeners) {
+      listener();
+    }
   }
 
   void checkpoint() {
@@ -32,12 +58,22 @@ final class RunCancellation {
   }
 
   void check() => checkpoint();
-  Future<T> wait<T>(Future<T> operation) async {
-    checkpoint();
-    return Future.any([
-      operation,
-      whenCancelled.then<T>((_) => throw const Cancelled()),
-    ]);
+  Future<T> wait<T>(Future<T> operation) {
+    final Completer<T> result = Completer<T>();
+    final void Function() remove = onCancel(() {
+      if (!result.isCompleted) result.completeError(const Cancelled());
+    });
+    operation.then(
+      (T value) {
+        remove();
+        if (!result.isCompleted) result.complete(value);
+      },
+      onError: (Object error, StackTrace stack) {
+        remove();
+        if (!result.isCompleted) result.completeError(error, stack);
+      },
+    );
+    return result.future;
   }
 }
 

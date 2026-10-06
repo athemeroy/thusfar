@@ -226,6 +226,8 @@ extension RunnerFinalization on Runner {
       if (result == false) throw const llm.LLMError('章节整理尚未通过验证');
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } on _BioJudgeFormatError catch (e) {
       job['state'] = 'deferred';
       job['failure_kind'] = 'bio_judge_format';
@@ -418,6 +420,8 @@ extension RunnerFinalization on Runner {
         }
       } on Cancelled {
         rethrow;
+      } on llm.UnknownOutcomeLLMError {
+        rethrow;
       } catch (e) {
         throw llm.LLMError('章节摘要验证失败：${_error(e)}');
       }
@@ -501,6 +505,8 @@ extension RunnerFinalization on Runner {
         r['fallback_kind'] = 'verified-input-excerpt';
       }
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (e) {
       throw llm.LLMError('前情提要验证失败：${_error(e)}');
@@ -586,6 +592,8 @@ extension RunnerFinalization on Runner {
       }
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (e) {
       throw llm.LLMError('章节整理验证失败：${_error(e)}');
     }
@@ -626,6 +634,8 @@ extension RunnerFinalization on Runner {
           usage['jev_calls'] =
               _int(usage['jev_calls']) + (pairs.length + 15) ~/ 16;
         } on Cancelled {
+          rethrow;
+        } on llm.UnknownOutcomeLLMError {
           rethrow;
         } catch (_) {
           return;
@@ -975,6 +985,8 @@ extension RunnerFinalization on Runner {
       usage['jev_calls'] = _int(usage['jev_calls']) + 1;
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (_) {
       return;
     }
@@ -1045,6 +1057,8 @@ extension RunnerFinalization on Runner {
       chosen = await judge.currentValue(items);
       usage['jev_calls'] = _int(usage['jev_calls']) + 1;
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (_) {
       return;
@@ -1209,6 +1223,8 @@ extension RunnerFinalization on Runner {
       usage['jev_calls'] = _int(usage['jev_calls']) + 1;
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } on jevClient.ModelJudgeInvalidAnswer catch (e) {
       throw _BioJudgeFormatError(e.message);
     } catch (e) {
@@ -1324,10 +1340,14 @@ extension RunnerFinalization on Runner {
         await rateImportance(end, lastBio);
       } on Cancelled {
         rethrow;
+      } on llm.UnknownOutcomeLLMError {
+        rethrow;
       } catch (_) {}
       try {
         await settleAttrs(end, lastBio);
       } on Cancelled {
+        rethrow;
+      } on llm.UnknownOutcomeLLMError {
         rethrow;
       } catch (_) {}
     }

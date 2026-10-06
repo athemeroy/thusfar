@@ -25,6 +25,99 @@ void main() {
     );
   });
 
+  test('native runtime export is bounded and rejects private fields', () {
+    const String secret = 'PRIVATE-BOOK-API-URL';
+    final String encoded = utf8.decode(
+      ProcessingDiagnostics.bytes(
+        bookDirectory: book,
+        workerHealth: const <String, Object?>{},
+        backgroundRuntime: <String, Object?>{
+          'sdk': 35,
+          'pid': 123,
+          'device_idle': true,
+          'private': secret,
+          'service': <String, Object?>{
+            'running': true,
+            'wake_lock_held': true,
+            'title': secret,
+          },
+          'events': <Object?>[
+            for (int i = 0; i < 80; i++)
+              <String, Object?>{
+                'event': i == 79 ? secret : 'foreground_started',
+                'error_type': secret,
+                'message': secret,
+                'at_ms': i,
+                'elapsed_ms': i,
+                'uptime_ms': i,
+              },
+          ],
+        },
+      ),
+    );
+    expect(encoded, isNot(contains(secret)));
+    final Map<String, Object?> decoded =
+        jsonDecode(encoded) as Map<String, Object?>;
+    final Map<String, Object?> native =
+        decoded['android_runtime']! as Map<String, Object?>;
+    expect(native['device_idle'], isTrue);
+    expect(
+      (native['service']! as Map<String, Object?>)['wake_lock_held'],
+      isTrue,
+    );
+    expect(native['events'], hasLength(64));
+  });
+
+  test('judge failure export keeps structural codes and counts only', () {
+    const String secret = 'PRIVATE-QUESTION-RESPONSE-URL-KEY';
+    final File failure = File(
+      '${book.path}/work/judge/model-answer-failure.json',
+    );
+    failure.parent.createSync(recursive: true);
+    failure.writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'at': 1234,
+        'attempts': 2,
+        'question_count': 3,
+        'unresolved_count': 1,
+        'raw': secret,
+        'question_id': secret,
+        'reasons': <String, Object?>{
+          'inconsistent_sum': 1,
+          'invalid_choice': secret,
+          secret: 1,
+        },
+      }),
+    );
+    File('${book.path}/status.json').writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'state': 'paused',
+        'pause_reason': 'request_outcome_unknown',
+        'error': '已配置模型的判断回答不完整或概率无效：$secret',
+      }),
+    );
+    final String encoded = utf8.decode(
+      ProcessingDiagnostics.bytes(
+        bookDirectory: book,
+        workerHealth: const <String, Object?>{},
+      ),
+    );
+    expect(encoded, isNot(contains(secret)));
+    final Map<String, Object?> output =
+        jsonDecode(encoded) as Map<String, Object?>;
+    expect(output['last_model_judge_failure'], <String, Object?>{
+      'at': 1234,
+      'attempts': 2,
+      'question_count': 3,
+      'unresolved_count': 1,
+      'reasons': <String, int>{'inconsistent_sum': 1},
+    });
+    expect(
+      (output['status'] as Map<String, Object?>)['error_code'],
+      'model_judge_invalid_answer',
+    );
+  });
+
   test('file name is stable and does not include a book title', () {
     expect(
       ProcessingDiagnostics.fileName(DateTime(2026, 9, 27, 16, 8, 9)),

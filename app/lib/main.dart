@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart' show PyException;
+import 'package:thusfar_core/jobs.dart' show hasUnsettledModelRequests;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/backup.dart';
@@ -180,10 +181,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void>? _backgroundResume;
   Timer? _importFeedback;
   Timer? _updatePromptRetry;
-  final Set<String> _notifiedBooks = <String>{};
-  final Map<String, String> _notificationStamps = <String, String>{};
-  bool _notificationSyncBusy = false;
-  bool _notificationSyncPending = false;
   bool _appResumed = true;
   bool _readingShares = false;
   bool _sharesAgain = false;
@@ -199,9 +196,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     m.processing.addListener(_changed);
     WidgetsBinding.instance.addObserver(this);
     ProcessingNotificationBridge.onOpenBook(_openProcessingNotification);
-    ProcessingNotificationBridge.onBackgroundTimeLimit(
-      _handleBackgroundTimeLimit,
-    );
     _paths.setMethodCallHandler((MethodCall call) async {
       if (call.method == 'importsAvailable') await _takeSharedImports();
     });
@@ -210,11 +204,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       if (mounted) unawaited(_checkForUpdates());
       if (mounted) unawaited(_takeProcessingNotification());
       if (mounted) {
-        unawaited(
-          _takeBackgroundTimeLimit().whenComplete(
-            _resumeBackgroundLimitedBooks,
-          ),
-        );
+        unawaited(_resumeBackgroundLimitedBooks());
       }
     });
     if (m.startupError != null) {
@@ -234,7 +224,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     m.processing.removeListener(_changed);
     WidgetsBinding.instance.removeObserver(this);
     ProcessingNotificationBridge.onOpenBook(null);
-    ProcessingNotificationBridge.onBackgroundTimeLimit(null);
     _paths.setMethodCallHandler(null);
     _importFeedback?.cancel();
     _updatePromptRetry?.cancel();
@@ -244,16 +233,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _appResumed = state == AppLifecycleState.resumed;
+    unawaited(ProcessingNotificationBridge.recordLifecycle(state.name));
     if (state == AppLifecycleState.resumed) {
       unawaited(
         _refreshLibraryOnResume().then((_) => _resumeBackgroundLimitedBooks()),
       );
       unawaited(_checkForUpdates());
-      _queueNotificationSync();
     }
-    if (state == AppLifecycleState.detached) {
-      unawaited(m.processing.close().catchError((Object _) {}));
-    }
+    // Android's app-owned engine can outlive every Activity/view. Detached
+    // is not an instruction to cancel an authorized worker or its requests.
   }
 
   Future<void> _checkForUpdates({bool manual = false}) async {
@@ -368,7 +356,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           if (!mounted || !_appResumed) return;
           m.library.refreshStatus(book);
           if (!book.status.isPaused ||
-              book.status.raw['pause_reason'] != 'background_time_limit') {
+              hasUnsettledModelRequests(book.dir) ||
+              !<String>{
+                'background_time_limit',
+                'background_unavailable',
+              }.contains(book.status.raw['pause_reason'])) {
             continue;
           }
           try {
@@ -382,7 +374,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void _changed() {
     if (mounted) {
       setState(() {});
-      _queueNotificationSync();
       // Cancellation can settle after the first foreground scan. The worker
       // refresh is the authoritative transition from cancelling to paused.
       if (_appResumed &&
@@ -390,7 +381,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           m.library.books.any(
             (BookEntry book) =>
                 book.status.isPaused &&
-                book.status.raw['pause_reason'] == 'background_time_limit',
+                !hasUnsettledModelRequests(book.dir) &&
+                <String>{
+                  'background_time_limit',
+                  'background_unavailable',
+                }.contains(book.status.raw['pause_reason']),
           )) {
         unawaited(_resumeBackgroundLimitedBooks());
       }
@@ -410,123 +405,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       if (bookId != null) await _openProcessingNotification(bookId);
     } on Object {
       // A notification may arrive while the Android channel is being set up.
-    }
-  }
-
-  Future<void> _takeBackgroundTimeLimit() async {
-    try {
-      final List<String> ids =
-          await ProcessingNotificationBridge.takeBackgroundTimeLimitBookIds();
-      if (ids.isNotEmpty) await _handleBackgroundTimeLimit(ids);
-    } on Object {
-      // The task state remains visible from the library if Android is offline.
-    }
-  }
-
-  Future<void> _handleBackgroundTimeLimit(List<String> bookIds) async {
-    bool affected = false;
-    for (final String id in bookIds.toSet()) {
-      final BookEntry? book = m.library.byId(id);
-      if (book == null) continue;
-      m.library.refreshStatus(book);
-      if (!book.status.isRunning) continue;
-      affected = true;
-      try {
-        await m.processing.pauseForBackgroundLimit(book);
-      } on Object {
-        // The worker may already have stopped; its durable status is read below.
-      }
-      m.library.refreshStatus(book);
-    }
-    if (mounted && affected) {
-      _queueNotificationSync();
-      _updateMessage('系统后台整理时段已结束。请打开整理任务查看状态后继续。');
-    }
-  }
-
-  void _queueNotificationSync() {
-    _notificationSyncPending = true;
-    if (_notificationSyncBusy) return;
-    unawaited(_syncNotifications());
-  }
-
-  Future<void> _syncNotifications() async {
-    _notificationSyncBusy = true;
-    try {
-      while (_notificationSyncPending && mounted) {
-        _notificationSyncPending = false;
-        final Map<String, Object?> health = m.processing.health;
-        final Set<String> owned = <String>{
-          if (health['current'] is String) health['current']! as String,
-          for (final Object? id
-              in (health['queued'] as List<Object?>?) ?? const [])
-            if (id is String) id,
-        };
-        final Map<String, BookEntry> active = <String, BookEntry>{
-          if (health['alive'] == true)
-            for (final BookEntry book in m.library.books)
-              if (book.status.isActive && owned.contains(book.id))
-                book.id: book,
-        };
-        for (final String id in _notifiedBooks.toList()) {
-          if (active.containsKey(id)) continue;
-          await ProcessingNotificationBridge.stop(id);
-          _notifiedBooks.remove(id);
-          _notificationStamps.remove(id);
-        }
-        for (final BookEntry book in active.values) {
-          final ProcessStatus status = book.status;
-          final String notice = status.notice ?? '';
-          final String phase = status.state == 'queued'
-              ? 'queued'
-              : status.state == 'finalizing'
-              ? 'finalizing'
-              : notice.contains('等待') || notice.contains('模型')
-              ? 'waiting'
-              : status.done == 0
-              ? 'preparing'
-              : 'running';
-          final String stamp =
-              '$phase/${status.done}/${status.total}/${book.title}';
-          if (_notificationStamps[book.id] == stamp) continue;
-          try {
-            if (_notifiedBooks.contains(book.id)) {
-              final bool present = await ProcessingNotificationBridge.update(
-                bookId: book.id,
-                title: book.title,
-                phase: phase,
-                done: status.done,
-                total: status.total,
-              );
-              if (!present) {
-                _notifiedBooks.remove(book.id);
-                _notificationStamps.remove(book.id);
-                continue;
-              }
-            } else if (_appResumed) {
-              await ProcessingNotificationBridge.start(
-                bookId: book.id,
-                title: book.title,
-                phase: phase,
-                done: status.done,
-                total: status.total,
-              );
-              _notifiedBooks.add(book.id);
-              // Permission approval can outlive the task that requested it.
-              // Re-read durable status before leaving any notification up.
-              _notificationSyncPending = true;
-            } else {
-              continue;
-            }
-            _notificationStamps[book.id] = stamp;
-          } on Object {
-            _notifiedBooks.remove(book.id);
-            _notificationStamps.remove(book.id);
-          }
-        }
-      }
-    } finally {
-      _notificationSyncBusy = false;
     }
   }
 

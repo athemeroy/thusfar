@@ -16,6 +16,7 @@ import '../pipeline/extract.dart' as extraction;
 import '../pipeline/jev.dart' as jev;
 import '../pipeline/judge_context.dart';
 import '../pipeline/preparation_plan.dart' show validatePreparationPlan;
+import '../pipeline/request_lifecycle.dart';
 import '../pipeline/run.dart' as pipeline;
 import '../pipeline/run_lease.dart';
 import '../py/py_compat.dart';
@@ -29,7 +30,8 @@ typedef Json = Map<String, Object?>;
 /// A safe, durable explanation for why a book stopped processing.
 enum BookPauseReason {
   user('user'),
-  backgroundTimeLimit('background_time_limit');
+  backgroundTimeLimit('background_time_limit'),
+  backgroundUnavailable('background_unavailable');
 
   const BookPauseReason(this.value);
   final String value;
@@ -310,6 +312,10 @@ class Worker {
       if (_current == _name(root)) continue;
       try {
         Json state = _json(root, 'status.json');
+        if (hasUnsettledModelRequests(root) && !await _probe(root)) {
+          await _withLease(root, () => _pauseUnknownOutcome(root));
+          continue;
+        }
         if (!<String>{
           'queued',
           'running',
@@ -451,6 +457,13 @@ class Worker {
     }
     final Json meta = _json(root, 'meta.json');
     final Json state = _json(root, 'status.json');
+    if (value && _current != _name(root)) {
+      if (hasUnsettledModelRequests(root)) {
+        await _withLease(root, () => acknowledgeUnsettledModelRequests(root));
+      }
+      state.remove('request_outcome');
+      state.remove('failure_code');
+    }
     final Json quality = _object(state['quality']);
     final bool completedGoal =
         state['state'] == 'done' ||
@@ -573,7 +586,7 @@ class Worker {
     final String id = _name(root);
     // A later Android timeout must not turn an explicit user pause into an
     // automatically resumable background-limit pause.
-    if (reason == BookPauseReason.backgroundTimeLimit &&
+    if (reason != BookPauseReason.user &&
         _json(root, 'status.json')['pause_reason'] ==
             BookPauseReason.user.value) {
       return;
@@ -584,7 +597,9 @@ class Worker {
       // settle immediately and must see the same reason in its paused state.
       final Json state = _json(root, 'status.json');
       if (state['state'] != 'done') {
-        state['pause_reason'] = reason.value;
+        if (state['pause_reason'] != 'request_outcome_unknown') {
+          state['pause_reason'] = reason.value;
+        }
         _save(root, 'status.json', state);
       }
     }
@@ -604,7 +619,9 @@ class Worker {
         'updated': _clock(),
         if (!preserveAuto)
           'pause_reason':
-              state['pause_reason'] == BookPauseReason.user.value
+              state['pause_reason'] == 'request_outcome_unknown'
+                  ? 'request_outcome_unknown'
+                  : state['pause_reason'] == BookPauseReason.user.value
                   ? BookPauseReason.user.value
                   : reason.value,
       });
@@ -622,6 +639,10 @@ class Worker {
     if (!root.existsSync()) return;
     await _withLease(root, () {
       final Json state = _json(root, 'status.json');
+      if (hasUnsettledModelRequests(root)) {
+        _pauseUnknownOutcome(root);
+        return;
+      }
       if (state['state'] != 'done') {
         final String next = preserveAuto ? 'queued' : 'paused';
         state.addAll(<String, Object?>{
@@ -674,7 +695,19 @@ class Worker {
         final List<Directory> roots;
         if (enabled) {
           roots = _roots();
-          _queue.clear();
+          _queue
+            ..clear()
+            ..addAll(
+              roots
+                  .where(
+                    (root) => _eligible(
+                      root,
+                      _json(root, 'meta.json'),
+                      _json(root, 'status.json'),
+                    ),
+                  )
+                  .map(_name),
+            );
         } else {
           final List<String> ids = _queue.toList()..sort(PyCompat.compare);
           roots = <Directory>[
@@ -683,8 +716,8 @@ class Worker {
         }
         for (final Directory root in roots) {
           if (_stopping) break;
-          _queue.remove(_name(root));
-          _notify();
+          // Keep the queued book visible until processBook claims current.
+          // UI observers must not see a false idle gap between books.
           try {
             await processBook(root);
           } on Object catch (error) {
@@ -712,6 +745,7 @@ class Worker {
               }
             }
           }
+          _queue.remove(_name(root));
           _notify();
         }
       } on Object catch (error) {
@@ -797,11 +831,38 @@ class Worker {
       (state['state'] != 'error' ||
           (_retryPending(meta, state) && _clock() >= _retryAt(state)));
 
+  void _pauseUnknownOutcome(Directory root) {
+    final Json meta = _json(root, 'meta.json');
+    meta['auto'] = false;
+    _save(root, 'meta.json', meta);
+    final Json state = _json(root, 'status.json');
+    state.addAll(<String, Object?>{
+      'state': 'paused',
+      'pause_reason': 'request_outcome_unknown',
+      'request_outcome': 'unknown',
+      'retryable': false,
+      'updated': _clock(),
+      'error':
+          _truth(state['error'])
+              ? state['error']
+              : '模型请求结果无法确认，已暂停；继续前请检查服务商记录，重新请求可能重复计费',
+    });
+    state.remove('retry_at');
+    _save(root, 'status.json', state);
+    _queue.remove(_name(root));
+    _receipt(root, <String, Object?>{'phase': 'paused', 'owner_pid': null});
+  }
+
   /// One serialized attempt, also useful for deterministic offline executors.
   /// This does not grant permission: meta.auto must already be explicit/true.
   Future<void> processBook(Directory root) => _processGate.run(() async {
     if (_stopping || !root.existsSync()) return;
     _checkRoot(root);
+    if (hasUnsettledModelRequests(root) && !await _probe(root)) {
+      await _withLease(root, () => _pauseUnknownOutcome(root));
+      _notify();
+      return;
+    }
     Json meta = _json(root, 'meta.json'), state = _json(root, 'status.json');
     if (!_eligible(root, meta, state) || await _probe(root)) return;
     meta = _json(root, 'meta.json');
@@ -816,6 +877,7 @@ class Worker {
     if (settings.concurrency < 1) throw const ValueError('并发数量必须大于零');
     final RunCancellation cancellation = RunCancellation();
     _current = _name(root);
+    _queue.remove(_name(root));
     _cancellation = cancellation;
     _currentDone = Completer<void>();
     final String? previousJudgeDirectory = environ['JUDGE_LOG_DIR'];
@@ -876,6 +938,11 @@ class Worker {
       if (!root.existsSync()) return;
       state = _json(root, 'status.json');
       meta = _json(root, 'meta.json');
+      if (hasUnsettledModelRequests(root)) {
+        _pauseUnknownOutcome(root);
+        state = _json(root, 'status.json');
+        meta = _json(root, 'meta.json');
+      }
       final bool auto = _truth(meta['auto']);
       final bool stopAfterBioFailure =
           code != 0 &&
@@ -913,7 +980,8 @@ class Worker {
           state.addAll(<String, Object?>{
             'state': 'paused',
             'updated': _clock(),
-            'error': null,
+            if (state['pause_reason'] != 'request_outcome_unknown')
+              'error': null,
           });
           _save(root, 'status.json', state);
         }
@@ -1002,8 +1070,13 @@ class Worker {
       'running' => '正在检查书籍和整理缓存',
       'cancelling' when pauseReason == 'background_time_limit' =>
         '系统后台整理时段结束，正在暂停',
+      'cancelling' when pauseReason == 'background_unavailable' =>
+        '后台整理暂不可用，正在暂停',
       'cancelling' => '正在暂停，等待当前请求结束',
       'paused' when pauseReason == 'background_time_limit' => '系统后台整理时段结束，已暂停',
+      'paused' when pauseReason == 'background_unavailable' => '后台整理暂不可用，已暂停',
+      'paused' when pauseReason == 'request_outcome_unknown' =>
+        '请求结果无法确认，已暂停；重新请求可能重复计费',
       'paused' when pauseReason == 'user' => '已手动暂停整理',
       'paused' when pauseReason == 'interrupted' => '整理中断，等待手动继续',
       'paused' => '整理已暂停',
