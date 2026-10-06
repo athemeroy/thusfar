@@ -452,7 +452,14 @@ class LibraryZipCodec {
         'firstLineIndent',
       },
       'web': <String>{'pageMode', 'columnWidth', 'fontSize'},
-      'model': <String>{'protocol', 'base_url', 'model', 'jev_route'},
+      'model': <String>{
+        'protocol',
+        'base_url',
+        'model',
+        'jev_route',
+        'judge_url',
+        'judge_model',
+      },
       'shelf': <String>{'readingQueue'},
     };
     for (final String section in allowed.keys) {
@@ -516,25 +523,48 @@ class LibraryZipCodec {
           url is! String ||
           name is! String ||
           route != null &&
-              !const <String>{'free-only', 'free-then-model'}.contains(route) ||
+              !const <String>{
+                'free-only',
+                'free-then-model',
+                'systemone',
+                'model',
+              }.contains(route) ||
           !RegExp(r'^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,99}$').hasMatch(name)) {
         throw const FormatException('书库 ZIP 模型配置无效。');
       }
-      final Uri? uri = Uri.tryParse(url);
-      final bool loopback =
-          uri != null &&
-          const <String>{
-            'localhost',
-            '127.0.0.1',
-            '::1',
-          }.contains(uri.host.toLowerCase());
-      if (uri == null ||
-          uri.host.isEmpty ||
-          uri.userInfo.isNotEmpty ||
-          uri.hasQuery ||
-          uri.hasFragment ||
-          !(uri.scheme == 'https' || loopback && uri.scheme == 'http')) {
-        throw const FormatException('书库 ZIP 模型地址含有敏感或无效内容。');
+      final Object? judgeModel = model['judge_model'];
+      if (judgeModel != null &&
+          (judgeModel is! String ||
+              judgeModel.isNotEmpty &&
+                  !RegExp(
+                    r'^[A-Za-z0-9][A-Za-z0-9._/+:-]{0,99}$',
+                  ).hasMatch(judgeModel))) {
+        throw const FormatException('书库 ZIP 核对模型名称无效。');
+      }
+      final Object? judgeUrl = model['judge_url'];
+      if (judgeUrl != null && judgeUrl is! String) {
+        throw const FormatException('书库 ZIP 核对地址无效。');
+      }
+      for (final String address in [
+        url,
+        if (judgeUrl is String && judgeUrl.isNotEmpty) judgeUrl,
+      ]) {
+        final Uri? uri = Uri.tryParse(address);
+        final bool loopback =
+            uri != null &&
+            const <String>{
+              'localhost',
+              '127.0.0.1',
+              '::1',
+            }.contains(uri.host.toLowerCase());
+        if (uri == null ||
+            uri.host.isEmpty ||
+            uri.userInfo.isNotEmpty ||
+            uri.hasQuery ||
+            uri.hasFragment ||
+            !(uri.scheme == 'https' || loopback && uri.scheme == 'http')) {
+          throw const FormatException('书库 ZIP 模型地址含有敏感或无效内容。');
+        }
       }
     }
     return result;

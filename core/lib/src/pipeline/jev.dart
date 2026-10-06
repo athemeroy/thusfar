@@ -19,12 +19,75 @@ import 'judge_context.dart';
 import 'llm.dart';
 import 'models.dart' as pricing;
 import 'provenance.dart';
+import 'request_diagnostics.dart';
+import 'request_lifecycle.dart';
+import 'run_lease.dart';
 
 String get jevUrl =>
     environ['JEV_URL'] ?? 'https://api.typesafe.ai/v1/systemone';
 String get jevModel => environ['JEV_MODEL'] ?? 'jev-latest';
 String get classifierUrl =>
     environ['CLASSIFIER_URL'] ?? 'https://classifier.dev/v1/classify';
+
+/// A user-selected System One-compatible endpoint returns option probabilities.
+Future<Json> systemOneJudge(
+  Object? state,
+  Json questions, {
+  String? endpoint,
+  String? apiKey,
+  String? model,
+}) async {
+  final String url = endpoint ?? environ['JUDGE_API_URL'] ?? '';
+  if (url.isEmpty) throw const LLMError('请先设置 System One 核对接口');
+  final String key = apiKey ?? configuredJudgeKey();
+  final String selectedModel = model ?? environ['JUDGE_API_MODEL'] ?? '';
+  final String body = _dumps(<String, Object?>{
+    'state': state,
+    'questions': questions,
+    if (selectedModel.isNotEmpty) 'model': selectedModel,
+  });
+  try {
+    _judgeAttempt();
+    final Object? data = await _postJson(
+      url,
+      body,
+      <String, String>{
+        'Content-Type': 'application/json',
+        if (key.isNotEmpty) 'Authorization': 'Bearer $key',
+      },
+      _envDouble('SYSTEMONE_TIMEOUT', '120'),
+      0,
+      paid: true,
+    );
+    if (data is! Json) throw const ValueError('核对接口返回的不是 JSON 对象');
+    final String responder =
+        data['model'] is String && (data['model']! as String).isNotEmpty
+            ? data['model']! as String
+            : selectedModel.isNotEmpty
+            ? selectedModel
+            : 'system-one';
+    final Json answers = _strictModelAnswers(
+      data['answers'],
+      questions,
+      responder,
+    );
+    jevStats['calls'] = (jevStats['calls'] ?? 0) + 1;
+    jevStats['chars'] = (jevStats['chars'] ?? 0) + _cpLen(body);
+    jevStats['questions'] = (jevStats['questions'] ?? 0) + questions.length;
+    jevStats['local_calls'] = (jevStats['local_calls'] ?? 0) + 1;
+    _routeUsed = 'systemone';
+    teacherLog(state, questions, answers, 'systemone');
+    return answers;
+  } on _HttpFailure catch (e) {
+    throw LLMError('System One 核对失败：HTTP ${e.code}');
+  } on ValueError catch (e) {
+    throw LLMError('System One 核对失败：${e.message}');
+  } on IOException {
+    throw const LLMError('System One 核对接口连接中断；已保留进度');
+  } on TimeoutException {
+    throw const LLMError('System One 核对超时；已保留进度');
+  }
+}
 
 const int classifierDims = 20;
 const int classifierDimChars = 16000;
@@ -36,6 +99,58 @@ typedef Json = Map<String, Object?>;
 /// complete, usable probability distribution. No verdict may be cached.
 final class ModelJudgeInvalidAnswer extends LLMError {
   const ModelJudgeInvalidAnswer(super.message);
+}
+
+/// Fixed diagnostic codes only. Never include model text, question/option ids,
+/// probability values, prompts, URLs or credentials in the diagnostic receipt.
+enum _ModelAnswerIssue {
+  invalidJson('invalid_json', '回复不是有效 JSON'),
+  missingAnswer('missing_answer', '缺少问题回答或回答类型错误'),
+  invalidChoice('invalid_choice', '选项缺失或无效'),
+  incompleteProbabilities('incomplete_probabilities', '概率字段缺失或选项数量不符'),
+  nonNumericProbability('non_numeric_probability', '概率不是数字'),
+  nonFiniteProbability('non_finite_probability', '概率不是有限数值'),
+  probabilityOutOfRange('probability_out_of_range', '概率超出 0 到 1'),
+  inconsistentSum('inconsistent_sum', '概率合计不为 1'),
+  zeroChoiceProbability('zero_choice_probability', '所选选项概率为零');
+
+  const _ModelAnswerIssue(this.code, this.label);
+  final String code;
+  final String label;
+}
+
+final class _ModelAnswerError extends ValueError {
+  const _ModelAnswerError(this.issue) : super('model judge: invalid answer');
+  final _ModelAnswerIssue issue;
+}
+
+void _recordModelAnswerFailure(
+  Map<String, _ModelAnswerIssue> issues,
+  int questionCount,
+) {
+  final String? directory = selectedJudgeDirectory();
+  if (directory == null || directory.isEmpty) return;
+  final Json diagnostic = <String, Object?>{
+    'schema': 1,
+    'at': wallClock(),
+    'attempts': 2,
+    'question_count': questionCount,
+    'unresolved_count': issues.length,
+    'reasons': <String, int>{
+      for (final _ModelAnswerIssue issue in _ModelAnswerIssue.values)
+        if (issues.containsValue(issue))
+          issue.code: issues.values.where((value) => value == issue).length,
+    },
+  };
+  try {
+    final File file = File('$directory/model-answer-failure.json');
+    file.parent.createSync(recursive: true);
+    final File temp = File('${file.path}.$pid.tmp');
+    temp.writeAsStringSync(jsonEncode(diagnostic), flush: true);
+    temp.renameSync(file.path);
+  } on FileSystemException {
+    // Optional diagnostics must never obscure the original validation error.
+  }
 }
 
 /// What the judge costs; reset per book run.
@@ -108,6 +223,24 @@ Reply with one compact JSON object and nothing else:
 Json _criteria(Object? q) =>
     ((q! as Json)['criteria'] as Json?) ?? <String, Object?>{};
 
+String configuredJudgeKey() =>
+    (environ['JUDGE_API_KEY'] ?? '').isNotEmpty
+        ? environ['JUDGE_API_KEY']!
+        : llmEnv('LLM_API_KEY') ?? '';
+
+ChatEndpoint? configuredJudgeEndpoint(String model) {
+  if (environ['JEV_ROUTE'] != 'model') return null;
+  final String url = environ['JUDGE_API_URL'] ?? '';
+  final String key = environ['JUDGE_API_KEY'] ?? '';
+  if (url.isEmpty && key.isEmpty) return null;
+  final String protocol = protocolFor(model);
+  return ChatEndpoint(
+    protocol: protocol,
+    baseUrl: url.isEmpty ? baseFor(protocol) : url,
+    apiKey: configuredJudgeKey(),
+  );
+}
+
 /// The same contract as [jev], answered by the reader's configured model.
 /// Malformed answers are repaired once, never converted to a first-choice guess.
 Future<Json> llmJudge(
@@ -115,6 +248,7 @@ Future<Json> llmJudge(
   Json questions, {
   String? model,
   bool reserveBudget = false,
+  ChatEndpoint? endpoint,
 }) async {
   String pick(String k) => environ[k] ?? '';
   final String m =
@@ -124,7 +258,9 @@ Future<Json> llmJudge(
           : pick('RECAP_MODEL').isNotEmpty
           ? pick('RECAP_MODEL')
           : 'deepseek-flash+nothink');
-  if (m.isEmpty || keyFor(m.split('+').first)?.isNotEmpty != true) {
+  final ChatEndpoint? target = endpoint ?? configuredJudgeEndpoint(m);
+  if (m.isEmpty ||
+      (target?.apiKey ?? keyFor(m.split('+').first) ?? '').isEmpty) {
     throw const LLMError('模型判断需要先在「模型设置」保存可用的模型和 API 密钥');
   }
   final Json qs = <String, Object?>{
@@ -149,6 +285,7 @@ Future<Json> llmJudge(
   int promptTokens = 0, completionTokens = 0;
   final Json valid = <String, Object?>{};
   final Json pending = Map<String, Object?>.of(questions);
+  final Map<String, _ModelAnswerIssue> issues = {};
   for (int attempt = 0; attempt < 2; attempt++) {
     if (reserveBudget) {
       try {
@@ -164,6 +301,7 @@ Future<Json> llmJudge(
       m,
       msgs,
       maxTokens: budget,
+      endpoint: target,
       temperature: 0,
       retries: 0,
     );
@@ -175,25 +313,28 @@ Future<Json> llmJudge(
     if (reserveBudget) _recordModelJudgeUsage(m, input, output);
     try {
       final Object? raw = parseJson(result.text);
-      if (raw is Json) {
-        for (final MapEntry<String, Object?> e in pending.entries.toList()) {
-          try {
-            // Accept only complete, strict answers. An invalid answer for one
-            // question must not discard valid answers for the others.
-            final Json one = _strictModelAnswers(
-              <String, Object?>{e.key: raw[e.key]},
-              <String, Object?>{e.key: e.value},
-              m,
-            );
-            valid[e.key] = one[e.key];
-            pending.remove(e.key);
-          } on ValueError {
-            // This question still needs a model answer.
-          }
+      if (raw is! Json) throw const ValueError('model judge: expected object');
+      for (final MapEntry<String, Object?> e in pending.entries.toList()) {
+        try {
+          // Accept only complete, strict answers. An invalid answer for one
+          // question must not discard valid answers for the others.
+          final Json one = _strictModelAnswers(
+            <String, Object?>{e.key: raw[e.key]},
+            <String, Object?>{e.key: e.value},
+            m,
+          );
+          valid[e.key] = one[e.key];
+          pending.remove(e.key);
+          issues.remove(e.key);
+        } on _ModelAnswerError catch (error) {
+          issues[e.key] = error.issue;
         }
       }
     } on ValueError {
       // The entire reply is malformed; the next bounded attempt can repair it.
+      for (final String key in pending.keys) {
+        issues[key] = _ModelAnswerIssue.invalidJson;
+      }
     }
     if (pending.isEmpty) break;
     if (attempt == 0) {
@@ -217,6 +358,7 @@ Future<Json> llmJudge(
         <String, Object?>{e.key: e.value},
         model: m,
         reserveBudget: reserveBudget,
+        endpoint: target,
       );
       valid[e.key] = one[e.key];
       final Json usage = one['_usage']! as Json;
@@ -226,7 +368,14 @@ Future<Json> llmJudge(
     }
   }
   if (pending.isNotEmpty) {
-    throw const ModelJudgeInvalidAnswer('已配置模型的判断回答不完整或概率无效；已保留进度，请重试');
+    _recordModelAnswerFailure(issues, questions.length);
+    final String reasons = issues.values
+        .toSet()
+        .map((issue) => issue.label)
+        .join('、');
+    throw ModelJudgeInvalidAnswer(
+      '已配置模型的判断回答不完整或概率无效：$reasons（未完成 ${pending.length}/${questions.length} 个问题）；已保留进度，请检查模型后手动重试',
+    );
   }
   valid['_usage'] = <String, Object?>{
     'prompt_tokens': promptTokens,
@@ -236,37 +385,45 @@ Future<Json> llmJudge(
 }
 
 Json _strictModelAnswers(Object? raw, Json questions, String model) {
-  if (raw is! Json) throw const ValueError('model judge: expected object');
+  if (raw is! Json)
+    throw const _ModelAnswerError(_ModelAnswerIssue.invalidJson);
   final Json out = <String, Object?>{};
   for (final MapEntry<String, Object?> e in questions.entries) {
     final Json criteria = _criteria(e.value);
     final Object? answer = raw[e.key];
-    if (answer is! Json ||
-        answer['choice'] is! String ||
+    if (answer is! Json) {
+      throw const _ModelAnswerError(_ModelAnswerIssue.missingAnswer);
+    }
+    if (answer['choice'] is! String ||
         !criteria.containsKey(answer['choice'])) {
-      throw const ValueError('model judge: missing choice');
+      throw const _ModelAnswerError(_ModelAnswerIssue.invalidChoice);
     }
     final Object? given = answer['probabilities'];
     if (given is! Json ||
         given.length != criteria.length ||
         !given.keys.toSet().containsAll(criteria.keys)) {
-      throw const ValueError('model judge: incomplete probabilities');
+      throw const _ModelAnswerError(_ModelAnswerIssue.incompleteProbabilities);
     }
     final Map<String, double> probs = <String, double>{};
     for (final String option in criteria.keys) {
       final Object? value = given[option];
-      if (value is! num ||
-          value is bool ||
-          !value.isFinite ||
-          value < 0 ||
-          value > 1) {
-        throw const ValueError('model judge: invalid probability');
+      if (value is! num || value is bool) {
+        throw const _ModelAnswerError(_ModelAnswerIssue.nonNumericProbability);
+      }
+      if (!value.isFinite) {
+        throw const _ModelAnswerError(_ModelAnswerIssue.nonFiniteProbability);
+      }
+      if (value < 0 || value > 1) {
+        throw const _ModelAnswerError(_ModelAnswerIssue.probabilityOutOfRange);
       }
       probs[option] = value.toDouble();
     }
     final double total = probs.values.fold(0.0, (a, b) => a + b);
-    if ((total - 1).abs() > 0.02 || probs[answer['choice']] == 0) {
-      throw const ValueError('model judge: inconsistent probabilities');
+    if ((total - 1).abs() > 0.02) {
+      throw const _ModelAnswerError(_ModelAnswerIssue.inconsistentSum);
+    }
+    if (probs[answer['choice']] == 0) {
+      throw const _ModelAnswerError(_ModelAnswerIssue.zeroChoiceProbability);
     }
     out[e.key] = <String, Object?>{
       'type': 'choice',
@@ -363,7 +520,10 @@ Future<void> _judgeRetry(
     '[judge] 路由=$route 状态=$status 尝试=${attempt + 1}/${retries + 1} '
     '等待=${wait.toStringAsFixed(1)}s 已用=${(started.elapsedMilliseconds / 1000).toStringAsFixed(1)}s',
   );
-  await sleep(Duration(microseconds: (wait * 1e6).round()));
+  final Future<void> delay = sleep(
+    Duration(microseconds: (wait * 1e6).round()),
+  );
+  await (RunCancellation.current?.wait(delay) ?? delay);
 }
 
 void _judgeAttempt() => jevStats['attempts'] = (jevStats['attempts'] ?? 0) + 1;
@@ -552,17 +712,89 @@ Future<Object?> _postJson(
   String body,
   Map<String, String> headers,
   double timeout,
-  int detailBytes,
-) async {
-  final ChatResponse resp = await transport.post(
-    ChatRequest(Uri.parse(url), headers, body),
-    Duration(microseconds: (timeout * 1e6).round()),
-  );
-  final List<int> raw = <int>[];
-  await for (final List<int> chunk in resp.body) {
-    raw.addAll(chunk);
-    if (raw.length > 16 * 1024 * 1024) throw const LLMError('模型响应超过大小上限');
+  int detailBytes, {
+  bool paid = false,
+}) async {
+  final RunCancellation? cancellation = RunCancellation.current;
+  cancellation?.checkpoint();
+  if (ModelRequestScope.current?.hasUnknown ?? false) {
+    throw const UnknownOutcomeLLMError('previous_request_unknown');
   }
+  Future<T> wait<T>(Future<T> operation) =>
+      cancellation?.wait(operation) ?? operation;
+  final ModelRequestReceipt? receipt =
+      paid ? ModelRequestScope.current?.begin() : null;
+  late ChatResponse resp;
+  final List<int> raw = <int>[];
+  try {
+    resp = await wait(
+      postRequest(
+        ChatRequest(Uri.parse(url), headers, body),
+        Duration(microseconds: (timeout * 1e6).round()),
+        trace: receipt?.trace,
+      ),
+    );
+    if (resp.status >= 400) {
+      if (paid &&
+          !const <int>{
+            400,
+            401,
+            402,
+            403,
+            404,
+            422,
+            429,
+          }.contains(resp.status)) {
+        unawaited(discardChatResponse(resp));
+        throw const UnknownOutcomeLLMError('provider_outcome_unknown');
+      }
+      receipt?.rejected();
+    }
+    final StreamIterator<List<int>> chunks = StreamIterator<List<int>>(
+      resp.body,
+    );
+    try {
+      while (await wait(chunks.moveNext())) {
+        raw.addAll(chunks.current);
+        if (raw.length > 16 * 1024 * 1024) throw const LLMError('模型响应超过大小上限');
+      }
+    } finally {
+      receipt?.trace.record('body_cancel_requested');
+      unawaited(
+        chunks.cancel().then<void>(
+          (_) {
+            receipt?.trace.record('body_cancelled');
+          },
+          onError: (Object error) {
+            receipt?.trace.record(
+              'body_cancel_error',
+              code: ModelRequestTrace.exceptionCode(error),
+            );
+          },
+        ),
+      );
+    }
+    receipt?.received();
+  } on Cancelled {
+    receipt?.unknown('cancelled');
+    rethrow;
+  } on UnknownOutcomeLLMError catch (e) {
+    receipt?.unknown(e.code);
+    rethrow;
+  } on TimeoutException {
+    if (!paid) rethrow;
+    receipt?.unknown('timeout');
+    throw const UnknownOutcomeLLMError('timeout');
+  } on IOException {
+    if (!paid) rethrow;
+    receipt?.unknown('network_interrupted');
+    throw const UnknownOutcomeLLMError('network_interrupted');
+  } on Object {
+    if (!paid) rethrow;
+    receipt?.unknown('response_interrupted');
+    throw const UnknownOutcomeLLMError('response_interrupted');
+  }
+
   if (resp.status >= 400) {
     String detail = utf8.decode(
       raw.take(detailBytes).toList(),
@@ -808,7 +1040,9 @@ void teacherLog(Object? state, Json questions, Json answers, String route) {
           'choice': a['choice'],
           'probabilities': a['probabilities'],
           'model':
-              route == 'configured-model'
+              route == 'systemone'
+                  ? (a['by'] ?? environ['JUDGE_API_MODEL'] ?? 'system-one')
+                  : route == 'configured-model'
                   ? (environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? '')
                   : jevModel,
           'route': route,
@@ -911,12 +1145,14 @@ Future<Json> jevUncached(
     'free-then-paid',
     'model',
     'paid',
+    'systemone',
   ].contains(route)) {
     throw const LLMError(
-      '未知裁判路由；使用 local、free-only、free-then-model、free-then-paid、model 或 paid',
+      '未知裁判路由；使用 local、systemone、free-only、free-then-model、free-then-paid、model 或 paid',
     );
   }
   if (route == 'local') return jevLocal(state, questions);
+  if (route == 'systemone') return systemOneJudge(state, questions);
   _syncFreeCredential();
   if ((route == 'free-only' ||
           route == 'free-then-model' ||
@@ -929,6 +1165,10 @@ Future<Json> jevUncached(
       teacherLog(state, questions, out, 'free');
       return out;
     } on DeadlineExceeded {
+      rethrow;
+    } on Cancelled {
+      rethrow;
+    } on UnknownOutcomeLLMError {
       rethrow;
     } on Object catch (e) {
       if (e is ClassifierAccessError) freeBreaker.bad = freeBreaker.fails - 1;
@@ -998,6 +1238,7 @@ Future<Json> jevUncached(
           },
           timeout.toDouble(),
           300,
+          paid: true,
         );
       });
       if (data is! Json || data.containsKey('error'))
@@ -1089,14 +1330,17 @@ Future<Json> jev(
   final String fingerprint = digest(<String, Object?>{
     'state': state,
     'questions': questions,
-    'model': jevModel,
+    'model':
+        route == 'systemone' ? (environ['JUDGE_API_MODEL'] ?? '') : jevModel,
     'route': route,
-    'url': jevUrl,
+    'url': route == 'systemone' ? environ['JUDGE_API_URL'] : jevUrl,
     if (route == 'free-then-model' || route == 'model') ...<String, Object?>{
       'fallback_model': environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? '',
       'fallback_url': baseFor(
         protocolFor(environ['JUDGE_MODEL'] ?? environ['RECAP_MODEL'] ?? ''),
       ),
+      if (route == 'model' && (environ['JUDGE_API_URL'] ?? '').isNotEmpty)
+        'judge_url': environ['JUDGE_API_URL'],
     },
     'version': 1,
   });
@@ -1149,7 +1393,10 @@ Future<Json> jev(
         'request_sha256': fingerprint,
         'answers': answers,
         'route': _routeUsed == 'unknown' ? route : _routeUsed,
-        'model': jevModel,
+        'model':
+            route == 'systemone'
+                ? (environ['JUDGE_API_MODEL'] ?? '')
+                : jevModel,
       }),
     );
     tmp.renameSync(path.path);

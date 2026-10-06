@@ -307,6 +307,8 @@ extension RunnerSupport on Runner {
       generated = data;
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (_) {
       return {};
     }
@@ -390,6 +392,8 @@ extension RunnerSupport on Runner {
           _int(usage['jev_calls']) +
           3 * ((pairs.length + items.length + 47) ~/ 48);
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (e) {
       rec['relation_check_error'] = _cut(_typedError(e), 300);
@@ -549,6 +553,8 @@ extension RunnerSupport on Runner {
       rec.remove('support_error');
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (e) {
       rec['support_error'] = _cut(_typedError(e), 300);
       writeJson(localPath(i), rec);
@@ -567,22 +573,30 @@ extension RunnerSupport on Runner {
     final File path = localPath(i);
     if (path.existsSync()) {
       final Json rec = _read(path);
-      if (_truth(rec['empty']))
-        throw llm.LLMError('第 $i 段缓存来自抽取失败，须先隔离失败缓存再重试');
-      if (_truth(rec['refused'])) {
-        refused.add(i);
-        return addSupport(await addRelations(rec, i, model), i);
-      }
       final Json p = _obj(rec['provenance']);
       if (p.isNotEmpty &&
           (p['input_sha256'] != inputSha256 ||
-              p['extractor_revision'] != prompts.extractorRevision ||
-              rec['model'] != model))
+              p['extractor_revision'] != prompts.extractorRevision))
         throw const llm.LLMError('抽取缓存的输入、模型或提示版本已变更；请隔离旧缓存后重建');
-      rec['data'] = local.sanitize(_obj(rec['data']));
-      if (!_truth(rec['relation_context']))
-        rec['relation_context'] = relationContext(i, _obj(rec['data']), memory);
-      return addSupport(await addRelations(rec, i, model), i);
+      if (p.isNotEmpty && rec['model'] != model) {
+        // Only pending extraction is rebuilt. Published segments replay from
+        // segs/ and retain their original model and verified progress.
+        if (segPath(i).existsSync())
+          throw const llm.LLMError('已完成片段的抽取缓存不能随模型切换重建');
+        final Directory archive = work.createTempSync('previous-model-');
+        path.renameSync('${archive.path}/${i.toString().padLeft(4, '0')}.json');
+      } else {
+        if (_truth(rec['empty']))
+          throw llm.LLMError('第 $i 段缓存来自抽取失败，须先隔离失败缓存再重试');
+        if (_truth(rec['refused'])) {
+          refused.add(i);
+          return addSupport(await addRelations(rec, i, model), i);
+        }
+        rec['data'] = local.sanitize(_obj(rec['data']));
+        if (!_truth(rec['relation_context']))
+          rec['relation_context'] = relationContext(i, _obj(rec['data']), memory);
+        return addSupport(await addRelations(rec, i, model), i);
+      }
     }
     Json? rec;
     int refusals = 0;
@@ -646,6 +660,10 @@ extension RunnerSupport on Runner {
         writeJson(path, rec);
         break;
       } on Cancelled {
+        rethrow;
+      } on llm.UnknownOutcomeLLMError {
+        rethrow;
+      } on FileSystemException {
         rethrow;
       } catch (e) {
         if (_error(e).startsWith('REFUSED:')) {
@@ -821,6 +839,8 @@ extension RunnerSupport on Runner {
       await verifyCritical(data, _obj(localRec['data']), linkRec, text, guard);
     } on Cancelled {
       rethrow;
+    } on llm.UnknownOutcomeLLMError {
+      rethrow;
     } catch (e) {
       guard['critical_error'] = _cut(_error(e), 200);
       writeJson(
@@ -864,6 +884,8 @@ extension RunnerSupport on Runner {
         usage['jev_calls'] = _int(usage['jev_calls']) + 1;
       } on Cancelled {
         rethrow;
+      } on llm.UnknownOutcomeLLMError {
+        rethrow;
       } catch (e) {
         guard['error'] = _cut(_error(e), 200);
         writeJson(
@@ -896,6 +918,8 @@ extension RunnerSupport on Runner {
                   15) ~/
               16;
     } on Cancelled {
+      rethrow;
+    } on llm.UnknownOutcomeLLMError {
       rethrow;
     } catch (e) {
       decisions = {};

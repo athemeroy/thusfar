@@ -11,6 +11,9 @@ import '../env.dart';
 import '../errors.dart';
 import '../py/py_json_decode.dart';
 import '../py/py_re.dart';
+import 'request_diagnostics.dart';
+import 'request_lifecycle.dart';
+import 'run_lease.dart';
 
 /// `pipeline.llm.LLMError` (a `RuntimeError`).
 base class LLMError extends RuntimeError {
@@ -28,6 +31,13 @@ final class DeadlineExceeded extends LLMError {
 /// A provider or transport failure that may recover without changing input.
 final class TransientLLMError extends LLMError {
   const TransientLLMError(super.message);
+}
+
+/// The provider may have processed a dispatched request. Never retry implicitly.
+final class UnknownOutcomeLLMError extends LLMError {
+  const UnknownOutcomeLLMError(this.code)
+    : super('模型请求结果无法确认，已暂停；继续前请检查服务商记录，重新请求可能重复计费');
+  final String code;
 }
 
 String get gateway => environ['LLM_BASE_URL'] ?? 'https://api.deepseek.com/v1';
@@ -285,9 +295,14 @@ ChatRequest buildRequest(
       'stream': true,
       'stream_options': <String, Object?>{'include_usage': true},
       if (variant == 'think' || variant == 'nothink')
-        'thinking': <String, Object?>{
-          'type': variant == 'think' ? 'enabled' : 'disabled',
-        },
+        if (model.toLowerCase().contains('qwen'))
+          'chat_template_kwargs': <String, Object?>{
+            'enable_thinking': variant == 'think',
+          }
+        else
+          'thinking': <String, Object?>{
+            'type': variant == 'think' ? 'enabled' : 'disabled',
+          },
     };
     headers['Authorization'] = 'Bearer $key';
   }
@@ -364,6 +379,7 @@ final class ChatResponse {
     this.contentType,
     this.body, {
     this.headers = const <String, String>{},
+    this.diagnostics,
   });
 
   final int status;
@@ -372,6 +388,7 @@ final class ChatResponse {
 
   /// Response headers that matter to retries, e.g. `Retry-After`.
   final Map<String, String> headers;
+  final ModelRequestTrace? diagnostics;
 }
 
 /// `dart:io` transport honouring system proxies like urllib does.
@@ -385,13 +402,37 @@ final class IoTransport implements ChatTransport {
 
   @override
   Future<ChatResponse> post(ChatRequest request, Duration timeout) async {
-    final HttpClientRequest req = await _client
-        .postUrl(request.url)
-        .timeout(timeout);
+    final RunCancellation? cancellation = RunCancellation.current;
+    cancellation?.checkpoint();
+    final ModelRequestTrace? trace = ModelRequestTrace.current;
+    HttpClientRequest? active;
+    bool abandoned = false;
+    final void Function()? remove = cancellation?.onCancel(() {
+      abandoned = true;
+      if (active != null) trace?.record('abort_requested', code: 'cancelled');
+      active?.abort(const Cancelled());
+    });
+    Future<T> wait<T>(Future<T> operation) =>
+        cancellation?.wait(operation) ?? operation;
     try {
+      final Future<HttpClientRequest> opening = _client.postUrl(request.url);
+      // postUrl may settle after the deadline/cancel race. Abort that late
+      // socket as well; no request may survive to overlap an explicit resume.
+      unawaited(
+        opening.then<void>((HttpClientRequest req) {
+          active = req;
+          if (abandoned) {
+            trace?.record('abort_requested', code: 'late_open_abandoned');
+            req.abort();
+          }
+        }, onError: (Object _, StackTrace __) {}),
+      );
+      final HttpClientRequest req = await wait(opening.timeout(timeout));
+      cancellation?.checkpoint();
       request.headers.forEach(req.headers.set);
+      trace?.record('send_started');
       req.add(utf8.encode(request.body));
-      final HttpClientResponse resp = await req.close().timeout(timeout);
+      final HttpClientResponse resp = await wait(req.close().timeout(timeout));
       final String? retry = resp.headers.value('retry-after');
       return ChatResponse(
         resp.statusCode,
@@ -399,10 +440,18 @@ final class IoTransport implements ChatTransport {
         resp.timeout(timeout),
         headers: <String, String>{if (retry != null) 'Retry-After': retry},
       );
-    } on Object {
-      // Do not leave a timed-out request uploading while a retry is sent.
-      req.abort();
+    } on Object catch (error) {
+      abandoned = true;
+      if (active != null) {
+        trace?.record(
+          'abort_requested',
+          code: ModelRequestTrace.exceptionCode(error),
+        );
+      }
+      active?.abort();
       rethrow;
+    } finally {
+      remove?.call();
     }
   }
 }
@@ -411,11 +460,110 @@ ChatTransport transport = IoTransport();
 
 /// Stop receiving a response immediately. Transport cleanup may complete only
 /// after its event loop advances, so it must not extend the request deadline.
-Future<void> _cancelResponse<T>(StreamIterator<T> iterator) async {
+Future<void> _cancelResponse<T>(
+  StreamIterator<T> iterator, [
+  ModelRequestTrace? trace,
+]) async {
+  trace?.record('body_cancel_requested');
   try {
     await iterator.cancel();
-  } on Object {
+    trace?.record('body_cancelled');
+  } on Object catch (error) {
+    trace?.record(
+      'body_cancel_error',
+      code: ModelRequestTrace.exceptionCode(error),
+    );
     // The request has already finished or failed; retain that outcome.
+  }
+}
+
+/// Close a response whose body will not be parsed (e.g. ambiguous gateway errors).
+Future<void> discardChatResponse(ChatResponse response) =>
+    _disposeResponseBody(response.body, response.diagnostics);
+
+Future<void> _disposeResponseBody(
+  Stream<List<int>> body, [
+  ModelRequestTrace? trace,
+]) async {
+  trace?.record('body_cancel_requested');
+  try {
+    // StreamIterator does not subscribe before moveNext; use a real
+    // subscription so an unconsumed late response releases its socket too.
+    await body.listen((_) {}, onError: (Object _) {}).cancel();
+    trace?.record('body_cancelled');
+  } on Object catch (error) {
+    trace?.record(
+      'body_cancel_error',
+      code: ModelRequestTrace.exceptionCode(error),
+    );
+    // Preserve the already-established request outcome.
+  }
+}
+
+/// Observe late headers after cancellation/deadline and dispose their body.
+/// The native transport also aborts its socket before headers are available.
+Future<ChatResponse> postRequest(
+  ChatRequest request,
+  Duration timeout, {
+  ModelRequestTrace? trace,
+}) async {
+  final RunCancellation? cancellation = RunCancellation.current;
+  cancellation?.checkpoint();
+  bool abandoned = false;
+  ChatResponse? arrived;
+  final Future<ChatResponse> pending =
+      trace == null
+          ? transport.post(request, timeout)
+          : trace.run(() => transport.post(request, timeout));
+  unawaited(
+    pending.then<void>((ChatResponse response) {
+      arrived = response;
+      trace?.record('headers', httpStatus: response.status);
+      if (abandoned) unawaited(_disposeResponseBody(response.body, trace));
+    }, onError: (Object _, StackTrace __) {}),
+  );
+  try {
+    final Future<ChatResponse> bounded = pending.timeout(timeout);
+    final ChatResponse response =
+        await (cancellation?.wait(bounded) ?? bounded);
+    if (trace == null) return response;
+    return ChatResponse(
+      response.status,
+      response.contentType,
+      response.body.transform(
+        StreamTransformer<List<int>, List<int>>.fromHandlers(
+          handleData: (List<int> bytes, EventSink<List<int>> sink) {
+            trace.bytes(bytes.length);
+            sink.add(bytes);
+          },
+          handleError: (
+            Object error,
+            StackTrace stack,
+            EventSink<List<int>> sink,
+          ) {
+            trace.record(
+              'body_error',
+              code: ModelRequestTrace.exceptionCode(error),
+            );
+            sink.addError(error, stack);
+          },
+          handleDone: (EventSink<List<int>> sink) {
+            trace.record('body_done');
+            sink.close();
+          },
+        ),
+      ),
+      headers: response.headers,
+      diagnostics: trace,
+    );
+  } on Object catch (error) {
+    trace?.record(
+      'transport_error',
+      code: ModelRequestTrace.exceptionCode(error),
+    );
+    abandoned = true;
+    if (arrived != null) unawaited(_disposeResponseBody(arrived!.body, trace));
+    rethrow;
   }
 }
 
@@ -436,6 +584,7 @@ double stallTimeout(String model) {
 /// Only failures likely to recover when a connection or provider recovers.
 /// Permanent credentials, endpoint and response-format errors require a person.
 bool transientFailure(Object error) {
+  if (error is UnknownOutcomeLLMError) return false;
   if (error is DeadlineExceeded ||
       error is TransientLLMError ||
       error is TimeoutException ||
@@ -475,6 +624,10 @@ Future<ChatResult> chat(
   void Function(String partial)? onText,
   ChatEndpoint? endpoint,
 }) async {
+  final RunCancellation? cancellation = RunCancellation.current;
+  cancellation?.checkpoint();
+  Future<T> waitFor<T>(Future<T> operation) =>
+      cancellation?.wait(operation) ?? operation;
   final bool adaptive = timeout == null;
   final double wait = timeout ?? stallTimeout(fullModel);
   final double wall =
@@ -494,6 +647,12 @@ Future<ChatResult> chat(
   final String baseUrl = endpoint?.baseUrl ?? baseFor(protocol);
   Object? last;
   for (int attempt = 0; attempt <= tries; attempt++) {
+    cancellation?.checkpoint();
+    if (ModelRequestScope.current?.hasUnknown ?? false) {
+      throw const UnknownOutcomeLLMError('previous_request_unknown');
+    }
+    ModelRequestReceipt? receipt;
+    bool responseSettled = false;
     try {
       final ChatRequest req = buildRequest(
         protocol,
@@ -516,18 +675,34 @@ Future<ChatResult> chat(
       }
 
       double? first;
-      final ChatResponse resp = await transport
-          .post(
-            req,
-            Duration(
-              milliseconds: math.min(
-                (wait * 1000).round(),
-                remaining().inMilliseconds,
-              ),
+      receipt = ModelRequestScope.current?.begin();
+      final ChatResponse resp = await waitFor(
+        postRequest(
+          req,
+          Duration(
+            milliseconds: math.min(
+              (wait * 1000).round(),
+              remaining().inMilliseconds,
             ),
-          )
-          .timeout(remaining());
+          ),
+          trace: receipt?.trace,
+        ).timeout(remaining()),
+      );
       if (resp.status >= 400) {
+        if (!const <int>{
+          400,
+          401,
+          402,
+          403,
+          404,
+          422,
+          429,
+        }.contains(resp.status)) {
+          unawaited(_disposeResponseBody(resp.body, receipt?.trace));
+          throw const UnknownOutcomeLLMError('provider_outcome_unknown');
+        }
+        receipt?.rejected();
+        responseSettled = true;
         final List<int> raw = <int>[];
         // Include enough of a credential crossing the diagnostic boundary to
         // redact it before truncation, including JSON/URL-escaped variants.
@@ -544,14 +719,14 @@ Future<ChatResult> chat(
         bool exhausted = false;
         try {
           while (raw.length < readLimit) {
-            if (!await chunks.moveNext().timeout(remaining())) {
+            if (!await waitFor(chunks.moveNext().timeout(remaining()))) {
               exhausted = true;
               break;
             }
             raw.addAll(chunks.current);
           }
         } finally {
-          if (!exhausted) unawaited(_cancelResponse(chunks));
+          if (!exhausted) unawaited(_cancelResponse(chunks, receipt?.trace));
         }
         final String safe = redactSecrets(
           utf8.decode(raw.take(readLimit).toList(), allowMalformed: true),
@@ -564,6 +739,9 @@ Future<ChatResult> chat(
         throw e;
       }
       if (resp.contentType.contains('text/html')) {
+        responseSettled = true;
+        receipt?.rejected();
+        unawaited(_disposeResponseBody(resp.body, receipt?.trace));
         throw LLMError('NOT_API: 接口地址返回的是网页，不是模型接口：${req.url}');
       }
       final StringBuffer parts = StringBuffer();
@@ -574,9 +752,10 @@ Future<ChatResult> chat(
             .transform(const LineSplitter()),
       );
       bool exhausted = false;
+      bool complete = false;
       try {
         while (true) {
-          if (!await lines.moveNext().timeout(remaining())) {
+          if (!await waitFor(lines.moveNext().timeout(remaining()))) {
             exhausted = true;
             break;
           }
@@ -584,6 +763,7 @@ Future<ChatResult> chat(
           if (!line.startsWith('data:')) continue;
           final String data = line.substring(5).trim();
           if (data == '[DONE]') {
+            complete = true;
             break;
           }
           final Object? ev;
@@ -593,6 +773,20 @@ Future<ChatResult> chat(
             continue;
           }
           if (ev is! Map<String, Object?>) continue;
+          if (protocol == 'anthropic' && ev['type'] == 'message_stop' ||
+              protocol == 'gemini' &&
+                  (ev['candidates'] as List<Object?>? ?? []).any(
+                    (c) =>
+                        c is Map<String, Object?> && c['finishReason'] != null,
+                  ) ||
+              protocol != 'anthropic' &&
+                  protocol != 'gemini' &&
+                  (ev['choices'] as List<Object?>? ?? []).any(
+                    (c) =>
+                        c is Map<String, Object?> && c['finish_reason'] != null,
+                  )) {
+            complete = true;
+          }
           final String text = delta(protocol, ev, usage);
           if (text.isNotEmpty) {
             first ??= clock.elapsedMilliseconds / 1000;
@@ -601,8 +795,11 @@ Future<ChatResult> chat(
           }
         }
       } finally {
-        if (!exhausted) unawaited(_cancelResponse(lines));
+        if (!exhausted) unawaited(_cancelResponse(lines, receipt?.trace));
       }
+      if (!complete) throw const UnknownOutcomeLLMError('incomplete_response');
+      receipt?.received();
+      responseSettled = true;
       final String text = parts.toString();
       if (text.trim().isEmpty) {
         if (usage['_reasoning'] != null) {
@@ -624,34 +821,54 @@ Future<ChatResult> chat(
         if (seen.length > 20) seen.removeAt(0);
       }
       return ChatResult(text, out);
+    } on Cancelled {
+      receipt?.unknown('cancelled');
+      rethrow;
+    } on UnknownOutcomeLLMError catch (e) {
+      receipt?.unknown(e.code);
+      rethrow;
     } on _Fatal catch (f) {
       throw f.error;
     } on DeadlineExceeded catch (e) {
       throw DeadlineExceeded(redactSecrets(e.message, <String>[key]));
     } on LLMError catch (e) {
+      if (!responseSettled) {
+        receipt?.unknown('provider_outcome_unknown');
+        throw const UnknownOutcomeLLMError('provider_outcome_unknown');
+      }
       last = e;
-    } on TimeoutException catch (e) {
-      last = e;
-    } on SocketException catch (e) {
-      last = e;
-    } on HttpException catch (e) {
-      last = e;
-    } on HandshakeException catch (e) {
-      last = e;
+    } on TimeoutException {
+      receipt?.unknown('timeout');
+      throw const UnknownOutcomeLLMError('timeout');
+    } on SocketException {
+      receipt?.unknown('network_interrupted');
+      throw const UnknownOutcomeLLMError('network_interrupted');
+    } on HttpException {
+      receipt?.unknown('network_interrupted');
+      throw const UnknownOutcomeLLMError('network_interrupted');
+    } on HandshakeException {
+      receipt?.unknown('network_interrupted');
+      throw const UnknownOutcomeLLMError('network_interrupted');
     } on Object catch (error) {
+      if (!responseSettled) {
+        receipt?.unknown('response_interrupted');
+        throw const UnknownOutcomeLLMError('response_interrupted');
+      }
       final String message = error is PyException ? error.message : '$error';
       final String safe = redactSecrets(message, <String>[key]);
       if (safe != message) throw LLMError(safe);
       rethrow;
     }
     if (attempt < tries) {
-      await sleep(
-        Duration(
-          milliseconds:
-              ((math.min(60, 3 * math.pow(2, attempt)) +
-                          random.nextDouble() * 2) *
-                      1000)
-                  .round(),
+      await waitFor(
+        sleep(
+          Duration(
+            milliseconds:
+                ((math.min(60, 3 * math.pow(2, attempt)) +
+                            random.nextDouble() * 2) *
+                        1000)
+                    .round(),
+          ),
         ),
       );
     }

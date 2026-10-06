@@ -6,12 +6,14 @@ import 'package:flutter/services.dart';
 import 'package:thusfar_core/models.dart' as models;
 import 'package:thusfar_core/judge_budget.dart' as judge_budget;
 import 'package:thusfar_core/llm.dart' as llm;
+import 'package:thusfar_core/jobs.dart' show hasUnsettledModelRequests;
 
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/processing.dart';
 import '../data/preparation_plan.dart';
 import '../data/processing_diagnostics.dart';
+import '../data/processing_notification_bridge.dart';
 import '../screens/imported_web_preparation_screen.dart';
 import '../ui/cover.dart';
 import '../ui/theme.dart';
@@ -113,10 +115,7 @@ class _BookSheetState extends State<BookSheet> {
         );
     if (choice == null || !mounted) return;
     setState(() => _selectedPlan = choice);
-    await _action(
-      '正在开始本次范围…',
-      () => widget.processing.startBookWithPlan(widget.entry, choice.toJson()),
-    );
+    await _action('正在开始本次范围…', () => _startWorker(plan: choice.toJson()));
   }
 
   bool confirmRemove = false;
@@ -397,10 +396,39 @@ class _BookSheetState extends State<BookSheet> {
     }
     await _action(
       '正在开始整理…',
-      () => bounded
-          ? widget.processing.startBookWithPlan(widget.entry, plan.toJson())
-          : widget.processing.startBook(widget.entry),
+      () => _startWorker(plan: bounded ? plan.toJson() : null),
     );
+  }
+
+  Future<void> _startWorker({Json? plan}) async {
+    if (widget.entry.status.raw['pause_reason'] == 'request_outcome_unknown' ||
+        hasUnsettledModelRequests(widget.entry.dir)) {
+      final bool? approved = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) => AlertDialog(
+          title: const Text('上次模型请求结果未确认'),
+          content: const Text(
+            '服务器可能已经处理并计费，但页读没有保存到完整结果。已完成的整理会保留；继续未确认的部分可能再次产生模型费用。',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('暂不继续'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('确认继续'),
+            ),
+          ],
+        ),
+      );
+      if (approved != true || !mounted) return;
+    }
+    if (plan != null) {
+      await widget.processing.startBookWithPlan(widget.entry, plan);
+    } else {
+      await widget.processing.startBook(widget.entry);
+    }
   }
 
   Future<void> _continueWithModel() =>
@@ -428,7 +456,7 @@ class _BookSheetState extends State<BookSheet> {
         meta['judge_fallback_route'] = route;
         meta.remove('judge_model_fallback');
         writeJson(metaFile, meta);
-        await widget.processing.startBook(widget.entry);
+        await _startWorker();
       });
 
   String? _bookJudgeFallback(Directory book) {
@@ -466,7 +494,7 @@ class _BookSheetState extends State<BookSheet> {
     judge_budget.extendModelJudgeBudget(
       File('${widget.entry.dir.path}/work/judge/model-budget.json'),
     );
-    await widget.processing.startBook(widget.entry);
+    await _startWorker();
   });
 
   Future<void> _extendPaidJudgeBudget() =>
@@ -474,7 +502,7 @@ class _BookSheetState extends State<BookSheet> {
         judge_budget.extendPaidJudgeBudget(
           File('${widget.entry.dir.path}/work/judge/paid-budget.json'),
         );
-        await widget.processing.startBook(widget.entry);
+        await _startWorker();
       });
 
   Future<void> _pause() => _action(
@@ -491,12 +519,15 @@ class _BookSheetState extends State<BookSheet> {
     String message;
     try {
       final DateTime now = DateTime.now();
+      final Map<String, Object?> runtime =
+          await ProcessingNotificationBridge.diagnostics();
       final String? path = await FilePicker.platform.saveFile(
         dialogTitle: '导出整理诊断',
         fileName: ProcessingDiagnostics.fileName(now),
         bytes: ProcessingDiagnostics.bytes(
           bookDirectory: widget.entry.dir,
           workerHealth: widget.processing.health,
+          backgroundRuntime: runtime,
           now: now,
         ),
       );
@@ -509,9 +540,8 @@ class _BookSheetState extends State<BookSheet> {
       acting = false;
       actionLabel = null;
     });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _remove() => _action('正在停止整理，完成后移除…', () async {
@@ -815,7 +845,13 @@ class _BookSheetState extends State<BookSheet> {
     final String? bookJudgeRoute = _bookJudgeFallback(b.dir);
     final String effectiveJudgeRoute =
         bookJudgeRoute ??
-        (widget.settings.judgeFallbackEnabled ? 'model' : 'free');
+        (widget.settings.systemOneEnabled
+            ? 'systemone'
+            : widget.settings.judgeRoute == 'model'
+            ? 'model-direct'
+            : widget.settings.judgeFallbackEnabled
+            ? 'model'
+            : 'free');
     final bool modelFallback = effectiveJudgeRoute == 'model';
     final bool paidFallback = effectiveJudgeRoute == 'jev';
     final bool directModel = effectiveJudgeRoute == 'model-direct';
@@ -960,9 +996,8 @@ class _BookSheetState extends State<BookSheet> {
               'model_attempt',
               'retry',
             }.contains(activity.last['phase']) &&
-            _activityAge(
-              activity.last['started_at'] ?? activity.last['at'],
-            ).isNotEmpty) ...<Widget>[
+            _activityAge(activity.last['started_at'] ?? activity.last['at'])
+                .isNotEmpty) ...<Widget>[
           const SizedBox(height: 5),
           Text(
             '${_activityAge(activity.last['started_at'] ?? activity.last['at'])}；等待时长不代表已完成新段落。',
@@ -1106,6 +1141,13 @@ class _BookSheetState extends State<BookSheet> {
           '${ProcessingDiagnostics.pauseReasonLabel(b.dir, s.raw)}${pausedAt.isEmpty ? '' : ' · $pausedAt'}',
           style: TextStyle(fontSize: 13, color: t.ink2),
         ),
+        if (s.error != null && s.error!.trim().isNotEmpty) ...<Widget>[
+          const SizedBox(height: 6),
+          Text(
+            s.error!,
+            style: TextStyle(fontSize: 13, height: 1.5, color: t.amber),
+          ),
+        ],
         if (lastWork != null) ...<Widget>[
           const SizedBox(height: 6),
           Text(
@@ -1394,7 +1436,9 @@ class _BookSheetState extends State<BookSheet> {
       final String modelName = widget.settings.read().$2;
       body.insertAll(0, <Widget>[
         Text(
-          directPaid
+          effectiveJudgeRoute == 'systemone'
+              ? '判断路线：System One · ${widget.settings.judgeModel.isEmpty ? '服务默认模型' : widget.settings.judgeModel}'
+              : directPaid
               ? '判断路线：直接使用 Jev 网关（仅本书）'
               : directModel
               ? '判断路线：直接使用 $modelName（仅本书）'

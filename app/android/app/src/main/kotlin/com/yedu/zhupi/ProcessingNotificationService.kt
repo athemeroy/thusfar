@@ -10,6 +10,10 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Looper
+import android.os.PowerManager
 
 private data class BookTask(
     val id: String,
@@ -24,6 +28,38 @@ class ProcessingNotificationService : Service() {
     private val tasks = linkedMapOf<String, BookTask>()
     private lateinit var notifications: NotificationManager
     private var foregroundId: Int? = null
+    private var stopping = false
+    private lateinit var cpuLease: PowerManager.WakeLock
+    private var diagnosticThread: HandlerThread? = null
+    @Volatile private var diagnosticHandler: Handler? = null
+    private val diagnosticHeartbeat = object : Runnable {
+        override fun run() {
+            try {
+                ProcessingRuntimeDiagnostics.record(applicationContext, "native_heartbeat")
+            } catch (_: RuntimeException) {
+                // Sampling never controls the foreground service.
+            }
+            diagnosticHandler?.postDelayed(this, 15_000)
+        }
+    }
+
+    private fun startDiagnostics() {
+        if (diagnosticThread != null) return
+        try {
+            val thread = HandlerThread("ThusfarDiagnostics").apply { start() }
+            diagnosticThread = thread
+            diagnosticHandler = Handler(thread.looper).also { it.post(diagnosticHeartbeat) }
+        } catch (_: RuntimeException) {
+            stopDiagnostics()
+        }
+    }
+
+    private fun stopDiagnostics() {
+        diagnosticHandler?.removeCallbacks(diagnosticHeartbeat)
+        diagnosticHandler = null
+        diagnosticThread?.quitSafely()
+        diagnosticThread = null
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -34,6 +70,10 @@ class ProcessingNotificationService : Service() {
                 setShowBadge(false)
             },
         )
+        cpuLease = getSystemService(PowerManager::class.java).newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK, "Thusfar:BookProcessing",
+        ).apply { setReferenceCounted(false) }
+        ProcessingRuntimeDiagnostics.record(this, "service_created")
         instance = this
         startPending = false
     }
@@ -42,8 +82,12 @@ class ProcessingNotificationService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
-            intent.getStringExtra(EXTRA_BOOK_ID)?.let(::remove)
-            if (tasks.isEmpty()) stopSelf(startId)
+            intent.getStringExtra(EXTRA_BOOK_ID)?.let { id ->
+                // A queued STOP belongs to the cancelled generation. A new
+                // admission for the same book must survive its late delivery.
+                if (id !in desiredBooks) remove(id)
+            }
+            if (tasks.isEmpty() && desiredBooks.isEmpty()) stopSelf(startId)
             return START_NOT_STICKY
         }
         val task = taskFrom(intent)
@@ -51,13 +95,34 @@ class ProcessingNotificationService : Service() {
             if (tasks.isEmpty()) stopSelf()
             return START_NOT_STICKY
         }
-        if (task.id !in desiredBooks) {
+        val generation = intent?.getLongExtra(EXTRA_GENERATION, -1)
+        if (generation != startGenerations[task.id]) {
+            // A cancelled start may be delivered after a newer start for the
+            // same book. It must neither publish old progress nor settle it.
+            if (tasks.isEmpty() && desiredBooks.isEmpty()) stopSelf(startId)
+            return START_NOT_STICKY
+        }
+        if (stopping || task.id !in desiredBooks) {
             // The user may have stopped the book while Android was still
             // creating this service for an earlier START command.
+            finishStart(task.id, Result.failure(IllegalStateException("Processing stopped")))
             if (tasks.isEmpty()) stopSelf(startId)
             return START_NOT_STICKY
         }
-        upsert(task)
+        try {
+            upsert(task)
+            finishStart(task.id, Result.success(Unit))
+        } catch (error: RuntimeException) {
+            ProcessingRuntimeDiagnostics.record(this, "foreground_start_failed", error)
+            desiredBooks.remove(task.id)
+            tasks.remove(task.id)
+            finishStart(task.id, Result.failure(error))
+            if (tasks.isEmpty()) {
+                releaseCpuLease()
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf(startId)
+            }
+        }
         return START_NOT_STICKY
     }
 
@@ -76,12 +141,15 @@ class ProcessingNotificationService : Service() {
     }
 
     private fun upsert(task: BookTask) {
+        check(!stopping) { "Service is stopping" }
         tasks[task.id] = task
         publish()
     }
 
     private fun remove(id: String) {
+        finishStart(id, Result.failure(IllegalStateException("Processing stopped")))
         if (tasks.remove(id) == null) return
+        ProcessingRuntimeDiagnostics.record(this, "task_stopped")
         notifications.cancel(notificationId(id))
         publish()
     }
@@ -89,7 +157,9 @@ class ProcessingNotificationService : Service() {
     private fun publish() {
         val foreground = tasks.values.firstOrNull { it.phase != "queued" } ?: tasks.values.firstOrNull()
         if (foreground == null) {
+            stopDiagnostics()
             foregroundId = null
+            releaseCpuLease()
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return
@@ -102,8 +172,19 @@ class ProcessingNotificationService : Service() {
         } else {
             startForeground(id, notification(foreground))
         }
+        startDiagnostics()
         val old = foregroundId
         foregroundId = id
+        if (old == null) ProcessingRuntimeDiagnostics.record(this, "foreground_started")
+        if (tasks.values.any { it.phase != "queued" }) {
+            val wasHeld = cpuLease.isHeld
+            // A live Dart heartbeat renews this finite lease. If the worker or
+            // channel stalls, Android releases it; this does not bypass Doze.
+            cpuLease.acquire(CPU_LEASE_MS)
+            if (!wasHeld) ProcessingRuntimeDiagnostics.record(this, "cpu_lease_acquired")
+        } else {
+            releaseCpuLease()
+        }
         for (task in tasks.values) {
             if (task.id != foreground.id) notifications.notify(notificationId(task.id), notification(task))
         }
@@ -166,7 +247,22 @@ class ProcessingNotificationService : Service() {
         return next
     }
 
+    private fun releaseCpuLease() {
+        if (::cpuLease.isInitialized && cpuLease.isHeld) {
+            cpuLease.release()
+            ProcessingRuntimeDiagnostics.record(this, "cpu_lease_released")
+        }
+    }
+
     override fun onDestroy() {
+        stopDiagnostics()
+        stopping = true
+        foregroundId = null
+        releaseCpuLease()
+        ProcessingRuntimeDiagnostics.record(this, "service_destroyed")
+        for (bookId in startCallbacks.keys.toList()) {
+            finishStart(bookId, Result.failure(IllegalStateException("Service destroyed")))
+        }
         if (instance === this) instance = null
         startPending = false
         for (bookId in tasks.keys) notifications.cancel(notificationId(bookId))
@@ -175,12 +271,21 @@ class ProcessingNotificationService : Service() {
     }
 
     override fun onTimeout(startId: Int, fgsType: Int) {
+        stopDiagnostics()
+        stopping = true
+        foregroundId = null
+        releaseCpuLease()
+        ProcessingRuntimeDiagnostics.record(this, "foreground_time_limit")
         // Android 15+ dataSync has a per-app time allowance. Keep a durable
         // signal for the Flutter worker/UI; stopping this service cannot by
         // itself settle the in-process model requests.
         val affected = tasks.keys.toSet()
+        desiredBooks.removeAll(affected)
+        for (bookId in affected) startGenerations.remove(bookId)
         getSharedPreferences("processing_notifications", Context.MODE_PRIVATE)
             .edit().putStringSet("background_limit_books", affected).commit()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
         try {
             backgroundLimitListener?.invoke(affected.toList())
         } catch (_: RuntimeException) {
@@ -221,6 +326,7 @@ class ProcessingNotificationService : Service() {
     companion object {
         const val EXTRA_BOOK_ID = "processingBookId"
         private const val EXTRA_TITLE = "title"
+        private const val EXTRA_GENERATION = "generation"
         private const val EXTRA_PHASE = "phase"
         private const val EXTRA_DONE = "done"
         private const val EXTRA_TOTAL = "total"
@@ -230,16 +336,37 @@ class ProcessingNotificationService : Service() {
         private val PHASES = setOf("queued", "preparing", "waiting", "running", "finalizing")
         private var instance: ProcessingNotificationService? = null
         private var startPending = false
+        private const val CPU_LEASE_MS = 10 * 60 * 1000L
+        private var nextStartGeneration = 0L
+        private val startGenerations = mutableMapOf<String, Long>()
+        private val startCallbacks = mutableMapOf<String, MutableList<(Result<Unit>) -> Unit>>()
+        private val handler = Handler(Looper.getMainLooper())
+
+        private fun finishStart(bookId: String, result: Result<Unit>) {
+            startCallbacks.remove(bookId)?.forEach { it(result) }
+        }
+
+        fun runtimeState(): Map<String, Any> = mapOf(
+            "running" to (instance?.foregroundId != null),
+            "start_pending" to startPending,
+            "task_count" to (instance?.tasks?.size ?: 0),
+            "wake_lock_held" to (instance?.let { it.cpuLease.isHeld } ?: false),
+        )
         private val desiredBooks = mutableSetOf<String>()
         var backgroundLimitListener: ((List<String>) -> Unit)? = null
         fun validBookId(id: String): Boolean = id.length in 1..128 && id.all {
             it.isLetterOrDigit() || it == '-' || it == '_' || it == '.'
         }
 
-        fun start(context: Context, bookId: String, title: String, phase: String, done: Int, total: Int) {
+        fun start(context: Context, bookId: String, title: String, phase: String, done: Int, total: Int,
+                  onStarted: (Result<Unit>) -> Unit) {
             require(validBookId(bookId) && phase in PHASES) { "整理任务无效" }
             val task = BookTask(bookId, title.trim().take(60).ifEmpty { "这本书" }, phase, done.coerceAtLeast(0), total.coerceAtLeast(0))
+            val generation = ++nextStartGeneration
+            finishStart(bookId, Result.failure(IllegalStateException("Start superseded")))
+            startGenerations[bookId] = generation
             val intent = Intent(context, ProcessingNotificationService::class.java).apply {
+                putExtra(EXTRA_GENERATION, generation)
                 action = ACTION_UPSERT
                 putExtra(EXTRA_BOOK_ID, task.id)
                 putExtra(EXTRA_TITLE, task.title)
@@ -248,6 +375,17 @@ class ProcessingNotificationService : Service() {
                 putExtra(EXTRA_TOTAL, task.total)
             }
             desiredBooks.add(bookId)
+            val callbacks = startCallbacks.getOrPut(bookId) { mutableListOf() }
+            callbacks.add(onStarted)
+            // Also settle the channel if Android never delivers the start intent.
+            handler.postDelayed({
+                if (startCallbacks[bookId] === callbacks) {
+                    ProcessingRuntimeDiagnostics.record(context.applicationContext, "foreground_start_timeout")
+                    desiredBooks.remove(bookId)
+                    finishStart(bookId, Result.failure(IllegalStateException("Service did not start")))
+                }
+            }, 10_000)
+            ProcessingRuntimeDiagnostics.record(context, "foreground_start_requested")
             try {
                 if (instance != null) {
                     context.startService(intent)
@@ -258,13 +396,15 @@ class ProcessingNotificationService : Service() {
             } catch (error: RuntimeException) {
                 desiredBooks.remove(bookId)
                 if (instance == null) startPending = false
-                throw error
+                ProcessingRuntimeDiagnostics.record(context, "foreground_start_rejected", error)
+                finishStart(bookId, Result.failure(error))
             }
         }
 
         fun update(bookId: String, title: String, phase: String, done: Int, total: Int): Boolean {
             if (!validBookId(bookId) || phase !in PHASES || bookId !in desiredBooks) return false
             val running = instance ?: return false
+            if (running.stopping) return false
             running.upsert(BookTask(bookId, title.trim().take(60).ifEmpty { "这本书" }, phase, done.coerceAtLeast(0), total.coerceAtLeast(0)))
             return true
         }
@@ -272,6 +412,8 @@ class ProcessingNotificationService : Service() {
         fun stop(context: Context, bookId: String): Boolean {
             if (!validBookId(bookId)) return false
             desiredBooks.remove(bookId)
+            startGenerations.remove(bookId)
+            finishStart(bookId, Result.failure(IllegalStateException("Processing stopped")))
             val running = instance
             running?.remove(bookId)
             if (running == null && !startPending) return false

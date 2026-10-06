@@ -4,13 +4,23 @@ import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:thusfar_core/jobs.dart'
-    show AlreadyRunning, BookPauseReason, RunLease, Worker, WorkerSettings;
+    show
+        AlreadyRunning,
+        BookPauseReason,
+        RunLease,
+        RunCancellation,
+        Worker,
+        WorkerSettings,
+        hasUnsettledModelRequests;
 import 'package:thusfar_core/llm.dart' as llm;
-import 'package:thusfar_core/run.dart' show recordBookActivity;
+import 'package:thusfar_core/run.dart' show recordBookActivity, runBook;
 import 'package:thusfar_core/thusfar_core.dart' show environ;
 
 import 'library.dart';
 import 'model_settings.dart';
+import 'processing_background_session.dart';
+import 'processing_notification_bridge.dart';
+import 'processing_worker_heartbeat.dart';
 
 /// UI contract; tests substitute a worker without making model requests.
 abstract class BookProcessing extends ChangeNotifier {
@@ -55,14 +65,25 @@ Future<void> reconcileStoppedWorker(Library library, String reason) async {
           (readJson(File('${book.dir.path}/meta.json')) as Json?) ??
           <String, Object?>{};
       final bool manualPause = raw['pause_reason'] == 'user';
-      final bool resume = meta['auto'] == true && !manualPause;
+      final bool uncertain = hasUnsettledModelRequests(book.dir);
+      final bool resume = meta['auto'] == true && !manualPause && !uncertain;
+      if (uncertain) {
+        meta['auto'] = false;
+        writeJson(File('${book.dir.path}/meta.json'), meta);
+        raw.addAll(<String, Object?>{
+          'pause_reason': 'request_outcome_unknown',
+          'request_outcome': 'unknown',
+          'retryable': false,
+        });
+        raw.remove('retry_at');
+      }
       if (manualPause) {
         meta['auto'] = false;
         writeJson(File('${book.dir.path}/meta.json'), meta);
       }
       raw.addAll(<String, Object?>{
         'state': resume ? 'queued' : 'paused',
-        'error': null,
+        'error': uncertain ? raw['error'] : null,
         'notice': resume ? reason : null,
         'updated': DateTime.now().microsecondsSinceEpoch / 1e6,
       });
@@ -75,7 +96,11 @@ Future<void> reconcileStoppedWorker(Library library, String reason) async {
       recordBookActivity(
         book.dir,
         resume ? 'queued' : 'paused',
-        resume ? '整理任务意外中断，重新打开应用后自动继续' : '整理任务意外中断，等待手动继续',
+        uncertain
+            ? '上次模型请求结果未确认，已保留进度，请检查后手动继续'
+            : resume
+            ? '整理任务意外中断，重新打开应用后自动继续'
+            : '整理任务意外中断，等待手动继续',
       );
     } finally {
       lease.release();
@@ -90,7 +115,23 @@ Future<void> reconcileStoppedWorker(Library library, String reason) async {
 const int phoneConcurrency = 4;
 
 class ProcessingController extends BookProcessing {
-  ProcessingController(this.library);
+  ProcessingController(
+    this.library, {
+    ProcessingBackgroundSession? background,
+  }) {
+    _background =
+        background ??
+        ProcessingBackgroundSession(
+          onUnavailable: (String id) async {
+            final BookEntry? book = library.byId(id);
+            if (book != null && !_closing) {
+              await _send('pauseBackgroundUnavailable', book);
+            }
+          },
+        );
+  }
+
+  late final ProcessingBackgroundSession _background;
 
   final Library library;
   Map<String, Object?> _health = const <String, Object?>{};
@@ -102,6 +143,7 @@ class ProcessingController extends BookProcessing {
   final Map<int, Completer<void>> _pending = <int, Completer<void>>{};
   int _sequence = 0;
   bool _closing = false;
+  bool _ready = false;
   bool _disposed = false;
 
   @override
@@ -111,6 +153,9 @@ class ProcessingController extends BookProcessing {
   }
 
   Future<void> _initialize() async {
+    ProcessingNotificationBridge.onBackgroundTimeLimit(_pauseBackgroundLimited);
+    final List<String> startupLimits =
+        await ProcessingNotificationBridge.takeBackgroundTimeLimitBookIds();
     final Completer<void> ready = Completer<void>();
     final ReceivePort events = ReceivePort();
     events.listen((Object? message) {
@@ -119,13 +164,31 @@ class ProcessingController extends BookProcessing {
         return;
       }
       if (message is Map<String, Object?>) {
-        if (message['ready'] == true) {
+        if (message['backgroundStart'] is String &&
+            message['reply'] is SendPort) {
+          unawaited(
+            _startBackground(
+              message['backgroundStart']! as String,
+              message['reply']! as SendPort,
+            ),
+          );
+        } else if (message['ready'] == true) {
+          _ready = true;
           _refresh();
           if (!ready.isCompleted) ready.complete();
+        } else if (message['heartbeat'] == true) {
+          _background.workerHeartbeat();
+          final Object? sample = message['sample'];
+          if (sample is Map<String, Object?>) {
+            unawaited(
+              ProcessingNotificationBridge.recordWorkerHeartbeat(sample),
+            );
+          }
         } else if (message['health'] is Map<String, Object?>) {
           final Map<String, Object?> health =
               message['health']! as Map<String, Object?>;
           _health = health;
+          _background.synchronize(health);
           final bool active =
               health['current'] != null ||
               ((health['queued'] as List<Object?>?) ?? const []).isNotEmpty;
@@ -162,7 +225,7 @@ class ProcessingController extends BookProcessing {
     try {
       await Isolate.spawn<List<Object?>>(
         _processingIsolate,
-        <Object?>[library.root.path, events.sendPort],
+        <Object?>[library.root.path, events.sendPort, startupLimits],
         onError: events.sendPort,
         onExit: events.sendPort,
         debugName: 'thusfar-book-worker',
@@ -176,7 +239,27 @@ class ProcessingController extends BookProcessing {
     }
   }
 
+  Future<void> _startBackground(String id, SendPort reply) async {
+    try {
+      final BookEntry? book = library.byId(id);
+      if (book == null || _closing) throw StateError('整理任务已停止');
+      await _background.acquire(book);
+      reply.send(null);
+    } on Object {
+      reply.send('后台整理服务未能启动，请回到页读后重试');
+    }
+  }
+
+  Future<void> _pauseBackgroundLimited(List<String> ids) async {
+    for (final String id in ids) {
+      final BookEntry? book = library.byId(id);
+      if (book != null && !_closing) await _send('pauseBackgroundLimit', book);
+    }
+  }
+
   void _failed(Completer<void> ready, String text) {
+    _ready = false;
+    unawaited(_background.stopAll());
     final llm.LLMError error = llm.LLMError(text);
     _health = <String, Object?>{
       'alive': false,
@@ -206,13 +289,14 @@ class ProcessingController extends BookProcessing {
       library.refreshStatus(entry);
     }
     notifyListeners();
+    unawaited(_background.refresh());
   }
 
   Future<void> _send(String operation, [BookEntry? book, Json? plan]) async {
     if (_closing && operation != 'close') throw const llm.LLMError('整理任务正在停止');
     if (operation == 'close') {
       await _initializing;
-    } else {
+    } else if (!_ready) {
       await initialize();
     }
     final SendPort? port = _commands;
@@ -226,6 +310,16 @@ class ProcessingController extends BookProcessing {
       if (book != null) 'book': book.id,
       'plan': ?plan,
     });
+    if (book != null &&
+        <String>{
+          'pause',
+          'pauseAndWait',
+          'pauseBackgroundLimit',
+          'pauseBackgroundUnavailable',
+          'prepareRemoval',
+        }.contains(operation)) {
+      unawaited(_background.stopBook(book.id).catchError((Object _) {}));
+    }
     await done.future;
   }
 
@@ -256,6 +350,8 @@ class ProcessingController extends BookProcessing {
     _closing = true;
     _poll?.cancel();
     _poll = null;
+    await _background.close();
+    ProcessingNotificationBridge.onBackgroundTimeLimit(null);
     if (_initializing != null && _commands != null) {
       await _send('close');
     } else if (_initializing != null) {
@@ -296,15 +392,76 @@ Future<void> _processingIsolate(List<Object?> args) async {
     );
   }
 
+  ProcessingWorkerHeartbeat? activeHeartbeat;
   final Worker worker = Worker(
     Directory('${data.path}/books'),
     resumeInterrupted: true,
     settings: snapshot,
+    run:
+        (
+          Directory root, {
+          required RunCancellation cancellation,
+          required bool retryQuality,
+          required String model,
+          required String localModel,
+          required int concurrency,
+        }) async {
+          final ReceivePort reply = ReceivePort();
+          final ProcessingWorkerHeartbeat journal = ProcessingWorkerHeartbeat(
+            root,
+          );
+          activeHeartbeat = journal;
+          journal.record();
+          try {
+            parent.send(<String, Object?>{
+              'backgroundStart': root.uri.pathSegments
+                  .where((String s) => s.isNotEmpty)
+                  .last,
+              'reply': reply.sendPort,
+            });
+            final Object? failure = await cancellation.wait(
+              reply.first.timeout(const Duration(seconds: 15)),
+            );
+            cancellation.checkpoint();
+            if (failure != null) throw llm.LLMError('$failure');
+            await runBook(
+              root,
+              cancellation: cancellation,
+              retryQuality: retryQuality,
+              model: model,
+              localModel: localModel,
+              concurrency: concurrency,
+            );
+          } finally {
+            journal.record(finished: true);
+            if (identical(activeHeartbeat, journal)) activeHeartbeat = null;
+            reply.close();
+          }
+        },
     onChange: (Map<String, Object?> health) =>
         parent.send(<String, Object?>{'health': health}),
   );
   parent.send(commands.sendPort);
   try {
+    // Consume a persisted Android timeout before reconciliation can schedule
+    // another paid run. A stale signal must never cancel a newly admitted run.
+    for (final String id in (args[2] as List<Object?>).whereType<String>()) {
+      if (id.isEmpty ||
+          id.contains('/') ||
+          id.contains('\\') ||
+          id.startsWith('.')) {
+        continue;
+      }
+      final Directory book = Directory('${data.path}/books/$id');
+      if (!book.existsSync()) continue;
+      final Json? state = readJson(File('${book.path}/status.json')) as Json?;
+      if (state != null && ProcessStatus(state).isActive) {
+        await worker.pauseBook(
+          book,
+          reason: BookPauseReason.backgroundTimeLimit,
+        );
+      }
+    }
     await worker.start();
     parent.send(<String, Object?>{'ready': true});
   } on Object {
@@ -312,12 +469,23 @@ Future<void> _processingIsolate(List<Object?> args) async {
     commands.close();
     return;
   }
+  final Timer heartbeat = Timer.periodic(const Duration(seconds: 15), (_) {
+    final Map<String, Object?> health = worker.health();
+    if (health['current'] != null ||
+        ((health['queued'] as List<Object?>?) ?? const []).isNotEmpty) {
+      parent.send(<String, Object?>{
+        'heartbeat': true,
+        'sample': activeHeartbeat?.record(),
+      });
+    }
+  });
   commands.listen((Object? raw) async {
     final Map<String, Object?> message = raw! as Map<String, Object?>;
     final Object? id = message['id'];
     try {
       final String operation = message['operation']! as String;
       if (operation == 'close') {
+        heartbeat.cancel();
         await worker.close();
         await worker.waitIdle();
         parent.send(<String, Object?>{'id': id});
@@ -340,11 +508,14 @@ Future<void> _processingIsolate(List<Object?> args) async {
       } else if (operation == 'pause' ||
           operation == 'pauseAndWait' ||
           operation == 'pauseBackgroundLimit' ||
+          operation == 'pauseBackgroundUnavailable' ||
           operation == 'prepareRemoval') {
         await worker.pauseBook(
           root,
           reason: operation == 'pauseBackgroundLimit'
               ? BookPauseReason.backgroundTimeLimit
+              : operation == 'pauseBackgroundUnavailable'
+              ? BookPauseReason.backgroundUnavailable
               : BookPauseReason.user,
         );
         if (operation == 'prepareRemoval' || operation == 'pauseAndWait') {

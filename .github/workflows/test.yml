@@ -47,6 +47,10 @@ jobs:
             test/ask/ask_test.dart test/ask/context_test.dart \
             test/http/http_server_test.dart \
             test/jobs/jobs_test.dart test/pipeline/llm_timeout_test.dart \
+            test/pipeline/request_interruption_test.dart \
+            test/pipeline/request_diagnostics_test.dart \
+            test/pipeline/jev_model_fallback_test.dart \
+            test/run_lifecycle/disconnect_recovery_test.dart \
             test/run_lifecycle/bio_reliability_test.dart \
             test/run_lifecycle/preparation_plan_review_test.dart \
             test/run_lifecycle/preparation_plan_test.dart \
@@ -77,6 +81,8 @@ jobs:
             test/model_settings_test.dart test/notes_test.dart \
             test/portable_work_test.dart test/webdav_test.dart test/webdav_screen_test.dart \
             test/people_search_test.dart test/processing_test.dart \
+            test/processing_background_session_test.dart \
+            test/processing_worker_heartbeat_test.dart \
             test/preparation_plan_test.dart \
             test/processing_diagnostics_test.dart \
             test/reader_regression_test.dart test/selection_bounds_test.dart \
@@ -170,3 +176,23 @@ jobs:
             app/build/browser-smoke/
             app/build/browser-http.log
           if-no-files-found: ignore
+
+  android-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compile Android runtime and run signing-free service regressions
+        run: mvn -B -f app/android/runtime-tests/pom.xml test
+      - name: Keep Android runtime test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-runtime-jvm-reports
+          path: app/android/runtime-tests/target/surefire-reports/
+          if-no-files-found: warn

@@ -13,6 +13,7 @@ class ProcessingNotificationBridge {
   static Future<void> Function(String)? _openBook;
   static Future<void> Function(List<String>)? _backgroundTimeLimit;
 
+  /// Completes only after native foreground startup succeeds.
   /// Returns whether Android currently allows the notification in its drawer.
   /// The service may still run when Android 13+ notification permission is denied.
   static Future<bool> start({
@@ -42,7 +43,7 @@ class ProcessingNotificationBridge {
     required int done,
     required int total,
   }) async {
-    if (!Platform.isAndroid) return false;
+    if (!Platform.isAndroid) return true;
     return await _channel.invokeMethod<bool>('update', <String, Object>{
           'bookId': bookId,
           'title': title,
@@ -58,6 +59,47 @@ class ProcessingNotificationBridge {
     await _channel.invokeMethod<bool>('stop', <String, Object>{
       'bookId': bookId,
     });
+  }
+
+  static Future<Map<String, Object?>> diagnostics() async {
+    if (!Platform.isAndroid) return const <String, Object?>{};
+    try {
+      return Map<String, Object?>.from(
+        await _channel.invokeMapMethod<String, Object?>('diagnostics') ??
+            const {},
+      );
+    } on Object {
+      return const <String, Object?>{'available': false};
+    }
+  }
+
+  static Future<void> recordLifecycle(String state) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _channel.invokeMethod<void>('lifecycle', <String, Object>{
+        'state': state,
+      });
+    } on Object {
+      // Diagnostics must never control the worker's lifetime.
+    }
+  }
+
+  static Future<void> recordWorkerHeartbeat(Map<String, Object?> sample) async {
+    if (!Platform.isAndroid) return;
+    try {
+      await _channel.invokeMethod<void>('workerHeartbeat', <String, Object?>{
+        'ui_at_ms': DateTime.now().millisecondsSinceEpoch,
+        for (final String key in <String>[
+          'at_ms',
+          'elapsed_ms',
+          'gap_ms',
+          'sequence',
+        ])
+          if (sample[key] is int) key: sample[key],
+      });
+    } on Object {
+      // A failed diagnostic channel cannot affect request ownership.
+    }
   }
 
   /// Drain the book ID from a notification tap after the library is ready.

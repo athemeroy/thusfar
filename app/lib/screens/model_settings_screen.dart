@@ -5,6 +5,7 @@ import 'package:thusfar_core/llm.dart' as llm;
 
 import '../data/model_settings.dart';
 import '../ui/theme.dart';
+
 import 'package:thusfar_core/judge_budget.dart' as budget;
 
 /// Makes saved settings effective for the engine (`model_settings.apply_environment`).
@@ -88,6 +89,12 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
   final TextEditingController jevApiKey = TextEditingController();
   late String protocol;
   late bool judgeFallback;
+  late String judgeMode;
+  bool get customJudge => judgeMode != 'free';
+  late final TextEditingController judgeModel;
+  final TextEditingController judgeKey = TextEditingController();
+  bool clearJudgeKey = false;
+  late final TextEditingController judgeUrl;
   bool showKey = false;
   bool showClassifierKey = false;
   bool showJevApiKey = false;
@@ -140,7 +147,15 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     'model': model.text.trim(),
     'api_key': key.text.trim(),
     'clear_key': clearKey,
-    'jev_route': judgeFallback ? 'free-then-model' : 'free-only',
+    'jev_route': customJudge
+        ? judgeMode
+        : judgeFallback
+        ? 'free-then-model'
+        : 'free-only',
+    'judge_url': judgeUrl.text.trim(),
+    'judge_model': judgeModel.text.trim(),
+    'judge_api_key': judgeKey.text.trim(),
+    'clear_judge_api_key': clearJudgeKey,
     'classifier_key': classifierKey.text.trim(),
     'clear_classifier_key': clearClassifierKey,
     'jev_api_key': jevApiKey.text.trim(),
@@ -166,6 +181,12 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
           );
     protocol = firstRunPreset?.protocol ?? widget.settings.protocol;
     judgeFallback = widget.settings.judgeFallbackEnabled;
+    judgeMode =
+        const {'systemone', 'model'}.contains(widget.settings.judgeRoute)
+        ? widget.settings.judgeRoute
+        : 'free';
+    judgeModel = TextEditingController(text: widget.settings.judgeModel);
+    judgeUrl = TextEditingController(text: widget.settings.judgeUrl);
     url = TextEditingController(text: firstRunPreset?.url ?? u);
     model = TextEditingController(text: firstRunPreset?.defaultModel ?? m);
     _keyEndpoint = _endpoint;
@@ -181,6 +202,9 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
     model.dispose();
     key.dispose();
     classifierKey.dispose();
+    judgeUrl.dispose();
+    judgeModel.dispose();
+    judgeKey.dispose();
     jevApiKey.dispose();
     formScroll.dispose();
     super.dispose();
@@ -262,6 +286,11 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         clearKey: false,
         protocol: draft['protocol']! as String,
         judgeFallback: draft['jev_route'] == 'free-then-model',
+        judgeRoute: draft['jev_route']! as String,
+        judgeModel: draft['judge_model']! as String,
+        judgeKey: draft['judge_api_key']! as String,
+        clearJudgeKey: draft['judge_api_key'] == '',
+        judgeUrl: draft['judge_url']! as String,
         classifierKey: draft['classifier_key']! as String,
         clearClassifierKey: draft['classifier_key'] == '',
         jevApiKey: draft['jev_api_key']! as String,
@@ -346,6 +375,11 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         clearKey: draft['api_key'] == '',
         protocol: draft['protocol']! as String,
         judgeFallback: draft['jev_route'] == 'free-then-model',
+        judgeRoute: draft['jev_route']! as String,
+        judgeModel: draft['judge_model']! as String,
+        judgeKey: draft['judge_api_key']! as String,
+        clearJudgeKey: draft['judge_api_key'] == '',
+        judgeUrl: draft['judge_url']! as String,
         classifierKey: draft['classifier_key']! as String,
         clearClassifierKey: draft['classifier_key'] == '',
         jevApiKey: draft['jev_api_key']! as String,
@@ -367,6 +401,10 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
             : null;
         url.text = u;
         model.text = m;
+        judgeUrl.text = draft['judge_url']! as String;
+        judgeModel.text = draft['judge_model']! as String;
+        judgeKey.clear();
+        clearJudgeKey = false;
         key.clear();
         classifierKey.clear();
         jevApiKey.clear();
@@ -381,7 +419,9 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
         clearJevApiKey = false;
         test = verified ? _Test.saved : _Test.unverified;
         testMessage = verified
-            ? '连接测试通过，设置已保存并生效。此测试未验证 classifier.dev 或 Jev 网关密钥。'
+            ? customJudge
+                  ? '生成模型与核对接口均测试通过，设置已生效。'
+                  : '连接测试通过，设置已保存并生效。此测试未验证 classifier.dev 或 Jev 网关密钥。'
             : '设置已保存并生效，但未验证连接。classifier.dev 和 Jev 网关密钥也未验证。';
       });
       _showResult();
@@ -595,31 +635,116 @@ class _ModelSettingsScreenState extends State<ModelSettingsScreen> {
                 ),
               ),
             const SizedBox(height: 20),
-            Material(
-              color: t.raised,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: t.rule),
-              ),
-              child: SwitchListTile.adaptive(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                title: const Text('免费判断不可用时，使用已配置模型继续'),
-                subtitle: Text(
-                  '此设置作用于所有书籍，会消耗上方模型的 API 额度。每本书初始最多 ${budget.modelJudgeInitialCalls} 次判断、${budget.modelJudgeInitialChars ~/ 10000} 万字符；用完可在书籍详情追加。',
-                  style: TextStyle(fontSize: 12, color: t.ink2),
+            DropdownButtonFormField<String>(
+              initialValue: judgeMode,
+              decoration: deco('核对方式'),
+              items: const [
+                DropdownMenuItem(value: 'free', child: Text('免费判断接口')),
+                DropdownMenuItem(
+                  value: 'systemone',
+                  child: Text('System One 兼容接口'),
                 ),
-                value: judgeFallback,
-                onChanged: _busy
-                    ? null
-                    : (bool value) {
-                        HapticFeedback.selectionClick();
-                        setState(() {
+                DropdownMenuItem(
+                  value: 'model',
+                  child: Text('System Two 对话模型'),
+                ),
+              ],
+              onChanged: _busy
+                  ? null
+                  : (value) {
+                      if (value == null || value == judgeMode) return;
+                      setState(() {
+                        judgeMode = value;
+                        judgeUrl.clear();
+                        judgeModel.clear();
+                        judgeKey.clear();
+                        clearJudgeKey = true;
+                        _edited();
+                      });
+                    },
+            ),
+            if (customJudge) ...<Widget>[
+              const SizedBox(height: 12),
+              Text(
+                judgeMode == 'systemone'
+                    ? '使用你选择的判断模型。生成、人物小传和问答仍用上方模型。'
+                    : '使用对话模型回答判断题；测试会检查回答格式和概率。生成和问答仍用上方模型。',
+                style: TextStyle(fontSize: 12, color: t.ink2),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: judgeUrl,
+                enabled: !_busy,
+                onChanged: (_) => _edited(),
+                decoration: deco(
+                  '核对接口地址',
+                  helper: judgeMode == 'systemone'
+                      ? '填写完整的 /v1/systemone 地址；留空使用上方地址加 /systemone'
+                      : '留空使用上方接口；自定义接口使用上方选择的协议',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: judgeModel,
+                enabled: !_busy,
+                onChanged: (_) => _edited(),
+                decoration: deco(
+                  '核对模型（可选）',
+                  helper: judgeMode == 'systemone' ? '留空使用服务默认模型' : '留空使用上方模型',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: judgeKey,
+                enabled: !_busy,
+                obscureText: true,
+                onChanged: (value) {
+                  if (value.isNotEmpty) clearJudgeKey = false;
+                  _edited();
+                },
+                decoration: deco(
+                  '核对 API 密钥（可选）',
+                  helper: widget.settings.hasJudgeKey && !clearJudgeKey
+                      ? '已保存 ****${widget.settings.judgeKeyLast4}；留空保留'
+                      : '留空使用上方 API 密钥',
+                  suffix: widget.settings.hasJudgeKey && !clearJudgeKey
+                      ? IconButton(
+                          tooltip: '清除核对密钥',
+                          icon: const Icon(Icons.clear),
+                          onPressed: _busy
+                              ? null
+                              : () => setState(() {
+                                  judgeKey.clear();
+                                  clearJudgeKey = true;
+                                  _edited();
+                                }),
+                        )
+                      : null,
+                ),
+              ),
+            ],
+            if (!customJudge) ...<Widget>[
+              const SizedBox(height: 12),
+              Material(
+                color: t.raised,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: SwitchListTile.adaptive(
+                  title: const Text('免费判断不可用时，使用已配置模型继续'),
+                  subtitle: Text(
+                    '使用上方模型的 API 额度。每本书初始最多 ${budget.modelJudgeInitialCalls} 次判断，用完可在书籍详情追加。',
+                  ),
+                  value: judgeFallback,
+                  onChanged: _busy
+                      ? null
+                      : (value) => setState(() {
                           judgeFallback = value;
                           _edited();
-                        });
-                      },
+                        }),
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 18),
             Text(
               'classifier.dev 已充值工作区密钥（可选）',
