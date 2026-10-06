@@ -1,4 +1,5 @@
 import '../data/library.dart';
+import '../data/reader_directory.dart';
 import 'package:thusfar_core/title_spoilers.dart';
 
 final RegExp _chapterNumber = RegExp(
@@ -8,6 +9,11 @@ final RegExp _chapterNumber = RegExp(
 
 /// Conceal model-confirmed spoilers and obvious local fallback spoilers.
 String safeTitle(Chapter chapter, bool read, {bool checkPending = false}) {
+  if (chapter is DirectoryChapter) {
+    return read || chapter.verifiedSafe
+        ? chapter.title
+        : '目录第 ${chapter.index + 1} 项';
+  }
   if (read ||
       !titleSpoils(
         chapter.raw['spoil'],

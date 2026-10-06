@@ -153,7 +153,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
             ..._snapshots,
           ];
         });
-        return '《${book.title}》已上传为新备份。旧备份仍保留。';
+        return '《${book.title}》已上传为新备份，含本书净化规则和 TXT 目录设置；全局规则请用整库备份。旧备份仍保留。';
       });
 
   Future<void> _download(WebDavSnapshot snapshot) => _run('正在下载备份…', (
@@ -183,7 +183,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
         title: const Text('WebDAV 备份预览'),
         content: SingleChildScrollView(
           child: Text(
-            '${summary.title}\n${summary.exported == null ? _label(snapshot) : summary.dateLabel}\n${summary.sizeLabel}\n\n${preview.error == null ? '${preview.existed ? '已有同一本书，会保留已有阅读记录。' : '将导入为书架上的一本书。'}确认前不会修改本地。' : '${readerMessage(preview.error, fallback: '这份备份暂时无法恢复。')}\n现有书籍未改变。'}',
+            '${summary.title}\n${summary.exported == null ? _label(snapshot) : summary.dateLabel}\n${summary.sizeLabel}\n${summary.customizationSummary ?? ''}\n\n${preview.error == null ? '${preview.existed ? '已有同一本书，会保留已有阅读记录。' : '将导入为书架上的一本书。'}确认前不会修改本地。' : '${readerMessage(preview.error, fallback: '这份备份暂时无法恢复。')}\n现有书籍未改变。'}',
           ),
         ),
         actions: [

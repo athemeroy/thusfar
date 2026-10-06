@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+import '../reader/tap_layout.dart';
 import 'library.dart';
 
 enum PageAnim { slide, cover, none }
@@ -19,12 +20,15 @@ class Prefs extends ChangeNotifier {
         ? savedLineHeight.toDouble().clamp(1.2, 2.4)
         : null;
     letterSpacing = _readMetric(j, 'letterSpacing', 0, -0.5, 2.5);
+    paragraphSpacing = _readMetric(j, 'paragraphSpacing', 0, 0, 2);
+    firstLineIndent = _readMetric(j, 'firstLineIndent', 2, 0, 4);
     pageHorizontalMargin = _readMetric(j, 'pageHorizontalMargin', 20, 8, 96);
     pageVerticalMargin = _readMetric(j, 'pageVerticalMargin', 16, 4, 48);
     font = (j['font'] as num?)?.toInt() ?? 0;
     paper = (j['paper'] as num?)?.toInt() ?? 0;
     anim = PageAnim.values[(j['anim'] as num?)?.toInt() ?? 0];
     volumeKeys = j['volumeKeys'] as bool? ?? true;
+    tapLayout = ReaderTapLayout.fromJson(j['tapLayout']);
     night = NightMode.values[(j['night'] as num?)?.toInt() ?? 0];
     sort = (j['sort'] as num?)?.toInt() ?? 0;
     listView = j['listView'] as bool? ?? false;
@@ -41,6 +45,13 @@ class Prefs extends ChangeNotifier {
   /// Custom line height overrides the three older spacing presets.
   late double? lineHeightOverride;
   late double letterSpacing;
+
+  /// Extra space before a paragraph in font-size units, independent of leading.
+  /// Zero preserves the original reader layout for existing preferences.
+  late double paragraphSpacing;
+
+  /// First-line indent in font-size units. Two preserves the original layout.
+  late double firstLineIndent;
   late double pageHorizontalMargin;
   late double pageVerticalMargin;
 
@@ -49,6 +60,7 @@ class Prefs extends ChangeNotifier {
   late int paper;
   late PageAnim anim;
   late bool volumeKeys;
+  late ReaderTapLayout tapLayout;
   late NightMode night;
 
   /// Shelf sort: 0 最近阅读 · 1 书名 · 2 阅读进度 · 3 最近加入.
@@ -110,12 +122,15 @@ class Prefs extends ChangeNotifier {
       'spacing': spacing,
       if (lineHeightOverride != null) 'lineHeight': lineHeightOverride,
       'letterSpacing': letterSpacing,
+      'paragraphSpacing': paragraphSpacing,
+      'firstLineIndent': firstLineIndent,
       'pageHorizontalMargin': pageHorizontalMargin,
       'pageVerticalMargin': pageVerticalMargin,
       'font': font,
       'paper': paper,
       'anim': anim.index,
       'volumeKeys': volumeKeys,
+      'tapLayout': tapLayout.toJson(),
       'night': night.index,
       'sort': sort,
       'listView': listView,

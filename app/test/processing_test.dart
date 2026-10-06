@@ -198,6 +198,21 @@ void main() {
     }
   }
 
+  Future<void> expectCheckSettings(
+    WidgetTester tester,
+    List<String> messages,
+  ) async {
+    final Finder info = find.byTooltip('了解本书的检查设置');
+    await tester.ensureVisible(info);
+    await tester.tap(info);
+    await tester.pumpAndSettle();
+    for (final String message in messages) {
+      expect(find.textContaining(message), findsOneWidget);
+    }
+    await tester.tap(find.text('知道了'));
+    await tester.pumpAndSettle();
+  }
+
   test('AppModel defers worker startup until explicit initialize', () async {
     late FixtureProcessing fake;
     final AppModel model = AppModel(
@@ -471,7 +486,7 @@ void main() {
         expect(journal.readAsStringSync(), originalJournal);
         expect(
           File('${bookRoot.path}/work/activity.json').readAsStringSync(),
-          contains('上次模型请求结果未确认'),
+          contains('没有收到完整结果，已完成的内容已保留'),
         );
       },
     );
@@ -521,7 +536,7 @@ void main() {
       await tester.tap(find.text('开始整理'));
       await tester.pump();
       expect(processing.starts, 0);
-      expect(find.textContaining('会调用你的模型接口'), findsOneWidget);
+      expect(find.textContaining('费用按你的模型接口计费'), findsOneWidget);
       await tester.tap(find.text('开始'));
       await tester.pump();
       expect(processing.starts, 1);
@@ -537,7 +552,7 @@ void main() {
       await tester.tap(find.text('暂停整理'));
       await tester.pump();
       expect(processing.pauses, 1);
-      expect(find.textContaining('已经整理好的内容会保留'), findsOneWidget);
+      expect(find.textContaining('已完成的内容会保留'), findsOneWidget);
       expect(find.text('继续整理'), findsNothing);
       processing.pauseGate!.complete();
       await tester.pumpAndSettle();
@@ -563,13 +578,15 @@ void main() {
         'error': error,
       });
       await open(tester);
-      expect(find.text(error), findsOneWidget);
-      expect(find.textContaining('上次模型请求结果未确认，请检查后继续'), findsOneWidget);
+      expect(find.textContaining('检查模型没有给出可用的答案'), findsOneWidget);
+      expect(find.text(error), findsNothing);
+      expect(entry.status.error, error);
+      expect(find.textContaining('没有收到完整结果，已完成的内容已保留'), findsOneWidget);
       await tester.tap(find.text('继续整理'));
       await tester.pumpAndSettle();
       expect(processing.starts, 0);
-      expect(find.text('上次模型请求结果未确认'), findsOneWidget);
-      expect(find.textContaining('可能再次产生模型费用'), findsOneWidget);
+      expect(find.text('继续未完成的整理？'), findsOneWidget);
+      expect(find.textContaining('这部分可能再次收费'), findsOneWidget);
       await tester.tap(find.text('暂不继续'));
       await tester.pumpAndSettle();
       expect(processing.starts, 0);
@@ -615,13 +632,13 @@ void main() {
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 300));
           expect(processing.starts, 0);
-          expect(find.text('上次模型请求结果未确认'), findsOneWidget);
-          expect(find.textContaining('服务器可能已经处理并计费'), findsOneWidget);
-          expect(find.textContaining('可能再次产生模型费用'), findsOneWidget);
+          expect(find.text('继续未完成的整理？'), findsOneWidget);
+          expect(find.textContaining('上次未收到结果的部分可能需要重新处理'), findsOneWidget);
+          expect(find.textContaining('这部分可能再次收费'), findsOneWidget);
           expect(readJournal(), originalJournal);
 
           if (decision == 'confirm') {
-            await tester.tap(find.text('确认继续'));
+            await tester.tap(find.widgetWithText(FilledButton, '继续整理'));
           } else if (decision == 'cancel') {
             await tester.tap(find.text('暂不继续'));
           } else {
@@ -629,7 +646,7 @@ void main() {
           }
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 300));
-          expect(find.text('上次模型请求结果未确认'), findsNothing);
+          expect(find.text('继续未完成的整理？'), findsNothing);
           expect(processing.starts, decision == 'confirm' ? 1 : 0);
           if (decision != 'confirm') {
             expect(readJournal(), originalJournal);
@@ -917,8 +934,8 @@ void main() {
     });
     await open(tester, settle: false);
     expect(find.text('正在准备整理'), findsOneWidget);
-    expect(find.textContaining('正在检查书籍和整理缓存'), findsWidgets);
-    expect(find.textContaining('准备 · 正在检查书籍和整理缓存'), findsOneWidget);
+    expect(find.textContaining('正在检查书籍和整理缓存'), findsNothing);
+    expect(find.textContaining('准备 · 准备整理'), findsOneWidget);
     expect(find.textContaining('已等待 1 分'), findsNothing);
     expect(find.text('整理记录'), findsOneWidget);
 
@@ -960,7 +977,7 @@ void main() {
       'total': 603,
     });
     await tester.pump();
-    expect(find.textContaining('正文 · 已完成 9 / 603 段'), findsOneWidget);
+    expect(find.textContaining('正文 · 已整理 9 段'), findsOneWidget);
   });
 
   testWidgets('paused card names the unfinished segment and last stage', (
@@ -993,13 +1010,13 @@ void main() {
     await open(tester);
     expect(find.text('下一段：第 11 / 603 段，尚未完成。'), findsOneWidget);
     expect(find.textContaining('上次整理中断后已暂停'), findsOneWidget);
-    expect(find.textContaining('第 11 段 · 人物关联已等待'), findsWidgets);
+    expect(find.textContaining('第 11 段 · 整理人物关系已等待'), findsWidgets);
     await tester.scrollUntilVisible(
-      find.text('导出整理诊断'),
+      find.text('导出问题记录'),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('导出整理诊断').hitTestable(), findsOneWidget);
+    expect(find.text('导出问题记录').hitTestable(), findsOneWidget);
   });
 
   testWidgets('automatic retry can be stopped from the book card', (
@@ -1022,7 +1039,7 @@ void main() {
       'retry_at': DateTime.now().millisecondsSinceEpoch / 1000 + 600,
     });
     await open(tester);
-    expect(find.text('模型请求遇到问题，等待自动重试'), findsOneWidget);
+    expect(find.text('暂时连不上 AI 服务，稍后会自动再试'), findsOneWidget);
     expect(find.textContaining('自动重试；已经整理好的部分会保留'), findsOneWidget);
     await tester.tap(find.text('停止自动重试'));
     await tester.pumpAndSettle();
@@ -1043,7 +1060,7 @@ void main() {
         'retryable': false,
       });
       await open(tester);
-      expect(find.textContaining('上次匿名判断请求被拒绝'), findsOneWidget);
+      expect(find.textContaining('免费检查服务暂时无法使用'), findsOneWidget);
       expect(find.textContaining('proxy_requires_payment'), findsNothing);
       expect(settings.judgeFallbackEnabled, false);
       await tester.ensureVisible(find.text('用已配置模型继续整理'));
@@ -1071,9 +1088,9 @@ void main() {
         ),
         false,
       );
-      expect(find.textContaining('判断路线：免费优先'), findsOneWidget);
-      await tester.ensureVisible(find.text('暂停并停用本书判断兜底'));
-      await tester.tap(find.text('暂停并停用本书判断兜底'));
+      await expectCheckSettings(tester, <String>['内容检查：免费服务不可用时，改用 fixture']);
+      await tester.ensureVisible(find.text('暂停并使用设置中的检查方式'));
+      await tester.tap(find.text('暂停并使用设置中的检查方式'));
       await tester.pumpAndSettle();
       expect(processing.pauses, 1);
       expect(
@@ -1102,19 +1119,21 @@ void main() {
     });
     await open(tester);
     expect(settings.judgeFallbackEnabled, false);
-    await tester.ensureVisible(find.text('用 Jev 网关继续整理'));
-    await tester.tap(find.text('用 Jev 网关继续整理'));
+    await tester.ensureVisible(find.text('用 Jev 继续整理'));
+    await tester.tap(find.text('用 Jev 继续整理'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(settings.judgeFallbackEnabled, false);
     final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
     expect(meta['judge_fallback_route'], 'jev');
     expect(meta.containsKey('judge_model_fallback'), false);
-    expect(find.textContaining('判断路线：免费优先，失败后使用 Jev 网关'), findsOneWidget);
-    expect(find.textContaining('本书 Jev 网关额度：0/1000 次'), findsOneWidget);
+    await expectCheckSettings(tester, <String>[
+      '内容检查：免费服务不可用时，改用 Jev（仅本书）',
+      '本书已使用 Jev 0 次，允许 1000 次',
+    ]);
     processing.pauseGate = Completer<void>();
-    await tester.ensureVisible(find.text('暂停并停用本书判断兜底'));
-    await tester.tap(find.text('暂停并停用本书判断兜底'));
+    await tester.ensureVisible(find.text('暂停并使用设置中的检查方式'));
+    await tester.tap(find.text('暂停并使用设置中的检查方式'));
     await tester.pump();
     expect(
       (readJson(File('${bookRoot.path}/meta.json'))
@@ -1144,8 +1163,8 @@ void main() {
       'error': '第 2 章人物小传通过 0/2 位（拦截 2，缺失 0），已保留模型草稿',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('本书用已配置模型直接核对'));
-    await tester.tap(find.text('本书用已配置模型直接核对'));
+    await tester.ensureVisible(find.text('用当前模型重新检查'));
+    await tester.tap(find.text('用当前模型重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -1153,7 +1172,7 @@ void main() {
           as Json)['judge_fallback_route'],
       'model-direct',
     );
-    expect(find.textContaining('判断路线：直接使用'), findsOneWidget);
+    await expectCheckSettings(tester, <String>['内容检查：fixture（仅本书）']);
   });
 
   testWidgets('bio rejection offers direct Jev recheck for this book', (
@@ -1172,8 +1191,8 @@ void main() {
       'error': '第 2 章人物小传通过 0/2 位（拦截 2，缺失 0），已保留模型草稿',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
-    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    await tester.ensureVisible(find.text('用 Jev 重新检查'));
+    await tester.tap(find.text('用 Jev 重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -1181,7 +1200,7 @@ void main() {
           as Json)['judge_fallback_route'],
       'jev-direct',
     );
-    expect(find.textContaining('判断路线：直接使用 Jev 网关'), findsOneWidget);
+    await expectCheckSettings(tester, <String>['内容检查：Jev（仅本书）']);
   });
 
   testWidgets('completed book can recheck a deferred biography with Jev', (
@@ -1209,9 +1228,9 @@ void main() {
       'bio_review': <String, Object?>{'blocked': 2},
     });
     await open(tester);
-    expect(find.text('重试待核对部分'), findsOneWidget);
-    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
-    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    expect(find.text('重新检查未完成的资料'), findsOneWidget);
+    await tester.ensureVisible(find.text('用 Jev 重新检查'));
+    await tester.tap(find.text('用 Jev 重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -1240,8 +1259,8 @@ void main() {
       'error': '人物小传验证失败：已配置模型的判断回答不完整或概率无效',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
-    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    await tester.ensureVisible(find.text('用 Jev 重新检查'));
+    await tester.tap(find.text('用 Jev 重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -1266,10 +1285,10 @@ void main() {
           '人物小传验证失败：Jev HTTP 401: {"error":{"message":"Authentication failed"}}',
     });
     await open(tester);
-    expect(find.textContaining('TypeSafe AI 拒绝了已保存的 Jev 密钥'), findsOneWidget);
+    expect(find.textContaining('Jev 密钥无效'), findsOneWidget);
     expect(find.textContaining('Authentication failed'), findsNothing);
-    await tester.ensureVisible(find.text('本书改用已配置模型直接核对'));
-    await tester.tap(find.text('本书改用已配置模型直接核对'));
+    await tester.ensureVisible(find.text('改用当前模型检查'));
+    await tester.tap(find.text('改用当前模型检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -1294,8 +1313,8 @@ void main() {
     });
     processing.pauseGate = Completer<void>();
     await open(tester);
-    await tester.ensureVisible(find.text('停用本书判断兜底'));
-    await tester.tap(find.text('停用本书判断兜底'));
+    await tester.ensureVisible(find.text('使用设置中的检查方式'));
+    await tester.tap(find.text('使用设置中的检查方式'));
     await tester.pump();
     expect(
       processing.pauses,
@@ -1333,7 +1352,7 @@ void main() {
         classifierKey: 'funded-workspace-key',
       );
       await open(tester);
-      expect(find.textContaining('上次匿名判断请求被拒绝'), findsOneWidget);
+      expect(find.textContaining('免费检查服务暂时无法使用'), findsOneWidget);
       expect(find.textContaining('上次 classifier.dev 工作区密钥被拒绝'), findsNothing);
     },
   );
@@ -1361,8 +1380,8 @@ void main() {
       'error': '模型判断额度已达上限；已保留整理缓存',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('追加 1000 次额度并继续'));
-    await tester.tap(find.text('追加 1000 次额度并继续'));
+    await tester.ensureVisible(find.text('再允许检查 1000 次'));
+    await tester.tap(find.text('再允许检查 1000 次'));
     await tester.pumpAndSettle();
     final Json after = readJson(allowance) as Json;
     expect(after['calls'], 1);
@@ -1392,8 +1411,8 @@ void main() {
         'error': '付费裁判预算已达上限；已保留缓存',
       });
       await open(tester);
-      await tester.ensureVisible(find.text('追加 500 次 Jev 网关额度并继续'));
-      await tester.tap(find.text('追加 500 次 Jev 网关额度并继续'));
+      await tester.ensureVisible(find.text('再允许使用 Jev 500 次'));
+      await tester.tap(find.text('再允许使用 Jev 500 次'));
       await tester.pumpAndSettle();
       final Json after = readJson(allowance) as Json;
       expect(after['calls'], 1000);
@@ -1410,7 +1429,7 @@ void main() {
     await open(tester);
     await tester.tap(find.text('开始整理'));
     await tester.pump();
-    expect(find.text('还没有填写模型 API 密钥'), findsOneWidget);
+    expect(find.text('请先填写 AI 服务密钥'), findsOneWidget);
     expect(processing.starts, 0);
     configure();
     await tester.tap(find.text('去填写'));
@@ -1435,7 +1454,7 @@ void main() {
     });
     await open(tester);
     expect(processing.starts, 0);
-    await tester.tap(find.text('重试待核对部分'));
+    await tester.tap(find.text('重新检查未完成的资料'));
     await tester.pump();
     expect(processing.starts, 1);
     expect(find.text('已整理 0 / 2 段'), findsOneWidget);

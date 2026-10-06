@@ -451,7 +451,8 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         title: const Text('远端书籍备份'),
         content: Text(
           '${summary.title}\n${summary.exported == null ? snapshot.label : summary.dateLabel}\n${summary.sizeLabel}\n\n'
-          '${previewError ?? '恢复时会保留已有阅读记录。确认前不会修改现有书籍。'}',
+          '${previewError ?? '恢复时会保留已有阅读记录。确认前不会修改现有书籍。'}'
+          '${summary.customizationSummary == null ? '' : '\n\n网页版只保留净化规则和修正目录，不应用到正文或导航。导回安装版时：${summary.customizationSummary}'}',
         ),
         actions: <Widget>[
           TextButton(

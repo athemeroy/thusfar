@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
+import 'package:thusfar_app/data/reader_directory.dart';
 import 'package:thusfar_app/data/seen.dart';
 import 'package:thusfar_app/reader/paginator.dart';
 import 'package:thusfar_app/reader/reader_controller.dart';
@@ -22,7 +23,7 @@ void main() {
     root = Directory.systemTemp.createTempSync('thusfar-chapter-titles-');
     final Directory dir = Directory('${root.path}/books/fixture')
       ..createSync(recursive: true);
-    const String text = 'A short chapter.';
+    const String text = '001 A short chapter.';
     final Json source = <String, Object?>{
       'title': 'Long book',
       'lang': 'en',
@@ -30,7 +31,11 @@ void main() {
       'notes': <String, Object?>{},
       'blocks': <Json>[
         for (int i = 0; i < 300; i++)
-          <String, Object?>{'k': 'p', 't': text, 'o': i * text.length},
+          <String, Object?>{
+            'k': 'p',
+            't': '${(i + 1).toString().padLeft(3, '0')} A short chapter.',
+            'o': i * text.length,
+          },
       ],
       'chapters': <Json>[
         for (int i = 0; i < 300; i++)
@@ -46,6 +51,9 @@ void main() {
       ],
     };
     writeJson(File('${dir.path}/book.json'), source);
+    writeJson(File('${dir.path}/meta.json'), <String, Object?>{
+      'filename': 'long.txt',
+    });
     writeJson(File('${dir.path}/status.json'), <String, Object?>{
       'state': 'idle',
     });
@@ -85,6 +93,7 @@ void main() {
 
   tearDown(() {
     controller.dispose();
+    book.directory.dispose();
     book.notes.dispose();
     book.dispose();
     library.dispose();
@@ -122,6 +131,35 @@ void main() {
     await tester.tap(find.text('目录'));
     await tester.pumpAndSettle();
     expect(find.text('第230章').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('corrected directory opens and returns at the source position', (
+    tester,
+  ) async {
+    book.directory.apply(
+      DirectoryPreview(DirectoryRule.numbered, '', <Json>[
+        for (int i = 0; i < book.blocks.length; i += 2)
+          <String, Object?>{
+            'title': book.blocks[i].text,
+            'offset': book.blocks[i].o,
+          },
+      ], 0),
+    );
+    expect(controller.chapter, 229);
+    expect(book.directory.chapterAt(controller.start), 114);
+    await showSheet(tester, TocPage(link: link));
+    expect(find.text('229 A short chapter.').hitTestable(), findsOneWidget);
+    expect(find.text('001 A short chapter.').hitTestable(), findsNothing);
+    await tester.tap(find.text('书签'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('目录'));
+    await tester.pumpAndSettle();
+    expect(find.text('229 A short chapter.').hitTestable(), findsOneWidget);
+    book.directory.reset();
+    await tester.pumpAndSettle();
+    expect(find.text('第230章').hitTestable(), findsOneWidget);
+    expect(controller.chapter, 229);
     expect(tester.takeException(), isNull);
   });
 

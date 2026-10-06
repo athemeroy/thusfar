@@ -54,3 +54,33 @@ Failed CI runs retain expected, actual, and diff images in the
 `flutter-golden-diagnostics-macos-15` / `macos-26` artifacts.
 
 Regression fixture checks are described in [reference/](../reference/README.md).
+
+## Local TXT directory correction
+
+In the native reader, open the directory and choose **修正 TXT 目录**. Confirmed
+TXT imports support bounded Chinese/English/numbered heading presets and a
+literal-prefix rule. Preview first, then apply to this book's directory and
+chapter search; **恢复原目录** returns to the import's original directory.
+Unread headings remain neutral until fully read, unless the exact original
+heading already has a model-verified safe verdict.
+
+This is a local navigation sidecar, not a reparse: source text, pagination,
+canonical chapter indexes, notes, reading progress, and AI preparation/results
+stay unchanged. It starts no model work. Single-book JSON, library ZIPs,
+and WebDAV snapshots include source-verified sidecars. Restore preserves
+conflicting local choices; see [portability details](../docs/READER-CUSTOMIZATIONS.md). Moving a book to the recycle bin
+moves its sidecar with it; restoring that book retains the correction, while a
+fresh import starts with its original directory.
+
+## Native paragraph typography
+
+The reading typography panel includes **段间距** (0–2 font-size units) and
+**首行缩进** (0–4 character-width units), alongside the existing size, line height,
+letter spacing, margins, and bundled fonts. Paragraph spacing is independent of
+line height; extra gaps are omitted at page tops and continued paragraphs. Very
+narrow panes cap the indent so the first line still has room for text.
+
+Existing preferences retain the original layout: no extra paragraph gap and a
+two-character indent. **恢复文字默认值** resets both with the existing typography
+settings. The controls only change display layout. Original text, purification
+source mappings, chapter models, quotes, and saved reading progress are retained.

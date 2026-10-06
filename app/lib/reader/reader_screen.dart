@@ -1,5 +1,6 @@
 import '../ui/reader_message.dart';
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' show DisplayFeatureState, DisplayFeatureType;
 
@@ -14,6 +15,8 @@ import 'package:thusfar_core/ask.dart' as ask;
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/prefs.dart';
+import '../data/purification_store.dart';
+import '../data/reader_directory.dart';
 import '../data/processing.dart';
 import '../data/seen.dart';
 import '../sheets/ask_sheet.dart';
@@ -22,6 +25,7 @@ import '../sheets/common.dart';
 import '../sheets/marginalia_sheet.dart';
 import '../sheets/note_editor.dart';
 import '../sheets/people_sheet.dart';
+import '../sheets/purification_sheet.dart';
 import '../sheets/person_sheet.dart';
 import '../sheets/recap_sheet.dart';
 import '../sheets/search_sheet.dart';
@@ -33,6 +37,8 @@ import '../sheets/footnotes_sheet.dart';
 import 'page_body.dart';
 import 'paginator.dart';
 import 'reader_controller.dart';
+import 'tap_layout.dart';
+import 'text_purification.dart';
 
 /// S04 阅读页 with its toolbar (S04c), selection (S06) and drawers.
 class ReaderScreen extends StatefulWidget {
@@ -71,10 +77,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
     library: widget.library,
     book: book,
   );
+  late final PurificationStore _purification = PurificationStore(
+    File('${widget.library.root.path}/text-purification.json'),
+  );
   PageController? pc;
   final GlobalKey<CoverPageTurnState> _coverTurnKey =
       GlobalKey<CoverPageTurnState>();
   PageSpec? spec;
+  late PageAnim _lastAnimation;
   int? _layoutAnchor;
   double _contentLeft = 0;
   double _contentWidth = 0;
@@ -97,7 +107,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void initState() {
     super.initState();
+    _lastAnimation = widget.prefs.anim;
     widget.prefs.addListener(_relayout);
+    _purification.addListener(_purificationChanged);
     book.notes.addListener(_repaint);
     c.addListener(_repaint);
     widget.library.addListener(_refreshKnowledge);
@@ -106,6 +118,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void dispose() {
     widget.prefs.removeListener(_relayout);
+    _purification.removeListener(_purificationChanged);
+    _purification.dispose();
     book.notes.removeListener(_repaint);
     c.removeListener(_repaint);
     widget.library.removeListener(_refreshKnowledge);
@@ -120,7 +134,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _refreshKnowledge() {
-    if (book.refreshKnowledge()) c.touch();
+    final bool knowledgeChanged = book.refreshKnowledge();
+    _purification.refresh();
+    final bool directoryChanged = book.directory.refresh();
+    if (knowledgeChanged || directoryChanged) c.touch();
   }
 
   void _repaint() {
@@ -128,8 +145,51 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _relayout() {
+    // _ensureLayout compares every page metric; control-only changes do not
+    // need a new paginator or a reset of an in-flight selection. Switching
+    // page-turn widgets still rebases their controllers at the current page.
+    if (_lastAnimation != widget.prefs.anim) {
+      _lastAnimation = widget.prefs.anim;
+      spec = null;
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _purificationChanged() {
+    // Keep the same immutable-source anchor across every preview/rule change.
+    // Relayout does not rewrite the saved reading position or knowledge cutoff.
+    _layoutAnchor ??= c.start;
+    c.selection = null;
+    c.flash = null;
     spec = null;
     if (mounted) setState(() {});
+  }
+
+  void _openPurification({String? find}) {
+    final List<String> samples = <String>[
+      for (final Frag fragment in c.page?.frags ?? const <Frag>[])
+        if (!fragment.image)
+          book.blocks[fragment.block].text.substring(
+            fragment.start,
+            fragment.end,
+          ),
+    ];
+    _clearSelection();
+    _sheet(
+      find == null
+          ? PurificationPage(
+              store: _purification,
+              bookId: book.id,
+              samples: samples,
+            )
+          : PurificationEditor(
+              store: _purification,
+              bookId: book.id,
+              samples: samples,
+              initialFind: find,
+            ),
+      full: true,
+    );
   }
 
   int get _initialOffset {
@@ -151,6 +211,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       fontSize: prefs.fontSize,
       lineHeight: prefs.lineHeight,
       letterSpacing: prefs.letterSpacing,
+      paragraphSpacing: prefs.paragraphSpacing,
+      firstLineIndent: prefs.firstLineIndent,
       fontFamily: prefs.fontFamily,
       fontFamilyFallback: prefs.fontFallback,
       color: _ink(t),
@@ -163,7 +225,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         : (_layoutAnchor ?? c.start);
     _layoutAnchor = keep;
     spec = next;
-    c.layout(Paginator(book, next), keep);
+    c.layout(
+      Paginator(book, next, rules: _purification.forBook(book.id)),
+      keep,
+    );
     if (first && widget.openAt != null) {
       c.returnTo = _initialOffset;
       c.flash = (widget.openAt!, widget.openAt! + 1);
@@ -376,7 +441,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // ---------------------------------------------------------------- selection
 
-  int? _hitOffset(Offset local) {
+  (int, int)? _hitRange(Offset local) {
     final PageData? page = c.page;
     final Paginator? p = c.pager;
     if (page == null || p == null) return null;
@@ -384,16 +449,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (x < 0 || x >= _contentWidth) return null;
     double y = 0;
     for (final Frag f in page.frags) {
-      final double h = f.lines * p.spec.line;
-      if (local.dy >= y && local.dy < y + h && !f.image) {
+      final double h = f.height(p.spec);
+      if (local.dy >= y + f.leading && local.dy < y + h && !f.image) {
         final Block b = book.blocks[f.block];
         final TextPainter tp = p.painterFor(b);
         final int shift = b.kind == 'h' ? 0 : indentShift;
         final int pos =
-            tp.getPositionForOffset(Offset(x, f.top + (local.dy - y))).offset -
+            tp
+                .getPositionForOffset(
+                  Offset(x, f.top + (local.dy - y - f.leading)),
+                )
+                .offset -
             shift;
         tp.dispose();
-        return b.o + pos.clamp(f.start, math.max(f.start, f.end - 1));
+        final (int, int)? range = p
+            .textFor(b)
+            .sourceCharacter(
+              pos.clamp(
+                f.displayStart,
+                math.max(f.displayStart, f.displayEnd - 1),
+              ),
+            );
+        return range == null ? null : (b.o + range.$1, b.o + range.$2);
       }
       y += h;
     }
@@ -427,26 +504,28 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _longPress(LongPressStartDetails d) {
-    final int? at = _hitOffset(d.localPosition);
-    if (at == null) return;
+    final (int, int)? hit = _hitRange(d.localPosition);
+    if (hit == null) return;
+    final int at = hit.$1;
     HapticFeedback.mediumImpact();
     _pressAt = d.localPosition;
     final (int s, int e) = _wordAt(at);
-    c.select((s, e));
+    c.select((s, math.max(e, hit.$2)));
     _selectionSeed = c.selection;
   }
 
   void _longPressMove(LongPressMoveUpdateDetails d) {
-    final int? at = _hitOffset(d.localPosition);
+    final (int, int)? hit = _hitRange(d.localPosition);
     final (int, int)? seed = _selectionSeed;
-    if (at == null || seed == null || c.selection == null) return;
+    if (hit == null || seed == null || c.selection == null) return;
+    final int at = hit.$1;
     HapticFeedback.selectionClick();
     if (_whoIsActive) {
       _whoIsActive = false;
       _whoIsResult = null;
       _whoIsLoading = false;
     }
-    c.select(at < seed.$1 ? (at, seed.$2) : (seed.$1, at + 1), anchor: seed.$1);
+    c.select(at < seed.$1 ? (at, seed.$2) : (seed.$1, hit.$2), anchor: seed.$1);
   }
 
   bool _changeNote(void Function() action) {
@@ -809,7 +888,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   child: _pages(
                     context,
                     paper,
-                    viewportWidth: reading.width,
+                    viewportSize: Size(reading.width, area.height),
                     contentInsets: EdgeInsets.only(
                       left: pageLeft,
                       right: pageRight,
@@ -928,7 +1007,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Widget _pages(
     BuildContext context,
     Color paper, {
-    required double viewportWidth,
+    required Size viewportSize,
     required EdgeInsets contentInsets,
   }) {
     final PageController? p = pc;
@@ -985,13 +1064,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
             _clearSelection();
             return;
           }
-          final double x = d.localPosition.dx / math.max(1, viewportWidth);
-          if (x < 1 / 3) {
-            _turn(-1);
-          } else if (x > 2 / 3) {
-            _turn(1);
-          } else {
-            c.setToolbar(!c.toolbar);
+          final ReaderTapAction action = widget.prefs.tapLayout.actionAt(
+            d.localPosition.dx / math.max(1, viewportSize.width),
+            d.localPosition.dy / math.max(1, viewportSize.height),
+          );
+          switch (action) {
+            case ReaderTapAction.previous:
+              _turn(-1);
+            case ReaderTapAction.next:
+              _turn(1);
+            case ReaderTapAction.tools:
+              c.setToolbar(!c.toolbar);
+            case ReaderTapAction.none:
+              break;
           }
         },
         onLongPressStart: _longPress,
@@ -1272,27 +1357,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
               : local > fragment.start && local <= fragment.end)) {
         final TextPainter painter = pager.painterFor(block);
         final int shift = block.kind == 'h' ? 0 : indentShift;
+        final PurifiedText mapped = pager.textFor(block);
+        final int display =
+            (start ? mapped.displayStart(local) : mapped.displayEnd(local))
+                .clamp(fragment.displayStart, fragment.displayEnd);
         caret =
             painter.getOffsetForCaret(
               TextPosition(
-                offset: local + shift,
+                offset: display + shift,
                 affinity: start
                     ? TextAffinity.downstream
                     : TextAffinity.upstream,
               ),
               Rect.zero,
             ) +
-            Offset(_readingBounds.left + _contentLeft, top + y - fragment.top);
+            Offset(
+              _readingBounds.left + _contentLeft,
+              top + y + fragment.leading - fragment.top,
+            );
         sourcePoint =
             painter.getOffsetForCaret(
-              TextPosition(offset: local + shift - (start ? 0 : 1)),
+              TextPosition(
+                offset: math.max(0, display + shift - (start ? 0 : 1)),
+              ),
               Rect.zero,
             ) +
-            Offset(_contentLeft, y - fragment.top + pager.spec.line / 2);
+            Offset(
+              _contentLeft,
+              y + fragment.leading - fragment.top + pager.spec.line / 2,
+            );
         painter.dispose();
         break;
       }
-      y += fragment.lines * pager.spec.line;
+      y += fragment.height(pager.spec);
     }
     if (caret == null) return const SizedBox.shrink();
     final double line = pager.spec.line;
@@ -1326,11 +1423,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 _handleDragSource! +
                 details.globalPosition -
                 _handleDragPointer!;
-            final int? at = _hitOffset(local);
-            if (at == null) return;
+            final (int, int)? hit = _hitRange(local);
+            if (hit == null) return;
             final (int s, int e) = c.selection!;
             c.select(
-              start ? (math.min(at, e - 1), e) : (s, math.max(s + 1, at + 1)),
+              start
+                  ? (math.min(hit.$1, e - 1), e)
+                  : (s, math.max(s + 1, hit.$2)),
             );
           },
           child: Align(
@@ -1354,7 +1453,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final (int s, int e) = c.selection!;
     final int len = (e - s).abs();
     final double y = (_pressAt?.dy ?? 100) + top;
-    final bool above = y > top + 70;
     Widget action(String label, VoidCallback on) => InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -1368,60 +1466,69 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return Positioned(
       left: _readingBounds.left + 16,
       width: math.max(1, _readingBounds.width - 32),
-      top: above ? math.max(top + 8, y - (_whoIsActive ? 120 : 64)) : y + 34,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Material(
-              color: t.ink,
-              shape: const StadiumBorder(),
-              elevation: 4,
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                children: <Widget>[
-                  action('摘录', _excerpt),
-                  action('批注', () {
-                    _clearSelection();
-                    _sheet(
-                      MarginaliaPage(link: link, start: s, end: e),
-                      full: true,
-                    );
-                  }),
-                  action('笔记', () {
-                    _clearSelection();
-                    NoteEditor.open(
-                      context,
-                      book: book,
-                      start: s,
-                      end: e,
-                      cutoff: c.cutoff,
-                    );
-                  }),
-                  if (len <= 12) action('这是谁', () => _identifyWho(s, e)),
-                  action('问书', () {
-                    final String quote = book.textBetween(s, e);
-                    _clearSelection();
-                    _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
-                  }),
-                  action('复制', () {
-                    HapticFeedback.lightImpact();
-                    Clipboard.setData(
-                      ClipboardData(text: book.textBetween(s, e)),
-                    );
-                    _clearSelection();
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('已复制')));
-                  }),
-                ],
+      top: top + 8,
+      height: math.max(1, _readingBounds.bottom - top - 16),
+      child: CustomSingleChildLayout(
+        delegate: _SelectionBarPosition(y - top - 8),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Material(
+                key: const ValueKey<String>('reader-selection-actions'),
+                color: t.ink,
+                shape: const StadiumBorder(),
+                elevation: 4,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  children: <Widget>[
+                    action('摘录', _excerpt),
+                    action('批注', () {
+                      _clearSelection();
+                      _sheet(
+                        MarginaliaPage(link: link, start: s, end: e),
+                        full: true,
+                      );
+                    }),
+                    action('笔记', () {
+                      _clearSelection();
+                      NoteEditor.open(
+                        context,
+                        book: book,
+                        start: s,
+                        end: e,
+                        cutoff: c.cutoff,
+                      );
+                    }),
+                    if (len <= 12) action('这是谁', () => _identifyWho(s, e)),
+                    action('问书', () {
+                      final String quote = book.textBetween(s, e);
+                      _clearSelection();
+                      _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
+                    }),
+                    action(
+                      '净化',
+                      () => _openPurification(find: book.textBetween(s, e)),
+                    ),
+                    action('复制', () {
+                      HapticFeedback.lightImpact();
+                      Clipboard.setData(
+                        ClipboardData(text: book.textBetween(s, e)),
+                      );
+                      _clearSelection();
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('已复制')));
+                    }),
+                  ],
+                ),
               ),
-            ),
-            if (_whoIsActive) ...<Widget>[
-              const SizedBox(height: 8),
-              _whoIsCard(context, s, e),
+              if (_whoIsActive) ...<Widget>[
+                const SizedBox(height: 8),
+                _whoIsCard(context, s, e),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -1625,6 +1732,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     widget.prefs,
                     anchorPoint: _toolsBounds.center,
                   );
+                case 4:
+                  _openPurification();
                 case 3:
                   if (c.page != null) {
                     _sheet(
@@ -1644,6 +1753,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
               PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
               PopupMenuItem<int>(value: 3, child: Text('本页批注')),
+              PopupMenuItem<int>(value: 4, child: Text('文本净化')),
             ],
           ),
         ],
@@ -2101,4 +2211,34 @@ class _Ticks extends CustomPainter {
 
   @override
   bool shouldRepaint(_Ticks old) => true;
+}
+
+/// Keep wrapped/large-text actions clear of the long-press point using their
+/// measured height. Very short viewports scroll the actions within this area.
+class _SelectionBarPosition extends SingleChildLayoutDelegate {
+  const _SelectionBarPosition(this.anchorY);
+  final double anchorY;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints(
+        maxWidth: constraints.maxWidth,
+        maxHeight: constraints.maxHeight,
+      );
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final double above = anchorY - 24 - childSize.height;
+    final double below = anchorY + 34;
+    final double top = above >= 0
+        ? above
+        : below + childSize.height <= size.height
+        ? below
+        : above.clamp(0, math.max(0, size.height - childSize.height));
+    return Offset((size.width - childSize.width) / 2, top);
+  }
+
+  @override
+  bool shouldRelayout(_SelectionBarPosition oldDelegate) =>
+      anchorY != oldDelegate.anchorY;
 }

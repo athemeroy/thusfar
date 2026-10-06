@@ -17,6 +17,9 @@ import 'library_zip.dart';
 import 'portable_work.dart';
 import 'restore_report.dart';
 import 'preparation_scope.dart';
+import 'reader_customizations.dart';
+import 'purification_store.dart';
+import '../reader/text_purification.dart';
 
 const String exportFormat = 'yedu-book/2';
 const String webExportFormat = 'thusfar-web-backup-v1';
@@ -73,7 +76,10 @@ Map<String, String> _snapshot(Directory root) {
   files.addAll(<File>[
     for (final (_, File file) in _portableWorkFiles(root)) file,
   ]);
+  final Json? directory = _readerDirectory(root);
   return <String, String>{
+    if (directory != null)
+      '${root.path}/reader-directory.json': _digest(directory),
     for (final File file in files)
       if (file.existsSync())
         file.path: crypto.sha256.convert(file.readAsBytesSync()).toString(),
@@ -996,13 +1002,13 @@ Directory? _sameBookOnDisk(
   for (final FileSystemEntity entity in lib.booksDir.listSync(
     followLinks: false,
   )) {
-    if (entity is! Directory || entity.uri.pathSegments.last.startsWith('.')) {
-      continue;
-    }
+    if (entity is! Directory) continue;
     final String id = entity.uri.pathSegments
         .where((String p) => p.isNotEmpty)
         .last;
-    if (checked.contains(id)) continue;
+    // Directory URIs end with an empty segment. Unpublished import staging
+    // must never become a same-book destination or receive remapped rules.
+    if (id.startsWith('.') || checked.contains(id)) continue;
     final BookEntry? shelf = lib.byId(id);
     if (shelf != null && shelf.length != book['len']) continue;
     final File source = File('${entity.path}/book.json');
@@ -1051,11 +1057,58 @@ class ImportResult {
 }
 
 /// `app.py export`: one self-contained `.yedu.json` for a book.
+File _purificationFile(Library lib) =>
+    File('${lib.root.path}/text-purification.json');
+
+Json? _readerDirectory(Directory dir) {
+  final File file = File('${dir.path}/reader-directory.json');
+  final FileSystemEntityType type = FileSystemEntity.typeSync(
+    file.path,
+    followLinks: false,
+  );
+  if (type == FileSystemEntityType.notFound) return null;
+  if (type != FileSystemEntityType.file) {
+    throw const FormatException('修正目录文件类型无效');
+  }
+  if (file.lengthSync() > readerDirectoryByteLimit) {
+    throw const FormatException('修正目录超过备份上限');
+  }
+  final RandomAccessFile input = file.openSync();
+  try {
+    final Uint8List bytes = input.readSync(readerDirectoryByteLimit + 1);
+    if (bytes.length > readerDirectoryByteLimit) {
+      throw const FormatException('修正目录超过备份上限');
+    }
+    return _object(
+      jsonDecode(utf8.decode(bytes, allowMalformed: false)),
+      '修正目录',
+    );
+  } finally {
+    input.closeSync();
+  }
+}
+
+void _restoreOptionalJson(File file, Object? previous) {
+  if (FileSystemEntity.isLinkSync(file.path)) {
+    throw const ValueError('备份恢复目标是链接，未修改');
+  }
+  if (previous == null) {
+    if (file.existsSync()) file.deleteSync();
+  } else {
+    writeJson(file, previous);
+  }
+}
+
 Uint8List exportBookBytes(Library lib, BookEntry b) {
   if (File('${b.dir.path}/$_mergeMarkerName').existsSync()) {
     throw const ValueError('上次跨端合并未完成，请先恢复书库再导出');
   }
   final Map<String, String> before = _snapshot(b.dir);
+  final File rulesFile = _purificationFile(lib);
+  final List<PurificationRule> rules = PurificationStore.readSnapshot(
+    rulesFile,
+  );
+  final Json rulesBefore = PurificationStore.encodeStore(rules);
   final Json out = <String, Object?>{
     'format': exportFormat,
     'exported': DateTime.now().millisecondsSinceEpoch / 1000,
@@ -1103,7 +1156,35 @@ Uint8List exportBookBytes(Library lib, BookEntry b) {
   if (transfer?['preparation'] != null) {
     out['web_preparation'] = _validatedWebPreparation(transfer!['preparation']);
   }
-  if (!_same(before, _snapshot(b.dir))) {
+  final Json meta = out['meta']! as Json;
+  // Older TXT imports may have only a source.txt file, which book JSON does
+  // not carry. Record its verified type so a portable sidecar stays usable.
+  if ((meta['filename'] == null || meta['filename'] == '') &&
+      File('${b.dir.path}/source.txt').existsSync() &&
+      !File('${b.dir.path}/source.epub').existsSync()) {
+    meta['filename'] = 'source.txt';
+  }
+  final Json customizations = exportReaderCustomizations(
+    book: book,
+    bookId: b.id,
+    rules: rules,
+    directory: _readerDirectory(b.dir),
+    meta: meta,
+    hasSourceTxt: File('${b.dir.path}/source.txt').existsSync(),
+    hasSourceEpub: File('${b.dir.path}/source.epub').existsSync(),
+  );
+  if ((customizations['purification']! as List<Object?>).isNotEmpty ||
+      customizations['directory'] != null ||
+      customizations['globalRulesOmitted'] != 0) {
+    out['reader_customizations'] = customizations;
+  }
+  if (!_same(
+        rulesBefore,
+        PurificationStore.encodeStore(
+          PurificationStore.readSnapshot(rulesFile),
+        ),
+      ) ||
+      !_same(before, _snapshot(b.dir))) {
     throw const ValueError('这本书正在更新，请稍后重新导出');
   }
   return utf8.encode(PyJson.encode(out, ensureAscii: false));
@@ -1111,13 +1192,47 @@ Uint8List exportBookBytes(Library lib, BookEntry b) {
 
 /// A single portable ZIP containing every complete book backup plus
 /// credential-free settings. Per-book JSON remains supported independently.
-Uint8List exportLibraryZipBytes(Library lib, Map<String, Object?> settings) =>
-    LibraryZipCodec.encode(
-      books: <Uint8List>[
-        for (final BookEntry book in lib.books) exportBookBytes(lib, book),
-      ],
-      settings: settings,
+Uint8List exportLibraryZipBytes(Library lib, Map<String, Object?> settings) {
+  final List<PurificationRule> rules = PurificationStore.readSnapshot(
+    _purificationFile(lib),
+  );
+  final List<Uint8List> books = <Uint8List>[
+    for (final BookEntry book in lib.books) exportBookBytes(lib, book),
+  ];
+  final Map<String, String> sources = <String, String>{};
+  for (final Uint8List bytes in books) {
+    final Json data = jsonDecode(utf8.decode(bytes)) as Json;
+    sources[data['id']! as String] = readerCustomizationSource(
+      data['book']! as Json,
     );
+  }
+  if (!_same(
+    PurificationStore.encodeStore(rules),
+    PurificationStore.encodeStore(
+      PurificationStore.readSnapshot(_purificationFile(lib)),
+    ),
+  )) {
+    throw const ValueError('净化规则正在变化，请稍后重新导出');
+  }
+  final Json customizations = validatedReaderLibrary(<String, Object?>{
+    'format': 'thusfar-reader-library',
+    'version': 1,
+    'books': <Json>[
+      for (final MapEntry<String, String> book in sources.entries)
+        <String, Object?>{'bookId': book.key, 'source': book.value},
+    ],
+    'purification': encodeReaderPurificationRules(
+      rules.where(
+        (rule) => rule.bookId == null || sources.containsKey(rule.bookId),
+      ),
+    ),
+  }, sources: sources);
+  return LibraryZipCodec.encode(
+    books: books,
+    settings: settings,
+    customizations: customizations,
+  );
+}
 
 class LibraryZipRestoreResult {
   const LibraryZipRestoreResult({
@@ -1128,6 +1243,7 @@ class LibraryZipRestoreResult {
     required this.settings,
     required this.ids,
     this.firstNewId,
+    this.customizationError,
     this.entries = const <RestoreReportEntry>[],
   });
 
@@ -1135,6 +1251,7 @@ class LibraryZipRestoreResult {
   final int imported;
   final int existing;
   final List<String> failures;
+  final String? customizationError;
   final Map<String, Object?> settings;
 
   /// One restored local book ID per archive position, null on conflict.
@@ -1142,21 +1259,119 @@ class LibraryZipRestoreResult {
   final String? firstNewId;
   final List<RestoreReportEntry> entries;
 
-  bool get complete => failures.isEmpty;
+  bool get complete => failures.isEmpty && customizationError == null;
 }
 
 /// Validate the ZIP structure and all member hashes before any write. Each
 /// book then uses the existing semantic checks and conflict-aware merge with
 /// its own rollback snapshot. A later conflict leaves earlier successful
 /// books in place and is reported explicitly for a safe retry.
-LibraryZipRestoreResult restoreLibraryZip(Library lib, Uint8List zip) {
-  return restoreLibraryZipData(lib, LibraryZipCodec.decode(zip));
+LibraryZipRestoreResult restoreLibraryZip(
+  Library lib,
+  Uint8List zip, {
+  bool applyRuleSettings = false,
+}) {
+  return restoreLibraryZipData(
+    lib,
+    LibraryZipCodec.decode(zip),
+    applyRuleSettings: applyRuleSettings,
+  );
 }
 
 LibraryZipRestoreResult restoreLibraryZipData(
   Library lib,
-  LibraryZipData archive,
-) {
+  LibraryZipData archive, {
+  bool applyRuleSettings = false,
+}) {
+  // Full-library rules are opt-in: book JSON never installs global rules.
+  // Resolve every source identity and conflict before publishing any book.
+  final bool restoreRules = applyRuleSettings && archive.customizations != null;
+  Json? nextRules;
+  if (archive.customizations != null) {
+    final Json libraryCustomizations = LibraryZipCodec.validatedCustomizations(
+      archive.books,
+      archive.customizations,
+    );
+    final Set<String> represented = <String>{
+      for (final Object? row
+          in libraryCustomizations['books']! as List<Object?>)
+        (row! as Json)['bookId']! as String,
+    };
+    final List<PurificationRule> extraBookRules = <PurificationRule>[];
+    final Map<String, String> sources = <String, String>{};
+    final Map<String, String> destinations = <String, String>{};
+    final Set<String> prospectiveBooks = <String>{};
+    for (final Uint8List bytes in archive.books) {
+      final Json wrapper = jsonDecode(utf8.decode(bytes)) as Json;
+      final Json data = wrapper['format'] == webExportFormat
+          ? _webAsNative(wrapper)
+          : wrapper;
+      final Object? sourceId = data['id'];
+      if (sourceId is! String) continue;
+      if (sources.containsKey(sourceId)) {
+        throw const FormatException('书库含有重复的书籍编号');
+      }
+      sources[sourceId] = readerCustomizationSource(
+        storage.validateBook(data['book']),
+      );
+      if (restoreRules) {
+        final Json sourceBook = data['book']! as Json;
+        final String identity = _digest(<String, Object?>{
+          ...sourceBook,
+          'chapters': <Json>[
+            for (final Object? row in sourceBook['chapters']! as List<Object?>)
+              <String, Object?>{...(row! as Json)}
+                ..remove('spoil')
+                ..remove('spoilSource'),
+          ],
+        });
+        if (!prospectiveBooks.add(identity)) {
+          throw const FormatException('书库含有多份相同正文，请先整理重复书籍再恢复全局规则');
+        }
+        final ImportResult preview = restoreBackup(
+          lib,
+          '阅读自定义预检',
+          bytes,
+          previewOnly: true,
+          skipPurification: true,
+        );
+        if (preview.error != null) throw FormatException(preview.error!);
+        destinations[sourceId] = preview.id!;
+        if (!represented.contains(sourceId)) {
+          final Json? custom = validatedReaderCustomizations(
+            data['reader_customizations'],
+            book: data['book']! as Json,
+            bookId: sourceId,
+            destinationBookId: preview.id,
+            meta: data['meta'] is Json
+                ? data['meta']! as Json
+                : <String, Object?>{},
+          );
+          if (custom != null) {
+            extraBookRules.addAll(
+              decodeReaderPurificationRules(custom['purification']),
+            );
+          }
+        }
+      }
+    }
+    final Json incoming = validatedReaderLibrary(
+      libraryCustomizations,
+      sources: sources,
+      destinationBookIds: destinations,
+    );
+    if (restoreRules) {
+      nextRules = PurificationStore.encodeStore(
+        PurificationStore.mergeRules(
+          PurificationStore.readSnapshot(_purificationFile(lib)),
+          PurificationStore.mergeRules(
+            decodeReaderPurificationRules(incoming['purification']),
+            extraBookRules,
+          ),
+        ),
+      );
+    }
+  }
   int imported = 0;
   int existing = 0;
   String? firstNewId;
@@ -1168,7 +1383,12 @@ LibraryZipRestoreResult restoreLibraryZipData(
       archive.books[i],
       fallback: '第 ${i + 1} 本书',
     ).title;
-    final ImportResult result = restoreBackup(lib, title, archive.books[i]);
+    final ImportResult result = restoreBackup(
+      lib,
+      title,
+      archive.books[i],
+      skipPurification: restoreRules,
+    );
     if (result.error != null) {
       ids.add(null);
       failures.add('《$title》：${result.error}');
@@ -1192,11 +1412,20 @@ LibraryZipRestoreResult restoreLibraryZipData(
       ),
     );
   }
+  String? customizationError;
+  if (restoreRules && failures.isEmpty && nextRules != null) {
+    try {
+      writeJson(_purificationFile(lib), nextRules);
+    } on Object {
+      customizationError = '书籍已恢复，但净化规则未能保存；原规则保留，请检查存储空间后重试';
+    }
+  }
   return LibraryZipRestoreResult(
     total: archive.books.length,
     imported: imported,
     existing: existing,
     failures: failures,
+    customizationError: customizationError,
     settings: archive.settings,
     ids: ids,
     firstNewId: firstNewId,
@@ -1212,7 +1441,13 @@ int recoverPendingBackupMerges(Directory root) {
   if (!books.existsSync()) return 0;
   int recovered = 0;
   for (final FileSystemEntity entity in books.listSync(followLinks: false)) {
-    if (entity is! Directory) continue;
+    if (entity is! Directory ||
+        entity.uri.pathSegments
+            .where((p) => p.isNotEmpty)
+            .last
+            .startsWith('.')) {
+      continue;
+    }
     final File marker = File('${entity.path}/$_mergeMarkerName');
     if (!marker.existsSync()) continue;
     final Object? raw = _strictRead(marker);
@@ -1221,6 +1456,31 @@ int recoverPendingBackupMerges(Directory root) {
         .where((String p) => p.isNotEmpty)
         .last;
     if (raw['id'] != id) throw const ValueError('跨端合并恢复记录编号不符，请手动恢复');
+    if (raw.containsKey('purification_previous') &&
+        raw['purification_previous'] != null) {
+      PurificationStore.decodeStore(raw['purification_previous']);
+    }
+    if (raw['new_book'] == true) {
+      if (raw['purification_changed'] is! bool ||
+          (raw['progress_previous'] != null &&
+              raw['progress_previous'] is! Json)) {
+        throw const ValueError('新书恢复记录损坏，未自动恢复');
+      }
+      if (raw['purification_changed'] == true) {
+        _restoreOptionalJson(
+          File('${root.path}/text-purification.json'),
+          raw['purification_previous'],
+        );
+      }
+      _restoreOptionalJson(
+        File('${root.path}/progress.json'),
+        raw['progress_previous'],
+      );
+      entity.deleteSync(recursive: true);
+      recovered++;
+      continue;
+    }
+
     final Object? addedRaw = raw['work_added'];
     if (addedRaw != null &&
         (addedRaw is! List<Object?> ||
@@ -1314,6 +1574,18 @@ int recoverPendingBackupMerges(Directory root) {
       writeJson(File('${entity.path}/status.json'), status);
       _writeMentions(entity, mentions!);
     }
+    if (raw.containsKey('purification_previous')) {
+      _restoreOptionalJson(
+        File('${root.path}/text-purification.json'),
+        raw['purification_previous'],
+      );
+    }
+    if (raw.containsKey('reader_directory_previous')) {
+      _restoreOptionalJson(
+        File('${entity.path}/reader-directory.json'),
+        raw['reader_directory_previous'],
+      );
+    }
     final File progressFile = File('${root.path}/progress.json');
     final Object? current = _strictRead(
       progressFile,
@@ -1361,6 +1633,7 @@ ImportResult restoreBackup(
   String name,
   Uint8List raw, {
   bool previewOnly = false,
+  bool skipPurification = false,
 }) {
   final Object? decoded;
   try {
@@ -1510,6 +1783,35 @@ ImportResult restoreBackup(
               .where((String part) => part.isNotEmpty)
               .last;
     final Directory dest = Directory('${lib.booksDir.path}/$id');
+    final Json? customizations = validatedReaderCustomizations(
+      data['reader_customizations'],
+      book: book,
+      bookId: offeredId,
+      destinationBookId: id,
+      meta: sourceMeta,
+    );
+    final Json? incomingDirectory = customizations?['directory'] as Json?;
+    final File rulesFile = _purificationFile(lib);
+    final bool hasRules =
+        !skipPurification &&
+        customizations != null &&
+        (customizations['purification']! as List<Object?>).isNotEmpty;
+    final Json? rulesPrevious = hasRules && rulesFile.existsSync()
+        ? PurificationStore.encodeStore(
+            PurificationStore.readSnapshot(rulesFile),
+          )
+        : null;
+    final Json? rulesNext = hasRules
+        ? PurificationStore.encodeStore(
+            PurificationStore.mergeRules(
+              rulesPrevious == null
+                  ? <PurificationRule>[]
+                  : PurificationStore.decodeStore(rulesPrevious),
+              decodeReaderPurificationRules(customizations['purification']),
+            ),
+          )
+        : null;
+    final bool rulesChanged = hasRules && !_same(rulesPrevious, rulesNext);
     if (File('${dest.path}/book.json').existsSync()) {
       final Object? rawStatus = _strictRead(
         File('${dest.path}/status.json'),
@@ -1548,6 +1850,27 @@ ImportResult restoreBackup(
       if (!_sameText(currentBook, book)) {
         return ImportResult(name: name, error: '同一书籍编号对应不同正文，未覆盖');
       }
+      final Json? directoryPrevious = incomingDirectory == null
+          ? null
+          : _readerDirectory(dest);
+      if (incomingDirectory != null) {
+        // A local explicit reset is a preference too; don't silently enable an
+        // older correction or replace a different local directory.
+        if (directoryPrevious != null &&
+            !_same(directoryPrevious, incomingDirectory)) {
+          throw const ValueError('两端修正目录不同，保留本机目录；请分别导出备份后处理');
+        }
+        validatedReaderCustomizations(
+          customizations,
+          book: currentBook,
+          bookId: id,
+          meta: liveMeta,
+          hasSourceTxt: File('${dest.path}/source.txt').existsSync(),
+          hasSourceEpub: File('${dest.path}/source.epub').existsSync(),
+        );
+      }
+      final bool directoryChanged =
+          incomingDirectory != null && directoryPrevious == null;
       final Json mergedBook;
       try {
         mergedBook = verdicts.mergeChapterVerdicts(
@@ -1787,7 +2110,9 @@ ImportResult restoreBackup(
           graphChanged ||
           mentionsChanged ||
           statusChanged ||
-          workPrevious.isNotEmpty) {
+          workPrevious.isNotEmpty ||
+          rulesChanged ||
+          directoryChanged) {
         if (!_same(liveStatus, _strictRead(File('${dest.path}/status.json'))) ||
             !_same(liveMeta, _strictRead(File('${dest.path}/meta.json')))) {
           return ImportResult(name: name, error: '本地书籍正在变化，请稍后重新导入');
@@ -1808,8 +2133,17 @@ ImportResult restoreBackup(
           'status': liveStatus,
           'mentions': currentMentions,
           'work_previous': workPrevious,
+          if (rulesChanged) 'purification_previous': rulesPrevious,
+          if (directoryChanged) 'reader_directory_previous': directoryPrevious,
         });
         try {
+          if (directoryChanged) {
+            writeJson(
+              File('${dest.path}/reader-directory.json'),
+              incomingDirectory,
+            );
+          }
+          if (rulesChanged) writeJson(rulesFile, rulesNext);
           if (bookChanged) {
             writeJson(File('${dest.path}/book.json'), mergedBook);
           }
@@ -1853,11 +2187,14 @@ ImportResult restoreBackup(
           }
           marker.deleteSync();
         } on Object {
-          recoverPendingBackupMerges(lib.root);
-          if (currentProgress == null) {
-            lib.progress.remove(id);
-          } else {
-            lib.progress[id] = currentProgress;
+          try {
+            recoverPendingBackupMerges(lib.root);
+          } finally {
+            if (currentProgress == null) {
+              lib.progress.remove(id);
+            } else {
+              lib.progress[id] = currentProgress;
+            }
           }
           rethrow;
         }
@@ -1894,6 +2231,7 @@ ImportResult restoreBackup(
         'status': state,
         'notebook': personal,
         'manual-entities': manual,
+        'reader-directory': ?incomingDirectory,
         if (webState != null || webPreparation != null)
           'web-transfer': <String, Object?>{
             'state': ?webState,
@@ -1924,12 +2262,24 @@ ImportResult restoreBackup(
           File('${tmp.path}/img/${a.key}').writeAsBytesSync(a.value);
         }
       }
+      if (rulesChanged || incomingDirectory != null) {
+        writeJson(File('${tmp.path}/$_mergeMarkerName'), <String, Object?>{
+          'id': id,
+          'new_book': true,
+          'purification_previous': rulesPrevious,
+          'purification_changed': rulesChanged,
+          'progress_previous': _strictRead(
+            File('${lib.root.path}/progress.json'),
+          ),
+        });
+      }
       tmp.renameSync(dest.path);
     } finally {
       if (tmp.existsSync()) tmp.deleteSync(recursive: true);
     }
-    if (pos != null && cutoff != null) {
-      try {
+    try {
+      if (rulesChanged) writeJson(rulesFile, rulesNext);
+      if (pos != null && cutoff != null) {
         lib.saveProgress(
           id,
           pos,
@@ -1937,22 +2287,25 @@ ImportResult restoreBackup(
           book['len']! as int,
           timestamp: sourceTime,
         );
-      } on Object {
-        // saveProgress mutates its in-memory index before the atomic file
-        // write. Revert both publications when that write fails, so a retry
-        // cannot mistake a partial first import for a completed restore.
-        lib.progress.remove(id);
-        if (dest.existsSync()) dest.deleteSync(recursive: true);
-        rethrow;
       }
+      final File marker = File('${dest.path}/$_mergeMarkerName');
+      if (marker.existsSync()) marker.deleteSync();
+    } on Object {
+      lib.progress.remove(id);
+      if (File('${dest.path}/$_mergeMarkerName').existsSync()) {
+        recoverPendingBackupMerges(lib.root);
+      } else if (dest.existsSync()) {
+        dest.deleteSync(recursive: true);
+      }
+      rethrow;
     }
     return ImportResult(name: name, id: id);
   } on PyException catch (e) {
     return ImportResult(name: name, error: e.message);
   } on FileSystemException {
     return ImportResult(name: name, error: '无法读写书籍文件，请检查存储空间和文件权限后重试');
-  } on FormatException {
-    return ImportResult(name: name, error: '书籍数据格式无效，未覆盖现有资料');
+  } on FormatException catch (error) {
+    return ImportResult(name: name, error: '书籍数据格式无效，未覆盖现有资料：${error.message}');
   }
 }
 

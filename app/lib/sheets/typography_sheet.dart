@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../data/prefs.dart';
 import '../ui/theme.dart';
+import 'reading_controls_sheet.dart';
 
 /// Keep part of the book visible while changing reading layout.
 Future<void> openTypography(
@@ -14,7 +15,8 @@ Future<void> openTypography(
 }) {
   final Widget panel = ListenableBuilder(
     listenable: prefs,
-    builder: (BuildContext context, _) => _TypographyPanel(prefs: prefs),
+    builder: (BuildContext context, _) =>
+        _TypographyPanel(prefs: prefs, anchorPoint: anchorPoint),
   );
   if (MediaQuery.sizeOf(context).width >= 720) {
     return showDialog<void>(
@@ -161,9 +163,10 @@ class _MetricControlState extends State<_MetricControl> {
 }
 
 class _TypographyPanel extends StatelessWidget {
-  const _TypographyPanel({required this.prefs});
+  const _TypographyPanel({required this.prefs, this.anchorPoint});
 
   final Prefs prefs;
+  final Offset? anchorPoint;
 
   @override
   Widget build(BuildContext context) {
@@ -311,6 +314,8 @@ class _TypographyPanel extends StatelessWidget {
                       p.spacing = 1;
                       p.lineHeightOverride = null;
                       p.letterSpacing = 0;
+                      p.paragraphSpacing = 0;
+                      p.firstLineIndent = 2;
                       p.pageHorizontalMargin = 20;
                       p.pageVerticalMargin = 16;
                       p.font = 0;
@@ -477,6 +482,33 @@ class _TypographyPanel extends StatelessWidget {
                           ],
                         ),
                       ),
+                      metric(
+                        '段间距',
+                        prefs.paragraphSpacing,
+                        0,
+                        2,
+                        0.25,
+                        (double v) => '${v.toStringAsFixed(2)} 字',
+                        (double v) =>
+                            prefs.update((Prefs p) => p.paragraphSpacing = v),
+                      ),
+                      metric(
+                        '首行缩进',
+                        prefs.firstLineIndent,
+                        0,
+                        4,
+                        0.5,
+                        (double v) => '${v.toStringAsFixed(1)} 字',
+                        (double v) =>
+                            prefs.update((Prefs p) => p.firstLineIndent = v),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: Text(
+                          '段间距独立于行距，页首不留空；缩进不改变原文和摘录。',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
                       row(
                         '翻页',
                         choice(
@@ -485,6 +517,18 @@ class _TypographyPanel extends StatelessWidget {
                           (int i) => prefs.update(
                             (Prefs p) => p.anim = PageAnim.values[i],
                           ),
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('点击区域'),
+                        subtitle: Text(
+                          tapPresetLabel(prefs.tapLayout.matchingPreset),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => openReadingControls(
+                          context,
+                          prefs,
+                          anchorPoint: anchorPoint,
                         ),
                       ),
                       SwitchListTile(

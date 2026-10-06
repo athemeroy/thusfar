@@ -3,16 +3,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:thusfar_core/title_spoilers.dart';
 
 import '../data/library.dart';
+import '../data/reader_directory.dart';
 import '../data/seen.dart';
 import '../ui/theme.dart';
 import 'chapter_title.dart';
+import 'directory_correction_page.dart';
 import 'common.dart';
 import 'preview_sheet.dart';
 import 'note_editor.dart';
 import 'sheet_host.dart';
+import 'toc_search_page.dart';
 
 export 'chapter_title.dart' show safeTitle;
 
@@ -40,6 +42,9 @@ class _TocPageState extends State<TocPage> {
   bool showLater = false;
   late bool _positionToc = widget.tab == 0;
   final GlobalKey _titleNoticeKey = GlobalKey();
+  final GlobalKey _correctionKey = GlobalKey();
+  final GlobalKey _directoryErrorKey = GlobalKey();
+  List<Chapter>? _positionedChapters;
   int? confirm;
   final TextEditingController pageInput = TextEditingController();
 
@@ -53,20 +58,35 @@ class _TocPageState extends State<TocPage> {
   Widget build(BuildContext context) {
     final ReaderLink link = widget.link;
     return ListenableBuilder(
-      listenable: Listenable.merge(<Listenable>[link.c, link.c.book.notes]),
+      listenable: Listenable.merge(<Listenable>[
+        link.c,
+        link.c.book.notes,
+        link.c.book.directory,
+      ]),
       builder: (BuildContext context, _) {
-        if (tab == 0 && _positionToc) {
+        final ReaderDirectory directory = link.c.book.directory;
+        if (tab == 0 &&
+            (_positionToc ||
+                !identical(_positionedChapters, directory.chapters))) {
+          _positionedChapters = directory.chapters;
           _positionToc = false;
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted || tab != 0) return;
             final ScrollController scroll = SheetScope.of(context).scroll;
             if (!scroll.hasClients) return;
-            final RenderBox? notice =
-                _titleNoticeKey.currentContext?.findRenderObject()
-                    as RenderBox?;
+            final double precedingHeight =
+                <GlobalKey>[
+                  _correctionKey,
+                  _directoryErrorKey,
+                  _titleNoticeKey,
+                ].fold(0, (height, key) {
+                  final RenderBox? box =
+                      key.currentContext?.findRenderObject() as RenderBox?;
+                  return height + (box?.size.height ?? 0);
+                });
             final double offset =
-                link.c.chapter * _chapterRowHeight(context) +
-                (notice?.size.height ?? 0);
+                directory.chapterAt(link.c.start) * _chapterRowHeight(context) +
+                precedingHeight;
             scroll.jumpTo(offset.clamp(0, scroll.position.maxScrollExtent));
           });
         }
@@ -145,41 +165,62 @@ class _TocPageState extends State<TocPage> {
           listenable: pageInput,
           builder: (BuildContext context, _) {
             final bool hasText = pageInput.text.isNotEmpty;
-            return TextField(
-              controller: pageInput,
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.go,
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              onSubmitted: (String v) {
-                final int? n = int.tryParse(v);
-                if (n == null) return;
-                HapticFeedback.lightImpact();
-                widget.link.jump(_offsetOfPage(n.clamp(1, total)));
-              },
-              decoration: InputDecoration(
-                hintText: '跳到第 __ 页（共${exact ? '' : '约 '}$total 页）',
-                filled: true,
-                fillColor: t.paper,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
+            return Row(
+              children: <Widget>[
+                Expanded(
+                  child: TextField(
+                    controller: pageInput,
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.go,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    onSubmitted: (String v) {
+                      final int? n = int.tryParse(v);
+                      if (n == null) return;
+                      HapticFeedback.lightImpact();
+                      widget.link.jump(_offsetOfPage(n.clamp(1, total)));
+                    },
+                    decoration: InputDecoration(
+                      hintText: '跳到第 __ 页（共${exact ? '' : '约 '}$total 页）',
+                      filled: true,
+                      fillColor: t.paper,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      suffixIcon: hasText
+                          ? IconButton(
+                              tooltip: '跳转到该页',
+                              icon: const Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 18,
+                              ),
+                              onPressed: () {
+                                final int? n = int.tryParse(pageInput.text);
+                                if (n == null) return;
+                                HapticFeedback.lightImpact();
+                                widget.link.jump(
+                                  _offsetOfPage(n.clamp(1, total)),
+                                );
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
                 ),
-                suffixIcon: hasText
-                    ? IconButton(
-                        tooltip: '跳转到该页',
-                        icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                        onPressed: () {
-                          final int? n = int.tryParse(pageInput.text);
-                          if (n == null) return;
-                          HapticFeedback.lightImpact();
-                          widget.link.jump(_offsetOfPage(n.clamp(1, total)));
-                        },
-                      )
-                    : null,
-              ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  tooltip: '搜索目录或按章节序号跳转',
+                  icon: const Icon(Icons.manage_search_rounded),
+                  onPressed: () => SheetScope.of(
+                    context,
+                  ).state.push(TocSearchPage(link: widget.link)),
+                ),
+              ],
             );
           },
         ),
@@ -206,7 +247,36 @@ class _TocPageState extends State<TocPage> {
     final BookData book = link.c.book;
     final int read = SeenStore.instance.maxRead(book.id, link.c.cutoff);
     final bool titlesPending = book.status.titleCheckPending;
+    final ReaderDirectory directory = book.directory;
     return <Widget>[
+      if (directory.supportsCorrection)
+        SliverToBoxAdapter(
+          child: Padding(
+            key: _correctionKey,
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.rule, size: 18),
+                label: Text(directory.enabled ? '已修正目录 · 管理' : '修正 TXT 目录'),
+                onPressed: () {
+                  setState(() => confirm = null);
+                  SheetScope.of(
+                    context,
+                  ).state.push(DirectoryCorrectionPage(link: link));
+                },
+              ),
+            ),
+          ),
+        ),
+      if (directory.error != null)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            key: _directoryErrorKey,
+            child: Text(directory.error!, style: TextStyle(color: t.danger)),
+          ),
+        ),
       if (titlesPending)
         SliverToBoxAdapter(
           child: Container(
@@ -234,22 +304,21 @@ class _TocPageState extends State<TocPage> {
           ),
         ),
       SliverList.builder(
-        itemCount: book.chapters.length,
+        itemCount: directory.chapters.length,
         itemBuilder: (BuildContext context, int i) {
-          final Chapter c = book.chapters[i];
-          final bool current = i == link.c.chapter;
+          final Chapter c = directory.chapters[i];
+          final bool current = i == directory.chapterAt(link.c.start);
           final bool isRead = c.o0 < read;
-          final bool titleHidden =
-              !isRead &&
-              titleSpoils(
-                c.raw['spoil'],
-                c.title,
-                checkPending: titlesPending,
-                checkedByModel: c.raw['spoilSource'] == 'model',
-              );
+          final bool titleRead = tocTitleRead(c, read);
+          final String label = safeTitle(
+            c,
+            titleRead,
+            checkPending: titlesPending,
+          );
+          final bool titleHidden = label != c.title;
           final int page = link.pageNo(c.o0);
           final Text chapterTitle = Text(
-            safeTitle(c, isRead, checkPending: titlesPending),
+            label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -283,14 +352,31 @@ class _TocPageState extends State<TocPage> {
                       ),
                       Expanded(
                         child: titleHidden
-                            ? Row(
-                                children: <Widget>[
-                                  chapterTitle,
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Container(height: 1, color: t.rule),
-                                  ),
-                                ],
+                            ? LayoutBuilder(
+                                builder:
+                                    (
+                                      BuildContext context,
+                                      BoxConstraints box,
+                                    ) => Row(
+                                      children: <Widget>[
+                                        ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: math.max(
+                                              0,
+                                              box.maxWidth - 22,
+                                            ),
+                                          ),
+                                          child: chapterTitle,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Container(
+                                            height: 1,
+                                            color: t.rule,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                               )
                             : chapterTitle,
                       ),
@@ -312,23 +398,18 @@ class _TocPageState extends State<TocPage> {
               if (confirm == i)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(34, 0, 20, 10),
-                  child: Row(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: <Widget>[
-                      Expanded(
-                        child: Row(
-                          children: <Widget>[
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              size: 14,
-                              color: t.amber,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '会看到后面的内容',
-                              style: TextStyle(fontSize: 13, color: t.amber),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        '会看到后面的内容',
+                        style: TextStyle(fontSize: 13, color: t.amber),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => confirm = null),
+                        child: const Text('取消'),
                       ),
                       Pill(
                         label: '跳过去',

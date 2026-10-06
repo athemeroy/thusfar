@@ -113,4 +113,69 @@ void main() {
     expect(prefs.pageHorizontalMargin, 20);
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'paragraph controls persist and repeated reset restores defaults',
+    (WidgetTester tester) async {
+      await setTestViewport(tester, const Size(320, 640));
+      addTearDown(() => setTestViewport(tester, null));
+      final Directory temp = Directory.systemTemp.createTempSync(
+        'paragraph-sheet-',
+      );
+      addTearDown(() => temp.deleteSync(recursive: true));
+      final File file = File('${temp.path}/app-prefs.json');
+      final Prefs prefs = Prefs(file);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: buildTheme(Brightness.light),
+          home: Scaffold(
+            body: Builder(
+              builder: (BuildContext context) => TextButton(
+                onPressed: () => openTypography(context, prefs),
+                child: const Text('排版'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('排版'));
+      await tester.pumpAndSettle();
+      Future<void> reveal(String label) async {
+        await tester.dragUntilVisible(
+          find.text(label),
+          find.byType(ListView).last,
+          const Offset(0, -80),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await reveal('段间距');
+      await tester.tap(find.byTooltip('段间距增加'));
+      await tester.pumpAndSettle();
+      expect(prefs.paragraphSpacing, 0.25);
+      expect(prefs.lineHeight, 1.85);
+      await reveal('首行缩进');
+      await tester.tap(find.byTooltip('首行缩进减少'));
+      await tester.pumpAndSettle();
+      expect(prefs.firstLineIndent, 1.5);
+      expect(Prefs(file).paragraphSpacing, 0.25);
+      expect(Prefs(file).firstLineIndent, 1.5);
+      for (int reset = 0; reset < 3; reset++) {
+        await tester.tap(find.text('恢复文字默认值'));
+        await tester.pumpAndSettle();
+        expect(prefs.paragraphSpacing, 0);
+        expect(prefs.firstLineIndent, 2);
+        expect(prefs.lineHeight, 1.85);
+        expect(Prefs(file).paragraphSpacing, 0);
+        expect(Prefs(file).firstLineIndent, 2);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byTooltip('关闭排版'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('排版'));
+      await tester.pumpAndSettle();
+      await reveal('首行缩进');
+      expect(find.text('2.0 字'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
