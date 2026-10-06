@@ -4,21 +4,26 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 
+import 'reader_customizations.dart';
+import '../reader/text_purification.dart';
+
 /// One portable library file. Each book remains an existing complete single
 /// book JSON backup, so native and Web use their established safe merge paths.
 const String libraryZipFormat = 'thusfar-library/1';
 const int maxLibraryZipBytes = 512 * 1024 * 1024;
 const int _maxBookBytes = 144 * 1024 * 1024;
 const int _maxSettingsBytes = 64 * 1024;
+const int _maxCustomizationsBytes = 1024 * 1024;
 const int _maxManifestBytes = 512 * 1024;
 const int _maxTotalBytes = 768 * 1024 * 1024;
 const int _maxBooks = 2000;
 
 class LibraryZipData {
-  const LibraryZipData(this.books, this.settings);
+  const LibraryZipData(this.books, this.settings, {this.customizations});
 
   final List<Uint8List> books;
   final Map<String, Object?> settings;
+  final Map<String, Object?>? customizations;
 }
 
 class LibraryZipCodec {
@@ -39,6 +44,7 @@ class LibraryZipCodec {
   static Uint8List encode({
     required List<Uint8List> books,
     required Map<String, Object?> settings,
+    Map<String, Object?>? customizations,
   }) {
     if (books.length > _maxBooks) {
       throw const FormatException('书库超过单个 ZIP 支持的书籍数量。');
@@ -51,9 +57,18 @@ class LibraryZipCodec {
     if (settingsBytes.length > _maxSettingsBytes) {
       throw const FormatException('书库设置超出备份上限。');
     }
+    final Map<String, Object?>? safeCustomizations = customizations == null
+        ? null
+        : validatedCustomizations(books, customizations);
+    final Uint8List? customizationBytes = safeCustomizations == null
+        ? null
+        : Uint8List.fromList(utf8.encode(jsonEncode(safeCustomizations)));
+    if ((customizationBytes?.length ?? 0) > _maxCustomizationsBytes) {
+      throw const FormatException('阅读自定义数据超过备份上限。');
+    }
     final Archive archive = Archive();
     final List<Map<String, Object?>> records = <Map<String, Object?>>[];
-    int total = settingsBytes.length;
+    int total = settingsBytes.length + (customizationBytes?.length ?? 0);
     for (int i = 0; i < books.length; i++) {
       final Uint8List data = books[i];
       if (data.isEmpty || data.length > _maxBookBytes) {
@@ -73,12 +88,23 @@ class LibraryZipCodec {
       });
     }
     archive.addFile(ArchiveFile.bytes('settings.json', settingsBytes));
+    if (customizationBytes != null) {
+      archive.addFile(
+        ArchiveFile.bytes('customizations.json', customizationBytes),
+      );
+    }
     final Uint8List manifestBytes = Uint8List.fromList(
       utf8.encode(
         jsonEncode(<String, Object?>{
           'format': libraryZipFormat,
           'exported_at': DateTime.now().toUtc().toIso8601String(),
           'books': records,
+          if (customizationBytes != null)
+            'customizations': <String, Object?>{
+              'path': 'customizations.json',
+              'size': customizationBytes.length,
+              'sha256': sha256.convert(customizationBytes).toString(),
+            },
           'settings': <String, Object?>{
             'path': 'settings.json',
             'size': settingsBytes.length,
@@ -115,7 +141,7 @@ class LibraryZipCodec {
         ..read(InputMemoryStream(zip));
       final Map<String, ZipFileHeader> files = <String, ZipFileHeader>{};
       if (directory.fileHeaders.length != declaredFiles ||
-          directory.fileHeaders.length > _maxBooks + 2) {
+          directory.fileHeaders.length > _maxBooks + 3) {
         throw const FormatException('书库 ZIP 含有重复或不支持的文件。');
       }
       int total = 0;
@@ -165,7 +191,11 @@ class LibraryZipCodec {
         throw const FormatException('书库 ZIP 格式不受支持。');
       }
       final List<Object?> rows = rawManifest['books'] as List<Object?>;
-      if (rows.length > _maxBooks || files.length != rows.length + 2) {
+      if (rows.length > _maxBooks ||
+          files.length !=
+              rows.length +
+                  2 +
+                  (rawManifest.containsKey('customizations') ? 1 : 0)) {
         throw const FormatException('书库 ZIP 文件数量与清单不符。');
       }
       final Uint8List settingsBytes = _verifiedFile(
@@ -192,10 +222,28 @@ class LibraryZipCodec {
         books.add(data);
         expected.add(path);
       }
+      Map<String, Object?>? customizations;
+      if (rawManifest.containsKey('customizations')) {
+        final Object? record = rawManifest['customizations'];
+        if (record is! Map<String, Object?>) {
+          throw const FormatException('阅读自定义数据清单无效。');
+        }
+        final Uint8List bytes = _verifiedFile(
+          files,
+          record,
+          'customizations.json',
+          _maxCustomizationsBytes,
+        );
+        customizations = validatedCustomizations(
+          books,
+          jsonDecode(utf8.decode(bytes, allowMalformed: false)),
+        );
+        expected.add('customizations.json');
+      }
       if (files.keys.any((String name) => !expected.contains(name))) {
         throw const FormatException('书库 ZIP 含有清单外文件。');
       }
-      return LibraryZipData(books, settings);
+      return LibraryZipData(books, settings, customizations: customizations);
     } on FormatException {
       rethrow;
     } on Object {
@@ -263,7 +311,7 @@ class LibraryZipCodec {
           bytes.getUint16(pos + 6, Endian.little) != 0 ||
           bytes.getUint16(pos + 8, Endian.little) != entries ||
           entries < 2 ||
-          entries > _maxBooks + 2 ||
+          entries > _maxBooks + 3 ||
           size <= 0 ||
           size > 2 * 1024 * 1024 ||
           offset > pos ||
@@ -285,6 +333,75 @@ class LibraryZipCodec {
         value['book'] is! Map<String, Object?>) {
       throw const FormatException('书库 ZIP 中包含无效的单书备份。');
     }
+  }
+
+  /// Bind full-library rule policy to the copies embedded in each book. The
+  /// payload may be a subset after Web adds new books; it cannot contradict a
+  /// represented book's scoped rules or silently choose one conflicting copy.
+  static Map<String, Object?> validatedCustomizations(
+    List<Uint8List> books,
+    Object? value,
+  ) {
+    final Map<String, Object?> result = validatedReaderLibrary(
+      value,
+      sources: _customizationSources(books),
+    );
+    final Set<String> represented = <String>{
+      for (final Object? row in result['books']! as List<Object?>)
+        (row! as Map<String, Object?>)['bookId']! as String,
+    };
+    final List<PurificationRule> rules = decodeReaderPurificationRules(
+      result['purification'],
+    );
+    for (final Uint8List bytes in books) {
+      final Map<String, Object?> wrapper =
+          jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
+      final Object? native = wrapper['format'] == 'thusfar-web-backup-v1'
+          ? wrapper['native_backup']
+          : wrapper;
+      if (native is! Map<String, Object?> ||
+          !represented.contains(native['id'])) {
+        continue;
+      }
+      final String id = native['id']! as String;
+      final Map<String, Object?>? custom = validatedReaderCustomizations(
+        native['reader_customizations'],
+        book: wrapper['book']! as Map<String, Object?>,
+        bookId: id,
+        meta: native['meta'] is Map<String, Object?>
+            ? native['meta']! as Map<String, Object?>
+            : <String, Object?>{},
+      );
+      final Object scoped = encodeReaderPurificationRules(
+        rules.where((rule) => rule.bookId == id),
+      );
+      final Object embedded = custom?['purification'] ?? <Object?>[];
+      if (jsonEncode(scoped) != jsonEncode(embedded)) {
+        throw const FormatException('整库规则与单书规则副本不同，未导入。');
+      }
+    }
+    return result;
+  }
+
+  static Map<String, String> _customizationSources(List<Uint8List> books) {
+    final Map<String, String> result = <String, String>{};
+    for (final Uint8List bytes in books) {
+      final Map<String, Object?> wrapper =
+          jsonDecode(utf8.decode(bytes)) as Map<String, Object?>;
+      final Object? native = wrapper['format'] == 'thusfar-web-backup-v1'
+          ? wrapper['native_backup']
+          : wrapper;
+      if (native is! Map<String, Object?> || native['id'] is! String) continue;
+      final String id = native['id']! as String;
+      final String source = readerCustomizationSource(
+        wrapper['book']! as Map<String, Object?>,
+      );
+      if (result.containsKey(id)) {
+        throw const FormatException('书库含有重复的阅读自定义书籍编号。');
+      }
+      result[id] = source;
+    }
+    return result;
   }
 
   static void _validateQueueBounds(Map<String, Object?> settings, int count) {
@@ -330,6 +447,9 @@ class LibraryZipCodec {
         'night',
         'sort',
         'listView',
+        'tapLayout',
+        'paragraphSpacing',
+        'firstLineIndent',
       },
       'web': <String>{'pageMode', 'columnWidth', 'fontSize'},
       'model': <String>{'protocol', 'base_url', 'model', 'jev_route'},
@@ -345,6 +465,23 @@ class LibraryZipCodec {
       final Map<String, Object?> safe = <String, Object?>{};
       for (final MapEntry<String, Object?> entry in raw.entries) {
         final Object? field = entry.value;
+        if (section == 'native' && entry.key == 'tapLayout') {
+          if (field is! List<Object?> ||
+              field.length != 9 ||
+              field[4] != 'tools' ||
+              field.any(
+                (Object? action) => !const <String>{
+                  'previous',
+                  'tools',
+                  'next',
+                  'none',
+                }.contains(action),
+              )) {
+            throw const FormatException('书库 ZIP 点击区域设置无效。');
+          }
+          safe[entry.key] = List<String>.of(field.cast<String>());
+          continue;
+        }
         if (section == 'shelf' && entry.key == 'readingQueue') {
           if (field is! List<Object?> ||
               field.length > _maxBooks ||
@@ -426,6 +563,8 @@ class LibraryZipCodec {
       'anim': (0, 2),
       'night': (0, 2),
       'sort': (0, 3),
+      'paragraphSpacing': (0, 2),
+      'firstLineIndent': (0, 4),
     };
     final (double, double)? range = ranges[key];
     if (range == null ||

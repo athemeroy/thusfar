@@ -209,6 +209,7 @@ class _WebShelfState extends State<WebShelf> {
                 '${archive.books.map((bytes) => '• ${BackupSummary.read(bytes).title}').join('\n')}\n\n这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
                 '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
                 '已有书籍保留此浏览器的逐书整理和付费路由，继续前请核对。'
+                '${archive.customizations == null ? '' : '使用备份设置也会保留整库净化规则及其顺序供安装版使用；网页版只保留这些自定义，不应用净化或修正目录。'}'
                 '是否同时使用备份里的阅读清单、排版和模型设置？',
               ),
             ),
@@ -260,6 +261,35 @@ class _WebShelfState extends State<WebShelf> {
         }
         return;
       } else if (file.name.toLowerCase().endsWith('.json')) {
+        final BackupSummary summary = BackupSummary.read(bytes);
+        if (summary.customizationSummary != null) {
+          await library.importBackup(bytes, previewOnly: true);
+          if (!mounted) return;
+          final bool? confirmed = await showDialog<bool>(
+            context: context,
+            builder: (BuildContext dialogContext) => AlertDialog(
+              title: const Text('保留安装版阅读自定义'),
+              content: SingleChildScrollView(
+                child: Text(
+                  '${summary.title}\n\n网页版只保留净化规则和修正目录，不应用到正文或导航。'
+                  '已有自定义冲突时会停止导入。\n\n'
+                  '导回安装版时：${summary.customizationSummary}',
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('取消'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('导入并保留'),
+                ),
+              ],
+            ),
+          );
+          if (confirmed != true) return;
+        }
         final String id = await library.importBackup(bytes);
         final WebBook? imported = await library.load(id);
         _importedBook = imported?.meta;

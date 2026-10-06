@@ -5,26 +5,114 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 
 import '../reader/text_purification.dart';
-import 'library.dart' show writeJson;
+import 'library.dart' show Json, writeJson;
+import 'reader_customizations.dart';
 
 /// Atomic local storage, separate from immutable books and generated knowledge.
 /// A damaged store stays on disk and is never silently replaced with empty data.
 class PurificationStore extends ChangeNotifier {
   PurificationStore(this.file) {
     try {
-      if (file.existsSync()) {
-        if (file.lengthSync() > maxImportBytes) {
-          throw const FormatException('规则文件过大');
-        }
-        _rules = _decode(jsonDecode(file.readAsStringSync()), portable: false);
-      }
+      _rules = readSnapshot(file);
     } on Object {
       error = '净化规则暂时无法读取。原文件已保留，请恢复规则文件后重新打开这本书';
     }
+    _loadedStamp = _diskStamp();
   }
 
   // Covers the worst-case JSON escaping of every valid 64-rule export.
-  static const int maxImportBytes = 512 * 1024;
+  static const int maxImportBytes = readerPurificationByteLimit;
+
+  /// Strict native snapshots preserve IDs, scope, ordering and disabled rules.
+  /// Missing files mean no saved rules; damaged/oversized files must fail.
+  static List<PurificationRule> readSnapshot(File file) {
+    final FileSystemEntityType type = FileSystemEntity.typeSync(
+      file.path,
+      followLinks: false,
+    );
+    if (type == FileSystemEntityType.notFound) return <PurificationRule>[];
+    if (type != FileSystemEntityType.file) {
+      throw const FormatException('规则文件类型无效，现有规则未更改');
+    }
+    final RandomAccessFile handle = file.openSync();
+    try {
+      if (handle.lengthSync() > maxImportBytes) {
+        throw const FormatException('规则文件过大');
+      }
+      // Bound actual bytes as well as the advertised size, including a file
+      // that grows while a backup or restore is reading it.
+      final List<int> bytes = handle.readSync(maxImportBytes + 1);
+      if (bytes.length > maxImportBytes) {
+        throw const FormatException('规则文件过大');
+      }
+      return decodeStore(jsonDecode(utf8.decode(bytes, allowMalformed: false)));
+    } finally {
+      handle.closeSync();
+    }
+  }
+
+  static List<PurificationRule> decodeStore(Object? raw) {
+    if (raw is! Json ||
+        raw.length != 3 ||
+        !raw.containsKey('rules') ||
+        raw['version'] is! int ||
+        raw['version'] != 1 ||
+        raw['format'] != 'thusfar-purification-store' ||
+        utf8.encode(jsonEncode(raw)).length > maxImportBytes) {
+      throw const FormatException('规则文件格式无效，现有规则未更改');
+    }
+    return decodeReaderPurificationRules(raw['rules']);
+  }
+
+  static Json encodeStore(List<PurificationRule> rules) {
+    final Json result = <String, Object?>{
+      'format': 'thusfar-purification-store',
+      'version': 1,
+      'rules': encodeReaderPurificationRules(rules),
+    };
+    decodeStore(result);
+    return result;
+  }
+
+  static List<PurificationRule> mergeRules(
+    List<PurificationRule> local,
+    List<PurificationRule> incoming,
+  ) => mergeReaderPurificationRules(local, incoming);
+
+  String _loadedStamp = '';
+  String _diskStamp() {
+    final FileStat stat = FileStat.statSync(file.path);
+    return '${FileSystemEntity.typeSync(file.path, followLinks: false)}:${stat.size}:${stat.modified.microsecondsSinceEpoch}:${stat.changed.microsecondsSinceEpoch}';
+  }
+
+  bool _sameRules(List<PurificationRule> a, List<PurificationRule> b) =>
+      jsonEncode(encodeStore(a)) == jsonEncode(encodeStore(b));
+
+  /// Refresh only changed durable data. Progress notifications must not cause
+  /// a fresh layout or replace the reader's original-source anchor every page.
+  void refresh() {
+    if (_loadedStamp == _diskStamp()) return;
+    try {
+      reload();
+    } on Object {
+      _loadedStamp = _diskStamp();
+      const String message = '净化规则暂时无法读取。原文件已保留，请恢复规则文件后重新打开这本书';
+      if (error != message) {
+        error = message;
+        notifyListeners();
+      }
+    }
+  }
+
+  void reload() {
+    final List<PurificationRule> next = readSnapshot(file);
+    final bool changed = error != null || !_sameRules(_rules, next);
+    _rules = next;
+    error = null;
+    _loadedStamp = _diskStamp();
+    if (changed) notifyListeners();
+  }
+
   static int _sequence = 0;
   static String newRuleId() =>
       '${DateTime.now().microsecondsSinceEpoch}-${_sequence++}';
@@ -43,8 +131,16 @@ class PurificationStore extends ChangeNotifier {
       throw const FormatException('最多保存 64 条规则，请先删除不再使用的规则');
     }
     if (next.any((r) => r.error != null)) throw const FormatException('净化规则无效');
-    writeJson(file, _encode(next, portable: false));
+    final List<PurificationRule> current = readSnapshot(file);
+    if (!_sameRules(current, _rules)) {
+      _rules = current;
+      _loadedStamp = _diskStamp();
+      notifyListeners();
+      throw StateError('规则已由恢复或其他页面更新，请检查后重新保存');
+    }
+    writeJson(file, encodeStore(next));
     _rules = next;
+    _loadedStamp = _diskStamp();
     notifyListeners();
   }
 

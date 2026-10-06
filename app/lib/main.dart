@@ -9,6 +9,7 @@ import 'package:thusfar_core/thusfar_core.dart' show PyException;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/backup.dart';
+import 'reader/tap_layout.dart';
 import 'data/restore_report.dart';
 import 'ui/restore_report_view.dart';
 import 'data/library_zip.dart';
@@ -920,7 +921,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         fileName: '${b.title}.yedu.json',
         bytes: bytes,
       );
-      message = path == null ? '没有导出' : '已导出《${b.title}》';
+      message = path == null
+          ? '没有导出'
+          : '已导出《${b.title}》，含本书规则和目录设置；全局规则请用整库 ZIP 或单独导出';
     } on PyException catch (error) {
       message = error.message;
     } on Object {
@@ -963,6 +966,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         'pageVerticalMargin': p.pageVerticalMargin,
         'anim': p.anim.index,
         'volumeKeys': p.volumeKeys,
+        'tapLayout': p.tapLayout.toJson(),
+        'paragraphSpacing': p.paragraphSpacing,
+        'firstLineIndent': p.firstLineIndent,
         'night': p.night.index,
         'sort': p.sort,
         'listView': p.listView,
@@ -1050,6 +1056,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       }
       if (native['volumeKeys'] is bool) {
         p.volumeKeys = native['volumeKeys']! as bool;
+      }
+      if (native['paragraphSpacing'] is num) {
+        p.paragraphSpacing = (native['paragraphSpacing']! as num).toDouble();
+      }
+      if (native['firstLineIndent'] is num) {
+        p.firstLineIndent = (native['firstLineIndent']! as num).toDouble();
+      }
+      if (native['tapLayout'] != null) {
+        p.tapLayout = ReaderTapLayout.fromJson(native['tapLayout']);
       }
       if (native['night'] is num) {
         p.night = NightMode.values[(native['night']! as num).toInt()];
@@ -1151,6 +1166,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                   '${archive.books.map((bytes) => '• ${BackupSummary.read(bytes).title}').join('\n')}\n\n这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
                   '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
                   '已有书籍保留本机逐书整理和付费路由，继续前请核对。'
+                  '本书规则和 TXT 修正目录随书恢复，现有规则顺序和启用选择保留；目录或规则冲突会停止该项。'
+                  '${archive.customizations == null ? '' : '使用备份设置时，还会追加整库全局净化规则（影响所有书）；保留当前设置则不导入全局规则。'}'
                   '是否同时使用备份里的阅读清单、排版和模型设置？',
                 ),
               ),
@@ -1176,6 +1193,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             final LibraryZipRestoreResult restored = restoreLibraryZipData(
               m.library,
               archive,
+              applyRuleSettings: applySettings,
             );
             item
               ..bookId = restored.firstNewId
@@ -1188,6 +1206,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               item.error =
                   '已导入 ${restored.imported} 本，合并 ${restored.existing} 本；'
                   '${restored.failures.length} 本未导入。${applySettings ? '设置因存在冲突而未导入。' : '保留当前设置。'}详见设置 → 上次恢复报告。';
+            } else if (restored.customizationError != null) {
+              item.error = restored.customizationError;
+              settingsStatus = '${restored.customizationError} 其他设置未更改。';
             } else {
               String? settingError;
               if (applySettings) {
@@ -1221,7 +1242,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               settingsStatus = settingError != null
                   ? '未完整恢复：$settingError'
                   : applySettings
-                  ? '已导入阅读清单、排版和模型设置；模型密钥需重填'
+                  ? '已导入阅读清单、排版、净化规则和模型设置；模型密钥需重填'
                   : '按你的选择保留当前设置';
               if (settingError != null) {
                 item.error = '书籍已恢复 ${restored.total} 本，但设置未恢复：$settingError';
@@ -1263,6 +1284,48 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             }
           }
         } else if (lower.endsWith('.json')) {
+          final BackupSummary summary = BackupSummary.read(
+            bytes,
+            fallback: f.name,
+          );
+          if (summary.customizationSummary != null) {
+            final ImportResult preview = restoreBackup(
+              m.library,
+              f.name,
+              bytes,
+              previewOnly: true,
+            );
+            if (preview.error != null) {
+              item.error = preview.error;
+              continue;
+            }
+            if (!mounted) return;
+            final bool? confirmed = await showDialog<bool>(
+              context: context,
+              builder: (dialog) => AlertDialog(
+                title: const Text('恢复单书备份'),
+                content: SingleChildScrollView(
+                  child: Text(
+                    '${summary.title}\n\n${summary.customizationSummary}\n\n确认前不会修改本地。',
+                  ),
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialog, false),
+                    child: const Text('取消'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(dialog, true),
+                    child: const Text('确认恢复'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed != true) {
+              item.error = '已取消恢复';
+              continue;
+            }
+          }
           final ImportResult r = restoreBackup(m.library, f.name, bytes);
           item
             ..error = r.error

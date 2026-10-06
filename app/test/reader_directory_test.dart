@@ -1116,7 +1116,7 @@ void main() {
     }
 
     test(
-      'export before and after correction keeps canonical book and omits the local overlay',
+      'export keeps canonical book and carries the correction in a source-bound sidecar',
       () {
         final File canonical = File('${entry.dir.path}/book.json');
         final List<int> originalBytes = canonical.readAsBytesSync();
@@ -1139,13 +1139,16 @@ void main() {
         expect(after.keys, isNot(contains('reader-directory')));
         expect(after.keys, isNot(contains('reader_directory')));
         expect(jsonEncode(after), isNot(contains('reader-directory.json')));
+        final Json custom = after.remove('reader_customizations')! as Json;
+        expect((custom['directory']! as Json)['enabled'], isTrue);
+        before.remove('reader_customizations');
         before.remove('exported');
         after.remove('exported');
         expect(
           after,
           before,
           reason:
-              'A local navigation override must not change any backup payload',
+              'A local navigation override must not change canonical backup data',
         );
         expect(canonical.readAsBytesSync(), originalBytes);
       },

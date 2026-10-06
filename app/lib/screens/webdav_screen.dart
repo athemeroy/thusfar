@@ -148,7 +148,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
             ..._snapshots,
           ];
         });
-        return '《${book.title}》已上传为新快照。旧快照仍保留。';
+        return '《${book.title}》已上传为新快照，含本书净化规则和 TXT 目录设置；全局规则请用整库备份。旧快照仍保留。';
       });
 
   Future<void> _download(WebDavSnapshot snapshot) => _run('正在下载快照以供校验和预览', (
@@ -178,7 +178,7 @@ class _WebDavScreenState extends State<WebDavScreen> {
         title: const Text('WebDAV 快照预览'),
         content: SingleChildScrollView(
           child: Text(
-            '${summary.title}\n${summary.exported == null ? _label(snapshot) : summary.dateLabel}\n${summary.sizeLabel}\n\n${preview.error == null ? '已校验。${preview.existed ? '已有同一本书，将只合并兼容的阅读资料。' : '将导入为书架上的一本书。'}确认前不会修改本地。' : '未能通过校验：${preview.error}\n本地未改动，可取消后检查备份。'}',
+            '${summary.title}\n${summary.exported == null ? _label(snapshot) : summary.dateLabel}\n${summary.sizeLabel}\n${summary.customizationSummary ?? ''}\n\n${preview.error == null ? '已校验。${preview.existed ? '已有同一本书，将只合并兼容的阅读资料。' : '将导入为书架上的一本书。'}确认前不会修改本地。' : '未能通过校验：${preview.error}\n本地未改动，可取消后检查备份。'}',
           ),
         ),
         actions: [

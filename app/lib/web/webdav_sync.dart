@@ -455,7 +455,8 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         title: const Text('远端书籍快照'),
         content: Text(
           '${summary.title}\n${summary.exported == null ? snapshot.label : summary.dateLabel}\n${summary.sizeLabel}\n\n'
-          '${previewError ?? '校验通过。同一本书只合并兼容的阅读记录与整理结果；确认前不会修改本地。'}',
+          '${previewError ?? '校验通过。同一本书只合并兼容的阅读记录与整理结果；确认前不会修改本地。'}'
+          '${summary.customizationSummary == null ? '' : '\n\n网页版只保留净化规则和修正目录，不应用到正文或导航。导回安装版时：${summary.customizationSummary}'}',
         ),
         actions: <Widget>[
           TextButton(

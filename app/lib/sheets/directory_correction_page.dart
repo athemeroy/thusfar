@@ -155,7 +155,7 @@ class _DirectoryCorrectionPageState extends State<DirectoryCorrectionPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '修正目录不包含在书籍导出、书库 ZIP 备份或 WebDAV 同步中',
+                    '修正目录随单书导出、书库 ZIP 和 WebDAV 快照保存；恢复时核对原文，保留本机冲突目录',
                     style: TextStyle(fontSize: 12, height: 1.5, color: t.ink3),
                   ),
                   const SizedBox(height: 12),

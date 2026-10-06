@@ -66,8 +66,9 @@ heading already has a model-verified safe verdict.
 
 This is a local navigation sidecar, not a reparse: source text, pagination,
 canonical chapter indexes, notes, reading progress, and AI preparation/results
-stay unchanged. It starts no model work. Current book exports, library ZIPs,
-and WebDAV sync do not include the sidecar. Moving a book to the recycle bin
+stay unchanged. It starts no model work. Single-book JSON, library ZIPs,
+and WebDAV snapshots include source-verified sidecars. Restore preserves
+conflicting local choices; see [portability details](../docs/READER-CUSTOMIZATIONS.md). Moving a book to the recycle bin
 moves its sidecar with it; restoring that book retains the correction, while a
 fresh import starts with its original directory.
 

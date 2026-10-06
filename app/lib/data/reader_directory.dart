@@ -200,6 +200,7 @@ extension BookNavigationDirectory on BookData {
 /// preserves the previous list; reset never mutates the canonical book file.
 class ReaderDirectory extends ChangeNotifier {
   ReaderDirectory(this.book) {
+    _loadedStamp = _diskStamp();
     if (!_file.existsSync()) return;
     try {
       if (_file.lengthSync() > directorySidecarByteLimit) {
@@ -242,6 +243,27 @@ class ReaderDirectory extends ChangeNotifier {
   String prefix = '';
   bool get enabled => _override != null;
   List<Chapter> get chapters => _override ?? book.chapters;
+
+  late String _loadedStamp;
+  String _diskStamp() {
+    final FileStat stat = FileStat.statSync(_file.path);
+    return '${stat.type}:${stat.size}:${stat.modified.microsecondsSinceEpoch}:${stat.changed.microsecondsSinceEpoch}';
+  }
+
+  /// A verified restore can complete while this reader is open (for example
+  /// an Android share). Refresh navigation without reparsing canonical text.
+  bool refresh() {
+    if (_loadedStamp == _diskStamp()) return false;
+    final ReaderDirectory next = ReaderDirectory(book);
+    _override = next._override;
+    error = next.error;
+    rule = next.rule;
+    prefix = next.prefix;
+    _loadedStamp = next._loadedStamp;
+    next.dispose();
+    notifyListeners();
+    return true;
+  }
 
   bool get supportsCorrection {
     try {
@@ -365,6 +387,7 @@ class ReaderDirectory extends ChangeNotifier {
       throw const FormatException('目录数据超过 4 MB，请缩小规则范围；当前目录未更改');
     }
     writeJson(_file, payload);
+    _loadedStamp = _diskStamp();
     _override = next;
     rule = preview.rule;
     prefix = savedPrefix;
@@ -380,6 +403,7 @@ class ReaderDirectory extends ChangeNotifier {
       'length': book.length,
       'enabled': false,
     });
+    _loadedStamp = _diskStamp();
     _override = null;
     error = null;
     rule = DirectoryRule.automatic;

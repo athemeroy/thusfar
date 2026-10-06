@@ -71,6 +71,7 @@ jobs:
             test/chapter_titles_test.dart \
             test/toc_search_test.dart \
             test/reader_directory_test.dart test/directory_correction_page_test.dart \
+            test/reader_customizations_test.dart test/reader_customization_backup_test.dart \
             test/foldable_screens_test.dart test/graph_view_test.dart test/graph_screens_test.dart test/import_test.dart \
             test/manual_entities_test.dart test/marginalia_sheet_test.dart \
             test/model_settings_test.dart test/notes_test.dart \
@@ -130,6 +131,7 @@ jobs:
             test/browser/web_ai_cancellation_test.dart \
             test/browser/web_ask_panel_test.dart \
             test/browser/web_recovery_test.dart \
+            test/browser/web_reader_customizations_test.dart \
             test/browser/webdav_page_test.dart
       - name: Build offline browser client at a static subpath
         working-directory: app
