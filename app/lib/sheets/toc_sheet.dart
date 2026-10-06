@@ -300,14 +300,31 @@ class _TocPageState extends State<TocPage> {
                       ),
                       Expanded(
                         child: titleHidden
-                            ? Row(
-                                children: <Widget>[
-                                  Flexible(child: chapterTitle),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Container(height: 1, color: t.rule),
-                                  ),
-                                ],
+                            ? LayoutBuilder(
+                                builder:
+                                    (
+                                      BuildContext context,
+                                      BoxConstraints box,
+                                    ) => Row(
+                                      children: <Widget>[
+                                        ConstrainedBox(
+                                          constraints: BoxConstraints(
+                                            maxWidth: math.max(
+                                              0,
+                                              box.maxWidth - 22,
+                                            ),
+                                          ),
+                                          child: chapterTitle,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Container(
+                                            height: 1,
+                                            color: t.rule,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                               )
                             : chapterTitle,
                       ),

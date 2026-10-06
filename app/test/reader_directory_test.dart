@@ -809,6 +809,8 @@ void main() {
               .readAsBytesSync();
           final ReaderDirectory reopened = fixture.open().directory;
           expect(reopened.enabled, isFalse, reason: jsonEncode(value));
+          expect(reopened.rule, DirectoryRule.automatic);
+          expect(reopened.prefix, isEmpty);
           expect(reopened.chapters, same(reopened.book.chapters));
           expect(reopened.error, isNotNull);
           expect(
@@ -890,6 +892,96 @@ void main() {
         expect(reopened.chapters, same(reopened.book.chapters));
       },
     );
+  });
+
+  group('encoded sidecar size limit', () {
+    test('escaped-control expansion cannot replace a valid saved directory', () {
+      final _DirectoryFixture fixture = _DirectoryFixture(
+        lines: <String>[
+          '基线目录',
+          for (int i = 0; i < directoryHeadingLimit; i++)
+            '导航${i.toString().padLeft(5, '0')}${'\u0001' * 113}',
+        ],
+      );
+      addTearDown(fixture.dispose);
+      final ReaderDirectory directory = fixture.book.directory;
+      directory.apply(fixture.scan(DirectoryRule.prefix, '基线'));
+      final List<Chapter> previous = directory.chapters;
+      final List<int> sidecar = fixture
+          .file('reader-directory.json')
+          .readAsBytesSync();
+      final Map<String, List<int>> durableBefore = fixture.durableBytes();
+      final DirectoryPreview oversized = fixture.scan(
+        DirectoryRule.prefix,
+        '导航',
+      );
+      expect(oversized.rows, hasLength(directoryHeadingLimit));
+      expect(
+        oversized.rows.every(
+          (row) => (row['title']! as String).length == directoryTitleLimit,
+        ),
+        isTrue,
+      );
+      // The UTF-16 title and row-count limits both pass. JSON escaping expands
+      // each control character to six bytes, exceeding the loader's 4 MiB cap.
+      expect(
+        utf8.encode(jsonEncode(oversized.rows)).length,
+        greaterThan(4 * 1024 * 1024),
+      );
+      int notifications = 0;
+      directory.addListener(() => notifications++);
+      expect(() => directory.apply(oversized), throwsFormatException);
+      expect(directory.chapters, same(previous));
+      expect(directory.enabled, isTrue);
+      expect(directory.rule, DirectoryRule.prefix);
+      expect(directory.prefix, '基线');
+      expect(directory.error, isNull);
+      expect(notifications, 0);
+      expect(fixture.file('reader-directory.json').readAsBytesSync(), sidecar);
+      expect(fixture.durableBytes(), durableBefore);
+      final ReaderDirectory reopened = fixture.open().directory;
+      expect(reopened.enabled, isTrue);
+      expect(reopened.error, isNull);
+      expect(reopened.prefix, '基线');
+      expect(reopened.chapters.map((chapter) => chapter.title), <String>[
+        '基线目录',
+      ]);
+    });
+
+    test('10000 ordinary 120-unit Chinese titles still apply and reopen', () {
+      final List<String> titles = <String>[
+        for (int i = 0; i < directoryHeadingLimit; i++)
+          '导航${i.toString().padLeft(5, '0')}${'汉' * 113}',
+      ];
+      final _DirectoryFixture fixture = _DirectoryFixture(lines: titles);
+      addTearDown(fixture.dispose);
+      final Map<String, List<int>> durableBefore = fixture.durableBytes();
+      final DirectoryPreview maximal = fixture.scan(DirectoryRule.prefix, '导航');
+      expect(maximal.rows, hasLength(directoryHeadingLimit));
+      expect(
+        maximal.rows.every(
+          (row) => (row['title']! as String).length == directoryTitleLimit,
+        ),
+        isTrue,
+      );
+      fixture.book.directory.apply(maximal);
+      expect(fixture.book.directory.chapters, hasLength(directoryHeadingLimit));
+      expect(
+        fixture.file('reader-directory.json').lengthSync(),
+        lessThanOrEqualTo(4 * 1024 * 1024),
+      );
+      final ReaderDirectory reopened = fixture.open().directory;
+      expect(reopened.enabled, isTrue);
+      expect(reopened.error, isNull);
+      expect(reopened.rule, DirectoryRule.prefix);
+      expect(reopened.prefix, '导航');
+      expect(reopened.chapters.map((chapter) => chapter.title), titles);
+      expect(
+        reopened.chapters.last.o0,
+        (directoryHeadingLimit - 1) * (directoryTitleLimit + 1),
+      );
+      expect(fixture.durableBytes(), durableBefore);
+    });
   });
 
   group('positive TXT source identification', () {

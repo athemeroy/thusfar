@@ -93,8 +93,10 @@ class _DirectoryCorrectionPageState extends State<DirectoryCorrectionPage> {
         _clearPreview();
         _message = '已应用到本书目录和章节查找';
       });
+    } on FormatException catch (error) {
+      setState(() => _message = error.message);
     } on Object catch (_) {
-      setState(() => _message = '保存失败，原目录未更改。请检查存储空间后重试');
+      setState(() => _message = '保存失败，当前目录未更改。请检查存储空间后重试');
     }
   }
 

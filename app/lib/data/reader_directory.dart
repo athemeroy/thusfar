@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
+import 'package:thusfar_core/thusfar_core.dart' show PyJson;
 
 import 'library.dart';
 
@@ -40,6 +41,7 @@ enum DirectoryRule {
 
 const int directoryHeadingLimit = 10000;
 const int directoryTitleLimit = 120;
+const int directorySidecarByteLimit = 4 * 1024 * 1024;
 
 class DirectoryPreview {
   const DirectoryPreview(this.rule, this.prefix, this.rows, this.skippedLong);
@@ -200,7 +202,9 @@ class ReaderDirectory extends ChangeNotifier {
   ReaderDirectory(this.book) {
     if (!_file.existsSync()) return;
     try {
-      if (_file.lengthSync() > 4 * 1024 * 1024) throw const FormatException();
+      if (_file.lengthSync() > directorySidecarByteLimit) {
+        throw const FormatException();
+      }
       final Object? value = readJson(_file);
       if (value is! Json ||
           value['version'] != 1 ||
@@ -223,6 +227,9 @@ class ReaderDirectory extends ChangeNotifier {
         (value['rows']! as List<Object?>).cast<Json>(),
       );
     } on Object {
+      _override = null;
+      rule = DirectoryRule.automatic;
+      prefix = '';
       error = '已保存的修正目录无法读取或与原文不符，现使用原目录。可重新预览或恢复原目录';
     }
   }
@@ -339,7 +346,7 @@ class ReaderDirectory extends ChangeNotifier {
       throw const FormatException('请输入 1–32 字的固定前缀，不支持正则表达式');
     }
     final List<Chapter> next = previewEntries(preview.rows);
-    writeJson(_file, <String, Object?>{
+    final Json payload = <String, Object?>{
       'version': 1,
       'bookId': book.id,
       'length': book.length,
@@ -347,7 +354,17 @@ class ReaderDirectory extends ChangeNotifier {
       'rule': preview.rule.name,
       'prefix': savedPrefix,
       'rows': preview.rows,
-    });
+    };
+    // A short UTF-16 heading can expand sixfold when controls are JSON escaped.
+    // Check the exact encoder used by writeJson so every successful apply can
+    // be reopened under the same byte limit, without replacing a valid sidecar.
+    final int bytes = utf8
+        .encode(PyJson.encode(payload, ensureAscii: false, compact: true))
+        .length;
+    if (bytes > directorySidecarByteLimit) {
+      throw const FormatException('目录数据超过 4 MB，请缩小规则范围；当前目录未更改');
+    }
+    writeJson(_file, payload);
     _override = next;
     rule = preview.rule;
     prefix = savedPrefix;

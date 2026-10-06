@@ -153,7 +153,7 @@ void main() {
 
   Future<void> tapText(WidgetTester tester, String text) async {
     final Finder target = find.text(text);
-    await tester.ensureVisible(target);
+    await Scrollable.ensureVisible(tester.element(target), alignment: .5);
     await tester.pumpAndSettle();
     await tester.tap(target);
     await tester.pumpAndSettle();
@@ -369,6 +369,29 @@ void main() {
     },
   );
 
+  testWidgets(
+    'short hidden titles retain full-width rules without unused flex space',
+    (tester) async {
+      book.chapters[4].raw['title'] = '第5章 凶手现身';
+      book.chapters[4].raw['spoil'] = true;
+      await show(tester);
+      final Finder title = find.text('第5章');
+      expect(title, findsOneWidget);
+      final Finder rule = find.byWidgetPredicate(
+        (Widget widget) =>
+            widget is Container &&
+            widget.constraints?.maxHeight == 1 &&
+            widget.color != null,
+      );
+      expect(rule, findsOneWidget);
+      final Rect labelBounds = tester.getRect(title);
+      final Rect ruleBounds = tester.getRect(rule);
+      expect(ruleBounds.left, closeTo(labelBounds.right + 10, .01));
+      expect(ruleBounds.width, greaterThan(200));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('corrected directory unread warning wraps at narrow large text', (
     tester,
   ) async {
@@ -378,10 +401,14 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
     await tester.pumpAndSettle();
     final Finder label = find.text('目录第 8 项');
-    await tester.ensureVisible(label);
+    await Scrollable.ensureVisible(tester.element(label), alignment: .5);
+    await tester.pumpAndSettle();
     await tester.tap(label);
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('会看到后面的内容'));
+    await Scrollable.ensureVisible(
+      tester.element(find.text('会看到后面的内容')),
+      alignment: .5,
+    );
     await tester.pumpAndSettle();
     expect(jumps, isEmpty);
     expect(tester.takeException(), isNull);
