@@ -2,12 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:thusfar_core/title_spoilers.dart';
 
 import '../data/library.dart';
+import '../data/reader_directory.dart';
 import '../data/seen.dart';
 import '../ui/theme.dart';
 import 'chapter_title.dart';
+import 'directory_correction_page.dart';
 import 'common.dart';
 import 'preview_sheet.dart';
 import 'note_editor.dart';
@@ -51,7 +52,11 @@ class _TocPageState extends State<TocPage> {
   Widget build(BuildContext context) {
     final ReaderLink link = widget.link;
     return ListenableBuilder(
-      listenable: Listenable.merge(<Listenable>[link.c, link.c.book.notes]),
+      listenable: Listenable.merge(<Listenable>[
+        link.c,
+        link.c.book.notes,
+        link.c.book.directory,
+      ]),
       builder: (BuildContext context, _) => SheetPage(
         title: link.c.book.entry.title,
         headerExtraHeight:
@@ -194,7 +199,34 @@ class _TocPageState extends State<TocPage> {
     final BookData book = link.c.book;
     final int read = SeenStore.instance.maxRead(book.id, link.c.cutoff);
     final bool titlesPending = book.status.titleCheckPending;
+    final ReaderDirectory directory = book.directory;
     return <Widget>[
+      if (directory.supportsCorrection)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.rule, size: 18),
+                label: Text(directory.enabled ? '已修正目录 · 管理' : '修正 TXT 目录'),
+                onPressed: () {
+                  setState(() => confirm = null);
+                  SheetScope.of(
+                    context,
+                  ).state.push(DirectoryCorrectionPage(link: link));
+                },
+              ),
+            ),
+          ),
+        ),
+      if (directory.error != null)
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(directory.error!, style: TextStyle(color: t.danger)),
+          ),
+        ),
       if (titlesPending)
         SliverToBoxAdapter(
           child: Container(
@@ -221,22 +253,21 @@ class _TocPageState extends State<TocPage> {
           ),
         ),
       SliverList.builder(
-        itemCount: book.chapters.length,
+        itemCount: directory.chapters.length,
         itemBuilder: (BuildContext context, int i) {
-          final Chapter c = book.chapters[i];
-          final bool current = i == link.c.chapter;
+          final Chapter c = directory.chapters[i];
+          final bool current = i == directory.chapterAt(link.c.start);
           final bool isRead = c.o0 < read;
-          final bool titleHidden =
-              !isRead &&
-              titleSpoils(
-                c.raw['spoil'],
-                c.title,
-                checkPending: titlesPending,
-                checkedByModel: c.raw['spoilSource'] == 'model',
-              );
+          final bool titleRead = tocTitleRead(c, read);
+          final String label = safeTitle(
+            c,
+            titleRead,
+            checkPending: titlesPending,
+          );
+          final bool titleHidden = label != c.title;
           final int page = link.pageNo(c.o0);
           final Text chapterTitle = Text(
-            safeTitle(c, isRead, checkPending: titlesPending),
+            label,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -271,7 +302,7 @@ class _TocPageState extends State<TocPage> {
                         child: titleHidden
                             ? Row(
                                 children: <Widget>[
-                                  chapterTitle,
+                                  Flexible(child: chapterTitle),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Container(height: 1, color: t.rule),
@@ -298,23 +329,18 @@ class _TocPageState extends State<TocPage> {
               if (confirm == i)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(34, 0, 20, 10),
-                  child: Row(
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: <Widget>[
-                      Expanded(
-                        child: Row(
-                          children: <Widget>[
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              size: 14,
-                              color: t.amber,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '会看到后面的内容',
-                              style: TextStyle(fontSize: 13, color: t.amber),
-                            ),
-                          ],
-                        ),
+                      Text(
+                        '会看到后面的内容',
+                        style: TextStyle(fontSize: 13, color: t.amber),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() => confirm = null),
+                        child: const Text('取消'),
                       ),
                       Pill(
                         label: '跳过去',
