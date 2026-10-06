@@ -142,13 +142,20 @@ class _SnapshotLibrary extends Fake implements WebLibrary {
   _SnapshotLibrary(this.library);
   final WebLibrary library;
   Object? lastError;
+  int exportsStarted = 0;
+  int exportsFinished = 0;
   final Completer<void> previewed = Completer<void>();
   final Completer<void> imported = Completer<void>();
 
   @override
   Future<Uint8List> exportBackupBytes(String id) async {
+    exportsStarted++;
     try {
-      return await library.exportBackupBytes(id);
+      final Uint8List bytes = await Zone.root.run(
+        () => library.exportBackupBytes(id),
+      );
+      exportsFinished++;
+      return bytes;
     } on Object catch (error) {
       lastError = error;
       rethrow;
@@ -160,9 +167,8 @@ class _SnapshotLibrary extends Fake implements WebLibrary {
     Uint8List bytes, {
     bool previewOnly = false,
   }) async {
-    final String id = await library.importBackup(
-      bytes,
-      previewOnly: previewOnly,
+    final String id = await Zone.root.run(
+      () => library.importBackup(bytes, previewOnly: previewOnly),
     );
     (previewOnly ? previewed : imported).complete();
     return id;
@@ -176,19 +182,29 @@ Future<void> _tapForTransfer(
   String stage,
   _SnapshotLibrary library,
 ) async {
-  // Start the tap and every resulting IndexedDB await in the real zone. A
-  // fake-zone continuation can outlive IndexedDB's native transaction window,
-  // even when periodically pumped. Keep the real operation bounded and make
-  // any delegate failure visible rather than waiting forever on a completer.
-  await tester.runAsync(() async {
-    await tester.tap(action);
-    await completed.future.timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        throw StateError('WebDAV $stage did not finish: ${library.lastError}');
-      },
+  await tester.ensureVisible(action);
+  await tester.pumpAndSettle();
+  await tester.tap(action);
+  await tester.pump();
+  // Storage delegates run in the root event zone so native IndexedDB
+  // transactions cannot auto-commit between fake-clock continuations. Pump
+  // the waiting UI separately and retain an explicit bounded completion check.
+  for (
+    int i = 0;
+    i < 500 && !completed.isCompleted && library.lastError == null;
+    i++
+  ) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
     );
-  });
+    await tester.pump(const Duration(milliseconds: 10));
+  }
+  expect(
+    completed.isCompleted,
+    isTrue,
+    reason:
+        'WebDAV $stage did not finish; exports=${library.exportsStarted}/${library.exportsFinished}; error=${library.lastError}; text=${tester.widgetList<Text>(find.byType(Text)).map((t) => t.data).whereType<String>().join(" | ")}',
+  );
   expect(tester.takeException(), isNull);
 }
 
@@ -505,6 +521,7 @@ void main() {
         () => library.importBackup(_bytes(native)),
       ))!;
       final List<WebBookMeta> books = (await tester.runAsync(library.list))!;
+      expect(books, hasLength(1));
       final _SnapshotLibrary transferLibrary = _SnapshotLibrary(library);
       final _SnapshotClient client = _SnapshotClient();
       tester.view.physicalSize = const Size(800, 1600);
