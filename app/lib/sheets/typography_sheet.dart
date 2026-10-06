@@ -314,6 +314,8 @@ class _TypographyPanel extends StatelessWidget {
                       p.spacing = 1;
                       p.lineHeightOverride = null;
                       p.letterSpacing = 0;
+                      p.paragraphSpacing = 0;
+                      p.firstLineIndent = 2;
                       p.pageHorizontalMargin = 20;
                       p.pageVerticalMargin = 16;
                       p.font = 0;
@@ -478,6 +480,33 @@ class _TypographyPanel extends StatelessWidget {
                                 ),
                               ),
                           ],
+                        ),
+                      ),
+                      metric(
+                        '段间距',
+                        prefs.paragraphSpacing,
+                        0,
+                        2,
+                        0.25,
+                        (double v) => '${v.toStringAsFixed(2)} 字',
+                        (double v) =>
+                            prefs.update((Prefs p) => p.paragraphSpacing = v),
+                      ),
+                      metric(
+                        '首行缩进',
+                        prefs.firstLineIndent,
+                        0,
+                        4,
+                        0.5,
+                        (double v) => '${v.toStringAsFixed(1)} 字',
+                        (double v) =>
+                            prefs.update((Prefs p) => p.firstLineIndent = v),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+                        child: Text(
+                          '段间距独立于行距，页首不留空；缩进不改变原文和摘录。',
+                          style: TextStyle(fontSize: 12),
                         ),
                       ),
                       row(

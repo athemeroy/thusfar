@@ -14,6 +14,8 @@ class PageSpec {
     required this.fontSize,
     required this.lineHeight,
     this.letterSpacing = 0,
+    this.paragraphSpacing = 0,
+    this.firstLineIndent = 2,
     required this.fontFamily,
     this.fontFamilyFallback,
     required this.color,
@@ -25,10 +27,14 @@ class PageSpec {
   final double fontSize;
   final double lineHeight;
   final double letterSpacing;
+  final double paragraphSpacing;
+  final double firstLineIndent;
   final String? fontFamily;
   final List<String>? fontFamilyFallback;
   final Color color;
   final TextScaler textScaler;
+
+  double get paragraphGap => paragraphSpacing * textScaler.scale(fontSize);
 
   double get line => textScaler.scale(fontSize) * lineHeight;
   int get linesPerPage => math.max(1, (height / line).floor());
@@ -62,6 +68,8 @@ class PageSpec {
       other.fontSize == fontSize &&
       other.lineHeight == lineHeight &&
       other.letterSpacing == letterSpacing &&
+      other.paragraphSpacing == paragraphSpacing &&
+      other.firstLineIndent == firstLineIndent &&
       other.fontFamily == fontFamily &&
       other.color == color &&
       listEquals(other.fontFamilyFallback, fontFamilyFallback) &&
@@ -74,6 +82,8 @@ class PageSpec {
     fontSize,
     lineHeight,
     letterSpacing,
+    paragraphSpacing,
+    firstLineIndent,
     fontFamily,
     fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback!),
     textScaler,
@@ -81,12 +91,28 @@ class PageSpec {
   );
 }
 
-/// Paragraph indent: a two-character placeholder before the block text. A
+/// Paragraph indent: one placeholder before the block text, even at zero width. A
 /// placeholder occupies one UTF-16 unit (U+FFFC) in the laid-out text; unlike
 /// ideographic spaces it is never squeezed by justification.
 const int indentShift = 1;
 
-double indentWidth(PageSpec spec) => 2 * spec.textScaler.scale(spec.fontSize);
+double indentWidth(PageSpec spec) => math.min(
+  spec.firstLineIndent * spec.textScaler.scale(spec.fontSize),
+  // A narrow pane must still fit text beside the indent, rather than creating
+  // an empty first line that consumes source offsets or a whole page.
+  math.max(0, spec.width - spec.textScaler.scale(spec.fontSize)),
+);
+
+/// RichText scales WidgetSpan children using the surrounding font size. Keep
+/// the child in unscaled units so its final dimensions match the explicit
+/// placeholder dimensions used by TextPainter during pagination/hit testing.
+WidgetSpan indentSpan(PageSpec spec, double width) {
+  final double scale = spec.textScaler.scale(spec.fontSize) / spec.fontSize;
+  return WidgetSpan(
+    alignment: PlaceholderAlignment.middle,
+    child: SizedBox(width: width / scale, height: 1 / scale),
+  );
+}
 
 /// A run of whole lines of one block on one page.
 class Frag {
@@ -97,6 +123,7 @@ class Frag {
     required this.top,
     required this.lines,
     required this.image,
+    this.leading = 0,
     int? displayStart,
     int? displayEnd,
   }) : _displayStart = displayStart,
@@ -116,6 +143,10 @@ class Frag {
   final double top;
   final int lines;
   final bool image;
+
+  /// Extra visual space before this fragment; never part of the source text.
+  final double leading;
+  double height(PageSpec spec) => leading + lines * spec.line;
 }
 
 class PageData {
@@ -163,38 +194,63 @@ class Paginator {
 
   List<PageData> pages(int chapter) => _cache[chapter] ??= _layout(chapter);
 
+  final Map<Block, double> _indents = <Block, double>{};
+
+  /// Resolved per paragraph: a long first word may need the full line width.
+  double indentFor(Block block) {
+    if (!_indents.containsKey(block)) painterFor(block).dispose();
+    return _indents[block] ?? 0;
+  }
+
   /// Lines of text a block uses at this spec, and its painter.
   TextPainter painterFor(Block b) {
     final bool heading = b.kind == 'h';
     final String text = textFor(b).text;
-    final TextPainter tp = TextPainter(
-      text: heading
-          ? TextSpan(text: text, style: spec.heading)
-          : TextSpan(
-              style: spec.body,
-              children: <InlineSpan>[
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.middle,
-                  child: SizedBox(width: indentWidth(spec), height: 1),
-                ),
-                TextSpan(text: text),
-              ],
-            ),
-      textAlign: heading ? TextAlign.center : TextAlign.justify,
-      textDirection: TextDirection.ltr,
-      strutStyle: heading ? null : spec.strut,
-      textScaler: spec.textScaler,
-    );
-    if (!heading) {
-      tp.setPlaceholderDimensions(<PlaceholderDimensions>[
-        PlaceholderDimensions(
-          size: Size(indentWidth(spec), 1),
-          alignment: PlaceholderAlignment.middle,
-        ),
-      ]);
+    TextPainter measure(double indent) {
+      final TextPainter painter = TextPainter(
+        text: heading
+            ? TextSpan(text: text, style: spec.heading)
+            : TextSpan(
+                style: spec.body,
+                children: <InlineSpan>[
+                  indentSpan(spec, indent),
+                  TextSpan(text: text),
+                ],
+              ),
+        textAlign: heading ? TextAlign.center : TextAlign.justify,
+        textDirection: TextDirection.ltr,
+        strutStyle: heading ? null : spec.strut,
+        textScaler: spec.textScaler,
+      );
+      if (!heading) {
+        painter.setPlaceholderDimensions(<PlaceholderDimensions>[
+          PlaceholderDimensions(
+            size: Size(indent, 1),
+            alignment: PlaceholderAlignment.middle,
+          ),
+        ]);
+      }
+      painter.layout(minWidth: spec.width, maxWidth: spec.width);
+      return painter;
     }
-    tp.layout(minWidth: spec.width, maxWidth: spec.width);
-    return tp;
+
+    double indent = heading ? 0 : (_indents[b] ?? indentWidth(spec));
+    TextPainter painter = measure(indent);
+    if (!heading && !_indents.containsKey(b)) {
+      // Flutter may break a CJK glyph with positive tracking, or an entire
+      // English word, after the placeholder. Drop the indent in that paragraph
+      // rather than creating a blank first line (or a source-empty page).
+      if (indent > 0 &&
+          text.isNotEmpty &&
+          painter.getLineBoundary(const TextPosition(offset: 0)).end <=
+              indentShift) {
+        painter.dispose();
+        indent = 0;
+        painter = measure(indent);
+      }
+      _indents[b] = indent;
+    }
+    return painter;
   }
 
   int _imageLines() => math.min(
@@ -208,7 +264,8 @@ class Paginator {
     final double line = spec.line;
     final List<PageData> out = <PageData>[];
     List<Frag> current = <Frag>[];
-    int used = 0;
+    double used = 0;
+    final double availableHeight = capacity * line;
 
     void flush() {
       if (current.isEmpty) return;
@@ -231,7 +288,7 @@ class Paginator {
       final Block b = book.blocks[bi];
       if (b.kind == 'img') {
         final int need = _imageLines();
-        if (used + need > capacity) flush();
+        if (used + need * line > availableHeight + 0.000001) flush();
         current.add(
           Frag(
             block: bi,
@@ -242,12 +299,18 @@ class Paginator {
             image: true,
           ),
         );
-        used += need;
+        used += need * line;
         continue;
       }
       final PurifiedText mapped = textFor(b);
       if (mapped.text.isEmpty) continue;
-      Frag fragment(int a, int z, double top, int lines) => Frag(
+      Frag fragment(
+        int a,
+        int z,
+        double top,
+        int lines, {
+        double leading = 0,
+      }) => Frag(
         block: bi,
         start: mapped.sourceStart(a),
         end: mapped.sourceEnd(z),
@@ -256,6 +319,7 @@ class Paginator {
         top: top,
         lines: lines,
         image: false,
+        leading: leading,
       );
       final TextPainter tp = painterFor(b);
       final bool heading = b.kind == 'h';
@@ -266,12 +330,15 @@ class Paginator {
       if (heading) {
         final int textLines = math.max(1, (tp.height / line).ceil());
         if (textLines <= capacity) {
-          if (used + textLines + (current.isEmpty ? 0 : 1) > capacity) flush();
+          if (used + (textLines + (current.isEmpty ? 0 : 1)) * line >
+              availableHeight + 0.000001) {
+            flush();
+          }
           final int extra = current.isEmpty ? 0 : 1;
           current.add(
             fragment(0, mapped.text.length, -extra * line, textLines + extra),
           );
-          used += textLines + extra;
+          used += (textLines + extra) * line;
           tp.dispose();
           continue;
         }
@@ -308,7 +375,7 @@ class Paginator {
               math.min(capacity, math.max(1, ((bottom - top) / line).ceil())),
             ),
           );
-          used = current.last.lines;
+          used = current.last.height(spec);
           from = to;
           if (from < metrics.length) flush();
         }
@@ -330,14 +397,26 @@ class Paginator {
       ];
       int from = 0;
       while (from < total) {
-        if (used >= capacity) flush();
-        final int take = math.min(capacity - used, total - from);
+        double leading = from == 0 && current.isNotEmpty
+            ? spec.paragraphGap
+            : 0;
+        // Keep the gap with its first line and omit it after a page break.
+        // Continuations use every available line without repeating the gap.
+        if (availableHeight - used - leading < line - 0.000001) {
+          flush();
+          leading = 0;
+        }
+        final int room = math.max(
+          1,
+          ((availableHeight - used - leading + 0.000001) / line).floor(),
+        );
+        final int take = math.min(room, total - from);
         final int a = from == 0 ? 0 : starts[from];
         final int z = from + take >= total
             ? mapped.text.length
             : starts[from + take];
-        current.add(fragment(a, z, from * line, take));
-        used += take;
+        current.add(fragment(a, z, from * line, take, leading: leading));
+        used += take * line + leading;
         from += take;
       }
       tp.dispose();

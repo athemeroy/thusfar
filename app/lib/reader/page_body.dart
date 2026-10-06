@@ -71,7 +71,7 @@ class PageBody extends StatelessWidget {
           for (final Frag f in page.frags)
             if (f.image)
               SizedBox(
-                height: f.lines * spec.line,
+                height: f.height(spec),
                 child: _image(context, book, book.blocks[f.block], t),
               )
             else
@@ -152,16 +152,19 @@ class _Fragment extends StatelessWidget {
       strutStyle: heading ? null : spec.strut,
       textScaler: spec.textScaler,
     );
-    return SizedBox(
-      height: frag.lines * spec.line,
-      child: ClipRect(
-        child: OverflowBox(
-          alignment: Alignment.topLeft,
-          minHeight: 0,
-          maxHeight: double.infinity,
-          child: Transform.translate(
-            offset: Offset(0, -frag.top),
-            child: SizedBox(width: spec.width, child: text),
+    return Padding(
+      padding: EdgeInsets.only(top: frag.leading),
+      child: SizedBox(
+        height: frag.lines * spec.line,
+        child: ClipRect(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minHeight: 0,
+            maxHeight: double.infinity,
+            child: Transform.translate(
+              offset: Offset(0, -frag.top),
+              child: SizedBox(width: spec.width, child: text),
+            ),
           ),
         ),
       ),
@@ -223,12 +226,7 @@ class _Fragment extends StatelessWidget {
         cuts.where((int x) => x >= 0 && x <= text.length).toList()..sort();
     final List<InlineSpan> children = <InlineSpan>[];
     if (shift > 0) {
-      children.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          child: SizedBox(width: indentWidth(spec), height: 1),
-        ),
-      );
+      children.add(indentSpan(spec, pager.indentFor(b)));
     }
     for (int i = 0; i + 1 < points.length; i++) {
       final int a = points[i];

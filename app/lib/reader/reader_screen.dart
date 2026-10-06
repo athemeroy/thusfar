@@ -206,6 +206,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       fontSize: prefs.fontSize,
       lineHeight: prefs.lineHeight,
       letterSpacing: prefs.letterSpacing,
+      paragraphSpacing: prefs.paragraphSpacing,
+      firstLineIndent: prefs.firstLineIndent,
       fontFamily: prefs.fontFamily,
       fontFamilyFallback: prefs.fontFallback,
       color: _ink(t),
@@ -442,13 +444,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (x < 0 || x >= _contentWidth) return null;
     double y = 0;
     for (final Frag f in page.frags) {
-      final double h = f.lines * p.spec.line;
-      if (local.dy >= y && local.dy < y + h && !f.image) {
+      final double h = f.height(p.spec);
+      if (local.dy >= y + f.leading && local.dy < y + h && !f.image) {
         final Block b = book.blocks[f.block];
         final TextPainter tp = p.painterFor(b);
         final int shift = b.kind == 'h' ? 0 : indentShift;
         final int pos =
-            tp.getPositionForOffset(Offset(x, f.top + (local.dy - y))).offset -
+            tp
+                .getPositionForOffset(
+                  Offset(x, f.top + (local.dy - y - f.leading)),
+                )
+                .offset -
             shift;
         tp.dispose();
         final (int, int)? range = p
@@ -1354,7 +1360,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
               Rect.zero,
             ) +
-            Offset(_readingBounds.left + _contentLeft, top + y - fragment.top);
+            Offset(
+              _readingBounds.left + _contentLeft,
+              top + y + fragment.leading - fragment.top,
+            );
         sourcePoint =
             painter.getOffsetForCaret(
               TextPosition(
@@ -1362,11 +1371,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ),
               Rect.zero,
             ) +
-            Offset(_contentLeft, y - fragment.top + pager.spec.line / 2);
+            Offset(
+              _contentLeft,
+              y + fragment.leading - fragment.top + pager.spec.line / 2,
+            );
         painter.dispose();
         break;
       }
-      y += fragment.lines * pager.spec.line;
+      y += fragment.height(pager.spec);
     }
     if (caret == null) return const SizedBox.shrink();
     final double line = pager.spec.line;
