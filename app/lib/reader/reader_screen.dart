@@ -15,6 +15,7 @@ import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/prefs.dart';
 import '../data/purification_store.dart';
+import '../data/reader_directory.dart';
 import '../data/processing.dart';
 import '../data/seen.dart';
 import '../sheets/ask_sheet.dart';
@@ -132,7 +133,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _refreshKnowledge() {
-    if (book.refreshKnowledge()) c.touch();
+    final bool knowledgeChanged = book.refreshKnowledge();
+    _purification.refresh();
+    final bool directoryChanged = book.directory.refresh();
+    if (knowledgeChanged || directoryChanged) c.touch();
   }
 
   void _repaint() {

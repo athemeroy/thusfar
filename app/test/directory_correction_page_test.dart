@@ -183,7 +183,10 @@ void main() {
           chapter = controller.chapter;
       await show(tester);
       await tapText(tester, '修正 TXT 目录');
-      expect(find.text('修正目录不包含在书籍导出、书库 ZIP 备份或 WebDAV 同步中'), findsOneWidget);
+      expect(
+        find.text('修正目录随单书导出、书库 ZIP 和 WebDAV 快照保存；恢复时核对原文，保留本机冲突目录'),
+        findsOneWidget,
+      );
       await preview(tester);
       expect(book.directory.enabled, isFalse);
       await tapText(tester, '取消预览');

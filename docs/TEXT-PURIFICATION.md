@@ -48,9 +48,12 @@ to 512 KiB, including JSON escaping and unknown file sizes. The format contains 
 not book content or credentials.
 
 This first implementation is native-reader only. It does not implement Legado
-rule compatibility, regex, cross-paragraph replacements, Web reader transforms,
-or inclusion in the existing book/library backup archives. Export rules
-separately for backup; the manager states this limit.
+rule compatibility, regex, cross-paragraph replacements,
+or Web reader transforms. Book-scoped rules now travel with single-book JSON
+and WebDAV; whole-library ZIP additionally carries global rules with explicit
+restore consent. See [portable reader customizations](READER-CUSTOMIZATIONS.md)
+for source validation, precedence, conflict and rollback semantics. Standalone
+rule export remains available.
 
 ## Verification
 

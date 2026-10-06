@@ -29,6 +29,8 @@ class PurificationPage extends StatelessWidget {
   void _change(BuildContext context, VoidCallback action) {
     try {
       action();
+    } on StateError catch (error) {
+      _notice(context, error.message);
     } on Object {
       _notice(context, '规则未能保存，请检查存储空间后重试');
     }
@@ -185,7 +187,7 @@ class PurificationPage extends StatelessWidget {
                     ),
                   ],
                 ),
-                const Text('规则单独导入和导出，目前不包含在书库备份中。导出的本书规则可用于另一本书。'),
+                const Text('单书备份含本书规则；全局规则请用整库 ZIP 或单独导出。独立规则文件仍可导入到另一本书。'),
                 const SizedBox(height: 16),
                 if (rules.isEmpty) const Text('还没有本书或全局规则。也可以长按选中文字，点“净化”添加。'),
                 for (int i = 0; i < rules.length; i++)
@@ -432,6 +434,8 @@ class _PurificationEditorState extends State<PurificationEditor> {
                           widget.store.put(draft);
                           SheetScope.of(context).state.pop();
                         } on FormatException catch (error) {
+                          setState(() => _saveError = error.message);
+                        } on StateError catch (error) {
                           setState(() => _saveError = error.message);
                         } on Object {
                           setState(() => _saveError = '规则未能保存，请检查存储空间后重试');

@@ -8,11 +8,13 @@ class BackupSummary {
     required this.bytes,
     this.id,
     this.exported,
+    this.customizationSummary,
   });
   final String title;
   final int bytes;
   final String? id;
   final DateTime? exported;
+  final String? customizationSummary;
 
   factory BackupSummary.read(Uint8List bytes, {String fallback = '未命名书籍'}) {
     try {
@@ -27,11 +29,26 @@ class BackupSummary {
             ? book['title']
             : null;
         final Object? stamp = raw['exported'];
+        final Object? native = raw['native_backup'];
+        final Object? custom =
+            raw['reader_customizations'] ??
+            (native is Map ? native['reader_customizations'] : null);
+        String? customizationSummary;
+        if (custom is Map) {
+          final Object? rules = custom['purification'];
+          final int count = rules is List ? rules.length : 0;
+          customizationSummary =
+              '本书净化规则 $count 条'
+              '${custom['directory'] == null ? '' : '；含 TXT 目录设置'}。'
+              '现有规则的顺序和启用选择保留，新增规则追加；目录冲突会停止恢复。'
+              '单书备份不含全局净化规则，请用整库 ZIP 或单独导出规则。';
+        }
         return BackupSummary(
           title: title is String && title.trim().isNotEmpty
               ? title.trim()
               : fallback,
           bytes: bytes.length,
+          customizationSummary: customizationSummary,
           id: raw['id'] is String
               ? raw['id'] as String
               : meta is Map && meta['id'] is String

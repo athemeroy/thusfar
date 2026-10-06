@@ -19,6 +19,7 @@ import '../data/library_zip.dart';
 import '../data/portable_work.dart';
 import '../data/restore_report.dart';
 import '../data/preparation_scope.dart';
+import '../data/reader_customizations.dart';
 
 typedef Json = Map<String, Object?>;
 
@@ -36,6 +37,8 @@ const int _preparationLeaseMs = 5 * 60 * 1000;
 const String _modelProfileStorageKey = 'thusfar-web-model-profile-v1';
 const String _librarySettingsStorageKey =
     'thusfar-web-library-settings-transfer-v1';
+const String _libraryCustomizationsStorageKey =
+    'thusfar-web-reader-customizations-transfer-v1';
 const String _readingQueueStorageKey = 'thusfar-web-reading-queue-v1';
 
 class WebLibraryZipRestoreResult {
@@ -417,7 +420,8 @@ void _validateImportedBook(Json book) {
   }
 }
 
-void _validateNativeExtras(Json value, int bookLength) {
+void _validateNativeExtras(Json value, Json book) {
+  final int bookLength = book['len'] as int;
   const Set<String> allowed = <String>{
     'format',
     'exported',
@@ -430,6 +434,7 @@ void _validateNativeExtras(Json value, int bookLength) {
     'notebook',
     'manual_entities',
     'work_files',
+    'reader_customizations',
   };
   if (value.keys.any((String key) => !allowed.contains(key))) {
     throw const FormatException('安装版备份含未知附加字段，未导入。');
@@ -449,6 +454,19 @@ void _validateNativeExtras(Json value, int bookLength) {
       value['id'] is! String ||
       value['kg'] is! Json) {
     throw const FormatException('备份中的安装版附加资料无效。');
+  }
+  if (value.containsKey('reader_customizations')) {
+    final Json? customizations = validatedReaderCustomizations(
+      value['reader_customizations'],
+      book: book,
+      bookId: value['id'] as String,
+      meta: value['meta'] is Json ? value['meta'] as Json : <String, Object?>{},
+    );
+    if (customizations == null) {
+      value.remove('reader_customizations');
+    } else {
+      value['reader_customizations'] = customizations;
+    }
   }
   final Json graph = value['kg'] as Json;
   final Object? rawLog = graph['log'];
@@ -580,6 +598,7 @@ Json _webWrapperFromNative(Json native) {
         'notebook',
         'manual_entities',
         'work_files',
+        'reader_customizations',
       }.contains(entry.key))
         entry.key: entry.value,
   };
@@ -600,11 +619,12 @@ Json _webWrapperFromNative(Json native) {
       'notebook',
       'manual_entities',
       'work_files',
+      'reader_customizations',
     }.contains(key),
   )) {
     throw const FormatException('安装版备份含未知附加字段，未导入。');
   }
-  _validateNativeExtras(nativeExtras, book['len'] as int);
+  _validateNativeExtras(nativeExtras, book);
   final Json state;
   if (native['web_state'] is Json) {
     state = native['web_state'] as Json;
@@ -840,6 +860,14 @@ List<Object?> _mergeNativeManual(Object? local, Object? incoming) {
 Json? _mergeNativeBackups(Json? local, Json? incoming) {
   if (local == null) return incoming;
   if (incoming == null) return local;
+  if (local['reader_customizations'] != null &&
+      incoming['reader_customizations'] != null &&
+      !_sameJson(
+        local['reader_customizations'],
+        incoming['reader_customizations'],
+      )) {
+    throw const WebBackupConflict('这本书的阅读自定义在两端不同，未覆盖；请分别导出备份后在安装版处理。');
+  }
   final Json? localMeta = local['meta'] is Json ? local['meta'] as Json : null;
   final Json? incomingMeta = incoming['meta'] is Json
       ? incoming['meta'] as Json
@@ -1381,6 +1409,9 @@ class WebLibrary {
     final Json book = wrapper['book'] as Json;
     final Json rawImages = wrapper['images'] as Json? ?? <String, Object?>{};
     final Json rawState = wrapper['state'] as Json? ?? <String, Object?>{};
+    if (wrapper['native_backup'] != null && wrapper['native_backup'] is! Json) {
+      throw const FormatException('备份中的安装版附加资料无效，未导入。');
+    }
     final Json? nativeBackup = wrapper['native_backup'] is Json
         ? wrapper['native_backup'] as Json
         : null;
@@ -1396,7 +1427,7 @@ class WebLibrary {
       throw const FormatException('备份缺少正文引用的图片或封面，未导入。');
     }
     if (nativeBackup != null) {
-      _validateNativeExtras(nativeBackup, book['len'] as int);
+      _validateNativeExtras(nativeBackup, book);
     }
     final Object? rawPreparation = wrapper['preparation'];
     final String? preparation;
@@ -1658,7 +1689,11 @@ class WebLibrary {
       };
       if (preparation != null) backup['preparation'] = preparation;
       if (book.nativeBackup != null) {
-        backup['native_backup'] = <String, Object?>{...book.nativeBackup!};
+        final Json native = <String, Object?>{...book.nativeBackup!};
+        // Native-only customization metadata is transferable, never rendered.
+        // Refuse damaged or stale source bindings rather than losing them.
+        _validateNativeExtras(native, book.data);
+        backup['native_backup'] = native;
       }
       return Uint8List.fromList(utf8.encode(jsonEncode(backup)));
     } finally {
@@ -1740,7 +1775,129 @@ class WebLibrary {
         ],
       },
     };
-    return LibraryZipCodec.encode(books: backups, settings: settings);
+    return LibraryZipCodec.encode(
+      books: backups,
+      settings: settings,
+      customizations: _exportReaderCustomizations(backups),
+    );
+  }
+
+  /// Keep native identities intact, even when same-book import chose an
+  /// existing browser shelf ID. A removed book must not donate its scoped
+  /// rules to a different book that later occupies its archive position.
+  static Map<String, String> _readerSources(List<Uint8List> backups) {
+    final Map<String, String> sources = <String, String>{};
+    for (final Uint8List bytes in backups) {
+      final Json wrapper = jsonDecode(utf8.decode(bytes)) as Json;
+      final Json? native = wrapper['format'] == 'yedu-book/2'
+          ? wrapper
+          : wrapper['native_backup'] as Json?;
+      final String? id = native?['id'] as String?;
+      if (id == null || id.isEmpty) continue;
+      final String source = readerCustomizationSource(wrapper['book'] as Json);
+      if (sources.containsKey(id) && sources[id] != source) {
+        throw const FormatException('书库中的安装版书籍编号对应不同正文，未导出阅读自定义。');
+      }
+      sources[id] = source;
+    }
+    return sources;
+  }
+
+  static Json _savedReaderCustomizations(String raw) {
+    final Object? value = jsonDecode(raw);
+    if (value is! Json || value['books'] is! List<Object?>) {
+      throw const FormatException('保留的阅读自定义已损坏，未生成不完整备份。');
+    }
+    final Map<String, String> sources = <String, String>{};
+    for (final Object? row in value['books'] as List<Object?>) {
+      if (row is! Json ||
+          row['bookId'] is! String ||
+          row['source'] is! String) {
+        throw const FormatException('保留的阅读自定义书籍信息已损坏。');
+      }
+      sources[row['bookId'] as String] = row['source'] as String;
+    }
+    return validatedReaderLibrary(value, sources: sources);
+  }
+
+  static Json? _exportReaderCustomizations(List<Uint8List> backups) {
+    final String? raw =
+        html.window.localStorage[_libraryCustomizationsStorageKey];
+    if (raw == null) return null;
+    // Unlike optional cosmetic settings, dropping damaged customization data
+    // would produce a deceptively successful, incomplete portable backup.
+    return _survivingReaderCustomizations(
+      _savedReaderCustomizations(raw),
+      _readerSources(backups),
+    );
+  }
+
+  static Json _survivingReaderCustomizations(
+    Json saved,
+    Map<String, String> sources,
+  ) {
+    for (final Object? value in saved['books'] as List<Object?>) {
+      final Json row = value! as Json;
+      final String id = row['bookId']! as String;
+      if (sources.containsKey(id) && sources[id] != row['source']) {
+        throw const FormatException('保留的阅读自定义与当前同编号书籍原文不同，未生成不完整备份。');
+      }
+    }
+    final List<Json> retained = <Json>[
+      for (final Object? row in saved['books'] as List<Object?>)
+        if (row is Json && sources[row['bookId']] == row['source']) row,
+    ];
+    final Set<String> ids = retained
+        .map((Json row) => row['bookId'] as String)
+        .toSet();
+    return validatedReaderLibrary(<String, Object?>{
+      ...saved,
+      'books': retained,
+      'purification': <Object?>[
+        for (final Object? row in saved['purification'] as List<Object?>)
+          if (row is Json &&
+              (row['bookId'] == null || ids.contains(row['bookId'])))
+            row,
+      ],
+    }, sources: sources);
+  }
+
+  Future<Json?> _readerCustomizationsToRestore(LibraryZipData archive) async {
+    final Json? incoming = archive.customizations;
+    if (incoming == null) return null;
+    final Json validated = LibraryZipCodec.validatedCustomizations(
+      archive.books,
+      incoming,
+    );
+    final Map<String, String> currentSources = <String, String>{};
+    for (final WebBookMeta meta in await list()) {
+      final WebBook? book = await load(meta.id);
+      final String? id = book?.nativeBackup?['id'] as String?;
+      if (book == null || id == null) continue;
+      final String source = readerCustomizationSource(book.data);
+      if (currentSources.containsKey(id) && currentSources[id] != source) {
+        throw const FormatException('本地安装版书籍编号对应不同正文。');
+      }
+      currentSources[id] = source;
+    }
+    validatedReaderLibrary(validated, sources: currentSources);
+    final String? raw =
+        html.window.localStorage[_libraryCustomizationsStorageKey];
+    if (raw != null) {
+      final Json saved = _savedReaderCustomizations(raw);
+      if (!_sameJson(
+        _survivingReaderCustomizations(saved, currentSources),
+        validated,
+      )) {
+        throw const WebBackupConflict(
+          '书籍已恢复，但两份书库的阅读自定义不同，未覆盖；当前设置保留，请分别导出后处理。',
+        );
+      }
+      // Preserve absent/recycled identities in local transfer storage. Export
+      // filters them, and restoring that same source can recover original order.
+      return saved;
+    }
+    return validated;
   }
 
   Future<void> exportLibraryZip() async {
@@ -1821,24 +1978,43 @@ class WebLibrary {
     );
     String? settingsError;
     if (failures.isEmpty && applySettings) {
+      Json? customizations;
       try {
-        final Json shelf =
-            archive.settings['shelf'] as Json? ?? <String, Object?>{};
-        final List<int> queue = shelf['readingQueue'] as List<int>? ?? <int>[];
-        if (queue.isNotEmpty) {
-          html.window.localStorage[_readingQueueStorageKey] = jsonEncode(
-            <String>[
-              ...<String>{
-                for (final int index in queue)
-                  if (ids[index] != null) ids[index]!,
-                ..._readingQueueIds(),
-              },
-            ],
-          );
-        }
-        _applyWebReaderSettings(archive.settings);
+        // Check before changing settings. Global rule order is meaningful and
+        // two different archived sets cannot be silently chosen or combined.
+        customizations = await _readerCustomizationsToRestore(archive);
+      } on WebBackupConflict catch (error) {
+        settingsError = error.message;
+      } on FormatException {
+        settingsError = '书籍已恢复，但阅读自定义损坏或来源不符，未覆盖当前设置。';
       } on Object {
-        settingsError = '书籍已恢复，设置未完全保存；请检查浏览器可用空间。';
+        settingsError = '书籍已恢复，但无法校验阅读自定义；当前设置保留，请检查浏览器可用空间。';
+      }
+      if (settingsError == null) {
+        try {
+          final Json shelf =
+              archive.settings['shelf'] as Json? ?? <String, Object?>{};
+          final List<int> queue =
+              shelf['readingQueue'] as List<int>? ?? <int>[];
+          if (queue.isNotEmpty) {
+            html.window.localStorage[_readingQueueStorageKey] = jsonEncode(
+              <String>[
+                ...<String>{
+                  for (final int index in queue)
+                    if (ids[index] != null) ids[index]!,
+                  ..._readingQueueIds(),
+                },
+              ],
+            );
+          }
+          _applyWebReaderSettings(archive.settings);
+          if (customizations != null) {
+            html.window.localStorage[_libraryCustomizationsStorageKey] =
+                jsonEncode(customizations);
+          }
+        } on Object {
+          settingsError = '书籍已恢复，设置未完全保存；请检查浏览器可用空间。';
+        }
       }
     }
     final RestoreReport report = RestoreReport(
@@ -1848,7 +2024,10 @@ class WebLibrary {
           ? '按你的选择保留当前设置'
           : failures.isNotEmpty
           ? '因书籍冲突而跳过，当前设置保留；可处理冲突后重试'
-          : settingsError ?? '已导入阅读清单、排版和模型设置；模型密钥需重填',
+          : settingsError ??
+                (archive.customizations == null
+                    ? '已导入阅读清单、排版和模型设置；模型密钥需重填'
+                    : '已导入阅读清单、排版和模型设置，并保留阅读自定义供安装版使用；网页版不应用净化或修正目录，模型密钥需重填'),
     );
     String? reportError;
     try {
