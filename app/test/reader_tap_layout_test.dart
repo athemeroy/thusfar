@@ -127,6 +127,7 @@ void main() {
         find.byType(ListView).last,
         const Offset(0, -240),
       );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('点击区域'));
       await tester.pumpAndSettle();
       for (final ReaderTapPreset preset in <ReaderTapPreset>[
@@ -363,6 +364,7 @@ void main() {
           find.byType(ListView).last,
           const Offset(0, -160),
         );
+        await tester.pumpAndSettle();
         await tester.tap(find.text('点击区域'));
         await tester.pumpAndSettle();
         await tester.sendKeyEvent(LogicalKeyboardKey.audioVolumeDown);

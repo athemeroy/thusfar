@@ -20,6 +20,8 @@ class Prefs extends ChangeNotifier {
         ? savedLineHeight.toDouble().clamp(1.2, 2.4)
         : null;
     letterSpacing = _readMetric(j, 'letterSpacing', 0, -0.5, 2.5);
+    paragraphSpacing = _readMetric(j, 'paragraphSpacing', 0, 0, 2);
+    firstLineIndent = _readMetric(j, 'firstLineIndent', 2, 0, 4);
     pageHorizontalMargin = _readMetric(j, 'pageHorizontalMargin', 20, 8, 96);
     pageVerticalMargin = _readMetric(j, 'pageVerticalMargin', 16, 4, 48);
     font = (j['font'] as num?)?.toInt() ?? 0;
@@ -43,6 +45,13 @@ class Prefs extends ChangeNotifier {
   /// Custom line height overrides the three older spacing presets.
   late double? lineHeightOverride;
   late double letterSpacing;
+
+  /// Extra space before a paragraph in font-size units, independent of leading.
+  /// Zero preserves the original reader layout for existing preferences.
+  late double paragraphSpacing;
+
+  /// First-line indent in font-size units. Two preserves the original layout.
+  late double firstLineIndent;
   late double pageHorizontalMargin;
   late double pageVerticalMargin;
 
@@ -113,6 +122,8 @@ class Prefs extends ChangeNotifier {
       'spacing': spacing,
       if (lineHeightOverride != null) 'lineHeight': lineHeightOverride,
       'letterSpacing': letterSpacing,
+      'paragraphSpacing': paragraphSpacing,
+      'firstLineIndent': firstLineIndent,
       'pageHorizontalMargin': pageHorizontalMargin,
       'pageVerticalMargin': pageVerticalMargin,
       'font': font,

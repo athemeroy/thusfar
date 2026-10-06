@@ -14,6 +14,8 @@ class PageSpec {
     required this.fontSize,
     required this.lineHeight,
     this.letterSpacing = 0,
+    this.paragraphSpacing = 0,
+    this.firstLineIndent = 2,
     required this.fontFamily,
     this.fontFamilyFallback,
     required this.color,
@@ -25,10 +27,14 @@ class PageSpec {
   final double fontSize;
   final double lineHeight;
   final double letterSpacing;
+  final double paragraphSpacing;
+  final double firstLineIndent;
   final String? fontFamily;
   final List<String>? fontFamilyFallback;
   final Color color;
   final TextScaler textScaler;
+
+  double get paragraphGap => paragraphSpacing * textScaler.scale(fontSize);
 
   double get line => textScaler.scale(fontSize) * lineHeight;
   int get linesPerPage => math.max(1, (height / line).floor());
@@ -62,6 +68,8 @@ class PageSpec {
       other.fontSize == fontSize &&
       other.lineHeight == lineHeight &&
       other.letterSpacing == letterSpacing &&
+      other.paragraphSpacing == paragraphSpacing &&
+      other.firstLineIndent == firstLineIndent &&
       other.fontFamily == fontFamily &&
       other.color == color &&
       listEquals(other.fontFamilyFallback, fontFamilyFallback) &&
@@ -74,6 +82,8 @@ class PageSpec {
     fontSize,
     lineHeight,
     letterSpacing,
+    paragraphSpacing,
+    firstLineIndent,
     fontFamily,
     fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback!),
     textScaler,
@@ -81,12 +91,17 @@ class PageSpec {
   );
 }
 
-/// Paragraph indent: a two-character placeholder before the block text. A
+/// Paragraph indent: one placeholder before the block text, even at zero width. A
 /// placeholder occupies one UTF-16 unit (U+FFFC) in the laid-out text; unlike
 /// ideographic spaces it is never squeezed by justification.
 const int indentShift = 1;
 
-double indentWidth(PageSpec spec) => 2 * spec.textScaler.scale(spec.fontSize);
+double indentWidth(PageSpec spec) => math.min(
+  spec.firstLineIndent * spec.textScaler.scale(spec.fontSize),
+  // A narrow pane must still fit text beside the indent, rather than creating
+  // an empty first line that consumes source offsets or a whole page.
+  math.max(0, spec.width - spec.textScaler.scale(spec.fontSize)),
+);
 
 /// A run of whole lines of one block on one page.
 class Frag {
@@ -97,6 +112,7 @@ class Frag {
     required this.top,
     required this.lines,
     required this.image,
+    this.leading = 0,
     int? displayStart,
     int? displayEnd,
   }) : _displayStart = displayStart,
@@ -116,6 +132,10 @@ class Frag {
   final double top;
   final int lines;
   final bool image;
+
+  /// Extra visual space before this fragment; never part of the source text.
+  final double leading;
+  double height(PageSpec spec) => leading + lines * spec.line;
 }
 
 class PageData {
@@ -208,7 +228,8 @@ class Paginator {
     final double line = spec.line;
     final List<PageData> out = <PageData>[];
     List<Frag> current = <Frag>[];
-    int used = 0;
+    double used = 0;
+    final double availableHeight = capacity * line;
 
     void flush() {
       if (current.isEmpty) return;
@@ -231,7 +252,7 @@ class Paginator {
       final Block b = book.blocks[bi];
       if (b.kind == 'img') {
         final int need = _imageLines();
-        if (used + need > capacity) flush();
+        if (used + need * line > availableHeight + 0.000001) flush();
         current.add(
           Frag(
             block: bi,
@@ -242,12 +263,18 @@ class Paginator {
             image: true,
           ),
         );
-        used += need;
+        used += need * line;
         continue;
       }
       final PurifiedText mapped = textFor(b);
       if (mapped.text.isEmpty) continue;
-      Frag fragment(int a, int z, double top, int lines) => Frag(
+      Frag fragment(
+        int a,
+        int z,
+        double top,
+        int lines, {
+        double leading = 0,
+      }) => Frag(
         block: bi,
         start: mapped.sourceStart(a),
         end: mapped.sourceEnd(z),
@@ -256,6 +283,7 @@ class Paginator {
         top: top,
         lines: lines,
         image: false,
+        leading: leading,
       );
       final TextPainter tp = painterFor(b);
       final bool heading = b.kind == 'h';
@@ -266,12 +294,15 @@ class Paginator {
       if (heading) {
         final int textLines = math.max(1, (tp.height / line).ceil());
         if (textLines <= capacity) {
-          if (used + textLines + (current.isEmpty ? 0 : 1) > capacity) flush();
+          if (used + (textLines + (current.isEmpty ? 0 : 1)) * line >
+              availableHeight + 0.000001) {
+            flush();
+          }
           final int extra = current.isEmpty ? 0 : 1;
           current.add(
             fragment(0, mapped.text.length, -extra * line, textLines + extra),
           );
-          used += textLines + extra;
+          used += (textLines + extra) * line;
           tp.dispose();
           continue;
         }
@@ -308,7 +339,7 @@ class Paginator {
               math.min(capacity, math.max(1, ((bottom - top) / line).ceil())),
             ),
           );
-          used = current.last.lines;
+          used = current.last.height(spec);
           from = to;
           if (from < metrics.length) flush();
         }
@@ -330,14 +361,26 @@ class Paginator {
       ];
       int from = 0;
       while (from < total) {
-        if (used >= capacity) flush();
-        final int take = math.min(capacity - used, total - from);
+        double leading = from == 0 && current.isNotEmpty
+            ? spec.paragraphGap
+            : 0;
+        // Keep the gap with its first line and omit it after a page break.
+        // Continuations use every available line without repeating the gap.
+        if (availableHeight - used - leading < line - 0.000001) {
+          flush();
+          leading = 0;
+        }
+        final int room = math.max(
+          1,
+          ((availableHeight - used - leading + 0.000001) / line).floor(),
+        );
+        final int take = math.min(room, total - from);
         final int a = from == 0 ? 0 : starts[from];
         final int z = from + take >= total
             ? mapped.text.length
             : starts[from + take];
-        current.add(fragment(a, z, from * line, take));
-        used += take;
+        current.add(fragment(a, z, from * line, take, leading: leading));
+        used += take * line + leading;
         from += take;
       }
       tp.dispose();
