@@ -27,7 +27,8 @@ effect but saves it disabled.
 - Rule changes invalidate layout without writing progress; the retained source
   anchor is reused when rules are edited or switched off. A replacement split
   across pages shares its source range, so an exact intra-replacement display
-  position is not separately persisted.
+  position is not separately persisted. Reopening or jumping to that source
+  anchor starts at its first display page; sequential page turns remain index-based.
 - An entirely hidden chapter still has one navigable empty page. Its cutoff
   does not advance into hidden text or the next chapter, and page estimates stay
   finite. No `book.json`, generated knowledge, source search or note data changes.
@@ -42,7 +43,8 @@ overwritten. Failed writes keep the last in-memory rules.
 book's rules plus global rules. **导入规则** validates and shows a confirmation
 preview, warns about global rules, rebinds book-scoped rules to the current book,
 and appends new rules in file order. Exact duplicates are skipped; existing rules
-are never overwritten. The format contains rule text, scope and enabled state,
+are never overwritten. Both serialized input and streamed file reads are limited
+to 512 KiB, including JSON escaping and unknown file sizes. The format contains rule text, scope and enabled state,
 not book content or credentials.
 
 This first implementation is native-reader only. It does not implement Legado

@@ -716,6 +716,59 @@ void main() {
       },
     );
 
+    for (final double scale in <double>[1, 2]) {
+      testWidgets(
+        'wrapped selection actions stay clear of the selected text at $scale scale',
+        (tester) async {
+          await setTestViewport(tester, Size(scale == 1 ? 360 : 320, 740));
+          addTearDown(() => setTestViewport(tester, null));
+          tester.platformDispatcher.textScaleFactorTestValue = scale;
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          await tester.pumpWidget(ThusfarApp(model: model));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('净化测试书').first);
+          await tester.pumpAndSettle();
+          final PageBody body = tester.widget<PageBody>(
+            find.byType(PageBody).first,
+          );
+          final TextPainter painter = body.pager.painterFor(
+            body.pager.book.blocks[1],
+          );
+          final Offset caret = painter.getOffsetForCaret(
+            const TextPosition(offset: 16 + indentShift),
+            Rect.zero,
+          );
+          final Offset point =
+              tester.getTopLeft(find.byType(PageBody).first) +
+              caret +
+              Offset(
+                1,
+                body.page.frags.first.lines * body.pager.spec.line +
+                    body.pager.spec.line / 2,
+              );
+          painter.dispose();
+          await tester.longPressAt(point);
+          await tester.pumpAndSettle();
+          final Rect actions = tester.getRect(
+            find.byKey(const ValueKey<String>('reader-selection-actions')),
+          );
+          expect(actions.bottom, lessThan(point.dy));
+          expect(actions.contains(point), isFalse);
+          expect(actions.left, greaterThanOrEqualTo(16));
+          expect(
+            actions.right,
+            lessThanOrEqualTo((scale == 1 ? 360 : 320) - 16),
+          );
+          expect(actions.top, greaterThanOrEqualTo(0));
+          expect(actions.bottom, lessThanOrEqualTo(740));
+          expect(find.text('净化').hitTestable(), findsOneWidget);
+          expect(find.text('复制').hitTestable(), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
+
     testWidgets('manager is reachable from more menu', (tester) async {
       await tester.pumpWidget(ThusfarApp(model: model));
       await tester.pumpAndSettle();

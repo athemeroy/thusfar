@@ -360,6 +360,12 @@ class Paginator {
   /// Page index inside [chapter] containing absolute [offset].
   int pageOf(int chapter, int offset) {
     final List<PageData> ps = pages(chapter);
+    // Expanded replacements may share one source range across several pages.
+    // Enter at the first containing page, never skip to its last occurrence.
+    // Half-open ranges retain normal next-page behavior at an exact boundary.
+    for (int i = 0; i < ps.length; i++) {
+      if (ps[i].start <= offset && offset < ps[i].end) return i;
+    }
     for (int i = ps.length - 1; i >= 0; i--) {
       if (ps[i].start <= offset) return i;
     }

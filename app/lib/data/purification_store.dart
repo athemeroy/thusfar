@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 
@@ -12,7 +13,7 @@ class PurificationStore extends ChangeNotifier {
   PurificationStore(this.file) {
     try {
       if (file.existsSync()) {
-        if (file.lengthSync() > 512 * 1024) {
+        if (file.lengthSync() > maxImportBytes) {
           throw const FormatException('规则文件过大');
         }
         _rules = _decode(jsonDecode(file.readAsStringSync()), portable: false);
@@ -22,6 +23,8 @@ class PurificationStore extends ChangeNotifier {
     }
   }
 
+  // Covers the worst-case JSON escaping of every valid 64-rule export.
+  static const int maxImportBytes = 512 * 1024;
   static int _sequence = 0;
   static String newRuleId() =>
       '${DateTime.now().microsecondsSinceEpoch}-${_sequence++}';
@@ -78,14 +81,16 @@ class PurificationStore extends ChangeNotifier {
   /// Portable book rules bind to the book the user is importing into. Import
   /// appends rules; it never changes or deletes existing rules, even on failure.
   int importForBook(String data, String bookId) {
-    if (data.length > 128 * 1024) throw const FormatException('规则文件过大');
     final List<PurificationRule> imported = previewImport(data, bookId);
     if (imported.isNotEmpty) _save(<PurificationRule>[..._rules, ...imported]);
     return imported.length;
   }
 
   List<PurificationRule> previewImport(String data, String bookId) {
-    if (data.length > 128 * 1024) throw const FormatException('规则文件过大');
+    if (data.length > maxImportBytes ||
+        utf8.encode(data).length > maxImportBytes) {
+      throw const FormatException('规则文件过大');
+    }
     final List<PurificationRule> decoded;
     try {
       decoded = _decode(jsonDecode(data), portable: true, bookId: bookId);
@@ -171,5 +176,29 @@ class PurificationStore extends ChangeNotifier {
       rules.add(rule);
     }
     return rules;
+  }
+}
+
+/// Bound memory before reading untrusted picker data. Unknown or stale file
+/// sizes still receive the same actual-byte limit, and overflow cancels the
+/// stream without appending the oversized chunk to the buffer.
+Future<String> readPurificationImport(
+  Stream<List<int>> stream, {
+  int reportedSize = 0,
+}) async {
+  if (reportedSize > PurificationStore.maxImportBytes) {
+    throw const FormatException('规则文件过大');
+  }
+  final BytesBuilder bytes = BytesBuilder(copy: false);
+  await for (final List<int> chunk in stream) {
+    if (chunk.length > PurificationStore.maxImportBytes - bytes.length) {
+      throw const FormatException('规则文件过大');
+    }
+    bytes.add(chunk);
+  }
+  try {
+    return utf8.decode(bytes.takeBytes(), allowMalformed: false);
+  } on FormatException {
+    throw const FormatException('规则文件不是有效的文字文件');
   }
 }

@@ -1430,7 +1430,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final (int s, int e) = c.selection!;
     final int len = (e - s).abs();
     final double y = (_pressAt?.dy ?? 100) + top;
-    final bool above = y > top + 70;
     Widget action(String label, VoidCallback on) => InkWell(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -1444,64 +1443,69 @@ class _ReaderScreenState extends State<ReaderScreen> {
     return Positioned(
       left: _readingBounds.left + 16,
       width: math.max(1, _readingBounds.width - 32),
-      top: above ? math.max(top + 8, y - (_whoIsActive ? 120 : 64)) : y + 34,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Material(
-              color: t.ink,
-              shape: const StadiumBorder(),
-              elevation: 4,
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                children: <Widget>[
-                  action('摘录', _excerpt),
-                  action('批注', () {
-                    _clearSelection();
-                    _sheet(
-                      MarginaliaPage(link: link, start: s, end: e),
-                      full: true,
-                    );
-                  }),
-                  action('笔记', () {
-                    _clearSelection();
-                    NoteEditor.open(
-                      context,
-                      book: book,
-                      start: s,
-                      end: e,
-                      cutoff: c.cutoff,
-                    );
-                  }),
-                  if (len <= 12) action('这是谁', () => _identifyWho(s, e)),
-                  action('问书', () {
-                    final String quote = book.textBetween(s, e);
-                    _clearSelection();
-                    _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
-                  }),
-                  action(
-                    '净化',
-                    () => _openPurification(find: book.textBetween(s, e)),
-                  ),
-                  action('复制', () {
-                    HapticFeedback.lightImpact();
-                    Clipboard.setData(
-                      ClipboardData(text: book.textBetween(s, e)),
-                    );
-                    _clearSelection();
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('已复制')));
-                  }),
-                ],
+      top: top + 8,
+      height: math.max(1, _readingBounds.bottom - top - 16),
+      child: CustomSingleChildLayout(
+        delegate: _SelectionBarPosition(y - top - 8),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Material(
+                key: const ValueKey<String>('reader-selection-actions'),
+                color: t.ink,
+                shape: const StadiumBorder(),
+                elevation: 4,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  children: <Widget>[
+                    action('摘录', _excerpt),
+                    action('批注', () {
+                      _clearSelection();
+                      _sheet(
+                        MarginaliaPage(link: link, start: s, end: e),
+                        full: true,
+                      );
+                    }),
+                    action('笔记', () {
+                      _clearSelection();
+                      NoteEditor.open(
+                        context,
+                        book: book,
+                        start: s,
+                        end: e,
+                        cutoff: c.cutoff,
+                      );
+                    }),
+                    if (len <= 12) action('这是谁', () => _identifyWho(s, e)),
+                    action('问书', () {
+                      final String quote = book.textBetween(s, e);
+                      _clearSelection();
+                      _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
+                    }),
+                    action(
+                      '净化',
+                      () => _openPurification(find: book.textBetween(s, e)),
+                    ),
+                    action('复制', () {
+                      HapticFeedback.lightImpact();
+                      Clipboard.setData(
+                        ClipboardData(text: book.textBetween(s, e)),
+                      );
+                      _clearSelection();
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('已复制')));
+                    }),
+                  ],
+                ),
               ),
-            ),
-            if (_whoIsActive) ...<Widget>[
-              const SizedBox(height: 8),
-              _whoIsCard(context, s, e),
+              if (_whoIsActive) ...<Widget>[
+                const SizedBox(height: 8),
+                _whoIsCard(context, s, e),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -2184,4 +2188,34 @@ class _Ticks extends CustomPainter {
 
   @override
   bool shouldRepaint(_Ticks old) => true;
+}
+
+/// Keep wrapped/large-text actions clear of the long-press point using their
+/// measured height. Very short viewports scroll the actions within this area.
+class _SelectionBarPosition extends SingleChildLayoutDelegate {
+  const _SelectionBarPosition(this.anchorY);
+  final double anchorY;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints(
+        maxWidth: constraints.maxWidth,
+        maxHeight: constraints.maxHeight,
+      );
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final double above = anchorY - 24 - childSize.height;
+    final double below = anchorY + 34;
+    final double top = above >= 0
+        ? above
+        : below + childSize.height <= size.height
+        ? below
+        : above.clamp(0, math.max(0, size.height - childSize.height));
+    return Offset((size.width - childSize.width) / 2, top);
+  }
+
+  @override
+  bool shouldRelayout(_SelectionBarPosition oldDelegate) =>
+      anchorY != oldDelegate.anchorY;
 }

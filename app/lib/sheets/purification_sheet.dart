@@ -54,14 +54,17 @@ class PurificationPage extends StatelessWidget {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: <String>['json'],
-        withData: true,
+        withData: false,
+        withReadStream: true,
       );
       if (result == null || !context.mounted) return;
       final PlatformFile file = result.files.single;
-      if (file.size > 512 * 1024) throw const FormatException('规则文件过大');
-      final String data = file.bytes != null
-          ? utf8.decode(file.bytes!, allowMalformed: false)
-          : await File(file.path!).readAsString();
+      final Stream<List<int>> stream =
+          file.readStream ?? File(file.path!).openRead();
+      final String data = await readPurificationImport(
+        stream,
+        reportedSize: file.size,
+      );
       final List<PurificationRule> rules = store.previewImport(data, bookId);
       if (!context.mounted) return;
       if (rules.isEmpty) {
@@ -387,6 +390,7 @@ class _PurificationEditorState extends State<PurificationEditor> {
                 decoration: const InputDecoration(
                   labelText: '替换为',
                   hintText: '留空即删除匹配文字',
+                  helperText: '留空即删除匹配文字',
                 ),
                 onChanged: (_) => setState(() {}),
               ),
