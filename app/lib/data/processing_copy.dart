@@ -8,7 +8,7 @@ String processingErrorMessage(String? detail) {
     return '检查模型没有给出可用的答案。进度已保留，可以再试一次；若反复出现，请在模型设置中更换检查模型。';
   }
   if (text.contains('请求结果') || text.contains('没有收到完整结果')) {
-    return '没有收到完整结果，已完成的内容已保留。可以点“继续整理”再试。';
+    return '没有收到完整结果，已完成的内容已保留。可以点“继续梳理”再试。';
   }
   if (text.contains('HandshakeException') ||
       text.contains('SocketException') ||

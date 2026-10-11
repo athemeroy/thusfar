@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 
 /// Design tokens from docs/flutter-rewrite/design/spec.json.
 ///
-/// 朱 (zhu) is only for what the AI produced; 石青 (qing) is only for what the
-/// reader wrote. Errors use amber and danger, never zhu.
+/// Warm paper, quiet ink and one forest-green accent. Token names remain
+/// stable for saved themes; amber and danger are reserved for warnings.
 @immutable
 class Tokens extends ThemeExtension<Tokens> {
   const Tokens({
@@ -29,17 +29,17 @@ class Tokens extends ThemeExtension<Tokens> {
   final Color zhu, zhuSoft, qing, qingSoft, amber, danger, ok;
 
   static const Tokens light = Tokens(
-    paper: Color(0xFFF2EDE2),
-    sheet: Color(0xFFFBF8F1),
+    paper: Color(0xFFF5F2EA),
+    sheet: Color(0xFFFDFBF6),
     raised: Color(0xFFFFFFFF),
     ink: Color(0xFF231F1A),
     ink2: Color(0xFF5F574C),
     ink3: Color(0xFF74695B),
-    rule: Color(0xFFE2D9C8),
-    zhu: Color(0xFFB23A1F),
-    zhuSoft: Color(0xFFF3DDD4),
-    qing: Color(0xFF2D5A77),
-    qingSoft: Color(0xFFD9E5EC),
+    rule: Color(0xFFE4DFD3),
+    zhu: Color(0xFF2F6654),
+    zhuSoft: Color(0xFFE0ECE5),
+    qing: Color(0xFF285B4B),
+    qingSoft: Color(0xFFDFEAE2),
     amber: Color(0xFF9A6412),
     danger: Color(0xFFA3261B),
     ok: Color(0xFF3C6B3A),
@@ -53,10 +53,10 @@ class Tokens extends ThemeExtension<Tokens> {
     ink2: Color(0xFFA99E8C),
     ink3: Color(0xFF9A8E7C),
     rule: Color(0xFF332E26),
-    zhu: Color(0xFFE0694B),
-    zhuSoft: Color(0xFF3A231B),
-    qing: Color(0xFF86AECA),
-    qingSoft: Color(0xFF1D2B34),
+    zhu: Color(0xFF93C2AB),
+    zhuSoft: Color(0xFF23392E),
+    qing: Color(0xFFA0CDB8),
+    qingSoft: Color(0xFF263D32),
     amber: Color(0xFFD9A04A),
     danger: Color(0xFFE5715F),
     ok: Color(0xFF8DBA84),
@@ -64,11 +64,11 @@ class Tokens extends ThemeExtension<Tokens> {
 
   /// Reading paper colours (纸 · 米 · 青灰 · 白 · 夜).
   static const List<(String, Color)> paperColors = <(String, Color)>[
-    ('纸', Color(0xFFF2EDE2)),
-    ('米', Color(0xFFF7F1E1)),
+    ('暖纸', Color(0xFFF5F2EA)),
+    ('羊皮', Color(0xFFF7F1E1)),
     ('青灰', Color(0xFFE7EBE6)),
-    ('白', Color(0xFFFBFAF7)),
-    ('夜', Color(0xFF161410)),
+    ('柔白', Color(0xFFFBFAF7)),
+    ('墨黑', Color(0xFF161410)),
   ];
 
   @override
@@ -102,7 +102,7 @@ ThemeData buildTheme(Brightness brightness) {
   final String? uiFont = kIsWeb ? sans : null;
   final ColorScheme scheme = ColorScheme(
     brightness: brightness,
-    primary: t.ink,
+    primary: t.qing,
     onPrimary: t.sheet,
     secondary: t.qing,
     onSecondary: t.sheet,
@@ -221,7 +221,7 @@ ThemeData buildTheme(Brightness brightness) {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(0, 48),
-        backgroundColor: t.ink,
+        backgroundColor: t.qing,
         foregroundColor: t.sheet,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         textStyle: TextStyle(
@@ -332,7 +332,7 @@ class Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    final Color c = color ?? t.ink;
+    final Color c = color ?? t.qing;
     return Semantics(
       button: onTap != null,
       selected: selected,
@@ -368,14 +368,17 @@ class Pill extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                   ],
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: dense ? 12 : 15,
-                      color: filled ? t.sheet : c,
-                      fontFeatures: const <FontFeature>[
-                        FontFeature.tabularFigures(),
-                      ],
+                  Flexible(
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: dense ? 12 : 15,
+                        color: filled ? t.sheet : c,
+                        fontFeatures: const <FontFeature>[
+                          FontFeature.tabularFigures(),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -407,9 +410,10 @@ class Tag extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
           color: c,
-          letterSpacing: 0.66,
+          letterSpacing: 0.2,
           fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
         ),
       ),

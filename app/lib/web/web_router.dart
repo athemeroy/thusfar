@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'web_app.dart';
+import 'web_activity_route.dart';
 import 'web_storage.dart';
 
 /// A browser route contains only a local book ID. Text and model configuration
@@ -126,6 +127,7 @@ class WebReadingRouter extends RouterDelegate<WebReadingRoute>
     final String? bookId = _bookId;
     return Navigator(
       key: navigatorKey,
+      observers: <NavigatorObserver>[webReadingRoutes],
       pages: <Page<void>>[
         MaterialPage<void>(
           key: const ValueKey<String>('web-shelf'),

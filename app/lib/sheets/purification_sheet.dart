@@ -10,7 +10,7 @@ import '../reader/text_purification.dart';
 import 'sheet_host.dart';
 
 const String _help =
-    '只改变阅读显示，原书、摘记和引用保留原文。关闭或删除规则即可恢复。按原文从左到右匹配，同一位置优先使用靠前的规则，替换结果不会再次匹配。不跨段落，仅支持普通文字，不支持正则表达式。';
+    '只改变阅读显示，原书、书摘和引用保留原文。关闭或删除规则即可恢复。按原文从左到右匹配，同一位置优先使用靠前的规则，替换结果不会再次匹配。不跨段落，仅支持普通文字，不支持正则表达式。';
 
 class PurificationPage extends StatelessWidget {
   const PurificationPage({
@@ -137,7 +137,7 @@ class PurificationPage extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    const Expanded(child: Text('隐藏广告或修正错字。原书和摘记不变，停用规则即可恢复。')),
+                    const Expanded(child: Text('隐藏广告或修正错字。原书和书摘不变，停用规则即可恢复。')),
                     IconButton(
                       tooltip: '净化规则说明',
                       icon: const Icon(Icons.info_outline),
@@ -410,7 +410,7 @@ class _PurificationEditorState extends State<PurificationEditor> {
                 '当前页预览',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              const Text('预览包含本书已启用的其他规则，不展示未读内容。摘记与引用仍使用原文。'),
+              const Text('预览包含本书已启用的其他规则，不展示未读内容。书摘与引用仍使用原文。'),
               if (!draft.enabled) const Text('预览展示启用后的效果，保存后仍保持停用'),
               if (purifier != null) ...<Widget>[
                 const SizedBox(height: 12),

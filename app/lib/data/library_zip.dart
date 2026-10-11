@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
 
 import 'reader_customizations.dart';
+import 'shelf_organization.dart';
 import '../reader/text_purification.dart';
 
 /// One portable library file. Each book remains an existing complete single
@@ -405,6 +406,12 @@ class LibraryZipCodec {
   }
 
   static void _validateQueueBounds(Map<String, Object?> settings, int count) {
+    if (settings['shelfOrganization'] != null) {
+      validatedShelfOrganization(
+        settings['shelfOrganization'],
+        bookCount: count,
+      );
+    }
     final Object? shelf = settings['shelf'];
     if (shelf is! Map<String, Object?>) return;
     final Object? queue = shelf['readingQueue'];
@@ -422,11 +429,17 @@ class LibraryZipCodec {
             'web',
             'model',
             'shelf',
+            'shelfOrganization',
           }.contains(key),
         )) {
       throw const FormatException('书库 ZIP 设置格式无效。');
     }
-    final Map<String, Object?> result = <String, Object?>{};
+    final Map<String, Object?> result = <String, Object?>{
+      if (value['shelfOrganization'] != null)
+        'shelfOrganization': validatedShelfOrganization(
+          value['shelfOrganization'],
+        ),
+    };
     const Map<String, Set<String>> allowed = <String, Set<String>>{
       'reader': <String>{
         'fontSize',

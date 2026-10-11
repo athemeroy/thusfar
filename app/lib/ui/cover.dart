@@ -177,9 +177,7 @@ class BookCover extends StatelessWidget {
           Align(
             alignment: Alignment.topLeft,
             child: Padding(
-              padding: EdgeInsets.only(
-                top: width > 108 ? width * .28 : 0,
-              ),
+              padding: EdgeInsets.only(top: width > 108 ? width * .28 : 0),
               child: Text(
                 entry.title,
                 maxLines: 4,
@@ -217,7 +215,7 @@ class BookCover extends StatelessWidget {
   }
 }
 
-/// 灰 = 未整理，朱红呼吸 = 整理中，朱红实心 = 已完成，琥珀 = 需要处理.
+/// 灰 = 未梳理，墨绿呼吸 = 梳理中，墨绿实心 = 已完成，琥珀 = 需要处理.
 class StatusDot extends StatefulWidget {
   const StatusDot({super.key, required this.status, this.size = 9});
 
@@ -289,7 +287,7 @@ class _StatusDotState extends State<StatusDot>
             : null,
       ),
     );
-    if (!s.isRunning) return dot;
+    if (!s.isRunning || MediaQuery.disableAnimationsOf(context)) return dot;
     return ScaleTransition(
       scale: Tween<double>(begin: 0.88, end: 1.15).animate(curved),
       child: FadeTransition(

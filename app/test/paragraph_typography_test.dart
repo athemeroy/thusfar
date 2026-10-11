@@ -517,7 +517,7 @@ void main() {
             adjusted.$1,
             adjusted.$2,
           );
-          await tester.tap(find.text('摘录'));
+          await tester.tap(find.text('划线'));
           await tester.pumpAndSettle();
           expect(initial.pager.book.notes.notes.single['quote'], quote);
           expect(quote, isNot(contains('张三李四')));

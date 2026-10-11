@@ -13,6 +13,7 @@ import 'package:thusfar_core/notebook.dart' as notebook;
 import 'package:thusfar_core/manual_entities.dart' as manual_entities;
 
 import 'library.dart';
+import 'shelf_organization.dart';
 import 'library_zip.dart';
 import 'portable_work.dart';
 import 'restore_report.dart';
@@ -20,6 +21,7 @@ import 'preparation_scope.dart';
 import 'reader_customizations.dart';
 import 'purification_store.dart';
 import '../reader/text_purification.dart';
+import '../reader/source_selection.dart';
 
 const String exportFormat = 'yedu-book/2';
 const String webExportFormat = 'thusfar-web-backup-v1';
@@ -324,10 +326,18 @@ Json _validatedWebState(Object? raw, Json book) {
     throw const ValueError('网页版阅读记录无效');
   }
   _chapterOffset(book, chapter, fraction.toDouble());
+  final Object? sourceOffset = raw['sourceOffset'];
+  if (sourceOffset != null &&
+      (sourceOffset is! int ||
+          sourceOffset < 0 ||
+          sourceOffset > (book['len']! as int))) {
+    throw const ValueError('网页版原文位置无效');
+  }
   final Json state = <String, Object?>{
     'chapter': chapter,
     'fraction': fraction.toDouble(),
     'lastOpened': opened.toInt(),
+    'sourceOffset': ?sourceOffset,
   };
   final Set<String> ids = <String>{};
   for (final String kind in const <String>['bookmarks', 'notes']) {
@@ -379,7 +389,24 @@ Json _validatedWebState(Object? raw, Json book) {
             created > 1000000000000000) {
           throw const ValueError('网页版摘记无效');
         }
+        final Object? style = value['style'];
+        final Object? sourceStart = value['sourceStart'];
+        final Object? sourceEnd = value['sourceEnd'];
+        if (style != null &&
+                !const <String>{'thought', 'highlight'}.contains(style) ||
+            (sourceStart == null) != (sourceEnd == null) ||
+            sourceStart != null &&
+                (sourceStart is! int ||
+                    sourceEnd is! int ||
+                    sourceStart < 0 ||
+                    sourceEnd < sourceStart ||
+                    sourceEnd > (book['len']! as int))) {
+          throw const ValueError('网页版书摘的选区无效');
+        }
         clean.add(<String, Object?>{
+          'style': ?style,
+          'sourceStart': ?sourceStart,
+          'sourceEnd': ?sourceEnd,
           'chapter': at,
           'fraction': ratio,
           'text': text,
@@ -579,6 +606,30 @@ List<Json> _webNotebook(Json state, Json book) {
         row['fraction']! as double,
       );
       final String text = kind == 'notes' ? row['text']! as String : '';
+      final bool highlight = kind == 'notes' && row['style'] == 'highlight';
+      int start = row['sourceStart'] as int? ?? offset;
+      int end = row['sourceEnd'] as int? ?? start;
+      if (highlight && row['sourceStart'] == null) {
+        final Json chapter =
+            (book['chapters']! as List<Object?>)[row['chapter']! as int]!
+                as Json;
+        final SourceSelection? selected = resolveSourceSelection(
+          text,
+          <SourceSlice>[
+            for (final Object? raw in book['blocks']! as List<Object?>)
+              if (raw is Json &&
+                  (raw['k'] == 'p' || raw['k'] == 'h') &&
+                  (raw['o']! as int) >= (chapter['o0']! as int) &&
+                  (raw['o']! as int) < (chapter['o1']! as int))
+                SourceSlice(text: raw['t']! as String, start: raw['o']! as int),
+          ],
+        );
+        if (selected == null) throw const ValueError('划线位置不明确，请在原设备重新选择后再导出');
+        start = selected.start;
+        end = selected.end;
+      }
+      final String quote = notebook.sourceQuote(book, start, end);
+      if (highlight && quote != text) throw const ValueError('划线与原文不一致，未覆盖书摘');
       final String id = row['id']! as String;
       final double created = kind == 'notes'
           ? (row['created']! as int) / 1000
@@ -586,11 +637,11 @@ List<Json> _webNotebook(Json state, Json book) {
       rows.add(<String, Object?>{
         'id': id,
         'kind': kind == 'notes' ? 'note' : 'bookmark',
-        'start': offset,
-        'end': offset,
-        'quote': '',
-        'text': text,
-        'knowledge_cutoff': offset,
+        'start': start,
+        'end': end,
+        'quote': quote,
+        'text': highlight ? '' : text,
+        'knowledge_cutoff': math.max(offset, end),
         'deleted': row['deleted'],
         'revision': row['revision'],
         'operation': id,
@@ -623,7 +674,9 @@ List<Json> _newWebNotebook(Json state, Json book, List<Json> embeddedNative) {
         if (row['kind'] == 'bookmark') return true;
         final String note = '${native['text'] ?? ''}';
         final String visible = note.isEmpty ? '${native['quote'] ?? ''}' : note;
-        return visible == row['text'];
+        final String incomingText = '${row['text'] ?? ''}';
+        return visible ==
+            (incomingText.isEmpty ? '${row['quote'] ?? ''}' : incomingText);
       }))
         row,
   ];
@@ -636,6 +689,7 @@ Json _nativeWebState(Json book, Progress? progress, List<Json> personal) {
     'chapter': chapter,
     'fraction': fraction,
     'lastOpened': ((progress?.t ?? 0) * 1000).round(),
+    'sourceOffset': pos,
     'bookmarks': <Json>[],
     'notes': <Json>[],
   };
@@ -656,6 +710,9 @@ Json _nativeWebState(Json book, Progress? progress, List<Json> personal) {
       (state['notes']! as List<Json>).add(<String, Object?>{
         ...anchor,
         'text': note.isEmpty ? row['quote'] : note,
+        'style': note.isEmpty ? 'highlight' : 'thought',
+        'sourceStart': row['start'],
+        'sourceEnd': row['end'],
         'created': ((row['created']! as num) * 1000).round(),
       });
     }
@@ -680,6 +737,13 @@ List<Json> _preserveWebAnchors(
   List<Json> original, {
   required bool notes,
 }) {
+  int anchor(Json row) => notes && row['sourceStart'] is int
+      ? row['sourceStart']! as int
+      : _chapterOffset(
+          book,
+          row['chapter']! as int,
+          row['fraction']! as double,
+        );
   final Map<String, Json> oldById = <String, Json>{
     for (final Json row in original) row['id']! as String: row,
   };
@@ -694,17 +758,19 @@ List<Json> _preserveWebAnchors(
             (notes &&
                 (old['text'] != row['text'] ||
                     old['created'] != row['created'])) ||
-            _chapterOffset(
-                  book,
-                  old['chapter']! as int,
-                  old['fraction']! as double,
-                ) !=
-                _chapterOffset(
-                  book,
-                  row['chapter']! as int,
-                  row['fraction']! as double,
-                )) {
+            anchor(old) != anchor(row) ||
+            (notes &&
+                old['sourceEnd'] != null &&
+                old['sourceEnd'] != row['sourceEnd'])) {
           return row;
+        }
+        if (notes && row['style'] == 'highlight' && old['style'] == null) {
+          return <String, Object?>{
+            ...old,
+            'style': 'highlight',
+            'sourceStart': row['sourceStart'],
+            'sourceEnd': row['sourceEnd'],
+          };
         }
         return old;
       }(),
@@ -794,11 +860,13 @@ Json _webAsNative(Json wrapper) {
   } else {
     throw const ValueError('网页版内嵌安装版资料无效');
   }
-  final int pos = _chapterOffset(
-    book,
-    state['chapter']! as int,
-    state['fraction']! as double,
-  );
+  final int pos =
+      state['sourceOffset'] as int? ??
+      _chapterOffset(
+        book,
+        state['chapter']! as int,
+        state['fraction']! as double,
+      );
   final Json previousProgress = native['progress'] is Json
       ? native['progress']! as Json
       : <String, Object?>{};
@@ -824,6 +892,11 @@ Json _webAsNative(Json wrapper) {
     'manual_entities': native['manual_entities'] ?? <Object?>[],
     'web_state': state,
     'web_preparation': ?preparation,
+    if (wrapper['shelf_organization'] != null)
+      'shelf_organization': validatedShelfOrganization(
+        wrapper['shelf_organization'],
+        bookCount: 1,
+      ),
   };
   return out;
 }
@@ -1135,6 +1208,17 @@ Uint8List exportBookBytes(Library lib, BookEntry b) {
   out['mentions'] = _mentions(b.dir);
   out['assets'] = storage.encodeAssets(b.dir, out['book']! as Json);
   out['progress'] = lib.progressOf(b.id)?.toJson();
+  final ShelfBookState? shelfState = lib.organization.books[b.id];
+  if (shelfState != null) {
+    out['shelf_organization'] = <String, Object?>{
+      'collections': <String>[
+        if (shelfState.collection != null) shelfState.collection!,
+      ],
+      'books': <Object?>[
+        <String, Object?>{'index': 0, ...shelfState.toJson()},
+      ],
+    };
+  }
   out['notebook'] = _strictRead(
     File('${b.dir.path}/notebook.json'),
     missing: <Object?>[],
@@ -1460,6 +1544,13 @@ int recoverPendingBackupMerges(Directory root) {
         raw['purification_previous'] != null) {
       PurificationStore.decodeStore(raw['purification_previous']);
     }
+    if (raw.containsKey('shelf_organization_previous')) {
+      ShelfOrganization.fromJson(raw['shelf_organization_previous']);
+      _restoreOptionalJson(
+        File('${root.path}/shelf-organization.json'),
+        raw['shelf_organization_previous'],
+      );
+    }
     if (raw['new_book'] == true) {
       if (raw['purification_changed'] is! bool ||
           (raw['progress_previous'] != null &&
@@ -1783,6 +1874,19 @@ ImportResult restoreBackup(
               .where((String part) => part.isNotEmpty)
               .last;
     final Directory dest = Directory('${lib.booksDir.path}/$id');
+    final File organizationFile = File(
+      '${lib.root.path}/shelf-organization.json',
+    );
+    final Object? organizationPrevious = _strictRead(organizationFile);
+    final ShelfOrganization organizationNext = ShelfOrganization.fromJson(
+      organizationPrevious,
+    );
+    if (data['shelf_organization'] != null) {
+      organizationNext.mergePortable(data['shelf_organization'], <String>[id]);
+    }
+    final bool organizationChanged =
+        data['shelf_organization'] != null &&
+        !_same(organizationPrevious, organizationNext.toJson());
     final Json? customizations = validatedReaderCustomizations(
       data['reader_customizations'],
       book: book,
@@ -2112,7 +2216,8 @@ ImportResult restoreBackup(
           statusChanged ||
           workPrevious.isNotEmpty ||
           rulesChanged ||
-          directoryChanged) {
+          directoryChanged ||
+          organizationChanged) {
         if (!_same(liveStatus, _strictRead(File('${dest.path}/status.json'))) ||
             !_same(liveMeta, _strictRead(File('${dest.path}/meta.json')))) {
           return ImportResult(name: name, error: '本地书籍正在变化，请稍后重新导入');
@@ -2135,8 +2240,13 @@ ImportResult restoreBackup(
           'work_previous': workPrevious,
           if (rulesChanged) 'purification_previous': rulesPrevious,
           if (directoryChanged) 'reader_directory_previous': directoryPrevious,
+          if (organizationChanged)
+            'shelf_organization_previous': organizationPrevious,
         });
         try {
+          if (organizationChanged) {
+            writeJson(organizationFile, organizationNext.toJson());
+          }
           if (directoryChanged) {
             writeJson(
               File('${dest.path}/reader-directory.json'),
@@ -2199,6 +2309,7 @@ ImportResult restoreBackup(
           rethrow;
         }
       }
+      if (organizationChanged) lib.organization = organizationNext;
       return ImportResult(name: name, id: id, existed: true);
     }
     if (dest.existsSync()) {
@@ -2262,10 +2373,12 @@ ImportResult restoreBackup(
           File('${tmp.path}/img/${a.key}').writeAsBytesSync(a.value);
         }
       }
-      if (rulesChanged || incomingDirectory != null) {
+      if (rulesChanged || incomingDirectory != null || organizationChanged) {
         writeJson(File('${tmp.path}/$_mergeMarkerName'), <String, Object?>{
           'id': id,
           'new_book': true,
+          if (organizationChanged)
+            'shelf_organization_previous': organizationPrevious,
           'purification_previous': rulesPrevious,
           'purification_changed': rulesChanged,
           'progress_previous': _strictRead(
@@ -2278,6 +2391,9 @@ ImportResult restoreBackup(
       if (tmp.existsSync()) tmp.deleteSync(recursive: true);
     }
     try {
+      if (organizationChanged) {
+        writeJson(organizationFile, organizationNext.toJson());
+      }
       if (rulesChanged) writeJson(rulesFile, rulesNext);
       if (pos != null && cutoff != null) {
         lib.saveProgress(
@@ -2299,6 +2415,7 @@ ImportResult restoreBackup(
       }
       rethrow;
     }
+    if (organizationChanged) lib.organization = organizationNext;
     return ImportResult(name: name, id: id);
   } on PyException catch (e) {
     return ImportResult(name: name, error: e.message);

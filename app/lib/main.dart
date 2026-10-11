@@ -15,6 +15,7 @@ import 'reader/tap_layout.dart';
 import 'data/restore_report.dart';
 import 'ui/restore_report_view.dart';
 import 'data/library_zip.dart';
+import 'data/shelf_organization.dart';
 import 'data/library.dart';
 import 'data/model_settings.dart';
 import 'data/prefs.dart';
@@ -31,6 +32,7 @@ import 'screens/shelf_screen.dart';
 import 'sheets/book_sheet.dart';
 import 'ui/cover.dart';
 import 'ui/theme.dart';
+import 'ui/workspace_navigation.dart';
 
 /// Books named on the command line ("打开方式" on Windows and Linux). They
 /// are the reader's own files and are never deleted after import.
@@ -409,37 +411,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     }
   }
 
-  static const List<NavigationDestination> _destinations =
-      <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.auto_stories_outlined),
-          selectedIcon: Icon(Icons.auto_stories),
-          label: '书架',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.edit_note_outlined),
-          selectedIcon: Icon(Icons.edit_note),
-          label: '摘记',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.tune_outlined),
-          selectedIcon: Icon(Icons.tune),
-          label: '设置',
-        ),
-      ];
-
   void _selectTab(int index) {
     if (tab != index) HapticFeedback.selectionClick();
     setState(() => tab = index);
   }
 
-  Widget _bottomNavigation(Tokens t) => NavigationBar(
-    height: 72,
-    backgroundColor: t.sheet,
-    selectedIndex: tab,
-    onDestinationSelected: _selectTab,
-    destinations: _destinations,
-  );
+  Widget _bottomNavigation(Tokens t) =>
+      WorkspaceNavigation(selectedIndex: tab, onSelected: _selectTab);
 
   Widget _navigationRail(Tokens t) => NavigationRail(
     backgroundColor: t.sheet,
@@ -464,7 +442,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       NavigationRailDestination(
         icon: Icon(Icons.edit_note_outlined),
         selectedIcon: Icon(Icons.edit_note),
-        label: Text('摘记'),
+        label: Text('书摘'),
       ),
       NavigationRailDestination(
         icon: Icon(Icons.tune_outlined),
@@ -477,7 +455,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Widget _foldableNavigation(Tokens t) {
     const List<(IconData, String)> destinations = <(IconData, String)>[
       (Icons.auto_stories_outlined, '书架'),
-      (Icons.edit_note_outlined, '摘记'),
+      (Icons.edit_note_outlined, '书摘'),
       (Icons.tune_outlined, '设置'),
     ];
     return Center(
@@ -853,6 +831,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         'listView': p.listView,
       },
       if (transfer['web'] is Map<String, Object?>) 'web': transfer['web'],
+      'shelfOrganization': m.library.organization.exportPortable(
+        m.library.books.map((book) => book.id).toList(),
+      ),
       'shelf': <String, Object?>{
         'readingQueue': <int>[
           ...<int>{
@@ -1097,6 +1078,19 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     restored.settings,
                   );
                   if (settingError == null) {
+                    if (restored.settings['shelfOrganization'] != null) {
+                      final organization = ShelfOrganization.fromJson(
+                        m.library.organization.toJson(),
+                      );
+                      organization.mergePortable(
+                        restored.settings['shelfOrganization'],
+                        <String>[
+                          for (int i = 0; i < restored.total; i++)
+                            restored.ids[i]!,
+                        ],
+                      );
+                      m.library.saveOrganization(organization);
+                    }
                     final Map<String, Object?> shelf =
                         restored.settings['shelf'] as Map<String, Object?>? ??
                         <String, Object?>{};

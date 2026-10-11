@@ -20,6 +20,7 @@ import '../data/portable_work.dart';
 import '../data/restore_report.dart';
 import '../data/preparation_scope.dart';
 import '../data/reader_customizations.dart';
+import '../data/shelf_organization.dart';
 
 typedef Json = Map<String, Object?>;
 
@@ -40,6 +41,7 @@ const String _librarySettingsStorageKey =
 const String _libraryCustomizationsStorageKey =
     'thusfar-web-reader-customizations-transfer-v1';
 const String _readingQueueStorageKey = 'thusfar-web-reading-queue-v1';
+const String _shelfOrganizationStorageKey = 'thusfar-web-shelf-organization-v1';
 
 class WebLibraryZipRestoreResult {
   const WebLibraryZipRestoreResult({
@@ -150,6 +152,9 @@ class WebPersonalItem {
     required this.chapter,
     required this.fraction,
     this.text = '',
+    this.style = 'thought',
+    this.sourceStart,
+    this.sourceEnd,
     this.created = 0,
     this.revision = 1,
     this.updated = 0,
@@ -161,6 +166,9 @@ class WebPersonalItem {
   final int chapter;
   final double fraction;
   final String text;
+  final String style;
+  final int? sourceStart;
+  final int? sourceEnd;
   final int created;
   final int revision;
   final int updated;
@@ -174,6 +182,9 @@ class WebPersonalItem {
     chapter: (row['chapter'] as num).toInt(),
     fraction: (row['fraction'] as num).toDouble(),
     text: kind == 'note' ? row['text'] as String : '',
+    style: row['style'] == 'highlight' ? 'highlight' : 'thought',
+    sourceStart: row['sourceStart'] as int?,
+    sourceEnd: row['sourceEnd'] as int?,
     created: kind == 'note' ? (row['created'] as num?)?.toInt() ?? 0 : 0,
     revision: (row['revision'] as num?)?.toInt() ?? 1,
     updated:
@@ -187,6 +198,9 @@ class WebPersonalItem {
     'chapter': chapter,
     'fraction': fraction,
     if (kind == 'note') 'text': text,
+    if (kind == 'note') 'style': style,
+    if (sourceStart != null) 'sourceStart': sourceStart,
+    if (sourceEnd != null) 'sourceEnd': sourceEnd,
     if (kind == 'note') 'created': created,
     'revision': revision,
     'updated': updated,
@@ -199,6 +213,9 @@ class WebPersonalItem {
     chapter: chapter,
     fraction: fraction,
     text: text,
+    style: style,
+    sourceStart: sourceStart,
+    sourceEnd: sourceEnd,
     created: created,
     revision: revision + 1,
     updated: DateTime.now().millisecondsSinceEpoch,
@@ -211,6 +228,7 @@ class WebReadingState {
     this.chapter = 0,
     this.fraction = 0,
     this.lastOpened = 0,
+    this.sourceOffset,
     this.returnChapter,
     this.returnFraction,
     this.returnOffset,
@@ -220,6 +238,7 @@ class WebReadingState {
   int chapter;
   double fraction;
   int lastOpened;
+  int? sourceOffset;
   int? returnChapter;
   double? returnFraction;
   int? returnOffset;
@@ -243,7 +262,14 @@ class WebReadingState {
     );
   }
 
-  void addNote(int chapter, double fraction, String text) {
+  void addNote(
+    int chapter,
+    double fraction,
+    String text, {
+    bool highlight = false,
+    int? sourceStart,
+    int? sourceEnd,
+  }) {
     final int now = DateTime.now().millisecondsSinceEpoch;
     items.add(
       WebPersonalItem(
@@ -252,6 +278,9 @@ class WebReadingState {
         chapter: chapter,
         fraction: fraction,
         text: text,
+        style: highlight ? 'highlight' : 'thought',
+        sourceStart: sourceStart,
+        sourceEnd: sourceEnd,
         created: now,
         updated: now,
       ),
@@ -271,6 +300,7 @@ class WebReadingState {
     chapter: (value['chapter'] as num?)?.toInt() ?? 0,
     fraction: ((value['fraction'] as num?)?.toDouble() ?? 0).clamp(0.0, 1.0),
     lastOpened: (value['lastOpened'] as num?)?.toInt() ?? 0,
+    sourceOffset: value['sourceOffset'] as int?,
     returnChapter: (value['returnChapter'] as num?)?.toInt(),
     returnOffset: (value['returnOffset'] as num?)?.toInt(),
     returnFraction: (value['returnFraction'] as num?)?.toDouble().clamp(
@@ -289,6 +319,7 @@ class WebReadingState {
     'chapter': chapter,
     'fraction': fraction,
     'lastOpened': lastOpened,
+    if (sourceOffset != null) 'sourceOffset': sourceOffset,
     if (returnChapter != null) 'returnChapter': returnChapter,
     if (returnFraction != null) 'returnFraction': returnFraction,
     if (returnOffset != null) 'returnOffset': returnOffset,
@@ -435,6 +466,7 @@ void _validateNativeExtras(Json value, Json book) {
     'manual_entities',
     'work_files',
     'reader_customizations',
+    'shelf_organization',
   };
   if (value.keys.any((String key) => !allowed.contains(key))) {
     throw const FormatException('安装版备份含未知附加字段，未导入。');
@@ -454,6 +486,12 @@ void _validateNativeExtras(Json value, Json book) {
       value['id'] is! String ||
       value['kg'] is! Json) {
     throw const FormatException('备份中的安装版附加资料无效。');
+  }
+  if (value.containsKey('shelf_organization')) {
+    value['shelf_organization'] = validatedShelfOrganization(
+      value['shelf_organization'],
+      bookCount: 1,
+    );
   }
   if (value.containsKey('reader_customizations')) {
     final Json? customizations = validatedReaderCustomizations(
@@ -599,6 +637,7 @@ Json _webWrapperFromNative(Json native) {
         'manual_entities',
         'work_files',
         'reader_customizations',
+        'shelf_organization',
       }.contains(entry.key))
         entry.key: entry.value,
   };
@@ -620,6 +659,7 @@ Json _webWrapperFromNative(Json native) {
       'manual_entities',
       'work_files',
       'reader_customizations',
+      'shelf_organization',
     }.contains(key),
   )) {
     throw const FormatException('安装版备份含未知附加字段，未导入。');
@@ -660,6 +700,9 @@ Json _webWrapperFromNative(Json native) {
             'chapter': place.chapter,
             'fraction': place.fraction,
             'text': text.isNotEmpty ? text : quote,
+            'style': text.isEmpty ? 'highlight' : 'thought',
+            'sourceStart': raw['start'],
+            if (raw['end'] is int) 'sourceEnd': raw['end'],
             'created': (((raw['created'] as num?)?.toDouble() ?? 0) * 1000)
                 .round(),
             'id': raw['id'],
@@ -674,6 +717,7 @@ Json _webWrapperFromNative(Json native) {
     state = <String, Object?>{
       'chapter': position.chapter,
       'fraction': position.fraction,
+      'sourceOffset': offset,
       'lastOpened': (((progress?['t'] as num?)?.toDouble() ?? 0) * 1000)
           .round(),
       'bookmarks': bookmarks,
@@ -696,11 +740,58 @@ Json _webWrapperFromNative(Json native) {
     'meta': meta,
     'book': book,
     'images': images,
-    'state': state,
+    'state': _withNativeNoteStyles(state, nativeExtras),
+    if (native['shelf_organization'] != null)
+      'shelf_organization': native['shelf_organization'],
     if (native['web_preparation'] is Json)
       'preparation': native['web_preparation'],
     'native_backup': nativeExtras,
   };
+}
+
+Json _withNativeNoteStyles(Json state, Json? native) {
+  final Map<String, Json> original = <String, Json>{
+    for (final Object? raw
+        in native?['notebook'] as List<Object?>? ?? const <Object?>[])
+      if (raw is Json && raw['id'] is String && raw['kind'] == 'note')
+        raw['id']! as String: raw,
+  };
+  if (original.isEmpty) return state;
+  final List<Object?> notes = <Object?>[];
+  for (final Object? raw
+      in state['notes'] as List<Object?>? ?? const <Object?>[]) {
+    final Json? old = raw is Json ? original[raw['id']] : null;
+    if (raw is! Json ||
+        old == null ||
+        (raw['revision'] ?? 1) != (old['revision'] ?? 1)) {
+      notes.add(raw);
+      continue;
+    }
+    notes.add(<String, Object?>{
+      ...raw,
+      if (raw['style'] == null)
+        'style': '${old['text'] ?? ''}'.isEmpty ? 'highlight' : 'thought',
+      if (raw['sourceStart'] == null && old['start'] is int)
+        'sourceStart': old['start'],
+      if (raw['sourceEnd'] == null && old['end'] is int)
+        'sourceEnd': old['end'],
+    });
+  }
+  return <String, Object?>{...state, 'notes': notes};
+}
+
+bool _samePersonalItem(WebPersonalItem first, WebPersonalItem second) {
+  final Json a = first.toJson();
+  final Json b = second.toJson();
+  if (first.sourceStart == null || second.sourceStart == null) {
+    a.remove('sourceStart');
+    b.remove('sourceStart');
+  }
+  if (first.sourceEnd == null || second.sourceEnd == null) {
+    a.remove('sourceEnd');
+    b.remove('sourceEnd');
+  }
+  return _sameJson(a, b);
 }
 
 WebReadingState _mergeReadingStates(
@@ -722,15 +813,25 @@ WebReadingState _mergeReadingStates(
     final WebPersonalItem? old = byId[item.id];
     if (old == null || item.revision > old.revision) {
       byId[item.id] = item;
-    } else if (item.revision == old.revision &&
-        !_sameJson(item.toJson(), old.toJson())) {
+    } else if (item.revision == old.revision && !_samePersonalItem(item, old)) {
       throw const WebBackupConflict('同一条书签或摘记在两端有不同修改，未覆盖；请分别导出备份。');
+    } else if (item.revision == old.revision &&
+        old.sourceStart == null &&
+        item.sourceStart != null) {
+      byId[item.id] = item;
     }
   }
   return WebReadingState(
     chapter: latest.chapter,
     fraction: latest.fraction,
     lastOpened: latest.lastOpened,
+    sourceOffset:
+        latest.sourceOffset ??
+        (local.lastOpened == incoming.lastOpened &&
+                local.chapter == incoming.chapter &&
+                local.fraction == incoming.fraction
+            ? local.sourceOffset ?? incoming.sourceOffset
+            : null),
     items: byId.values.toList(),
   );
 }
@@ -967,10 +1068,14 @@ Json? _mergeNativeBackups(Json? local, Json? incoming) {
           'progress',
           'exported',
           'work_files',
+          'shelf_organization',
         }.contains(entry.key) &&
         !_sameJson(merged[entry.key], entry.value)) {
       throw const WebBackupConflict('安装版扩展资料在本地与远端不同，未覆盖；请另存快照。');
     }
+  }
+  if (incoming['shelf_organization'] != null) {
+    merged['shelf_organization'] = incoming['shelf_organization'];
   }
   merged['notebook'] = byId.values.toList();
   merged['kg'] = mergedGraph;
@@ -1063,6 +1168,25 @@ class WebLibrary {
       // Optional order metadata cannot hide books.
     }
     return <String>[];
+  }
+
+  static ShelfOrganization shelfOrganization() {
+    final String? raw = html.window.localStorage[_shelfOrganizationStorageKey];
+    return ShelfOrganization.fromJson(raw == null ? null : jsonDecode(raw));
+  }
+
+  static void saveShelfOrganization(ShelfOrganization organization) {
+    html.window.localStorage[_shelfOrganizationStorageKey] = jsonEncode(
+      organization.toJson(),
+    );
+  }
+
+  static List<String> readingQueue() => _readingQueueIds();
+
+  static void setInReadingQueue(String id, bool included) {
+    final List<String> ids = _readingQueueIds()..remove(id);
+    if (included) ids.insert(0, id);
+    html.window.localStorage[_readingQueueStorageKey] = jsonEncode(ids);
   }
 
   /// Ask the browser to reduce automatic storage eviction. Browsers may
@@ -1183,9 +1307,15 @@ class WebLibrary {
       'readonly',
     );
     final Object? value = await transaction.objectStore(_states).getObject(id);
-    return value is String
-        ? WebReadingState.fromJson(jsonDecode(value) as Json)
-        : WebReadingState();
+    if (value is! String) return WebReadingState();
+    final Json raw = jsonDecode(value) as Json;
+    final bool legacy = (raw['notes'] as List<Object?>? ?? const <Object?>[])
+        .any((row) => row is Json && row['style'] == null);
+    if (!legacy) return WebReadingState.fromJson(raw);
+    final WebBook? book = await load(id);
+    return WebReadingState.fromJson(
+      _withNativeNoteStyles(raw, book?.nativeBackup),
+    );
   }
 
   Future<void> saveState(String id, WebReadingState state) async {
@@ -1429,6 +1559,11 @@ class WebLibrary {
     if (nativeBackup != null) {
       _validateNativeExtras(nativeBackup, book);
     }
+    final Object? rawOrganization =
+        wrapper['shelf_organization'] ?? nativeBackup?['shelf_organization'];
+    final Json? incomingOrganization = rawOrganization == null
+        ? null
+        : validatedShelfOrganization(rawOrganization, bookCount: 1);
     final Object? rawPreparation = wrapper['preparation'];
     final String? preparation;
     if (rawPreparation == null) {
@@ -1456,6 +1591,13 @@ class WebLibrary {
         (current is! num || current < 0 || current >= chapterCount)) {
       throw const FormatException('备份中的阅读位置无效。');
     }
+    final Object? sourceOffset = rawState['sourceOffset'];
+    if (sourceOffset != null &&
+        (sourceOffset is! int ||
+            sourceOffset < 0 ||
+            sourceOffset > (book['len']! as int))) {
+      throw const FormatException('备份中的原文位置无效。');
+    }
     final Set<String> personalIds = <String>{};
     for (final String key in <String>['bookmarks', 'notes']) {
       final Object? entries = rawState[key];
@@ -1472,6 +1614,18 @@ class WebLibrary {
             (raw['fraction'] as num) < 0 ||
             (raw['fraction'] as num) > 1 ||
             (key == 'notes' && raw['text'] is! String) ||
+            (raw['style'] != null &&
+                !const <String>{
+                  'thought',
+                  'highlight',
+                }.contains(raw['style'])) ||
+            ((raw['sourceStart'] == null) != (raw['sourceEnd'] == null)) ||
+            (raw['sourceStart'] != null &&
+                (raw['sourceStart'] is! int ||
+                    raw['sourceEnd'] is! int ||
+                    (raw['sourceStart'] as int) < 0 ||
+                    (raw['sourceEnd'] as int) < (raw['sourceStart'] as int) ||
+                    (raw['sourceEnd'] as int) > (book['len'] as int))) ||
             (raw['id'] != null &&
                 (raw['id'] is! String ||
                     !RegExp(
@@ -1524,7 +1678,9 @@ class WebLibrary {
           (rawMeta['added'] as num?)?.toInt() ??
           DateTime.now().millisecondsSinceEpoch,
     );
-    final WebReadingState incomingState = WebReadingState.fromJson(rawState);
+    final WebReadingState incomingState = WebReadingState.fromJson(
+      _withNativeNoteStyles(rawState, nativeBackup),
+    );
     String targetId = id;
     for (final WebBookMeta candidate in await list()) {
       final WebBook? existing = await load(candidate.id);
@@ -1552,99 +1708,149 @@ class WebLibrary {
     final idb.ObjectStore preparationStore = transaction.objectStore(
       _preparations,
     );
-    final Object? currentBookRaw = await booksStore.getObject(targetId);
-    if (currentBookRaw is String) {
-      final Json currentBook = jsonDecode(currentBookRaw) as Json;
-      if (currentBook['book'] is! Json ||
-          !_sameBookData(currentBook['book'] as Json, book) ||
-          !_sameJson(currentBook['images'], images)) {
-        throw const WebBackupConflict('本地同书资料已变化，未覆盖；请刷新后检查冲突。');
-      }
-      final Json? localNative = currentBook['native_backup'] is Json
-          ? currentBook['native_backup'] as Json
-          : null;
-      final Json mergedBook;
-      try {
-        mergedBook = verdicts.mergeChapterVerdicts(
-          currentBook['book'] as Json,
-          book,
-          localCheckPending: verdicts.titleCheckPending(localNative?['status']),
-          incomingCheckPending: verdicts.titleCheckPending(
-            nativeBackup?['status'],
-          ),
+    String? organizationBefore;
+    bool organizationSaved = false;
+    void saveImportedOrganization() {
+      if (incomingOrganization == null || previewOnly) return;
+      organizationBefore =
+          html.window.localStorage[_shelfOrganizationStorageKey];
+      final ShelfOrganization next = shelfOrganization();
+      next.mergePortable(incomingOrganization, <String>[targetId]);
+      saveShelfOrganization(next);
+      organizationSaved = true;
+    }
+
+    try {
+      final Object? currentBookRaw = await booksStore.getObject(targetId);
+      if (currentBookRaw is String) {
+        final Json currentBook = jsonDecode(currentBookRaw) as Json;
+        if (currentBook['book'] is! Json ||
+            !_sameBookData(currentBook['book'] as Json, book) ||
+            !_sameJson(currentBook['images'], images)) {
+          throw const WebBackupConflict('本地同书资料已变化，未覆盖；请刷新后检查冲突。');
+        }
+        final Json? localNative = currentBook['native_backup'] is Json
+            ? currentBook['native_backup'] as Json
+            : null;
+        final Json mergedBook;
+        try {
+          mergedBook = verdicts.mergeChapterVerdicts(
+            currentBook['book'] as Json,
+            book,
+            localCheckPending: verdicts.titleCheckPending(
+              localNative?['status'],
+            ),
+            incomingCheckPending: verdicts.titleCheckPending(
+              nativeBackup?['status'],
+            ),
+          );
+        } on verdicts.ChapterVerdictConflict {
+          throw const WebBackupConflict('两端对章节标题的剧透判断不同，未覆盖；请分别导出备份后处理。');
+        }
+        final Json? mergedNative = _mergeNativeBackups(
+          localNative,
+          nativeBackup,
         );
-      } on verdicts.ChapterVerdictConflict {
-        throw const WebBackupConflict('两端对章节标题的剧透判断不同，未覆盖；请分别导出备份后处理。');
-      }
-      final Json? mergedNative = _mergeNativeBackups(localNative, nativeBackup);
-      final Json? lease = _decodeLease(
-        await preparationStore.getObject(_preparationLeaseKey(targetId)),
-      );
-      if (lease != null &&
-          (lease['expires'] as int) > DateTime.now().millisecondsSinceEpoch) {
-        throw const WebBackupConflict('这本书正在整理，请先暂停后再导入快照。');
-      }
-      final Object? currentStateRaw = await statesStore.getObject(targetId);
-      final WebReadingState currentState = currentStateRaw is String
-          ? WebReadingState.fromJson(jsonDecode(currentStateRaw) as Json)
-          : WebReadingState();
-      final WebReadingState mergedState = _mergeReadingStates(
-        currentState,
-        incomingState,
-      );
-      final Object? currentPrepRaw = await preparationStore.getObject(targetId);
-      final Json? currentPrep = currentPrepRaw is String
-          ? _decodePreparation(currentPrepRaw)
-          : null;
-      final Json? mergedPrep = _mergePreparations(
-        currentPrep,
-        preparation == null ? null : _decodePreparation(preparation),
-      );
-      if (previewOnly) {
-        await completed;
-        return targetId;
-      }
-      if (!_sameJson(currentBook['book'], mergedBook) ||
-          (mergedNative != null && !_sameJson(localNative, mergedNative))) {
+        final Json? lease = _decodeLease(
+          await preparationStore.getObject(_preparationLeaseKey(targetId)),
+        );
+        if (lease != null &&
+            (lease['expires'] as int) > DateTime.now().millisecondsSinceEpoch) {
+          throw const WebBackupConflict('这本书正在整理，请先暂停后再导入快照。');
+        }
+        final Object? currentStateRaw = await statesStore.getObject(targetId);
+        final WebReadingState currentState = currentStateRaw is String
+            ? WebReadingState.fromJson(
+                _withNativeNoteStyles(
+                  jsonDecode(currentStateRaw) as Json,
+                  localNative,
+                ),
+              )
+            : WebReadingState();
+        final WebReadingState mergedState = _mergeReadingStates(
+          currentState,
+          incomingState,
+        );
+        final Object? currentPrepRaw = await preparationStore.getObject(
+          targetId,
+        );
+        final Json? currentPrep = currentPrepRaw is String
+            ? _decodePreparation(currentPrepRaw)
+            : null;
+        final Json? mergedPrep = _mergePreparations(
+          currentPrep,
+          preparation == null ? null : _decodePreparation(preparation),
+        );
+        if (previewOnly) {
+          await completed;
+          return targetId;
+        }
+        saveImportedOrganization();
+        if (!_sameJson(currentBook['book'], mergedBook) ||
+            (mergedNative != null && !_sameJson(localNative, mergedNative))) {
+          await booksStore.put(
+            jsonEncode(<String, Object?>{
+              ...currentBook,
+              'book': mergedBook,
+              'native_backup': ?mergedNative,
+            }),
+            targetId,
+          );
+        }
+        await statesStore.put(jsonEncode(mergedState.toJson()), targetId);
+        if (mergedPrep != null) {
+          await preparationStore.put(_encodePreparation(mergedPrep), targetId);
+        }
+      } else {
+        if (previewOnly) {
+          await completed;
+          return targetId;
+        }
+        saveImportedOrganization();
         await booksStore.put(
           jsonEncode(<String, Object?>{
-            ...currentBook,
-            'book': mergedBook,
-            'native_backup': ?mergedNative,
+            'book': book,
+            'images': images,
+            'native_backup': ?nativeBackup,
           }),
           targetId,
         );
+        await transaction
+            .objectStore(_meta)
+            .put(
+              jsonEncode(<String, Object?>{...meta.toJson(), 'id': targetId}),
+              targetId,
+            );
+        await statesStore.put(jsonEncode(incomingState.toJson()), targetId);
+        if (preparation != null) {
+          await preparationStore.put(preparation, targetId);
+        }
       }
-      await statesStore.put(jsonEncode(mergedState.toJson()), targetId);
-      if (mergedPrep != null) {
-        await preparationStore.put(_encodePreparation(mergedPrep), targetId);
+      await completed;
+      return targetId;
+    } on Object {
+      try {
+        transaction.abort();
+      } on Object {
+        /* Already completed or aborted. */
       }
-    } else {
-      if (previewOnly) {
+      if (organizationSaved) {
+        if (organizationBefore == null) {
+          html.window.localStorage.remove(_shelfOrganizationStorageKey);
+        } else {
+          html.window.localStorage[_shelfOrganizationStorageKey] =
+              organizationBefore!;
+        }
+      }
+      // Observe an aborted transaction so it cannot surface as an unrelated
+      // uncaught browser error after the caller handles the import failure.
+      try {
         await completed;
-        return targetId;
+      } on Object {
+        /* Keep the import error. */
       }
-      await booksStore.put(
-        jsonEncode(<String, Object?>{
-          'book': book,
-          'images': images,
-          'native_backup': ?nativeBackup,
-        }),
-        targetId,
-      );
-      await transaction
-          .objectStore(_meta)
-          .put(
-            jsonEncode(<String, Object?>{...meta.toJson(), 'id': targetId}),
-            targetId,
-          );
-      await statesStore.put(jsonEncode(incomingState.toJson()), targetId);
-      if (preparation != null) {
-        await preparationStore.put(preparation, targetId);
-      }
+      rethrow;
     }
-    await completed;
-    return targetId;
   }
 
   Future<Uint8List> exportBackupBytes(String id) async {
@@ -1687,9 +1893,22 @@ class WebLibrary {
         'images': book.images,
         'state': reading.toJson(),
       };
+      final ShelfBookState? shelfState = shelfOrganization().books[id];
+      final Json? shelf = shelfState == null
+          ? null
+          : <String, Object?>{
+              'collections': <String>[
+                if (shelfState.collection != null) shelfState.collection!,
+              ],
+              'books': <Object?>[
+                <String, Object?>{'index': 0, ...shelfState.toJson()},
+              ],
+            };
+      if (shelf != null) backup['shelf_organization'] = shelf;
       if (preparation != null) backup['preparation'] = preparation;
       if (book.nativeBackup != null) {
         final Json native = <String, Object?>{...book.nativeBackup!};
+        if (shelf != null) native['shelf_organization'] = shelf;
         // Native-only customization metadata is transferable, never rendered.
         // Refuse damaged or stale source bindings rather than losing them.
         _validateNativeExtras(native, book.data);
@@ -1766,6 +1985,9 @@ class WebLibrary {
         'fontSize': prefs['fontSize'],
       },
       'model': ?newestModel,
+      'shelfOrganization': shelfOrganization().exportPortable(
+        books.map((book) => book.id).toList(),
+      ),
       'shelf': <String, Object?>{
         'readingQueue': <int>[
           ...<int>{
@@ -2006,6 +2228,14 @@ class WebLibrary {
                 },
               ],
             );
+          }
+          if (archive.settings['shelfOrganization'] != null) {
+            final organization = shelfOrganization();
+            organization.mergePortable(
+              archive.settings['shelfOrganization'],
+              <String>[for (int i = 0; i < archive.books.length; i++) ids[i]!],
+            );
+            saveShelfOrganization(organization);
           }
           _applyWebReaderSettings(archive.settings);
           if (customizations != null) {

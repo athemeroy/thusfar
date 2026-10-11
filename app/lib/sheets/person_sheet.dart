@@ -114,7 +114,7 @@ class _PersonPageState extends State<PersonPage> {
           ),
         ],
       ),
-      tag: '截至第 $cutoffPage 页',
+      tag: '止于当前 · 第 $cutoffPage 页',
       slivers: <Widget>[
         if (p.manual)
           SliverToBoxAdapter(
@@ -164,7 +164,7 @@ class _PersonPageState extends State<PersonPage> {
               children: <Widget>[
                 if (p.aliases.isNotEmpty)
                   Text(
-                    '又称 ${p.aliases.join('、')}',
+                    '又称：${p.aliases.join('、')}',
                     style: TextStyle(fontSize: 13, color: t.ink2),
                   ),
                 if (p.tagline.isNotEmpty)
@@ -179,12 +179,13 @@ class _PersonPageState extends State<PersonPage> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: <Widget>[
                     Tag(
                       '第 ${link.pageNo(p.first)} 页登场',
                       onTap: () => _preview(p.first, p.first + p.name.length),
                     ),
-                    Tag('出场 ${p.mentions} 次'),
+                    Tag('已登场 ${p.mentions} 次'),
                   ],
                 ),
               ],
@@ -206,7 +207,7 @@ class _PersonPageState extends State<PersonPage> {
               ),
             ),
           ),
-        const SliverToBoxAdapter(child: SectionTitle('简介')),
+        const SliverToBoxAdapter(child: SectionTitle('人物生平')),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -230,7 +231,7 @@ class _PersonPageState extends State<PersonPage> {
           ),
         ),
         if (attrs.isNotEmpty) ...<Widget>[
-          const SliverToBoxAdapter(child: SectionTitle('档案')),
+          const SliverToBoxAdapter(child: SectionTitle('角色档案')),
           SliverList.list(
             children: <Widget>[
               for (final MapEntry<String, List<Json>> a in attrs.entries)
@@ -241,7 +242,7 @@ class _PersonPageState extends State<PersonPage> {
         if (rels.isNotEmpty) ...<Widget>[
           SliverToBoxAdapter(
             child: SectionTitle(
-              '关系',
+              '人物关系',
               trailing: Text(
                 '${rels.length}',
                 style: TextStyle(color: t.ink3, fontSize: 13),
@@ -270,14 +271,14 @@ class _PersonPageState extends State<PersonPage> {
         if (events.isNotEmpty) ...<Widget>[
           SliverToBoxAdapter(
             child: SectionTitle(
-              '经历',
+              '生平足迹',
               trailing: GestureDetector(
                 onTap: () {
                   HapticFeedback.selectionClick();
                   setState(() => newestFirst = !newestFirst);
                 },
                 child: Text(
-                  newestFirst ? '最新在上 ⇅' : '最早在上 ⇅',
+                  newestFirst ? '由近及远 ⇅' : '由远及近 ⇅',
                   style: TextStyle(color: t.ink3, fontSize: 13),
                 ),
               ),
@@ -291,12 +292,17 @@ class _PersonPageState extends State<PersonPage> {
           ),
         ],
         if (trail.length > 1) ...<Widget>[
-          const SliverToBoxAdapter(child: SectionTitle('身份变迁')),
+          const SliverToBoxAdapter(child: SectionTitle('身份揭晓')),
           SliverList.list(
             children: <Widget>[
               for (final Json s in trail)
                 ListTile(
                   dense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  onTap: () => _preview(
+                    (s['p']! as num).toInt(),
+                    (s['p']! as num).toInt(),
+                  ),
                   leading: Tag('第 ${link.pageNo((s['p']! as num).toInt())} 页'),
                   title: Text(
                     '${s['t']}',
@@ -311,7 +317,7 @@ class _PersonPageState extends State<PersonPage> {
         children: <Widget>[
           Expanded(
             child: Pill(
-              label: '问问这个人',
+              label: '问问此人',
               icon: Icons.chat_bubble_outline,
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -322,7 +328,7 @@ class _PersonPageState extends State<PersonPage> {
           const SizedBox(width: 12),
           Expanded(
             child: Pill(
-              label: '在关系图里看',
+              label: '看关系图',
               icon: Icons.hub_outlined,
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -504,7 +510,10 @@ class _PersonPageState extends State<PersonPage> {
               ),
             ),
             const SizedBox(width: 8),
-            Tag('第 ${widget.link.pageNo(at)} 页', color: fresh ? t.zhu : null),
+            Tooltip(
+              message: '翻回原文',
+              child: Tag('第 ${widget.link.pageNo(at)} 页', color: t.qing),
+            ),
           ],
         ),
       ),

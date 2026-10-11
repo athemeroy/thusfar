@@ -17,6 +17,7 @@ import java.util.concurrent.Executors
 class MainActivity : FlutterActivity() {
     private val pendingImports = mutableListOf<Map<String, String>>()
     private val importExecutor = Executors.newSingleThreadExecutor()
+    private var readAloud: ReadAloudBridge? = null
 
     override fun provideFlutterEngine(context: Context): FlutterEngine = ProcessingEngineHost.get(context)
 
@@ -39,6 +40,8 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        readAloud?.dispose()
+        readAloud = ReadAloudBridge(this, flutterEngine.dartExecutor.binaryMessenger)
         ProcessingEngineHost.attachImports(this) {
             val ready = pendingImports.toList()
             pendingImports.clear()
@@ -65,6 +68,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onPause() {
+        readAloud?.pause()
         ProcessingEngineHost.requestNotificationPermission = null
         ProcessingRuntimeDiagnostics.record(this, "activity_paused")
         super.onPause()
@@ -163,6 +167,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        readAloud?.dispose()
+        readAloud = null
         importExecutor.shutdownNow()
         pendingImports.forEach { it["path"]?.let { path -> File(path).delete() } }
         pendingImports.clear()

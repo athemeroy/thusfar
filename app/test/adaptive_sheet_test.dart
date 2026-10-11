@@ -307,12 +307,12 @@ void main() {
     await tester.enterText(input, 'Bob');
     await tester.pump(const Duration(milliseconds: 180));
     await tester.pumpAndSettle();
-    expect(find.text('读到这里的部分没有找到。要搜全书吗？'), findsOneWidget);
-    await tester.tap(find.text('全书'));
+    expect(find.text('已读范围没有找到，可搜索全书。'), findsOneWidget);
+    await tester.tap(find.text('搜索全书').first);
     await tester.pump(const Duration(milliseconds: 180));
     await tester.pumpAndSettle();
-    expect(find.text('会搜到还没读的内容'), findsOneWidget);
-    expect(find.text('找到 1 处'), findsOneWidget);
+    expect(find.text('可能剧透 · 将显示后文内容'), findsOneWidget);
+    expect(find.text('全书共找到 1 处'), findsOneWidget);
     await tester.tap(input);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
@@ -356,6 +356,12 @@ void main() {
         ),
       );
       await tester.tap(find.text('Typography'));
+      await tester.pumpAndSettle();
+      await tester.dragUntilVisible(
+        find.byTooltip('左右边距增加'),
+        find.byType(ListView).last,
+        const Offset(0, -60),
+      );
       await tester.pumpAndSettle();
       expect(
         tester.getSize(find.byTooltip('左右边距增加')).height,

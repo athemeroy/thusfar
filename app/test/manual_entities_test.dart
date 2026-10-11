@@ -263,7 +263,7 @@ void main() {
     (WidgetTester tester) async {
       final ReaderLink link = openData();
       await show(tester, PeoplePage(link: link));
-      await tester.tap(find.text('补充人物或概念'));
+      await tester.tap(find.text('添加角色'));
       await tester.pumpAndSettle();
       await tester.enterText(
         find.byKey(const ValueKey<String>('manual-name')),

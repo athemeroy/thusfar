@@ -234,7 +234,7 @@ void main() {
   ) async {
     final Json original = add();
     await openToc(tester);
-    await tester.tap(find.byTooltip('编辑笔记'));
+    await tester.tap(find.byTooltip('编辑想法'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '修改后的想法');
     await tester.tap(find.text('保存'));
@@ -242,11 +242,11 @@ void main() {
     expect(find.text('修改后的想法'), findsOneWidget);
     expect(notes.notes.single['revision'], 2);
     expect(notes.notes.single['id'], original['id']);
-    await tester.tap(find.byTooltip('编辑笔记'));
+    await tester.tap(find.byTooltip('编辑想法'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('删除'));
     await tester.pumpAndSettle();
-    expect(find.text('删除这条笔记？'), findsOneWidget);
+    expect(find.text('删除这条想法？'), findsOneWidget);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
     expect(notes.notes, hasLength(1));
@@ -264,7 +264,7 @@ void main() {
   ) async {
     final Json original = add();
     await openToc(tester);
-    await tester.tap(find.byTooltip('编辑笔记'));
+    await tester.tap(find.byTooltip('编辑想法'));
     await tester.pumpAndSettle();
     final NoteStore other = NoteStore(notes.file, fixture.data);
     other.save(
@@ -280,7 +280,7 @@ void main() {
     await tester.tap(find.text('保存'));
     await tester.pumpAndSettle();
     expect(find.byType(NoteEditor), findsOneWidget);
-    expect(find.textContaining('摘记已在别处修改'), findsOneWidget);
+    expect(find.textContaining('想法已在别处修改'), findsOneWidget);
     expect(
       tester.widget<TextField>(find.byType(TextField)).controller!.text,
       '我的未保存输入',
@@ -306,7 +306,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await settleNotes(tester);
-    await tester.tap(find.byTooltip('编辑笔记'));
+    await tester.tap(find.byTooltip('编辑想法'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), '全局编辑');
     await tester.tap(find.text('保存'));
@@ -335,7 +335,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await settleNotes(tester);
-      expect(find.textContaining('摘记读取失败'), findsOneWidget);
+      expect(find.textContaining('书摘暂时无法读取'), findsOneWidget);
       expect(file.readAsStringSync(), '{broken');
       await tester.pumpWidget(const SizedBox.shrink());
     },
@@ -352,7 +352,7 @@ void main() {
         ),
       );
       await settleNotes(tester);
-      await tester.tap(find.byTooltip('搜索摘记'));
+      await tester.tap(find.byTooltip('搜索书摘'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'my thought');
       await tester.pumpAndSettle();
@@ -370,18 +370,63 @@ void main() {
       await tester.enterText(find.byType(TextField), 'thought');
       await tester.pumpAndSettle();
       expect(find.text('Find MY Thought'), findsOneWidget);
-      expect(find.textContaining('摘记读取失败'), findsNothing);
+      expect(find.textContaining('书摘暂时无法读取'), findsNothing);
       await tester.runAsync(fixture.library.scan);
-      await settleNotes(tester, until: find.textContaining('摘记读取失败'));
+      await settleNotes(tester, until: find.textContaining('书摘暂时无法读取'));
       expect(notes.file.readAsStringSync(), '{broken');
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsNothing);
-      expect(find.byTooltip('搜索摘记'), findsOneWidget);
+      expect(find.byTooltip('搜索书摘'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
+  testWidgets('book-name search and copying export exactly the visible notes', (
+    tester,
+  ) async {
+    add(text: '留住这个想法');
+    String? clipboard;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboard =
+              (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: buildTheme(Brightness.light),
+        home: NotesScreen(library: fixture.library, onOpenAt: (_, _) {}),
+      ),
+    );
+    await settleNotes(tester);
+    await tester.tap(find.byTooltip('搜索书摘'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '关系图示例');
+    await tester.pumpAndSettle();
+    expect(find.text('留住这个想法'), findsOneWidget);
+    await tester.tap(find.byTooltip('导出书摘'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('复制当前结果'));
+    await tester.pumpAndSettle();
+    expect(clipboard, contains('## 关系图示例'));
+    expect(clipboard, contains('留住这个想法'));
+    await tester.tap(find.text('划线').first);
+    await tester.pumpAndSettle();
+    expect(find.text('留住这个想法'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   Future<void> openEditor(
     WidgetTester tester, {
     Json? existing,

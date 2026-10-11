@@ -72,9 +72,13 @@ class WebAiPanel extends StatefulWidget {
     this.focusPersonName,
     this.analyze = WebAiEngine.analyze,
     this.readingBuilder,
+    this.initialTab = 0,
+    this.showPreparation = true,
   });
 
   final Widget Function(BuildContext, WebPreparationActivity)? readingBuilder;
+  final int initialTab;
+  final bool showPreparation;
 
   final WebBook book;
   final WebReadingState reading;
@@ -101,6 +105,7 @@ class WebAiPanel extends StatefulWidget {
 }
 
 class _WebAiPanelState extends State<WebAiPanel> {
+  late bool _preparationVisible = widget.showPreparation;
   late final List<WebAiChunk> _chunks = WebAiEngine.chunks(widget.book);
   late final Map<String, WebAiChunk> _chunkByKey = <String, WebAiChunk>{
     for (final WebAiChunk chunk in _chunks) _chunkKey(chunk): chunk,
@@ -816,7 +821,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                   horizontal: 16,
                   vertical: 16,
                 ),
-                title: const Text('整理这本书'),
+                title: const Text('智能梳理'),
                 content: SizedBox(
                   width: 520,
                   child: Scrollbar(
@@ -833,7 +838,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            '整理范围',
+                            '梳理范围',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
                               color: t.ink,
@@ -855,8 +860,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
                                   ChoiceChip(
                                     label: Text(switch (option) {
                                       'first' => '首章',
-                                      'read' => '读到这里',
-                                      'range' => '选章节',
+                                      'read' => '已读',
+                                      'range' => '选章',
                                       _ => '全书',
                                     }),
                                     selected:
@@ -952,8 +957,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
                           Text(
                             '${switch (PreparationScope.parse(scope).kind) {
                               'first' => '先试首章，未读结果仍隐藏。',
-                              'read' => '仅发送本次已确认阅读终点之前的完整片段。继续阅读不会自行扩大本次范围。',
-                              'range' => '仅整理选中章节的独立引文草稿，前面未处理的章节保持空缺，不会补齐或收费。',
+                              'read' => '只发送已读内容，本次范围不会随阅读扩大。',
+                              'range' => '只梳理所选章节，其他章节不会处理或计费。',
                               _ => '整理全书，未读结果仍隐藏。',
                             }}  $remaining 段待处理。',
                             style: TextStyle(color: t.ink2, fontSize: 12),
@@ -964,12 +969,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
                             TextButton(
                               onPressed: () =>
                                   redraw(() => scope = 'read:$_readingCutoff'),
-                              child: const Text('把终点更新到当前阅读位置'),
+                              child: const Text('更新至当前'),
                             ),
                           if (PreparationScope.parse(scope).kind == 'read' &&
                               _targets(scope).isEmpty)
                             Text(
-                              '当前阅读位置之前还没有完整片段，请继续阅读或明确选择首章试整理。',
+                              '已读内容还不够，可继续阅读或先试首章。',
                               style: TextStyle(color: t.amber, fontSize: 12),
                             ),
                           const SizedBox(height: 16),
@@ -1034,7 +1039,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                             )
                           else if (provider == 'ollama')
                             Text(
-                              '本机 Ollama 指当前浏览设备，不是 NAS；可留空密钥，但服务需允许此网页来源。',
+                              '使用这台设备上的 Ollama；请先开启模型服务。',
                               style: TextStyle(color: t.ink2, fontSize: 12),
                             )
                           else if (provider != 'custom')
@@ -1121,8 +1126,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
                                     protocol,
                                     endpoint.text,
                                   )
-                                  ? '你的 服务密钥（本机可留空）'
-                                  : '你的 服务密钥',
+                                  ? '服务密钥（本机可留空）'
+                                  : '服务密钥',
                               suffixIcon: IconButton(
                                 tooltip: showKey ? '隐藏密钥' : '显示密钥',
                                 onPressed: () =>
@@ -1137,7 +1142,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '密钥仅存于当前标签页，关闭后需重填。最多可能调用模型 ${remaining * 2} 次；服务商可能收费。',
+                            '选中章节会发给服务商，可能收费。失败重试也可能收费。密钥仅保留在当前页面。',
                             style: TextStyle(
                               fontSize: 12,
                               color: t.ink2,
@@ -1205,7 +1210,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                               ),
                             );
                           },
-                    child: const Text('开始整理'),
+                    child: const Text('开始梳理'),
                   ),
                 ],
               ),
@@ -1227,7 +1232,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       final bool? confirmed = await showDialog<bool>(
         context: context,
         builder: (BuildContext context) => AlertDialog(
-          title: Text('确认整理${_scopeLabel(selected.scope)}？'),
+          title: Text('梳理${_scopeLabel(selected.scope)}？'),
           content: Text(
             '本次将整理 $remaining 段，未完成的内容可能再试一次。'
             '费用由 ${Uri.parse(selected.config.endpoint).host} 收取，具体金额以该服务的账单为准。'
@@ -1447,13 +1452,22 @@ class _WebAiPanelState extends State<WebAiPanel> {
       },
       child: DefaultTabController(
         length: 4,
+        initialIndex: widget.initialTab.clamp(0, 3),
         child: Scaffold(
           backgroundColor: t.paper,
           appBar: AppBar(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(widget.focusPersonName == null ? '浏览器整理草稿' : '人物详情'),
+                Text(
+                  widget.focusPersonName != null
+                      ? '人物详情'
+                      : widget.showPreparation
+                      ? '智能梳理'
+                      : widget.initialTab == 1
+                      ? '前情'
+                      : '人物',
+                ),
                 Text(
                   widget.book.meta.title,
                   maxLines: 1,
@@ -1463,8 +1477,16 @@ class _WebAiPanelState extends State<WebAiPanel> {
               ],
             ),
             actions: <Widget>[
+              if (!widget.showPreparation)
+                IconButton(
+                  tooltip: _preparationVisible ? '收起梳理设置' : '梳理设置',
+                  onPressed: () => setState(
+                    () => _preparationVisible = !_preparationVisible,
+                  ),
+                  icon: const Icon(Icons.tune),
+                ),
               PopupMenuButton<String>(
-                tooltip: '整理选项',
+                tooltip: '梳理选项',
                 onSelected: (String value) {
                   if (value == 'clear') unawaited(_clear());
                   if (value == 'export') _exportDiagnostics();
@@ -1472,12 +1494,12 @@ class _WebAiPanelState extends State<WebAiPanel> {
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                   const PopupMenuItem<String>(
                     value: 'export',
-                    child: Text('导出整理诊断'),
+                    child: Text('导出诊断'),
                   ),
                   PopupMenuItem<String>(
                     value: 'clear',
                     enabled: !_running && !_starting && !_clearing && !otherTab,
-                    child: const Text('清除本书网页整理'),
+                    child: const Text('清除网页草稿'),
                   ),
                 ],
               ),
@@ -1489,15 +1511,15 @@ class _WebAiPanelState extends State<WebAiPanel> {
               child: NestedScrollView(
                 headerSliverBuilder:
                     (BuildContext context, bool innerScrolled) => <Widget>[
-                      if (widget.focusPersonName == null)
+                      if (_preparationVisible && widget.focusPersonName == null)
                         SliverPadding(
-                          padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                           sliver: SliverToBoxAdapter(
                             child: _overview(t, done, targets.length, otherTab),
                           ),
                         ),
                       SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                         sliver: SliverToBoxAdapter(child: _visibilityNote(t)),
                       ),
                       SliverToBoxAdapter(
@@ -1506,9 +1528,9 @@ class _WebAiPanelState extends State<WebAiPanel> {
                           child: TabBar(
                             isScrollable: true,
                             tabAlignment: TabAlignment.start,
-                            labelColor: t.zhu,
+                            labelColor: t.qing,
                             unselectedLabelColor: t.ink2,
-                            indicatorColor: t.zhu,
+                            indicatorColor: t.qing,
                             tabs: const <Tab>[
                               Tab(text: '人物'),
                               Tab(text: '前情'),
@@ -1539,18 +1561,18 @@ class _WebAiPanelState extends State<WebAiPanel> {
 
   Widget _overview(Tokens t, int done, int total, bool otherTab) {
     final String phase = _running
-        ? (_stopRequested ? '正在暂停，已完成的内容会保留' : '正在整理')
+        ? (_stopRequested ? '正在暂停，进度已保留' : '正在梳理')
         : _starting || _clearing
-        ? '正在核对本地整理状态'
+        ? '正在准备'
         : otherTab
-        ? '另一标签页正在整理'
+        ? '另一页面正在梳理'
         : _phase == 'running'
-        ? '网页已关闭或刷新，等待你手动继续'
+        ? '梳理暂停，可随时继续'
         : switch (_phase) {
-            'complete' => '所选范围已完成',
-            'paused' => '已暂停',
-            'error' => '遇到问题',
-            _ => '尚未整理',
+            'complete' => '梳理完成',
+            'paused' => '梳理暂停',
+            'error' => '梳理受阻',
+            _ => '尚未梳理',
           };
     final (int prompt, int completion, int calls) = _usage();
     return Container(
@@ -1574,15 +1596,16 @@ class _WebAiPanelState extends State<WebAiPanel> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: t.zhuSoft,
+                  color: t.paper,
+                  border: Border.all(color: t.rule),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'AI 草稿',
+                  '待核对',
                   style: TextStyle(
-                    color: t.zhu,
+                    color: t.ink2,
                     fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w400,
                     fontFamily: sans,
                   ),
                 ),
@@ -1598,7 +1621,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           ),
           const SizedBox(height: 13),
           Text(
-            '$done / $total 段 · ${_scopeLabel(_scope)}',
+            '已梳理 ${total == 0 ? 0 : (done * 100 / total).round()}% · ${_scopeLabel(_scope)}',
             style: TextStyle(
               color: t.ink,
               fontSize: 23,
@@ -1611,31 +1634,31 @@ class _WebAiPanelState extends State<WebAiPanel> {
             minHeight: 7,
             borderRadius: BorderRadius.circular(9),
             backgroundColor: t.rule,
-            color: t.zhu,
+            color: t.qing,
           ),
           const SizedBox(height: 9),
           Text(
-            '全书已整理 ${_results.length} / ${_bodyChunks.length} 段',
+            '全书已梳理 ${_bodyChunks.isEmpty ? 0 : (_results.length * 100 / _bodyChunks.length).round()}%',
             style: TextStyle(fontSize: 12, color: t.ink2),
           ),
 
           if (_running)
             Text(switch (_requestStage) {
-              'saving' => '正在保存整理结果',
-              'model' => '正在整理人物和情节',
-              _ => '正在准备整理',
+              'saving' => '正在保存',
+              'model' => '正在梳理人物和情节',
+              _ => '正在准备梳理',
             }, style: TextStyle(fontSize: 12, color: t.ink2)),
           const SizedBox(height: 5),
           Text(
             _activeChunk == null
-                ? '关闭页面后，整理会暂停'
-                : '正在整理第 ${int.parse(_activeChunk!.split(':').first) + 1} 章',
+                ? '关闭页面后，梳理会暂停'
+                : '正在梳理第 ${int.parse(_activeChunk!.split(':').first) + 1} 章',
             style: TextStyle(fontSize: 12, color: t.ink2),
           ),
           if (!_running && done == 0 && _phase == 'idle') ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              '点击“开始整理”，选择整理范围。',
+              '点按“一键梳理”，选择章节。',
               style: TextStyle(
                 fontSize: 12,
                 color: t.ink2,
@@ -1647,7 +1670,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           if (done > 0) ...<Widget>[
             const SizedBox(height: 8),
             Text(
-              'AI 整理可能有误，可以对照原文查看。',
+              '智能梳理可能有误，可对照原文。',
               style: TextStyle(
                 fontSize: 12,
                 color: t.ink2,
@@ -1667,7 +1690,10 @@ class _WebAiPanelState extends State<WebAiPanel> {
           ],
           if (_lastError != null) ...<Widget>[
             const SizedBox(height: 12),
-            Text(_lastError!, style: TextStyle(color: t.danger, height: 1.4)),
+            Text(
+              readerMessage(_lastError, fallback: '梳理暂时受阻，请检查网络和服务设置。'),
+              style: TextStyle(color: t.danger, height: 1.4),
+            ),
           ],
           if (prompt > 0 || completion > 0 || calls > 0) ...<Widget>[
             const SizedBox(height: 11),
@@ -1685,13 +1711,13 @@ class _WebAiPanelState extends State<WebAiPanel> {
                 OutlinedButton.icon(
                   onPressed: _openingReader ? null : _readWhilePreparing,
                   icon: const Icon(Icons.menu_book_outlined),
-                  label: const Text('边读边整理'),
+                  label: const Text('继续阅读'),
                 ),
               if (_running)
                 OutlinedButton.icon(
                   onPressed: _stopRequested ? null : _pause,
                   icon: const Icon(Icons.pause_circle_outline),
-                  label: Text(_stopRequested ? '暂停中…' : '暂停整理'),
+                  label: Text(_stopRequested ? '暂停中…' : '暂停梳理'),
                 )
               else
                 FilledButton.icon(
@@ -1712,7 +1738,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                     color: t.sheet,
                   ),
                   label: Text(
-                    done == 0 ? '开始整理' : '继续或调整范围',
+                    done == 0 ? '一键梳理' : '继续梳理',
                     style: TextStyle(color: t.sheet, fontFamily: sans),
                   ),
                 ),
@@ -1760,16 +1786,26 @@ class _WebAiPanelState extends State<WebAiPanel> {
           Icon(Icons.visibility_off_outlined, size: 18, color: t.qing),
           Text(
             widget.cutoffOffset == null
-                ? '阅读保护：当前在第 ${widget.reading.chapter + 1} 章，本章和以后默认隐藏${hidden > 0 ? ' · 已隐藏 $hidden 段网页草稿' : ''}${nativeHidden > 0 ? ' · $nativeHidden 条安装版资料' : ''}'
-                : '阅读保护：安装版资料截至当前页；网页草稿只显示读完的章节${hidden > 0 ? ' · 已隐藏 $hidden 段网页草稿' : ''}${nativeHidden > 0 ? ' · $nativeHidden 条后续资料' : ''}',
+                ? '止于当前 · 第 ${widget.reading.chapter + 1} 章'
+                : '止于当前 · 资料截至眼前这一页',
             style: TextStyle(fontSize: 12, color: t.qing, fontFamily: serif),
           ),
+          InfoButton(
+            title: '阅读范围',
+            message:
+                '导入资料只显示到当前位置。网页人物线索尚未核对，默认只显示此前章节。${hidden + nativeHidden > 0 ? '后续资料已收起。' : ''}',
+          ),
           if (_hasCurrentResults && widget.focusPersonName == null)
-            TextButton(
-              onPressed: _toggleCurrentChapter,
-              child: Text(
-                _revealCurrentChapter ? '收起当前章' : '查看当前章整理（可能包含本章后续内容）',
-              ),
+            Wrap(
+              spacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                TextButton(
+                  onPressed: _toggleCurrentChapter,
+                  child: Text(_revealCurrentChapter ? '收起本章' : '查看本章'),
+                ),
+                Text('可能剧透', style: TextStyle(color: t.amber, fontSize: 12)),
+              ],
             ),
         ],
       ),
@@ -1784,16 +1820,16 @@ class _WebAiPanelState extends State<WebAiPanel> {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('查看当前章的全部整理？'),
+        title: const Text('注意剧透'),
         content: const Text('当前章后半段的线索可能提前揭示情节。确定后只在本次打开的页面中显示。'),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('暂不查看'),
+            child: const Text('留在原地'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('仍要查看'),
+            child: const Text('确认查看'),
           ),
         ],
       ),
@@ -1895,6 +1931,21 @@ class _WebAiPanelState extends State<WebAiPanel> {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: t.ink2, height: 1.5),
               ),
+              if (!_preparationVisible) ...<Widget>[
+                const SizedBox(height: 16),
+                TextButton.icon(
+                  onPressed:
+                      _loading ||
+                          _starting ||
+                          _clearing ||
+                          _running ||
+                          _otherLeaseActive
+                      ? null
+                      : _configureAndStart,
+                  icon: const Icon(Icons.auto_awesome_outlined),
+                  label: const Text('一键梳理'),
+                ),
+              ],
             ],
           ),
         ),
@@ -1905,12 +1956,38 @@ class _WebAiPanelState extends State<WebAiPanel> {
     padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
     decoration: BoxDecoration(
       color: t.paper,
-      border: Border(left: BorderSide(color: t.zhu, width: 2)),
+      border: Border(left: BorderSide(color: t.qing, width: 2)),
     ),
     child: Text(
-      '原文  $quote',
+      '原文出处  $quote',
       style: TextStyle(color: t.ink2, fontFamily: serif, height: 1.5),
     ),
+  );
+
+  Widget _trustLabel(Tokens t, {bool verified = false}) => Wrap(
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 4,
+    children: <Widget>[
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+        decoration: BoxDecoration(
+          color: verified ? t.qingSoft : t.paper,
+          border: Border.all(
+            color: verified ? t.qing.withValues(alpha: .25) : t.rule,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          verified ? '已核对' : '待核对',
+          style: TextStyle(color: verified ? t.qing : t.ink2, fontSize: 12),
+        ),
+      ),
+      if (!verified)
+        const InfoButton(
+          title: '人物线索',
+          message: '这些内容由 AI 梳理，尚未核对人物结论。附带原文不代表结论一定正确，可对照阅读。',
+        ),
+    ],
   );
 
   Widget _card(Tokens t, Widget child) => Container(
@@ -2003,20 +2080,20 @@ class _WebAiPanelState extends State<WebAiPanel> {
             ),
             const SizedBox(height: 7),
             Text(
-              '只显示截至当前阅读位置的资料',
+              '止于当前 · 仅含已读资料',
               style: TextStyle(color: t.ink2, fontSize: 13),
             ),
             if (person != null && person.aliases.isNotEmpty) ...<Widget>[
               const SizedBox(height: 8),
               Text(
-                '又称 ${person.aliases.join('、')}',
+                '又称：${person.aliases.join('、')}',
                 style: TextStyle(color: t.ink2),
               ),
             ],
             if (person != null) ...<Widget>[
               const SizedBox(height: 8),
               Text(
-                '已读出场 ${person.mentions} 次',
+                '已登场 ${person.mentions} 次',
                 style: TextStyle(color: t.ink3, fontSize: 12),
               ),
             ],
@@ -2029,7 +2106,9 @@ class _WebAiPanelState extends State<WebAiPanel> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('已核对人物小传', style: TextStyle(color: t.qing, fontSize: 13)),
+              Text('人物生平', style: TextStyle(color: t.ink, fontSize: 18)),
+              const SizedBox(height: 6),
+              _trustLabel(t, verified: true),
               const SizedBox(height: 10),
               Text(
                 '${latestProfile['bio']}',
@@ -2049,10 +2128,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                '截至这一页暂无核对通过的人物小传',
-                style: TextStyle(color: t.ink, fontSize: 16),
-              ),
+              Text('人物生平尚待核对', style: TextStyle(color: t.ink, fontSize: 16)),
               if (introduction.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 9),
                 Text(
@@ -2060,7 +2136,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                   style: TextStyle(color: t.ink2, height: 1.55),
                 ),
                 const SizedBox(height: 5),
-                Text('已读人物线索', style: TextStyle(color: t.ink3, fontSize: 12)),
+                Text('角色线索', style: TextStyle(color: t.ink3, fontSize: 12)),
               ],
             ],
           ),
@@ -2071,7 +2147,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('已读人物关系', style: TextStyle(color: t.ink, fontSize: 18)),
+              Text('人物关系', style: TextStyle(color: t.ink, fontSize: 18)),
               const SizedBox(height: 8),
               for (final Json relation in nativeRelationships.take(12))
                 if (world?.person('${relation['other'] ?? ''}')
@@ -2092,7 +2168,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('已读经历', style: TextStyle(color: t.ink, fontSize: 18)),
+              Text('生平足迹', style: TextStyle(color: t.ink, fontSize: 18)),
               const SizedBox(height: 8),
               for (final Json event in events.reversed.take(12))
                 if ('${event['text'] ?? ''}'.trim().isNotEmpty)
@@ -2112,7 +2188,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('网页 AI 草稿 · 尚未核对', style: TextStyle(color: t.ink3)),
+              _trustLabel(t),
               const SizedBox(height: 8),
               for (final (int chapter, Json fact) in draftFacts.reversed.take(
                 8,
@@ -2140,7 +2216,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         ),
     ];
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       itemCount: cards.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (BuildContext context, int index) => cards[index],
@@ -2180,12 +2256,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       }
     }
     if (people.isEmpty && nativeNames.isEmpty) {
-      return _empty(
-        t,
-        Icons.people_outline,
-        '还没有可看的已读人物线索',
-        '安装版已核对的人物小传与网页整理草稿会在已读范围内显示。当前章默认隐藏。',
-      );
+      return _empty(t, Icons.people_outline, '暂无人物', '当前范围暂无人物线索，可继续阅读或开启梳理。');
     }
     final List<Widget> cards = <Widget>[];
     final List<String> nativeIds = nativeNames.keys.toList()
@@ -2209,7 +2280,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                 ),
               ),
               const SizedBox(height: 5),
-              Text('安装版人物资料', style: TextStyle(fontSize: 12, color: t.ink3)),
+              Text('角色资料', style: TextStyle(fontSize: 12, color: t.ink3)),
               if (nativeIntros[id] != null) ...<Widget>[
                 const SizedBox(height: 10),
                 Text(
@@ -2251,7 +2322,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
                   color: t.ink,
                 ),
               ),
-              Text('网页 AI 草稿', style: TextStyle(fontSize: 12, color: t.ink3)),
+              _trustLabel(t),
               const SizedBox(height: 11),
               for (final (int chapter, Json fact) in facts) ...<Widget>[
                 Text(
@@ -2273,7 +2344,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       itemCount: cards.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (BuildContext context, int index) => cards[index],
@@ -2296,8 +2367,8 @@ class _WebAiPanelState extends State<WebAiPanel> {
       return _empty(
         t,
         Icons.menu_book_outlined,
-        '还没有可看的已读前情',
-        '安装版前情与网页整理草稿只展示已读完的章节。',
+        '正在发生',
+        '当前范围还没有前情，可继续阅读或开启梳理。',
       );
     }
     final List<Widget> cards = <Widget>[
@@ -2308,7 +2379,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                '安装版前情 · ${_chapterLabel(_nativeChapterAt((row['p'] as num).toInt()))}',
+                '此前脉络 · ${_chapterLabel(_nativeChapterAt((row['p'] as num).toInt()))}',
                 style: TextStyle(color: t.ink2, fontSize: 12),
               ),
               const SizedBox(height: 8),
@@ -2326,7 +2397,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                '网页 AI 草稿 · ${_chapterLabel(chapter)}',
+                '待核对 · ${_chapterLabel(chapter)}',
                 style: TextStyle(color: t.ink2, fontSize: 12),
               ),
               const SizedBox(height: 8),
@@ -2340,7 +2411,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         ),
     ];
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       itemCount: cards.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (BuildContext context, int index) => cards[index],
@@ -2375,12 +2446,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
       }
     }
     if (links.isEmpty && nativeLinks.isEmpty) {
-      return _empty(
-        t,
-        Icons.hub_outlined,
-        '还没有可看的已读人物关系',
-        '人物关系只展示已读范围内的安装版资料与网页草稿；未来章节默认隐藏。',
-      );
+      return _empty(t, Icons.hub_outlined, '关系未明', '已读范围暂无关系线索，可继续阅读。');
     }
     final List<Widget> cards = <Widget>[
       for (final Json link in nativeLinks)
@@ -2404,7 +2470,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
               ),
               const SizedBox(height: 8),
               Text(
-                '安装版人物关系 · ${_chapterLabel(_nativeChapterAt((link['p'] as num).toInt()))}',
+                '人物关系 · ${_chapterLabel(_nativeChapterAt((link['p'] as num).toInt()))}',
                 style: TextStyle(color: t.ink3, fontSize: 12),
               ),
             ],
@@ -2432,7 +2498,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
               _evidence(t, '${link['evidence'] ?? ''}'),
               const SizedBox(height: 8),
               Text(
-                '网页 AI 草稿 · ${_chapterLabel(chapter)}',
+                '待核对 · ${_chapterLabel(chapter)}',
                 style: TextStyle(color: t.ink3, fontSize: 12),
               ),
             ],
@@ -2440,7 +2506,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
         ),
     ];
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       itemCount: cards.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (BuildContext context, int index) => cards[index],
@@ -2458,7 +2524,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
     }
     final List<Json> events = _events.reversed.toList();
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       itemCount: events.length,
       separatorBuilder: (_, _) => Divider(color: t.rule, height: 1),
       itemBuilder: (BuildContext context, int index) {
@@ -2480,10 +2546,7 @@ class _WebAiPanelState extends State<WebAiPanel> {
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
-                  readerMessage(
-                    event['message'],
-                    fallback: error ? '这一步未完成，已保存的内容会保留。' : '整理进度已更新。',
-                  ),
+                  _eventLabel(event),
                   style: TextStyle(
                     color: error ? t.danger : t.ink2,
                     height: 1.5,
@@ -2495,6 +2558,21 @@ class _WebAiPanelState extends State<WebAiPanel> {
         );
       },
     );
+  }
+
+  String _eventLabel(Json event) {
+    final String message = '${event['message'] ?? ''}';
+    final String? chapter = RegExp(r'第 (\d+) 章').firstMatch(message)?.group(1);
+    return switch (event['kind']) {
+      'start' => '开始梳理，接续上次进度。',
+      'request' => chapter == null ? '正在梳理。' : '正在梳理第 $chapter 章。',
+      'done' => chapter == null ? '已保存新内容。' : '第 $chapter 章已有新内容。',
+      'complete' => '本次梳理完成。',
+      'pause' => message.contains('计费') ? '梳理暂停，继续时可能再次收费。' : '梳理暂停，进度已保留。',
+      'warning' => '上次梳理未收到结果；重试可能再次收费。',
+      'error' => readerMessage(message, fallback: '梳理暂时受阻，已保存的内容会保留。'),
+      _ => '梳理进度已更新。',
+    };
   }
 }
 

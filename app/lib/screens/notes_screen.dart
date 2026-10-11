@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:file_picker/file_picker.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/notebook.dart' as notebook;
@@ -13,7 +15,7 @@ import '../sheets/toc_sheet.dart';
 import '../ui/cover.dart';
 import '../ui/theme.dart';
 
-/// S16 摘记: everything the reader left, grouped by book.
+/// S16 书摘: everything the reader left, grouped by book.
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key, required this.library, required this.onOpenAt});
 
@@ -28,6 +30,7 @@ class _NotesScreenState extends State<NotesScreen> {
   int filter = 0;
   String query = '';
   bool searching = false;
+  bool _exporting = false;
 
   final Map<String, String> _errors = <String, String>{};
   final Map<String, List<Json>> _notes = <String, List<Json>>{};
@@ -145,7 +148,7 @@ class _NotesScreenState extends State<NotesScreen> {
             if (result.$2 == null) {
               _errors.remove(book.id);
             } else {
-              _errors[book.id] = '${book.title}：摘记暂时无法读取，请重试。';
+              _errors[book.id] = '${book.title}：书摘暂时无法读取，请重试。';
             }
           }
           _errors.remove('_load');
@@ -156,7 +159,7 @@ class _NotesScreenState extends State<NotesScreen> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _errors['_load'] = '暂时无法读取摘记，请稍后重试。';
+          _errors['_load'] = '暂时无法读取书摘，请稍后重试。';
         });
       }
     } finally {
@@ -178,9 +181,9 @@ class _NotesScreenState extends State<NotesScreen> {
         .where(
           (Json x) =>
               query.isEmpty ||
-              '${x['quote']}${x['text']}'.toLowerCase().contains(
-                query.toLowerCase(),
-              ),
+              '${b.title} ${b.author} ${x['quote']} ${x['text']}'
+                  .toLowerCase()
+                  .contains(query.toLowerCase()),
         )
         .toList()
       ..sort(
@@ -267,13 +270,85 @@ class _NotesScreenState extends State<NotesScreen> {
     }
   }
 
+  String _markdown(List<(BookEntry, List<Json>)> groups) {
+    final List<String> lines = <String>['# 页读书摘', ''];
+    for (final (BookEntry book, List<Json> items) in groups) {
+      lines.addAll(<String>[
+        '## ${book.title}',
+        if (book.author.isNotEmpty) book.author,
+        '',
+      ]);
+      for (final Json item in items) {
+        final String kind = item['kind'] == 'bookmark'
+            ? '书签'
+            : '${item['text'] ?? ''}'.isEmpty
+            ? '划线'
+            : '想法';
+        lines.addAll(<String>['### $kind', '']);
+        final String quote = '${item['quote'] ?? ''}';
+        if (quote.isNotEmpty) {
+          lines.addAll(quote.split('\n').map((line) => '> $line'));
+        }
+        final String thought = '${item['text'] ?? ''}';
+        if (thought.isNotEmpty) lines.addAll(<String>['', thought]);
+        lines.add('');
+      }
+    }
+    return lines.join('\n');
+  }
+
+  Future<void> _exportNotes(
+    List<(BookEntry, List<Json>)> groups, {
+    required bool copy,
+  }) async {
+    if (_exporting || groups.isEmpty) return;
+    setState(() => _exporting = true);
+    try {
+      final String markdown = _markdown(groups);
+      String? message;
+      if (copy) {
+        await Clipboard.setData(ClipboardData(text: markdown));
+        message = '已复制，书摘已整理为排版文本。';
+      } else {
+        final String date = DateTime.now().toIso8601String().substring(0, 10);
+        final String? path = await FilePicker.platform.saveFile(
+          dialogTitle: '导出当前书摘',
+          fileName: '页读书摘-$date.md',
+          bytes: Uint8List.fromList(utf8.encode(markdown)),
+        );
+        if (path != null) message = '书摘已导出。';
+      }
+      if (mounted && message != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+      }
+    } on Object catch (error) {
+      _error(error);
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Widget _exportMenu(List<(BookEntry, List<Json>)> groups) =>
+      PopupMenuButton<bool>(
+        tooltip: '导出书摘',
+        enabled: !_loading && !_exporting && groups.isNotEmpty,
+        icon: const Icon(Icons.ios_share_outlined),
+        onSelected: (bool copy) => _exportNotes(groups, copy: copy),
+        itemBuilder: (_) => const <PopupMenuEntry<bool>>[
+          PopupMenuItem<bool>(value: true, child: Text('复制当前结果')),
+          PopupMenuItem<bool>(value: false, child: Text('导出当前结果')),
+        ],
+      );
+
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final List<(BookEntry, List<Json>)> groups = <(BookEntry, List<Json>)>[
       for (final BookEntry b in widget.library.books) (b, _items(b)),
     ].where(((BookEntry, List<Json>) g) => g.$2.isNotEmpty).toList();
-    const List<String> labels = <String>['全部', '摘录', '笔记', '书签'];
+    const List<String> labels = <String>['全部', '划线', '想法', '书签'];
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.escape): () {
@@ -302,7 +377,7 @@ class _NotesScreenState extends State<NotesScreen> {
                         onChanged: (String value) =>
                             setState(() => query = value.trim()),
                         decoration: InputDecoration(
-                          hintText: '搜索摘记',
+                          hintText: '搜索书名、划线或想法',
                           border: InputBorder.none,
                           suffixIcon: query.isEmpty
                               ? null
@@ -314,6 +389,7 @@ class _NotesScreenState extends State<NotesScreen> {
                         ),
                       ),
                       actions: <Widget>[
+                        _exportMenu(groups),
                         IconButton(
                           tooltip: '关闭搜索',
                           icon: const Icon(Icons.close),
@@ -326,12 +402,13 @@ class _NotesScreenState extends State<NotesScreen> {
                       backgroundColor: t.paper,
                       surfaceTintColor: Colors.transparent,
                       title: Text(
-                        '摘记',
+                        '书摘',
                         style: TextStyle(fontFamily: display, color: t.ink),
                       ),
                       actions: <Widget>[
+                        _exportMenu(groups),
                         IconButton(
-                          tooltip: '搜索摘记',
+                          tooltip: '搜索书摘',
                           icon: const Icon(Icons.search),
                           onPressed: () => setState(() => searching = true),
                         ),
@@ -373,7 +450,7 @@ class _NotesScreenState extends State<NotesScreen> {
                       child: Padding(
                         key: ValueKey<String>('notes-loading'),
                         padding: EdgeInsets.all(24),
-                        child: Text('正在读取摘记…'),
+                        child: Text('正在读取书摘…'),
                       ),
                     ),
                   for (final String error in _errors.values)
@@ -423,7 +500,7 @@ class _NotesScreenState extends State<NotesScreen> {
                               const SizedBox(height: 16),
                               if (searching && query.isNotEmpty) ...<Widget>[
                                 Text(
-                                  '未找到匹配的摘记',
+                                  '未找到匹配的书摘',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
@@ -445,7 +522,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  '读书时长按一句话，就能摘录或写笔记',
+                                  '读书时长按句子，留存心中感动。',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: t.ink3.withValues(alpha: 0.7),
@@ -459,11 +536,11 @@ class _NotesScreenState extends State<NotesScreen> {
                                 const SizedBox(height: 12),
                                 TextButton(
                                   onPressed: () => setState(() => filter = 0),
-                                  child: const Text('查看全部摘记'),
+                                  child: const Text('查看全部书摘'),
                                 ),
                               ] else ...<Widget>[
                                 Text(
-                                  '读书时长按一句话，就能摘录或写笔记',
+                                  '笔墨未动\n读书时长按句子，留存心中感动。',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 14,
@@ -561,7 +638,9 @@ class _NotesScreenState extends State<NotesScreen> {
                                   : null,
                               pageLabel: item['kind'] == 'bookmark'
                                   ? '书签'
-                                  : '摘记',
+                                  : '${item['text'] ?? ''}'.isEmpty
+                                  ? '划线'
+                                  : '想法',
                               onTap: () {
                                 HapticFeedback.lightImpact();
                                 widget.onOpenAt(

@@ -19,8 +19,16 @@ import 'package:thusfar_core/chapter_verdicts.dart' show titleCheckPending;
 
 import '../data/library_zip.dart';
 import '../data/restore_report.dart';
+import '../data/shelf_organization.dart';
+import '../data/reading_activity.dart';
+import '../screens/reading_activity_screen.dart';
+import '../reading/read_aloud.dart';
+import '../reading/auto_page_turner.dart';
 import '../ui/restore_report_view.dart';
 import '../ui/theme.dart';
+import '../ui/workspace_navigation.dart';
+import 'web_notes_center.dart';
+import 'web_activity_route.dart';
 import '../reader/image_viewer.dart';
 import '../reader/source_selection.dart';
 import 'reading_boundary.dart';
@@ -34,6 +42,15 @@ import 'web_recovery_page.dart';
 import 'webdav_sync.dart';
 
 const double _wideShelf = 1140;
+
+double _savedBookProgress(WebBookMeta book, WebReadingState state) {
+  if (state.sourceOffset != null && book.length > 0) {
+    return (state.sourceOffset! / book.length).clamp(0.0, 1.0);
+  }
+  return book.chapters <= 0
+      ? 0
+      : ((state.chapter + state.fraction) / book.chapters).clamp(0.0, 1.0);
+}
 
 class WebShelf extends StatefulWidget {
   const WebShelf({
@@ -64,6 +81,11 @@ class _WebShelfState extends State<WebShelf> {
   final TextEditingController _search = TextEditingController();
   String _filter = 'all';
   String _sort = 'recent';
+  bool _listView = false;
+  int _tab = 0;
+  ShelfOrganization _organization = ShelfOrganization();
+  ShelfOrganization _savedOrganization = ShelfOrganization();
+  String _collection = 'all';
   WebBookMeta? _importedBook;
   bool _offline = html.window.navigator.onLine == false;
   StreamSubscription<html.Event>? _onlineSubscription;
@@ -72,6 +94,24 @@ class _WebShelfState extends State<WebShelf> {
   @override
   void initState() {
     super.initState();
+    try {
+      final raw = html.window.localStorage['thusfar-web-shelf-prefs'];
+      final saved = raw == null ? null : jsonDecode(raw);
+      if (saved is Map) {
+        _sort =
+            const [
+              'recent',
+              'progress',
+              'title',
+              'added',
+            ].contains(saved['sort'])
+            ? saved['sort'] as String
+            : 'recent';
+        _listView = saved['list'] == true;
+      }
+    } on Object {
+      /* Use the default view if optional preferences are damaged. */
+    }
     widget.refreshSignal?.addListener(_refreshRequested);
     _onlineSubscription = html.window.onOnline.listen((_) {
       if (mounted) setState(() => _offline = false);
@@ -117,6 +157,13 @@ class _WebShelfState extends State<WebShelf> {
     final WebLibrary? library = _library;
     if (library == null) return;
     final List<WebBookMeta> books = await library.list();
+    try {
+      _organization = WebLibrary.shelfOrganization();
+      _savedOrganization = ShelfOrganization.fromJson(_organization.toJson());
+    } on Object {
+      _message('书架分类暂时无法读取，请先导出备份。');
+    }
+
     final List<WebReadingState> states = await Future.wait(
       <Future<WebReadingState>>[
         for (final WebBookMeta book in books) library.state(book.id),
@@ -299,7 +346,10 @@ class _WebShelfState extends State<WebShelf> {
       await _refresh();
       if (mounted) {
         _search.clear();
-        setState(() => _filter = 'all');
+        setState(() {
+          _filter = 'all';
+          _collection = 'all';
+        });
       }
       if (_importedBook == null) {
         _message('已导入到此浏览器的本地书库');
@@ -453,12 +503,30 @@ class _WebShelfState extends State<WebShelf> {
               ),
               ListTile(
                 leading: const Icon(Icons.auto_awesome_outlined),
-                title: const Text('整理人物与前情'),
+                title: const Text('智能梳理'),
                 onTap: () => Navigator.pop(context, 'prepare'),
               ),
               ListTile(
+                leading: const Icon(Icons.folder_outlined),
+                title: const Text('移入分类'),
+                onTap: () => Navigator.pop(context, 'collection'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.check_circle_outline),
+                title: Text(_isFinished(book) ? '标为重读' : '标记读完'),
+                subtitle: const Text('不改变阅读位置与人物资料范围'),
+                onTap: () => Navigator.pop(context, 'finished'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.bookmark_add_outlined),
+                title: Text(
+                  WebLibrary.readingQueue().contains(book.id) ? '移出在读' : '加入在读',
+                ),
+                onTap: () => Navigator.pop(context, 'queue'),
+              ),
+              ListTile(
                 leading: const Icon(Icons.download_outlined),
-                title: const Text('导出书籍与阅读记录'),
+                title: const Text('导出本书'),
                 onTap: () => Navigator.pop(context, 'export'),
               ),
               ListTile(
@@ -471,7 +539,25 @@ class _WebShelfState extends State<WebShelf> {
         ),
       ),
     );
-    if (choice == 'prepare') {
+    if (choice == 'collection') {
+      await _chooseCollection(book);
+    } else if (choice == 'finished') {
+      _organization.books[book.id] = ShelfBookState(
+        collection: _organization.books[book.id]?.collection,
+        finished: !_isFinished(book),
+      );
+      _saveOrganization();
+    } else if (choice == 'queue') {
+      try {
+        WebLibrary.setInReadingQueue(
+          book.id,
+          !WebLibrary.readingQueue().contains(book.id),
+        );
+        if (mounted) setState(() {});
+      } on Object {
+        _message('在读清单未能保存，请重试。');
+      }
+    } else if (choice == 'prepare') {
       await _openAi(book);
     } else if (choice == 'export') {
       try {
@@ -484,7 +570,7 @@ class _WebShelfState extends State<WebShelf> {
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('移到回收站？'),
-          content: const Text('书籍、进度、书签和摘记会保留，可从书架的回收站恢复；仍占用浏览器存储空间。'),
+          content: const Text('书籍与阅读记录会保留，可从设置中的回收站恢复。仍占用浏览器空间。'),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -525,16 +611,23 @@ class _WebShelfState extends State<WebShelf> {
 
   double _bookProgress(WebBookMeta book) {
     final WebReadingState? state = _states[book.id];
-    if (state == null || book.chapters <= 0) return 0;
-    return ((state.chapter + state.fraction) / book.chapters).clamp(0.0, 1.0);
+    if (state == null) return 0;
+    return _savedBookProgress(book, state);
   }
 
+  bool _isFinished(WebBookMeta book) =>
+      _organization.books[book.id]?.finished ?? _bookProgress(book) >= .995;
+
   bool _matchesFilter(WebBookMeta book) {
+    if (_collection != 'all' &&
+        (_organization.books[book.id]?.collection ?? '') != _collection) {
+      return false;
+    }
     final double progress = _bookProgress(book);
     return switch (_filter) {
-      'unread' => progress == 0,
-      'reading' => progress > 0 && progress < 0.995,
-      'finished' => progress >= 0.995,
+      'unread' => progress == 0 && !_isFinished(book),
+      'reading' => progress > 0 && !_isFinished(book),
+      'finished' => _isFinished(book),
       _ => true,
     };
   }
@@ -544,410 +637,774 @@ class _WebShelfState extends State<WebShelf> {
     setState(() => _filter = 'all');
   }
 
+  void _saveOrganization() {
+    try {
+      WebLibrary.saveShelfOrganization(_organization);
+      _savedOrganization = ShelfOrganization.fromJson(_organization.toJson());
+      if (mounted) setState(() {});
+    } on Object {
+      _organization = ShelfOrganization.fromJson(_savedOrganization.toJson());
+      if (_collection != 'all' &&
+          !_organization.collections.contains(_collection)) {
+        _collection = 'all';
+      }
+      if (mounted) setState(() {});
+      _message('分类未能保存，请检查浏览器剩余空间。');
+    }
+  }
+
+  Future<String?> _collectionName({String? current}) async {
+    if (current == null && _organization.collections.length >= 100) {
+      _message('最多可建立 100 个分类。');
+      return null;
+    }
+    final input = TextEditingController(text: current ?? '');
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(current == null ? '新建分类' : '分类改名'),
+        content: TextField(
+          controller: input,
+          autofocus: true,
+          maxLength: 30,
+          decoration: const InputDecoration(labelText: '分类名称'),
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, input.text.trim()),
+            child: const Text('保存'),
+          ),
+        ],
+      ),
+    );
+    input.dispose();
+    if (result == null || result.isEmpty || result == current) return null;
+    if (_organization.collections.contains(result)) {
+      _message('已有同名分类。');
+      return null;
+    }
+    return result;
+  }
+
+  Future<void> _chooseCollection(WebBookMeta book) async {
+    final String? result = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: <Widget>[
+            const ListTile(title: Text('移入分类')),
+            ListTile(
+              title: const Text('未分类'),
+              onTap: () => Navigator.pop(context, ''),
+            ),
+            for (final name in _organization.collections)
+              ListTile(
+                title: Text(name),
+                onTap: () => Navigator.pop(context, name),
+              ),
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('新建分类'),
+              onTap: () => Navigator.pop(context, '__new__'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    String? name = result;
+    if (result == '__new__') {
+      name = await _collectionName();
+      if (name == null) return;
+      _organization.collections.add(name);
+    }
+    _organization.books[book.id] = ShelfBookState(
+      collection: name.isEmpty ? null : name,
+      finished: _organization.books[book.id]?.finished,
+    );
+    _saveOrganization();
+  }
+
+  void _manageCollections() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: StatefulBuilder(
+          builder: (context, update) => ListView(
+            shrinkWrap: true,
+            children: <Widget>[
+              ListTile(
+                title: const Text('管理分类'),
+                trailing: IconButton(
+                  tooltip: '关闭分类',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(sheetContext),
+                ),
+              ),
+              for (final name in List<String>.of(_organization.collections))
+                ListTile(
+                  title: Text(name),
+                  trailing: Wrap(
+                    children: <Widget>[
+                      IconButton(
+                        tooltip: '改名',
+                        icon: const Icon(Icons.edit_outlined),
+                        onPressed: () async {
+                          final next = await _collectionName(current: name);
+                          if (next == null || !mounted) return;
+                          _organization.collections[_organization.collections
+                                  .indexOf(name)] =
+                              next;
+                          for (final entry
+                              in _organization.books.entries.toList()) {
+                            if (entry.value.collection == name) {
+                              _organization.books[entry.key] = ShelfBookState(
+                                collection: next,
+                                finished: entry.value.finished,
+                              );
+                            }
+                          }
+                          if (_collection == name) _collection = next;
+                          _saveOrganization();
+                          if (context.mounted) update(() {});
+                        },
+                      ),
+                      IconButton(
+                        tooltip: '移除分类，保留书籍',
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _organization.collections.remove(name);
+                          for (final entry
+                              in _organization.books.entries.toList()) {
+                            if (entry.value.collection == name) {
+                              _organization.books[entry.key] = ShelfBookState(
+                                finished: entry.value.finished,
+                              );
+                            }
+                          }
+                          if (_collection == name) _collection = 'all';
+                          _saveOrganization();
+                          update(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ListTile(
+                leading: const Icon(Icons.add),
+                title: const Text('新建分类'),
+                onTap: () async {
+                  final name = await _collectionName();
+                  if (name == null || !mounted) return;
+                  _organization.collections.add(name);
+                  _saveOrganization();
+                  if (context.mounted) update(() {});
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _saveShelfPrefs() {
+    try {
+      html.window.localStorage['thusfar-web-shelf-prefs'] = jsonEncode({
+        'sort': _sort,
+        'list': _listView,
+      });
+    } on Object {
+      _message('显示偏好未能保存，下次打开将使用默认设置。');
+    }
+  }
+
+  Future<void> _openNote(WebBookMeta book, WebPersonalItem item) async {
+    final WebLibrary? library = _library;
+    if (library == null) return;
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('翻回原文'),
+        content: const Text('人物与前情会跟随阅读位置更新。'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('留在原地'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认前往'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      final WebReadingState reading = await library.state(book.id);
+      reading.returnChapter = reading.chapter;
+      reading.returnFraction = reading.fraction;
+      reading.returnOffset = null;
+      reading.chapter = item.chapter;
+      reading.fraction = item.fraction;
+      await library.saveState(book.id, reading);
+      if (mounted) await _open(book);
+    } on Object {
+      _message('暂时无法打开原文，请重试。');
+    }
+  }
+
+  Widget _settingsPage() => ListView(
+    padding: const EdgeInsets.all(20),
+    children: <Widget>[
+      Text(
+        '设置',
+        style: TextStyle(
+          fontFamily: display,
+          fontSize: 32,
+          color: context.tk.ink,
+        ),
+      ),
+      const SizedBox(height: 6),
+      Text('偏好与数据管理。', style: TextStyle(color: context.tk.ink2)),
+      const SizedBox(height: 24),
+      ListTile(
+        leading: const Icon(Icons.insights_outlined),
+        title: const Text('阅读记录'),
+        subtitle: const Text('看看阅读时光，设定每日目标'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => ReadingActivityScreen(
+              store: ReadingActivityStore.forRoot('web'),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 20),
+      const Text('书库与备份'),
+      const SizedBox(height: 8),
+      ListTile(
+        leading: const Icon(Icons.upload_file_outlined),
+        title: const Text('导入备份'),
+        subtitle: const Text('恢复书籍、进度与想法'),
+        onTap: _busy ? null : _import,
+      ),
+      ListTile(
+        leading: const Icon(Icons.archive_outlined),
+        title: const Text('整库备份'),
+        subtitle: const Text('把书籍和阅读记录一起带走'),
+        onTap: _busy ? null : _exportLibrary,
+      ),
+      ListTile(
+        leading: const Icon(Icons.cloud_sync_outlined),
+        title: const Text('云端备份'),
+        subtitle: const Text('手动保存或恢复 WebDAV 快照'),
+        onTap: _busy ? null : _openWebDav,
+      ),
+      ListTile(
+        leading: const Icon(Icons.restore_from_trash_outlined),
+        title: const Text('回收站'),
+        subtitle: const Text('找回移出的书与阅读记录'),
+        onTap: _busy ? null : _openRecovery,
+      ),
+      const SizedBox(height: 24),
+      const Text('阅读与隐私'),
+      const SizedBox(height: 8),
+      ListTile(
+        leading: const Icon(Icons.format_size),
+        title: const Text('排版'),
+        subtitle: const Text('阅读时轻点中央，再打开排版。'),
+      ),
+      ListTile(
+        leading: const Icon(Icons.auto_awesome_outlined),
+        title: const Text('智能梳理'),
+        subtitle: const Text('从本书详情选择服务并开始梳理。相关原文会发送给所选服务，可能产生费用。'),
+      ),
+      ListTile(
+        leading: const Icon(Icons.offline_bolt_outlined),
+        title: const Text('离线阅读'),
+        subtitle: Text(
+          _offline ? '当前离线，本地书籍仍可阅读。' : '书籍保存在此浏览器。定期备份可避免浏览器清理后丢失。',
+        ),
+      ),
+    ],
+  );
+
+  Widget _card(WebBookMeta book, {bool tile = false}) => _ShelfBookCard(
+    book: book,
+    state: _states[book.id] ?? WebReadingState(),
+    preparation: _preparations[book.id],
+    preparationInvalid: _invalidPreparations.contains(book.id),
+    onOpen: () => _open(book),
+    onPrepare: () => _openAi(book),
+    onMenu: () => _bookMenu(book),
+    tile: tile,
+  );
+
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     final String query = _search.text.trim().toLowerCase();
     final List<WebBookMeta> books =
-        _books.where((WebBookMeta book) {
-          return _matchesFilter(book) &&
-              (query.isEmpty ||
-                  '${book.title} ${book.author}'.toLowerCase().contains(query));
-        }).toList()..sort((WebBookMeta a, WebBookMeta b) {
-          if (_sort == 'title') return a.title.compareTo(b.title);
-          if (_sort == 'added') return b.added.compareTo(a.added);
-          final int aTime = _states[a.id]?.lastOpened ?? a.added;
-          final int bTime = _states[b.id]?.lastOpened ?? b.added;
-          return bTime.compareTo(aTime);
-        });
-    return Scaffold(
-      backgroundColor: t.paper,
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: _wideShelf),
-            child: CustomScrollView(
-              slivers: <Widget>[
+        _books
+            .where(
+              (book) =>
+                  _matchesFilter(book) &&
+                  (query.isEmpty ||
+                      '${book.title} ${book.author}'.toLowerCase().contains(
+                        query,
+                      )),
+            )
+            .toList()
+          ..sort((a, b) {
+            if (_sort == 'title') return a.title.compareTo(b.title);
+            if (_sort == 'added') return b.added.compareTo(a.added);
+            if (_sort == 'progress') {
+              return _bookProgress(b).compareTo(_bookProgress(a));
+            }
+            return (_states[b.id]?.lastOpened ?? b.added).compareTo(
+              _states[a.id]?.lastOpened ?? a.added,
+            );
+          });
+    final List<String> queue = WebLibrary.readingQueue();
+    final List<WebBookMeta> recent =
+        _books
+            .where(
+              (book) =>
+                  queue.contains(book.id) ||
+                  ((_states[book.id]?.lastOpened ?? 0) > 0 &&
+                      _bookProgress(book) < .995),
+            )
+            .toList()
+          ..sort((a, b) {
+            final ai = queue.indexOf(a.id), bi = queue.indexOf(b.id);
+            if (ai >= 0 || bi >= 0) {
+              return (ai < 0 ? queue.length : ai).compareTo(
+                bi < 0 ? queue.length : bi,
+              );
+            }
+            return (_states[b.id]?.lastOpened ?? 0).compareTo(
+              _states[a.id]?.lastOpened ?? 0,
+            );
+          });
+    final Widget body = _tab == 1
+        ? WebNotesCenter(books: _books, states: _states, onOpen: _openNote)
+        : _tab == 2
+        ? _settingsPage()
+        : CustomScrollView(
+            slivers: <Widget>[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              '页读',
+                              style: TextStyle(
+                                fontFamily: display,
+                                fontSize: 36,
+                                color: t.ink,
+                              ),
+                            ),
+                          ),
+                          FilledButton.icon(
+                            onPressed: _busy || _library == null
+                                ? null
+                                : _import,
+                            icon: const Icon(Icons.add),
+                            label: const Text('添书'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text('翻到哪页，就懂到哪页。', style: TextStyle(color: t.ink2)),
+                      if (_busy)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: LinearProgressIndicator(),
+                        ),
+                      if (_offline)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            '当前离线，可继续读书。',
+                            style: TextStyle(color: t.ink2, fontSize: 12),
+                          ),
+                        ),
+                      if (_importedBook != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Card(
+                            child: ListTile(
+                              title: Text('已添入 · ${_importedBook!.title}'),
+                              subtitle: const Text('轻点开始阅读。'),
+                              onTap: () => _open(_importedBook!),
+                              trailing: IconButton(
+                                tooltip: '收起提示',
+                                icon: const Icon(Icons.close),
+                                onPressed: () =>
+                                    setState(() => _importedBook = null),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_error != null)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Text('暂时无法打开书库，请重试。'),
+                        TextButton(
+                          onPressed: widget.onRetryLibrary ?? _start,
+                          child: const Text('重新打开'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else if (_library == null)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_books.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(
+                            Icons.auto_stories_outlined,
+                            size: 64,
+                            color: t.qing,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            '书架空空',
+                            style: TextStyle(
+                              fontFamily: serif,
+                              fontSize: 26,
+                              color: t.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            '放几本好书进来。支持 TXT 与 EPUB。',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          FilledButton.icon(
+                            onPressed: _busy ? null : _import,
+                            icon: const Icon(Icons.add),
+                            label: const Text('添加书籍'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else ...<Widget>[
+                if (query.isEmpty && _filter == 'all' && recent.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  '在读清单',
+                                  style: TextStyle(
+                                    fontFamily: serif,
+                                    fontSize: 21,
+                                    color: t.ink,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => _readingQueueSheet(recent),
+                                child: const Text('查看全部'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          _card(recent.first),
+                        ],
+                      ),
+                    ),
+                  ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                   sliver: SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         Text(
-                          '正在阅读',
-                          style: TextStyle(color: t.ink2, letterSpacing: 2),
-                        ),
-                        Text(
-                          '页读',
+                          '全部藏书',
                           style: TextStyle(
-                            fontFamily: display,
+                            fontFamily: serif,
+                            fontSize: 23,
                             color: t.ink,
-                            fontSize: 38,
                           ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '共 ${_books.length} 本好书。',
+                          style: TextStyle(color: t.ink2, fontSize: 12),
                         ),
                         const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: <Widget>[
-                            FilledButton.icon(
-                              onPressed: _busy || _library == null
-                                  ? null
-                                  : _import,
-                              icon: const Icon(Icons.add),
-                              label: const Text('导入书籍'),
-                            ),
-                            OutlinedButton.icon(
-                              onPressed: _busy || _library == null
-                                  ? null
-                                  : _exportLibrary,
-                              icon: const Icon(Icons.archive_outlined),
-                              label: const Text('整库备份'),
-                            ),
-                            IconButton(
-                              onPressed: _busy || _library == null
-                                  ? null
-                                  : _openRecovery,
-                              tooltip: '回收站与恢复报告',
-                              icon: const Icon(
-                                Icons.restore_from_trash_outlined,
-                              ),
-                            ),
-                            IconButton(
-                              onPressed: _busy || _library == null
-                                  ? null
-                                  : _openWebDav,
-                              tooltip: '云端备份',
-                              icon: const Icon(Icons.cloud_sync_outlined),
-                            ),
-                          ],
-                        ),
-                        if (_busy) ...<Widget>[
-                          const SizedBox(height: 12),
-                          const LinearProgressIndicator(),
-                        ],
-                        if (_offline) ...<Widget>[
-                          const SizedBox(height: 12),
-                          Text(
-                            '当前离线 · 本地书籍可继续阅读，联网后再整理或同步。',
-                            style: TextStyle(color: t.ink2, height: 1.5),
+                        TextField(
+                          controller: _search,
+                          onChanged: (_) => setState(() {}),
+                          decoration: InputDecoration(
+                            labelText: '搜书',
+                            hintText: '搜索书名或作者。',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: query.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: '清空书架搜索',
+                                    icon: const Icon(Icons.close),
+                                    onPressed: () {
+                                      _search.clear();
+                                      setState(() {});
+                                    },
+                                  ),
                           ),
-                        ],
-                        if (_importedBook != null) ...<Widget>[
-                          const SizedBox(height: 16),
-                          Semantics(
-                            container: true,
-                            liveRegion: true,
-                            child: Card(
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: <Widget>[
+                            for (final (value, label) in const [
+                              ('all', '全部'),
+                              ('reading', '在读'),
+                              ('unread', '未读'),
+                              ('finished', '读完'),
+                            ])
+                              ChoiceChip(
+                                label: Text(label),
+                                selected: _filter == value,
+                                onSelected: (_) =>
+                                    setState(() => _filter = value),
+                              ),
+                            PopupMenuButton<String>(
+                              tooltip: '书架分类',
+                              onSelected: (value) {
+                                if (value == 'manage') {
+                                  _manageCollections();
+                                } else {
+                                  setState(() => _collection = value);
+                                }
+                              },
+                              itemBuilder: (_) => <PopupMenuEntry<String>>[
+                                const PopupMenuItem(
+                                  value: 'all',
+                                  child: Text('全部分类'),
+                                ),
+                                const PopupMenuItem(
+                                  value: '',
+                                  child: Text('未分类'),
+                                ),
+                                for (final name in _organization.collections)
+                                  PopupMenuItem(value: name, child: Text(name)),
+                                const PopupMenuItem(
+                                  value: 'manage',
+                                  child: Text('管理分类'),
+                                ),
+                              ],
                               child: Padding(
-                                padding: const EdgeInsets.all(14),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      '已导入 · ${_importedBook!.title}',
-                                      style: TextStyle(color: t.ink),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
-                                      children: <Widget>[
-                                        FilledButton.icon(
-                                          onPressed: _busy
-                                              ? null
-                                              : () => _open(_importedBook!),
-                                          icon: const Icon(
-                                            Icons.menu_book_outlined,
-                                          ),
-                                          label: const Text('开始阅读'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            final ScaffoldMessengerState
-                                            messenger = ScaffoldMessenger.of(
-                                              context,
-                                            );
-                                            messenger.clearSnackBars();
-                                            messenger.removeCurrentSnackBar();
-                                            setState(
-                                              () => _importedBook = null,
-                                            );
-                                          },
-                                          child: const Text('收起提示'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                padding: const EdgeInsets.all(12),
+                                child: Text(
+                                  _collection == 'all'
+                                      ? '分类'
+                                      : _collection.isEmpty
+                                      ? '未分类'
+                                      : _collection,
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                            PopupMenuButton<String>(
+                              tooltip: '排序方式',
+                              initialValue: _sort,
+                              onSelected: (value) {
+                                setState(() => _sort = value);
+                                _saveShelfPrefs();
+                              },
+                              itemBuilder: (_) =>
+                                  const <PopupMenuEntry<String>>[
+                                    PopupMenuItem(
+                                      value: 'recent',
+                                      child: Text('最近翻开'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'progress',
+                                      child: Text('阅读进度'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'title',
+                                      child: Text('书名先后'),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'added',
+                                      child: Text('最近添入'),
+                                    ),
+                                  ],
+                              icon: const Icon(Icons.sort),
+                            ),
+                            IconButton(
+                              tooltip: _listView ? '平铺' : '列表',
+                              onPressed: () {
+                                setState(() => _listView = !_listView);
+                                _saveShelfPrefs();
+                              },
+                              icon: Icon(
+                                _listView
+                                    ? Icons.grid_view
+                                    : Icons.view_list_outlined,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
                 ),
-                if (_error != null)
-                  SliverPadding(
-                    padding: const EdgeInsets.all(20),
-                    sliver: SliverToBoxAdapter(
+                if (books.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(
-                            '暂时无法打开书库，请重试。',
-                            style: TextStyle(color: t.danger),
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: widget.onRetryLibrary ?? _start,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('重试打开书库'),
+                          Text(query.isEmpty ? '这个分类还没有书。' : '没有找到这本书。'),
+                          TextButton(
+                            onPressed: _resetFilters,
+                            child: const Text('查看全部'),
                           ),
                         ],
                       ),
                     ),
                   )
-                else if (_library == null)
-                  const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (_books.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 430),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              Icon(
-                                Icons.auto_stories_outlined,
-                                size: 70,
-                                color: t.qing,
-                              ),
-                              const SizedBox(height: 20),
-                              Text(
-                                '从一本书开始',
-                                style: TextStyle(
-                                  fontFamily: display,
-                                  fontSize: 27,
-                                  color: t.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                '导入 TXT 或 EPUB，即可开始阅读。书籍保存在当前浏览器；使用 AI 时，相关原文会发送给你选择的服务。',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: t.ink2, height: 1.6),
-                              ),
-                              const SizedBox(height: 24),
-                              OutlinedButton.icon(
-                                onPressed: _busy ? null : _import,
-                                icon: const Icon(Icons.upload_file_outlined),
-                                label: const Text('选择书籍或页读备份'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else ...<Widget>[
+                else
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                    sliver: SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          Text(
-                            '我的书架  ${books.length} / ${_books.length}',
-                            style: TextStyle(fontSize: 18, color: t.ink2),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _search,
-                            onChanged: (_) => setState(() {}),
-                            decoration: InputDecoration(
-                              labelText: '搜索书名或作者',
-                              prefixIcon: const Icon(Icons.search),
-                              suffixIcon: query.isEmpty
-                                  ? null
-                                  : IconButton(
-                                      tooltip: '清空书架搜索',
-                                      onPressed: () {
-                                        _search.clear();
-                                        setState(() {});
-                                      },
-                                      icon: const Icon(Icons.close),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: <Widget>[
-                              for (final (String value, String label)
-                                  in const <(String, String)>[
-                                    ('all', '全部'),
-                                    ('reading', '在读'),
-                                    ('unread', '未读'),
-                                    ('finished', '读完'),
-                                  ])
-                                ChoiceChip(
-                                  label: Text(label),
-                                  selected: _filter == value,
-                                  onSelected: (_) =>
-                                      setState(() => _filter = value),
-                                ),
-                              PopupMenuButton<String>(
-                                tooltip: '书架排序',
-                                initialValue: _sort,
-                                onSelected: (String value) =>
-                                    setState(() => _sort = value),
-                                itemBuilder: (_) =>
-                                    const <PopupMenuEntry<String>>[
-                                      PopupMenuItem(
-                                        value: 'recent',
-                                        child: Text('最近阅读'),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'added',
-                                        child: Text('最近导入'),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'title',
-                                        child: Text('书名排序'),
-                                      ),
-                                    ],
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      Text(switch (_sort) {
-                                        'title' => '书名排序',
-                                        'added' => '最近导入',
-                                        _ => '最近阅读',
-                                      }),
-                                      const SizedBox(width: 4),
-                                      const Icon(
-                                        Icons.arrow_drop_down,
-                                        size: 18,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (books.isEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          children: <Widget>[
-                            const Text('没有符合条件的书籍'),
-                            TextButton(
-                              onPressed: _resetFilters,
-                              child: const Text('显示全部书籍'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                      sliver: SliverLayoutBuilder(
-                        builder:
-                            (
-                              BuildContext context,
-                              SliverConstraints constraints,
-                            ) {
-                              final int columns =
-                                  constraints.crossAxisExtent < 720 ? 1 : 2;
-                              return SliverList.separated(
-                                itemCount: (books.length / columns).ceil(),
-                                separatorBuilder: (_, index) =>
-                                    const SizedBox(height: 14),
-                                itemBuilder: (BuildContext context, int row) => Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    for (
-                                      int column = 0;
-                                      column < columns;
-                                      column++
-                                    ) ...<Widget>[
-                                      if (column > 0) const SizedBox(width: 14),
-                                      Expanded(
-                                        child:
-                                            row * columns + column >=
-                                                books.length
-                                            ? const SizedBox.shrink()
-                                            : _ShelfBookCard(
-                                                book:
-                                                    books[row * columns +
-                                                        column],
-                                                state:
-                                                    _states[books[row *
-                                                                columns +
-                                                            column]
-                                                        .id] ??
-                                                    WebReadingState(),
-                                                preparation:
-                                                    _preparations[books[row *
-                                                                columns +
-                                                            column]
-                                                        .id],
-                                                preparationInvalid:
-                                                    _invalidPreparations
-                                                        .contains(
-                                                          books[row * columns +
-                                                                  column]
-                                                              .id,
-                                                        ),
-                                                onOpen: () => _open(
-                                                  books[row * columns + column],
-                                                ),
-                                                onPrepare: () => _openAi(
-                                                  books[row * columns + column],
-                                                ),
-                                                onMenu: () => _bookMenu(
-                                                  books[row * columns + column],
-                                                ),
-                                              ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    sliver: SliverLayoutBuilder(
+                      builder: (context, constraints) {
+                        final int columns = _listView
+                            ? 1
+                            : (constraints.crossAxisExtent / 170).floor().clamp(
+                                1,
+                                5,
                               );
-                            },
-                      ),
-                    ),
-                ],
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
-                  sliver: SliverToBoxAdapter(
-                    child: Text(
-                      '本地阅读 · 无需账号 · 导出备份可带走书与进度',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: t.ink2, fontSize: 12),
+                        return SliverList.separated(
+                          itemCount: (books.length / columns).ceil(),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 16),
+                          itemBuilder: (context, row) => Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              for (
+                                int column = 0;
+                                column < columns;
+                                column++
+                              ) ...<Widget>[
+                                if (column > 0) const SizedBox(width: 14),
+                                Expanded(
+                                  child: row * columns + column >= books.length
+                                      ? const SizedBox.shrink()
+                                      : _card(
+                                          books[row * columns + column],
+                                          tile: !_listView,
+                                        ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ),
-                ),
               ],
-            ),
+            ],
+          );
+    return Scaffold(
+      backgroundColor: t.paper,
+      body: SafeArea(
+        bottom: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _wideShelf),
+            child: body,
+          ),
+        ),
+      ),
+      bottomNavigationBar: WorkspaceNavigation(
+        selectedIndex: _tab,
+        onSelected: (value) {
+          FocusScope.of(context).unfocus();
+          setState(() => _tab = value);
+        },
+      ),
+    );
+  }
+
+  void _readingQueueSheet(List<WebBookMeta> books) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * .7,
+          child: Column(
+            children: <Widget>[
+              ListTile(
+                title: const Text('在读清单'),
+                trailing: IconButton(
+                  tooltip: '关闭在读清单',
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(sheetContext),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  children: <Widget>[
+                    for (final book in books)
+                      ListTile(
+                        title: Text(book.title),
+                        subtitle: Text(
+                          '已读 ${(_bookProgress(book) * 100).round()}%',
+                        ),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _open(book);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -964,137 +1421,136 @@ class _ShelfBookCard extends StatelessWidget {
     required this.onOpen,
     required this.onPrepare,
     required this.onMenu,
+    this.tile = false,
   });
-
   final WebBookMeta book;
   final WebReadingState state;
   final Json? preparation;
   final bool preparationInvalid;
-  final VoidCallback onOpen;
-  final VoidCallback onPrepare;
-  final VoidCallback onMenu;
+  final VoidCallback onOpen, onPrepare, onMenu;
+  final bool tile;
 
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
-    final double pct = book.chapters <= 0
-        ? 0
-        : ((state.chapter + state.fraction) / book.chapters * 100).clamp(
-            0.0,
-            100.0,
-          );
+    final double pct = _savedBookProgress(book, state) * 100;
     final int prepared =
         (preparation?['completed_count'] as num?)?.toInt() ?? 0;
     final int total = (preparation?['target_count'] as num?)?.toInt() ?? 0;
-    final String aiStatus = switch (preparation?['phase']) {
-      'complete' => '已完成',
-      'error' => '遇到问题',
-      'running' => '可继续',
-      _ => '已暂停',
-    };
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints box) {
-        final bool compact = box.maxWidth < 400;
-        return Material(
-          color: t.sheet,
-          borderRadius: BorderRadius.circular(18),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(18),
-            onTap: onOpen,
-            child: Padding(
-              padding: EdgeInsets.all(compact ? 14 : 18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      _WebCover(
-                        title: book.title,
-                        id: book.id,
-                        compact: compact,
-                      ),
-                      SizedBox(width: compact ? 12 : 18),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              book.title,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: t.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              book.author.isEmpty
-                                  ? '${book.chapters} 章'
-                                  : book.author,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: t.ink2),
-                            ),
-                            const SizedBox(height: 18),
-                            LinearProgressIndicator(
-                              value: pct / 100,
-                              minHeight: 3,
-                              backgroundColor: t.rule,
-                              color: t.qing,
-                            ),
-                            const SizedBox(height: 9),
-                            Text(
-                              pct == 0
-                                  ? '尚未开始'
-                                  : '读到 ${pct.toStringAsFixed(pct < 1 ? 1 : 0)}%',
-                              style: TextStyle(fontSize: 12, color: t.ink2),
-                            ),
-                            if (total > 0 || preparationInvalid) ...<Widget>[
-                              const SizedBox(height: 5),
-                              Text(
-                                preparationInvalid
-                                    ? '整理记录无法读取 · 点人物查看并清除'
-                                    : '人物整理 $prepared/$total 片 · $aiStatus',
-                                style: TextStyle(fontSize: 11, color: t.ink2),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
+    final String status = preparationInvalid
+        ? '梳理受阻'
+        : switch (preparation?['phase']) {
+            'complete' => '梳理完成',
+            'error' => '梳理受阻',
+            'running' => '正在梳理',
+            _ => '梳理暂停',
+          };
+    final Widget details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          book.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: serif,
+            fontSize: 18,
+            height: 1.4,
+            color: t.ink,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          book.author.isEmpty ? '佚名' : book.author,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: t.ink2, fontSize: 12),
+        ),
+        const SizedBox(height: 14),
+        LinearProgressIndicator(
+          value: pct / 100,
+          minHeight: 3,
+          backgroundColor: t.rule,
+          color: t.qing,
+          borderRadius: BorderRadius.circular(3),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '已读 ${pct.round()}%，共 ${book.chapters} 章。',
+          style: TextStyle(color: t.ink2, fontSize: 12),
+        ),
+        if (total > 0 || preparationInvalid)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: InkWell(
+              onTap: onPrepare,
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  '$status${total > 0 && status == '正在梳理' ? ' · ${(prepared / total * 100).round()}%' : ''}',
+                  style: TextStyle(
+                    color: preparationInvalid || status == '梳理受阻'
+                        ? t.amber
+                        : t.qing,
+                    fontSize: 12,
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    alignment: WrapAlignment.end,
-                    children: <Widget>[
-                      TextButton.icon(
-                        onPressed: onOpen,
-                        icon: const Icon(Icons.menu_book_outlined, size: 18),
-                        label: const Text('继续阅读'),
-                      ),
-                      IconButton(
-                        tooltip: '整理《${book.title}》的人物与前情',
-                        onPressed: onPrepare,
-                        icon: const Icon(Icons.auto_awesome_outlined),
-                      ),
-                      IconButton(
-                        tooltip: '《${book.title}》书籍选项',
-                        onPressed: onMenu,
-                        icon: const Icon(Icons.more_vert),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        );
-      },
+      ],
+    );
+    return Material(
+      color: t.sheet,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (tile) ...<Widget>[
+                Stack(
+                  children: <Widget>[
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8, bottom: 20),
+                        child: _WebCover(title: book.title, id: book.id),
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        tooltip: '《${book.title}》本书详情',
+                        onPressed: onMenu,
+                        icon: const Icon(Icons.more_horiz),
+                      ),
+                    ),
+                  ],
+                ),
+                details,
+              ] else ...<Widget>[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    _WebCover(title: book.title, id: book.id, compact: true),
+                    const SizedBox(width: 16),
+                    Expanded(child: details),
+                    IconButton(
+                      tooltip: '《${book.title}》本书详情',
+                      onPressed: onMenu,
+                      icon: const Icon(Icons.more_horiz),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1286,11 +1742,284 @@ class WebReader extends StatefulWidget {
   State<WebReader> createState() => _WebReaderState();
 }
 
-class _WebReaderState extends State<WebReader> {
+class _WebReaderState extends State<WebReader>
+    with WidgetsBindingObserver, RouteAware {
+  final ReadAloudController _speech = ReadAloudController();
+  final AutoPageTurner _autoPage = AutoPageTurner();
+  late final ReadingActivitySession _activity;
+  int? _speechCutoff;
+  bool _foreground = true;
+  bool _covered = false;
+  ModalRoute<dynamic>? _activityRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != _activityRoute) {
+      webReadingRoutes.unsubscribe(this);
+      _activityRoute = route;
+      if (route != null) webReadingRoutes.subscribe(this, route);
+    }
+  }
+
+  @override
+  void didPushNext() {
+    _covered = true;
+    _activity.setActive(false);
+    _autoPage.stop();
+  }
+
+  @override
+  void didPopNext() {
+    _covered = false;
+    _activity.setActive(_foreground);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _activity.setActive(_foreground && !_covered);
+  }
+
+  void _stopListening() {
+    if (_speech.hasSession) unawaited(_speech.stop());
+    _speechCutoff = null;
+  }
+
+  Future<void> _listen() async {
+    _autoPage.stop();
+    final int start =
+        _speechCutoff ??
+        _readingSourceOffset() ??
+        (_current['o0'] as num).toInt();
+    final int first = (_current['b0'] as num).toInt();
+    final int last = (_current['b1'] as num).toInt();
+    final List<ReadAloudPassage> passages = <ReadAloudPassage>[];
+    for (int i = first; i < last; i++) {
+      final block = _blocks[i];
+      if (block['k'] == 'img') continue;
+      final String text = '${block['t'] ?? ''}';
+      final int origin = (block['o'] as num).toInt();
+      if (origin + text.length <= start) continue;
+      final int from = math.max(0, start - origin);
+      passages.add(
+        ReadAloudPassage(text: text.substring(from), start: origin + from),
+      );
+    }
+    await openReadAloud(
+      context,
+      _speech,
+      passages: passages,
+      onProgress: (heard) {
+        if (!mounted) return;
+        _activity.touch();
+        setState(() {
+          _speechCutoff = heard;
+          if (_prefs.pageMode) {
+            final int page = _pages.indexWhere(
+              (fragments) => fragments.any((fragment) {
+                if (fragment.block < 0 ||
+                    fragment.kind == 'space' ||
+                    fragment.kind == 'img') {
+                  return false;
+                }
+                final int origin = (_blocks[fragment.block]['o'] as num)
+                    .toInt();
+                return heard > origin + fragment.sourceStart &&
+                    heard <= origin + fragment.sourceEnd;
+              }),
+            );
+            if (page >= 0 && page != _pageIndex) {
+              _pageIndex = page;
+              _reflowAnchor = null;
+            }
+            widget.state.fraction = _fraction;
+          }
+        });
+        if (!_prefs.pageMode) {
+          final int index = _blocks.indexWhere((block) {
+            final int origin = (block['o'] as num).toInt();
+            return heard > origin &&
+                heard <= origin + '${block['t'] ?? ''}'.length;
+          });
+          final BuildContext? target = _blockKeys[index]?.currentContext;
+          final RenderParagraph? paragraph = index < 0
+              ? null
+              : _sourceParagraph(index);
+          if (paragraph != null && paragraph.hasSize && _scroll.hasClients) {
+            final Json block = _blocks[index];
+            final int offset = (heard - (block['o'] as num).toInt()).clamp(
+              0,
+              '${block['t'] ?? ''}'.length,
+            );
+            final Offset caret = paragraph.getOffsetForCaret(
+              TextPosition(offset: offset + (block['k'] == 'p' ? 2 : 0)),
+              Rect.zero,
+            );
+            final double y = paragraph.localToGlobal(caret).dy;
+            final double top = MediaQuery.paddingOf(context).top + 70;
+            final double bottom = _readerVisibleBottom();
+            if (y < top || y + _prefs.fontSize * _prefs.lineHeight > bottom) {
+              unawaited(
+                _scroll.animateTo(
+                  (_scroll.offset + y - top).clamp(
+                    0.0,
+                    _scroll.position.maxScrollExtent,
+                  ),
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                ),
+              );
+            }
+          } else if (target != null) {
+            unawaited(
+              Scrollable.ensureVisible(
+                target,
+                alignment: .15,
+                duration: const Duration(milliseconds: 180),
+              ),
+            );
+          }
+        }
+        _queueSave();
+      },
+    );
+  }
+
+  Future<void> _automaticReading() async {
+    _stopListening();
+    await openAutoPageTurner(
+      context,
+      _autoPage,
+      nextPage: () {
+        if (!mounted || _covered || !_foreground || _restoring) return false;
+        if (_prefs.pageMode) {
+          if (_pageIndex >= _pages.length - 1 &&
+              _chapter >= _chapters.length - 1) {
+            return false;
+          }
+          _turnPage(1, automatic: true);
+        } else {
+          if (!_scroll.hasClients) return false;
+          final double next =
+              _scroll.offset + _scroll.position.viewportDimension * .8;
+          if (_scroll.offset >= _scroll.position.maxScrollExtent) {
+            if (_chapter >= _chapters.length - 1) return false;
+            _go(_chapter + 1, keepAuto: true);
+          } else {
+            _scroll.animateTo(
+              math.min(next, _scroll.position.maxScrollExtent),
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeInOut,
+            );
+          }
+        }
+        return true;
+      },
+    );
+  }
+
+  void _readerDetails() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(20),
+          children: <Widget>[
+            _sheetHeader(sheetContext, '本书详情'),
+            Text(
+              widget.book.meta.title,
+              style: TextStyle(
+                fontFamily: serif,
+                fontSize: 24,
+                color: context.tk.ink,
+              ),
+            ),
+            if (widget.book.meta.author.isNotEmpty)
+              Text(widget.book.meta.author),
+            const SizedBox(height: 8),
+            Text('已读 ${(_progress * 100).round()}%，共 ${_chapters.length} 章。'),
+            ListTile(
+              leading: const Icon(Icons.slow_motion_video_outlined),
+              title: const Text('自动翻页'),
+              subtitle: const Text('按阅读节奏逐页前进'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _automaticReading();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.headphones_outlined),
+              title: const Text('听书'),
+              subtitle: const Text('从当前位置听到本章末尾'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _listen();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('智能梳理'),
+              subtitle: const Text('人物小传与关系脉络'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _openReaderPanel(
+                  (reading) => WebAiPanel(
+                    book: widget.book,
+                    reading: reading,
+                    library: widget.library,
+                    cutoffOffset: _visibleCutoffOffset(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.bookmark_outline),
+              title: const Text('书签'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _bookmarksSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_note_outlined),
+              title: const Text('想法'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _notesSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.download_outlined),
+              title: const Text('导出本书'),
+              subtitle: const Text('包含进度与想法的完整单书'),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                try {
+                  await widget.library.exportBackup(widget.book.meta.id);
+                } on Object {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('导出未完成，请稍后重试。')),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   static final RegExp _asciiWord = RegExp(r'[A-Za-z0-9]');
   final ScrollController _scroll = ScrollController();
   final FocusNode _readerFocus = FocusNode();
   final Map<int, GlobalKey> _blockKeys = <int, GlobalKey>{};
+  final GlobalKey _bottomToolbarKey = GlobalKey();
   final WebReaderPrefs _prefs = WebReaderPrefs();
   List<List<_WebPageFragment>> _pages = const <List<_WebPageFragment>>[];
   int? _pageLayoutKey;
@@ -1375,7 +2104,13 @@ class _WebReaderState extends State<WebReader> {
   @override
   void initState() {
     super.initState();
+    _activity = ReadingActivityStore.forRoot(
+      'web',
+    ).startSession(bookId: widget.book.meta.id, title: widget.book.meta.title);
+    WidgetsBinding.instance.addObserver(this);
+
     _chapter = widget.state.chapter.clamp(0, math.max(0, _chapters.length - 1));
+    _jumpOffset = widget.state.sourceOffset;
     _scroll.addListener(_scrolled);
     unawaited(_loadPersonPreparation());
     html.window.addEventListener('keydown', _domKey, true);
@@ -1518,6 +2253,7 @@ class _WebReaderState extends State<WebReader> {
   /// The last original character already on the visible page. Scroll mode
   /// stops before the first paragraph that extends below the visible area.
   int _visibleCutoffOffset() {
+    if (_speechCutoff != null) return _speechCutoff!;
     final int chapterStart = (_current['o0'] as num?)?.toInt() ?? 0;
     final int chapterEnd = (_current['o1'] as num?)?.toInt() ?? chapterStart;
     if (_prefs.pageMode) {
@@ -1543,10 +2279,7 @@ class _WebReaderState extends State<WebReader> {
     }
     final int first = (_current['b0'] as num?)?.toInt() ?? 0;
     final int last = (_current['b1'] as num?)?.toInt() ?? 0;
-    final double visibleBottom =
-        MediaQuery.sizeOf(context).height -
-        MediaQuery.paddingOf(context).bottom -
-        (_controls ? 168 : 70);
+    final double visibleBottom = _readerVisibleBottom();
     for (int i = first; i < last && i < _blocks.length; i++) {
       if (i == first &&
           _blocks[i]['k'] == 'h' &&
@@ -1567,6 +2300,25 @@ class _WebReaderState extends State<WebReader> {
       }
     }
     return chapterEnd;
+  }
+
+  double _readerVisibleBottom() {
+    final RenderObject? toolbar = _bottomToolbarKey.currentContext
+        ?.findRenderObject();
+    if (_controls && toolbar is RenderBox && toolbar.hasSize) {
+      return toolbar.localToGlobal(Offset.zero).dy;
+    }
+    return MediaQuery.sizeOf(context).height -
+        MediaQuery.paddingOf(context).bottom -
+        70;
+  }
+
+  int _savedSourceOffset() {
+    final int start = (_current['o0'] as num).toInt();
+    final int end = (_current['o1'] as num).toInt();
+    if (_speechCutoff != null) return _speechCutoff!.clamp(start, end);
+    if (_fraction >= 1) return end;
+    return (_readingSourceOffset() ?? start).clamp(start, end);
   }
 
   void _scrolled() {
@@ -1590,6 +2342,9 @@ class _WebReaderState extends State<WebReader> {
   }
 
   void _queueSave() {
+    if (_chapters.isNotEmpty && !_restoring) {
+      widget.state.sourceOffset = _savedSourceOffset();
+    }
     _saveTimer?.cancel();
     if (_prefs.pageMode) {
       // Page turns are discrete actions. Publish the position immediately so
@@ -1694,14 +2449,31 @@ class _WebReaderState extends State<WebReader> {
     setState(() {});
   }
 
-  void _go(
+  Future<void> _go(
     int chapter, {
     double fraction = 0,
     int? block,
     int? sourceOffset,
     bool remember = false,
-  }) {
+    bool keepAuto = false,
+  }) async {
     if (chapter < 0 || chapter >= _chapters.length) return;
+    if (remember) {
+      final Json target = _chapters[chapter];
+      final int start = (target['o0'] as num).toInt();
+      final int end = (target['o1'] as num).toInt();
+      final int position =
+          sourceOffset ??
+          (block != null
+              ? (_blocks[block]['o'] as num).toInt()
+              : start + ((end - start) * fraction).round());
+      if (!await _confirmJump(position)) return;
+    }
+    _stopListening();
+    if (!keepAuto) {
+      _autoPage.stop();
+      _activity.touch();
+    }
     if (remember) _rememberPosition();
     final int epoch = ++_navigationEpoch;
     _selectionCaptureTimer?.cancel();
@@ -1722,6 +2494,13 @@ class _WebReaderState extends State<WebReader> {
       _chapter = chapter;
       widget.state.chapter = chapter;
       widget.state.fraction = fraction;
+      widget.state.sourceOffset =
+          sourceOffset ??
+          ((_chapters[chapter]['o0'] as num).toInt() +
+              (((_chapters[chapter]['o1'] as num).toInt() -
+                          (_chapters[chapter]['o0'] as num).toInt()) *
+                      fraction)
+                  .round());
       widget.state.lastOpened = DateTime.now().millisecondsSinceEpoch;
       _controls = false;
       _selectedText = null;
@@ -1843,7 +2622,30 @@ class _WebReaderState extends State<WebReader> {
     unawaited(_openPerson(name: name));
   }
 
-  void _seekFraction(double fraction) {
+  Future<void> _seekFraction(double fraction) async {
+    _activity.touch();
+    _autoPage.stop();
+    final int start = (_current['o0'] as num).toInt();
+    final int end = (_current['o1'] as num).toInt();
+    final int nextPage = _pages.isEmpty
+        ? 0
+        : (fraction * (_pages.length - 1)).round().clamp(0, _pages.length - 1);
+    int target = start + ((end - start) * fraction).round();
+    if (_prefs.pageMode && _pages.isNotEmpty) {
+      if (nextPage == _pageIndex) return;
+      for (final fragment in _pages[nextPage]) {
+        if (fragment.block >= 0 && fragment.kind != 'space') {
+          target =
+              (_blocks[fragment.block]['o'] as num).toInt() +
+              fragment.sourceStart;
+          break;
+        }
+      }
+    } else if ((fraction - _fraction).abs() < 0.001) {
+      return;
+    }
+    if (!await _confirmJump(target)) return;
+    _stopListening();
     if (_prefs.pageMode) {
       if (_pages.length < 2) return;
       final int next = (fraction * (_pages.length - 1)).round().clamp(
@@ -1871,20 +2673,50 @@ class _WebReaderState extends State<WebReader> {
     _scroll.jumpTo(_scroll.position.maxScrollExtent * fraction);
   }
 
+  Future<bool> _confirmJump(int target) async {
+    final int current =
+        _readingSourceOffset() ?? (_current['o0'] as num).toInt();
+    if (target == current) return true;
+    final int epoch = _navigationEpoch;
+    final bool forward = target > _visibleCutoffOffset();
+    final bool rewind = target < current;
+    if (!forward && !rewind) return true;
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(forward ? '注意剧透' : '回到前文'),
+        content: Text(forward ? '将跳至未读位置，可能提前知晓后续。' : '人物与前情将同步收窄至该页。'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('留在原地'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('确认前往'),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true && mounted && epoch == _navigationEpoch;
+  }
+
   void _bookmark() {
     final double fraction = _fraction;
-    final bool exists = widget.state.bookmarks.any(
-      (mark) => mark.chapter == _chapter && mark.fraction == fraction,
-    );
-    // This control promises to add. Nearby pages in a long chapter must never
-    // delete each other's bookmarks; removal belongs to the bookmark list.
-    if (!exists) {
-      setState(() => widget.state.addBookmark(_chapter, fraction));
-      unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
-    }
+    final WebPersonalItem? existing = widget.state.bookmarks
+        .where((mark) => mark.chapter == _chapter && mark.fraction == fraction)
+        .firstOrNull;
+    setState(() {
+      if (existing == null) {
+        widget.state.addBookmark(_chapter, fraction);
+      } else {
+        widget.state.remove(existing);
+      }
+    });
+    unawaited(widget.library.saveState(widget.book.meta.id, widget.state));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(exists ? '这里已有书签' : '已添加书签'),
+        content: Text(existing == null ? '已添加书签' : '已取消书签'),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -1947,7 +2779,11 @@ class _WebReaderState extends State<WebReader> {
 
   Future<void> _openAi() => _openPerson();
 
-  Future<void> _openPerson({String? id, String? name}) async {
+  Future<void> _openPerson({
+    String? id,
+    String? name,
+    int initialTab = 0,
+  }) async {
     final int cutoff = _visibleCutoffOffset();
     await _openReaderPanel(
       (WebReadingState reading) => WebAiPanel(
@@ -1955,6 +2791,8 @@ class _WebReaderState extends State<WebReader> {
         reading: reading,
         library: widget.library,
         cutoffOffset: cutoff,
+        initialTab: initialTab,
+        showPreparation: false,
         focusPersonId: id,
         focusPersonName: name,
         readingBuilder: (_, _) => WebReader(
@@ -1970,6 +2808,16 @@ class _WebReaderState extends State<WebReader> {
   int _askCutoffBlockExclusive() {
     final int first = (_current['b0'] as num?)?.toInt() ?? 0;
     final int last = (_current['b1'] as num?)?.toInt() ?? first;
+    if (_speechCutoff != null) {
+      for (int i = first; i < last && i < _blocks.length; i++) {
+        final Json block = _blocks[i];
+        if ((block['o'] as num).toInt() + '${block['t'] ?? ''}'.length >
+            _speechCutoff!) {
+          return i;
+        }
+      }
+      return last;
+    }
     if (_prefs.pageMode && _pages.isNotEmpty) {
       for (int page = _pageIndex + 1; page < _pages.length; page++) {
         for (final _WebPageFragment fragment in _pages[page]) {
@@ -2025,10 +2873,7 @@ class _WebReaderState extends State<WebReader> {
       }
     } else {
       final double top = MediaQuery.paddingOf(context).top + 58;
-      final double bottom =
-          MediaQuery.sizeOf(context).height -
-          MediaQuery.paddingOf(context).bottom -
-          (_controls ? 168 : 70);
+      final double bottom = _readerVisibleBottom();
       for (final MapEntry<int, GlobalKey> entry in _blockKeys.entries) {
         final RenderObject? root = entry.value.currentContext
             ?.findRenderObject();
@@ -2113,10 +2958,11 @@ class _WebReaderState extends State<WebReader> {
   }
 
   double get _progress {
-    final int start = (_current['o0'] as num?)?.toInt() ?? 0;
-    final int end = (_current['o1'] as num?)?.toInt() ?? start;
-    final int total = math.max(1, widget.book.meta.length);
-    return ((start + (end - start) * _fraction) / total).clamp(0.0, 1.0);
+    if (_chapters.isEmpty) return 0;
+    return (_savedSourceOffset() / math.max(1, widget.book.meta.length)).clamp(
+      0.0,
+      1.0,
+    );
   }
 
   Widget _sheetHeader(BuildContext sheetContext, String title) => ListTile(
@@ -2128,177 +2974,217 @@ class _WebReaderState extends State<WebReader> {
     ),
   );
 
-  void _chaptersSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      constraints: const BoxConstraints(maxWidth: 720),
-      builder: (BuildContext context) => SafeArea(
-        child: SizedBox(
-          height: math.min(MediaQuery.sizeOf(context).height * 0.8, 730),
-          child: Column(
-            children: <Widget>[
-              _sheetHeader(context, '目录'),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _chapters.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return ListTile(
-                      selected: index == _chapter,
-                      title: Text(_safeChapterTitle(index), maxLines: 2),
-                      leading: SizedBox(width: 40, child: Text('${index + 1}')),
-                      onTap: () {
-                        Navigator.pop(context);
-                        _go(index, remember: true);
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+  void _chaptersSheet({int initialTab = 0}) {
+    final TextEditingController pageInput = TextEditingController();
+    final ScrollController chapterScroll = ScrollController(
+      initialScrollOffset: _chapter * 64.0,
     );
-  }
-
-  void _bookmarksSheet() {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       constraints: const BoxConstraints(maxWidth: 720),
-      builder: (BuildContext context) => SafeArea(
-        child: SizedBox(
-          height: math.min(MediaQuery.sizeOf(context).height * 0.7, 630),
-          child: Column(
-            children: <Widget>[
-              _sheetHeader(context, '书签'),
-              Expanded(
-                child: widget.state.bookmarks.isEmpty
-                    ? const Center(child: Text('还没有书签。在阅读页点书签图标即可保存位置。'))
-                    : ListView.builder(
-                        itemCount: widget.state.bookmarks.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final mark = widget.state.bookmarks[index];
-                          return ListTile(
-                            leading: const Icon(Icons.bookmark_outline),
-                            title: Text(_safeChapterTitle(mark.chapter)),
-                            subtitle: Text(
-                              '本章 ${(mark.fraction * 100).round()}%',
+      builder: (sheetContext) => DefaultTabController(
+        length: 3,
+        initialIndex: initialTab,
+        child: SafeArea(
+          child: SizedBox(
+            height: math.min(MediaQuery.sizeOf(context).height * .82, 730),
+            child: StatefulBuilder(
+              builder: (context, update) => Column(
+                children: <Widget>[
+                  _sheetHeader(sheetContext, '目录'),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20),
+                    child: TabBar(
+                      tabs: <Tab>[
+                        Tab(text: '目录'),
+                        Tab(text: '书签'),
+                        Tab(text: '想法'),
+                      ],
+                    ),
+                  ),
+                  if (_prefs.pageMode && _pages.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                      child: Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: TextField(
+                              controller: pageInput,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                labelText: '跳页',
+                                hintText: '本章页码 1–${_pages.length}',
+                              ),
+                              onSubmitted: (_) =>
+                                  _jumpFromToc(sheetContext, pageInput.text),
                             ),
-                            onTap: () {
-                              Navigator.pop(context);
-                              _go(
-                                mark.chapter,
-                                fraction: mark.fraction,
-                                remember: true,
-                              );
-                            },
-                            trailing: IconButton(
-                              tooltip: '删除书签',
-                              onPressed: () {
-                                setState(() => widget.state.remove(mark));
-                                unawaited(
-                                  widget.library.saveState(
-                                    widget.book.meta.id,
-                                    widget.state,
-                                  ),
-                                );
-                                Navigator.pop(context);
-                                _bookmarksSheet();
-                              },
-                              icon: const Icon(Icons.close),
-                            ),
-                          );
-                        },
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () =>
+                                _jumpFromToc(sheetContext, pageInput.text),
+                            child: const Text('前往'),
+                          ),
+                        ],
                       ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _notesSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      constraints: const BoxConstraints(maxWidth: 720),
-      builder: (BuildContext context) => SafeArea(
-        child: SizedBox(
-          height: math.min(MediaQuery.sizeOf(context).height * 0.7, 650),
-          child: Column(
-            children: <Widget>[
-              ListTile(
-                title: const Text('我的摘记'),
-                trailing: Wrap(
-                  children: <Widget>[
-                    IconButton(
-                      tooltip: '添加摘记',
-                      icon: const Icon(Icons.add),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _addNote();
-                      },
                     ),
-                    IconButton(
-                      tooltip: '关闭摘记',
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: widget.state.notes.isEmpty
-                    ? const Center(child: Text('记下这一页的想法，随书一起备份。'))
-                    : ListView.builder(
-                        itemCount: widget.state.notes.length,
-                        itemBuilder: (BuildContext context, int index) {
-                          final note = widget.state.notes[index];
-                          return ListTile(
+                  Expanded(
+                    child: TabBarView(
+                      children: <Widget>[
+                        ListView.builder(
+                          controller: chapterScroll,
+                          itemCount: _chapters.length,
+                          itemExtent: 64,
+                          itemBuilder: (context, index) => ListTile(
+                            selected: index == _chapter,
                             title: Text(
-                              note.text,
-                              maxLines: 3,
+                              _safeChapterTitle(index),
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            subtitle: Text(
-                              '${_safeChapterTitle(note.chapter)} · 本章 ${(note.fraction * 100).round()}%',
+                            subtitle: index > _chapter
+                                ? const Text(
+                                    '未读章节 · 标题读到后再揭晓。',
+                                    style: TextStyle(fontSize: 12),
+                                  )
+                                : null,
+                            leading: SizedBox(
+                              width: 30,
+                              child: Text('${index + 1}'),
                             ),
                             onTap: () {
-                              Navigator.pop(context);
-                              _go(
-                                note.chapter,
-                                fraction: note.fraction,
-                                remember: true,
-                              );
+                              Navigator.pop(sheetContext);
+                              _go(index, remember: true);
                             },
-                            trailing: IconButton(
-                              tooltip: '删除摘记',
-                              icon: const Icon(Icons.close),
-                              onPressed: () {
-                                setState(() => widget.state.remove(note));
-                                unawaited(
-                                  widget.library.saveState(
-                                    widget.book.meta.id,
-                                    widget.state,
-                                  ),
-                                );
-                                Navigator.pop(context);
-                                _notesSheet();
-                              },
+                          ),
+                        ),
+                        widget.state.bookmarks.isEmpty
+                            ? const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20),
+                                  child: Text('随手折起精彩书页。点顶部书签即可保存。'),
+                                ),
+                              )
+                            : ListView(
+                                children: <Widget>[
+                                  for (final mark in widget.state.bookmarks)
+                                    ListTile(
+                                      leading: const Icon(
+                                        Icons.bookmark_outline,
+                                      ),
+                                      title: Text(
+                                        _safeChapterTitle(mark.chapter),
+                                      ),
+                                      subtitle: Text(
+                                        '本章 ${(mark.fraction * 100).round()}%',
+                                      ),
+                                      onTap: () {
+                                        Navigator.pop(sheetContext);
+                                        _go(
+                                          mark.chapter,
+                                          fraction: mark.fraction,
+                                          remember: true,
+                                        );
+                                      },
+                                      trailing: IconButton(
+                                        tooltip: '删除书签',
+                                        icon: const Icon(Icons.close),
+                                        onPressed: () async {
+                                          widget.state.remove(mark);
+                                          await widget.library.saveState(
+                                            widget.book.meta.id,
+                                            widget.state,
+                                          );
+                                          if (context.mounted) update(() {});
+                                          if (mounted) setState(() {});
+                                        },
+                                      ),
+                                    ),
+                                ],
+                              ),
+                        ListView(
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(sheetContext);
+                                  _addNote();
+                                },
+                                icon: const Icon(Icons.edit_outlined),
+                                label: const Text('写想法'),
+                              ),
                             ),
-                          );
-                        },
-                      ),
+                            if (widget.state.notes.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(20),
+                                child: Text('笔墨未动。长按句子，留存心中感动。'),
+                              ),
+                            for (final note in widget.state.notes)
+                              ListTile(
+                                title: Text(
+                                  note.text,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  '${note.style == 'highlight' ? '划线' : '想法'} · ${_safeChapterTitle(note.chapter)}',
+                                ),
+                                onTap: () {
+                                  Navigator.pop(sheetContext);
+                                  _go(
+                                    note.chapter,
+                                    fraction: note.fraction,
+                                    sourceOffset: note.sourceStart,
+                                    remember: true,
+                                  );
+                                },
+                                trailing: IconButton(
+                                  tooltip: '删除想法',
+                                  icon: const Icon(Icons.close),
+                                  onPressed: () async {
+                                    widget.state.remove(note);
+                                    await widget.library.saveState(
+                                      widget.book.meta.id,
+                                      widget.state,
+                                    );
+                                    if (context.mounted) update(() {});
+                                    if (mounted) setState(() {});
+                                  },
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
-    );
+    ).whenComplete(() {
+      pageInput.dispose();
+      chapterScroll.dispose();
+    });
   }
+
+  void _jumpFromToc(BuildContext sheetContext, String value) {
+    final int? page = int.tryParse(value.trim());
+    if (page == null || page < 1 || page > _pages.length) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('请输入 1–${_pages.length} 的页码。')));
+      return;
+    }
+    Navigator.pop(sheetContext);
+    if (_pages.length > 1) _seekFraction((page - 1) / (_pages.length - 1));
+  }
+
+  void _bookmarksSheet() => _chaptersSheet(initialTab: 1);
+  void _notesSheet() => _chaptersSheet(initialTab: 2);
 
   bool get _chapterHasFootnotes {
     final int first = (_current['b0'] as num?)?.toInt() ?? 0;
@@ -2439,6 +3325,43 @@ class _WebReaderState extends State<WebReader> {
     );
   }
 
+  Future<void> _highlight(String quote) async {
+    if (quote.trim().isEmpty) return;
+    final SourceSelection? selected = resolveSourceSelection(
+      quote,
+      _visibleSourceSlices(),
+    );
+    if (selected == null || selected.text.runes.length > 4000) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('请选择不超过 4000 字的原文。')));
+      return;
+    }
+    widget.state.addNote(
+      _chapter,
+      _fraction,
+      selected.text,
+      highlight: true,
+      sourceStart: selected.start,
+      sourceEnd: selected.end,
+    );
+    _clearSelectedText();
+    try {
+      await widget.library.saveState(widget.book.meta.id, widget.state);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('已存入书摘')));
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('划线未能保存，请检查浏览器空间。')));
+      }
+    }
+  }
+
   Future<void> _addNote({String? selectedText}) async {
     final TextEditingController controller = TextEditingController();
     final String quote = selectedText?.trim() ?? '';
@@ -2454,7 +3377,7 @@ class _WebReaderState extends State<WebReader> {
     final String? note = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: Text(quote.isEmpty ? '添加摘记' : '引用原文并摘记'),
+        title: const Text('写想法'),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -2479,7 +3402,16 @@ class _WebReaderState extends State<WebReader> {
     );
     controller.dispose();
     if (note == null || note.isEmpty) return;
-    widget.state.addNote(_chapter, _fraction, note);
+    final SourceSelection? selected = quote.isEmpty
+        ? null
+        : resolveSourceSelection(quote, _visibleSourceSlices());
+    widget.state.addNote(
+      _chapter,
+      _fraction,
+      note,
+      sourceStart: selected?.start,
+      sourceEnd: selected?.end,
+    );
     await widget.library.saveState(widget.book.meta.id, widget.state);
     if (mounted) setState(() {});
   }
@@ -2546,9 +3478,9 @@ class _WebReaderState extends State<WebReader> {
             child: SizedBox(
               height: math.min(MediaQuery.sizeOf(context).height * 0.82, 670),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(22, 20, 22, 28),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
                 children: <Widget>[
-                  _sheetHeader(context, '阅读排版'),
+                  _sheetHeader(context, '排版'),
                   const SizedBox(height: 16),
                   const Text('阅读方式'),
                   const SizedBox(height: 8),
@@ -2561,7 +3493,7 @@ class _WebReaderState extends State<WebReader> {
                         onSelected: (_) => change(() => _prefs.pageMode = true),
                       ),
                       ChoiceChip(
-                        label: const Text('连续滚动'),
+                        label: const Text('滚动'),
                         selected: !_prefs.pageMode,
                         onSelected: (_) =>
                             change(() => _prefs.pageMode = false),
@@ -2579,8 +3511,21 @@ class _WebReaderState extends State<WebReader> {
                     ),
                   ),
                   const SizedBox(height: 18),
+                  TextButton.icon(
+                    onPressed: () => change(() {
+                      _prefs.fontSize = 21;
+                      _prefs.lineHeight = 1.75;
+                      _prefs.letterSpacing = 0;
+                      _prefs.margin = 24;
+                      _prefs.columnWidth = 640;
+                      _prefs.font = 0;
+                      _prefs.paper = 0;
+                    }),
+                    icon: const Icon(Icons.restart_alt),
+                    label: const Text('重置排版'),
+                  ),
                   _metric(
-                    '字号',
+                    '字号大小',
                     _prefs.fontSize,
                     14,
                     34,
@@ -2588,7 +3533,7 @@ class _WebReaderState extends State<WebReader> {
                     'px',
                   ),
                   _metric(
-                    '行距',
+                    '行间高度',
                     _prefs.lineHeight,
                     1.2,
                     2.4,
@@ -2596,7 +3541,7 @@ class _WebReaderState extends State<WebReader> {
                     '×',
                   ),
                   _metric(
-                    '字距',
+                    '字符间距',
                     _prefs.letterSpacing,
                     -0.5,
                     2.5,
@@ -2604,7 +3549,7 @@ class _WebReaderState extends State<WebReader> {
                     'px',
                   ),
                   _metric(
-                    '页边距',
+                    '页边留白',
                     _prefs.margin,
                     8,
                     90,
@@ -2620,20 +3565,20 @@ class _WebReaderState extends State<WebReader> {
                     'px',
                   ),
                   const SizedBox(height: 12),
-                  const Text('字体'),
+                  const Text('正文字体'),
                   Wrap(
                     spacing: 8,
                     children: <Widget>[
                       for (int i = 0; i < 3; i++)
                         ChoiceChip(
-                          label: Text(const <String>['宋体', '楷体', '黑体'][i]),
+                          label: Text(const <String>['文宋', '文楷', '黑体'][i]),
                           selected: _prefs.font == i,
                           onSelected: (_) => change(() => _prefs.font = i),
                         ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text('纸张'),
+                  const Text('纸张质感'),
                   Wrap(
                     spacing: 8,
                     children: <Widget>[
@@ -2682,6 +3627,12 @@ class _WebReaderState extends State<WebReader> {
 
   @override
   void dispose() {
+    webReadingRoutes.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
+    _activity.dispose();
+    _speech.dispose();
+    _autoPage.dispose();
+
     _saveTimer?.cancel();
     _displayTimer?.cancel();
     _wheelTimer?.cancel();
@@ -2754,8 +3705,8 @@ class _WebReaderState extends State<WebReader> {
                   onHorizontalDragEnd: (DragEndDetails details) {
                     if (_prefs.pageMode) return;
                     final double velocity = details.primaryVelocity ?? 0;
-                    if (velocity < -350) _go(_chapter + 1);
-                    if (velocity > 350) _go(_chapter - 1);
+                    if (velocity < -350) _go(_chapter + 1, remember: true);
+                    if (velocity > 350) _go(_chapter - 1, remember: true);
                   },
                   child: _prefs.pageMode
                       ? _pageBody(bodyStyle)
@@ -2789,7 +3740,15 @@ class _WebReaderState extends State<WebReader> {
                                           },
                                         ),
                                       ContextMenuButtonItem(
-                                        label: '问书',
+                                        label: '划线',
+                                        onPressed: () {
+                                          final quote = _selectedText;
+                                          ContextMenuController.removeAny();
+                                          if (quote != null) _highlight(quote);
+                                        },
+                                      ),
+                                      ContextMenuButtonItem(
+                                        label: '问这段',
                                         onPressed: () {
                                           final String? selected =
                                               _selectedText;
@@ -2802,7 +3761,7 @@ class _WebReaderState extends State<WebReader> {
                                       if (_selectedText?.trim().isNotEmpty ==
                                           true)
                                         ContextMenuButtonItem(
-                                          label: '摘记',
+                                          label: '写想法',
                                           onPressed: () {
                                             final String? selected =
                                                 _selectedText;
@@ -2879,8 +3838,10 @@ class _WebReaderState extends State<WebReader> {
                                         children: <Widget>[
                                           if (_chapter > 0)
                                             TextButton.icon(
-                                              onPressed: () =>
-                                                  _go(_chapter - 1),
+                                              onPressed: () => _go(
+                                                _chapter - 1,
+                                                remember: true,
+                                              ),
                                               icon: const Icon(
                                                 Icons.arrow_back,
                                               ),
@@ -2889,8 +3850,10 @@ class _WebReaderState extends State<WebReader> {
                                           const Spacer(),
                                           if (_chapter + 1 < _chapters.length)
                                             TextButton.icon(
-                                              onPressed: () =>
-                                                  _go(_chapter + 1),
+                                              onPressed: () => _go(
+                                                _chapter + 1,
+                                                remember: true,
+                                              ),
                                               icon: const Icon(
                                                 Icons.arrow_forward,
                                               ),
@@ -2909,6 +3872,10 @@ class _WebReaderState extends State<WebReader> {
               ),
             ),
           ),
+          if (_controls)
+            const Positioned.fill(
+              child: IgnorePointer(child: ColoredBox(color: Color(0x0A000000))),
+            ),
           Positioned(
             top: 0,
             left: 0,
@@ -2936,6 +3903,24 @@ class _WebReaderState extends State<WebReader> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ExcludeSemantics(
+              excluding: !_controls,
+              child: IgnorePointer(
+                ignoring: !_controls,
+                child: AnimatedSlide(
+                  offset: _controls ? Offset.zero : const Offset(0, -1),
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 160),
+                  child: _topToolbar(),
                 ),
               ),
             ),
@@ -2996,12 +3981,12 @@ class _WebReaderState extends State<WebReader> {
                           TextButton.icon(
                             onPressed: () => _selectedAction(ask: false),
                             icon: Icon(Icons.edit_note, color: paper),
-                            label: Text('摘记', style: TextStyle(color: paper)),
+                            label: Text('写想法', style: TextStyle(color: paper)),
                           ),
                           TextButton.icon(
                             onPressed: () => _selectedAction(ask: true),
                             icon: Icon(Icons.auto_awesome, color: paper),
-                            label: Text('问书', style: TextStyle(color: paper)),
+                            label: Text('问这段', style: TextStyle(color: paper)),
                           ),
                           IconButton(
                             tooltip: '取消选择',
@@ -3162,7 +4147,25 @@ class _WebReaderState extends State<WebReader> {
         at = end;
       }
     }
-    if (candidates.isEmpty) {
+    final List<(int, int)> highlights = <(int, int)>[
+      for (final note in widget.state.notes)
+        if (note.style == 'highlight' &&
+            note.sourceStart != null &&
+            note.sourceEnd != null &&
+            note.sourceStart! < absoluteEnd &&
+            note.sourceEnd! > absoluteStart)
+          (
+            (note.sourceStart! - absoluteStart + indent).clamp(
+              indent,
+              text.length,
+            ),
+            (note.sourceEnd! - absoluteStart + indent).clamp(
+              indent,
+              text.length,
+            ),
+          ),
+    ];
+    if (candidates.isEmpty && highlights.isEmpty) {
       return Text(
         text,
         style: style,
@@ -3177,30 +4180,49 @@ class _WebReaderState extends State<WebReader> {
       if (a.id == null && b.id != null) return 1;
       return (b.end - b.start).compareTo(a.end - a.start);
     });
-    final List<InlineSpan> spans = <InlineSpan>[];
+    final List<_WebPersonLink> links = <_WebPersonLink>[];
     int cursor = 0;
-    for (final _WebPersonLink link in candidates) {
+    for (final link in candidates) {
       if (link.start < cursor || link.end > text.length) continue;
-      if (link.start > cursor) {
-        spans.add(TextSpan(text: text.substring(cursor, link.start)));
-      }
-      spans.add(
-        TextSpan(
-          text: text.substring(link.start, link.end),
-          style: TextStyle(
-            decoration: TextDecoration.underline,
-            decorationStyle: link.id == null
-                ? TextDecorationStyle.dotted
-                : TextDecorationStyle.solid,
-            decorationColor: _prefs.dark ? Tokens.night.qing : Tokens.light.zhu,
-            decorationThickness: 1.4,
-          ),
-          recognizer: _personRecognizer(link),
-        ),
-      );
+      links.add(link);
       cursor = link.end;
     }
-    if (cursor < text.length) spans.add(TextSpan(text: text.substring(cursor)));
+    final List<int> edges = <int>{
+      0,
+      text.length,
+      for (final link in links) ...<int>[link.start, link.end],
+      for (final range in highlights) ...<int>[range.$1, range.$2],
+    }.toList()..sort();
+    final List<InlineSpan> spans = <InlineSpan>[];
+    for (int i = 0; i + 1 < edges.length; i++) {
+      final int start = edges[i], end = edges[i + 1];
+      if (start == end) continue;
+      final _WebPersonLink? link = links
+          .where((link) => link.start <= start && link.end >= end)
+          .firstOrNull;
+      final bool marked = highlights.any(
+        (range) => range.$1 < end && range.$2 > start,
+      );
+      spans.add(
+        TextSpan(
+          text: text.substring(start, end),
+          style: TextStyle(
+            backgroundColor: marked
+                ? (_prefs.dark ? Tokens.night.qingSoft : Tokens.light.qingSoft)
+                : null,
+            decoration: link != null ? TextDecoration.underline : null,
+            decorationStyle: link?.id == null
+                ? TextDecorationStyle.dotted
+                : TextDecorationStyle.solid,
+            decorationColor: _prefs.dark
+                ? Tokens.night.qing
+                : Tokens.light.qing,
+            decorationThickness: 1.4,
+          ),
+          recognizer: link == null ? null : _personRecognizer(link),
+        ),
+      );
+    }
     return Text.rich(
       TextSpan(children: spans),
       style: style,
@@ -3267,9 +4289,97 @@ class _WebReaderState extends State<WebReader> {
     );
   }
 
+  Widget _topToolbar() {
+    final Tokens t = _prefs.dark ? Tokens.night : Tokens.light;
+    final List<Widget> actions = <Widget>[
+      IconButton(
+        tooltip: '书签',
+        onPressed: _bookmark,
+        icon: Icon(
+          widget.state.bookmarks.any(
+                (mark) =>
+                    mark.chapter == _chapter && mark.fraction == _fraction,
+              )
+              ? Icons.bookmark
+              : Icons.bookmark_border,
+        ),
+      ),
+      IconButton(
+        tooltip: '搜原文',
+        onPressed: _searchSheet,
+        icon: const Icon(Icons.search),
+      ),
+      if (_chapterHasFootnotes)
+        IconButton(
+          tooltip: '查看注释',
+          onPressed: _footnotesSheet,
+          icon: const Icon(Icons.notes_outlined),
+        ),
+      IconButton(
+        tooltip: '本书详情',
+        onPressed: _readerDetails,
+        icon: const Icon(Icons.more_horiz),
+      ),
+    ];
+    return Material(
+      color: t.sheet,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final bool compact =
+                  box.maxWidth < 360 ||
+                  MediaQuery.textScalerOf(context).scale(14) > 22;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      IconButton(
+                        tooltip: '书架',
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      Expanded(
+                        child: Text(
+                          widget.book.meta.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: t.ink,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      if (!compact) ...actions,
+                      IconButton(
+                        tooltip: '收起工具',
+                        onPressed: () => setState(() => _controls = false),
+                        icon: const Icon(Icons.keyboard_arrow_down),
+                      ),
+                    ],
+                  ),
+                  if (compact)
+                    Row(
+                      children: <Widget>[
+                        for (final action in actions) Expanded(child: action),
+                      ],
+                    ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _toolbar() {
     final Tokens t = _prefs.dark ? Tokens.night : Tokens.light;
     return Material(
+      key: _bottomToolbarKey,
       color: t.sheet,
       elevation: 12,
       child: SafeArea(
@@ -3281,100 +4391,73 @@ class _WebReaderState extends State<WebReader> {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  IconButton(
-                    tooltip: '返回书架',
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  Expanded(
-                    child: Text(
-                      widget.book.meta.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: t.ink,
-                        fontWeight: FontWeight.w600,
+                  Flexible(
+                    child: TextButton(
+                      onPressed: _chapter > 0
+                          ? () => _go(_chapter - 1, remember: true)
+                          : null,
+                      child: const Text(
+                        '上一章',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: '添加书签',
-                    onPressed: _bookmark,
-                    icon: const Icon(Icons.bookmark_add_outlined),
-                  ),
-                  IconButton(
-                    tooltip: '搜索',
-                    onPressed: _searchSheet,
-                    icon: const Icon(Icons.search),
-                  ),
-                  if (_chapterHasFootnotes)
-                    IconButton(
-                      tooltip: '查看注释',
-                      onPressed: _footnotesSheet,
-                      icon: const Icon(Icons.notes_outlined),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      _prefs.pageMode
+                          ? '本章第 ${((_seekPreview ?? _fraction) * math.max(0, _pages.length - 1)).round() + 1} / ${math.max(1, _pages.length)} 页'
+                          : '本章 ${((_seekPreview ?? _fraction) * 100).round()}%',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 11, color: t.ink2),
                     ),
-                  IconButton(
-                    tooltip: '收起工具',
-                    onPressed: () => setState(() => _controls = false),
-                    icon: const Icon(Icons.keyboard_arrow_down),
+                  ),
+                  Flexible(
+                    child: TextButton(
+                      onPressed: _chapter + 1 < _chapters.length
+                          ? () => _go(_chapter + 1, remember: true)
+                          : null,
+                      child: const Text(
+                        '下一章',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              Row(
-                children: <Widget>[
-                  TextButton(
-                    onPressed: _chapter > 0 ? () => _go(_chapter - 1) : null,
-                    child: const Text('上一章'),
-                  ),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Text(
-                          _prefs.pageMode
-                              ? '本章第 ${((_seekPreview ?? _fraction) * math.max(0, _pages.length - 1)).round() + 1} / ${math.max(1, _pages.length)} 页'
-                              : '本章 ${((_seekPreview ?? _fraction) * 100).round()}%',
-                          style: TextStyle(fontSize: 11, color: t.ink2),
-                        ),
-                        Semantics(
-                          label: '本章阅读进度',
-                          child: Slider(
-                            value: (_seekPreview ?? _fraction).clamp(0.0, 1.0),
-                            min: 0,
-                            max: 1,
-                            onChanged:
-                                (_prefs.pageMode
-                                    ? _pages.length > 1
-                                    : _scroll.hasClients &&
-                                          _scroll.position.maxScrollExtent > 0)
-                                ? (double value) =>
-                                      setState(() => _seekPreview = value)
-                                : null,
-                            onChangeEnd: (double value) {
-                              setState(() => _seekPreview = null);
-                              _seekFraction(value);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _chapter + 1 < _chapters.length
-                        ? () => _go(_chapter + 1)
-                        : null,
-                    child: const Text('下一章'),
-                  ),
-                ],
+              Semantics(
+                label: '本章阅读进度',
+                child: Slider(
+                  value: (_seekPreview ?? _fraction).clamp(0.0, 1.0),
+                  min: 0,
+                  max: 1,
+                  onChanged:
+                      (_prefs.pageMode
+                          ? _pages.length > 1
+                          : _scroll.hasClients &&
+                                _scroll.position.maxScrollExtent > 0)
+                      ? (double value) => setState(() => _seekPreview = value)
+                      : null,
+                  onChangeEnd: (double value) {
+                    setState(() => _seekPreview = null);
+                    _seekFraction(value);
+                  },
+                ),
               ),
               Row(
                 children: <Widget>[
                   Expanded(child: _tool(Icons.list, '目录', _chaptersSheet)),
                   Expanded(
-                    child: _tool(Icons.bookmark_outline, '书签', _bookmarksSheet),
+                    child: _tool(Icons.auto_awesome_outlined, '人物', _openAi),
                   ),
                   Expanded(
-                    child: _tool(Icons.auto_awesome_outlined, '人物', _openAi),
+                    child: _tool(
+                      Icons.history,
+                      '前情',
+                      () => _openPerson(initialTab: 1),
+                    ),
                   ),
                   Expanded(
                     child: _tool(
@@ -3382,9 +4465,6 @@ class _WebReaderState extends State<WebReader> {
                       '问书',
                       () => _openAsk(),
                     ),
-                  ),
-                  Expanded(
-                    child: _tool(Icons.edit_note_outlined, '摘记', _notesSheet),
                   ),
                   Expanded(
                     child: _tool(Icons.format_size, '排版', _typographySheet),
@@ -3408,7 +4488,12 @@ class _WebReaderState extends State<WebReader> {
       children: <Widget>[
         Icon(icon, size: 22),
         const SizedBox(height: 3),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12),
+        ),
       ],
     ),
   );
@@ -3653,27 +4738,30 @@ class _WebReaderState extends State<WebReader> {
     }
     _pageIndex = target.clamp(0, _pages.length - 1);
     _reflowAnchor = anchor ?? _pageSourceAnchor();
-    if (widget.state.fraction != _fraction) {
-      widget.state.fraction = _fraction;
-      _queueSave();
-    }
+    widget.state.fraction = _fraction;
     _jumpBlock = null;
     _jumpOffset = null;
     _pageLayoutKey = key;
     _restoring = false;
+    _queueSave();
   }
 
-  void _turnPage(int delta) {
+  void _turnPage(int delta, {bool automatic = false}) {
+    if (!automatic) {
+      _autoPage.pause();
+      _activity.touch();
+    }
+    _stopListening();
     if (!_prefs.pageMode || _pages.isEmpty) return;
     _selectionCaptureTimer?.cancel();
     html.window.getSelection()?.removeAllRanges();
     final int next = _pageIndex + delta;
     if (next < 0) {
-      _go(_chapter - 1, fraction: 1);
+      _go(_chapter - 1, fraction: 1, keepAuto: automatic);
       return;
     }
     if (next >= _pages.length) {
-      _go(_chapter + 1);
+      _go(_chapter + 1, keepAuto: automatic);
       return;
     }
     setState(() {
@@ -3770,6 +4858,8 @@ class _WebReaderState extends State<WebReader> {
   }
 
   void _readerPointerDown(PointerDownEvent event) {
+    _autoPage.pause();
+    _activity.touch();
     if (event.buttons != 1) return;
     _pageTapTimer?.cancel();
     _personTapConsumed = false;
@@ -3885,7 +4975,7 @@ class _WebReaderState extends State<WebReader> {
                     },
                   ),
                 ContextMenuButtonItem(
-                  label: '问书',
+                  label: '问这段',
                   onPressed: () {
                     final String? selected = _selectedText;
                     ContextMenuController.removeAny();
@@ -3894,13 +4984,21 @@ class _WebReaderState extends State<WebReader> {
                 ),
                 if (_selectedText?.trim().isNotEmpty == true)
                   ContextMenuButtonItem(
-                    label: '摘记',
+                    label: '划线',
                     onPressed: () {
-                      final String? selected = _selectedText;
+                      final quote = _selectedText;
                       ContextMenuController.removeAny();
-                      unawaited(_addNote(selectedText: selected));
+                      if (quote != null) _highlight(quote);
                     },
                   ),
+                ContextMenuButtonItem(
+                  label: '写想法',
+                  onPressed: () {
+                    final String? selected = _selectedText;
+                    ContextMenuController.removeAny();
+                    unawaited(_addNote(selectedText: selected));
+                  },
+                ),
               ],
             ),
     child: child,

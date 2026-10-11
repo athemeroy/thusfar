@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/ui/theme.dart';
 import 'package:thusfar_app/web/web_ai_panel.dart';
+import 'package:thusfar_app/web/web_activity_route.dart';
 import 'package:thusfar_app/web/web_app.dart';
 import 'package:thusfar_app/web/web_ask_panel.dart';
 import 'package:thusfar_app/web/web_storage.dart';
@@ -115,9 +116,12 @@ void main() {
     _Library library, {
     int chapter = 0,
     double fraction = 0.5,
+    double textScale = 1,
+    Size viewport = const Size(390, 844),
+    WebReadingState? saved,
   }) async {
     tester.view
-      ..physicalSize = const Size(390, 844)
+      ..physicalSize = viewport
       ..devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -125,6 +129,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         navigatorKey: navigator,
+        navigatorObservers: <NavigatorObserver>[webReadingRoutes],
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         theme: buildTheme(Brightness.light),
         home: const Scaffold(body: Text('Shelf fixture')),
       ),
@@ -134,7 +145,8 @@ void main() {
         MaterialPageRoute<void>(
           builder: (_) => WebReader(
             book: _book(),
-            state: WebReadingState(chapter: chapter, fraction: fraction),
+            state:
+                saved ?? WebReadingState(chapter: chapter, fraction: fraction),
             library: library,
           ),
         ),
@@ -151,6 +163,107 @@ void main() {
         .widget<TextButton>(find.widgetWithText(TextButton, label))
         .onPressed!;
   }
+
+  testWidgets(
+    'narrow large-text tools keep navigation and safe search reachable',
+    (tester) async {
+      final _Library library = _Library();
+      await open(tester, library, textScale: 2, viewport: const Size(320, 640));
+      await tester.tap(find.byTooltip('打开阅读工具'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byTooltip('搜原文'));
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '仅看已读'))
+            .selected,
+        isTrue,
+      );
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '搜索全书'))
+            .selected,
+        isFalse,
+      );
+      await tester.tap(find.widgetWithText(ChoiceChip, '搜索全书'));
+      await tester.pumpAndSettle();
+      expect(find.text('可能剧透'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'chapter jumps require consent and preserve position when cancelled',
+    (tester) async {
+      final _Library library = _Library();
+      await open(tester, library);
+      await tester.tap(find.byTooltip('打开阅读工具'));
+      await tester.pumpAndSettle();
+      final int? original = library.reading!.sourceOffset;
+      await tester.tap(find.widgetWithText(TextButton, '下一章'));
+      await tester.pumpAndSettle();
+      expect(find.text('注意剧透'), findsOneWidget);
+      await tester.tap(find.text('留在原地'));
+      await tester.pumpAndSettle();
+      expect(library.reading!.chapter, 0);
+      expect(library.reading!.sourceOffset, original);
+      await tester.tap(find.widgetWithText(TextButton, '下一章'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('确认前往'));
+      await tester.pumpAndSettle();
+      expect(library.reading!.chapter, 1);
+    },
+  );
+
+  testWidgets(
+    'saved source restores the same passage when page fraction differs',
+    (tester) async {
+      final WebBook book = _book();
+      final int source = (book.blocks[20]['o'] as num).toInt() + 40;
+      final _Library library = _Library();
+      await open(
+        tester,
+        library,
+        saved: WebReadingState(chapter: 0, fraction: 0, sourceOffset: source),
+      );
+      expect(
+        _visibleRanges(tester).any(
+          (range) => range.block == 20 && range.start <= 40 && range.end > 40,
+        ),
+        isTrue,
+      );
+      expect(library.reading!.sourceOffset, greaterThan(0));
+    },
+  );
+
+  testWidgets(
+    'automatic paging survives its controls closing and stops for other panels',
+    (tester) async {
+      final _Library library = _Library();
+      await open(tester, library);
+      await tester.tap(find.byTooltip('打开阅读工具'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('本书详情'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('自动翻页'));
+      await tester.pumpAndSettle();
+      final double before = library.reading!.fraction;
+      await tester.tap(find.text('开始翻页'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 21));
+      await tester.pumpAndSettle();
+      expect(library.reading!.fraction, greaterThan(before));
+      await tester.tap(find.byTooltip('打开阅读工具'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, '目录'));
+      await tester.pumpAndSettle();
+      final double paused = library.reading!.fraction;
+      await tester.pump(const Duration(seconds: 21));
+      await tester.pumpAndSettle();
+      expect(library.reading!.fraction, paused);
+    },
+  );
 
   testWidgets(
     'reflow keeps the same source through repeated resize and type changes',
@@ -199,7 +312,7 @@ void main() {
         final Slider fontSize = tester.widget<Slider>(
           find.descendant(
             of: find
-                .ancestor(of: find.text('字号'), matching: find.byType(Row))
+                .ancestor(of: find.text('字号大小'), matching: find.byType(Row))
                 .first,
             matching: find.byType(Slider),
           ),
@@ -214,7 +327,7 @@ void main() {
         final int expectedCutoff = _visibleRanges(tester)
             .map((range) => (book.blocks[range.block]['o']! as int) + range.end)
             .fold(0, (int largest, int end) => end > largest ? end : largest);
-        await tester.tap(find.byTooltip('关闭阅读排版'));
+        await tester.tap(find.byTooltip('关闭排版'));
         await tester.pumpAndSettle();
         await tester.tap(find.widgetWithText(TextButton, '人物'));
         await tester.pumpAndSettle();
@@ -235,37 +348,44 @@ void main() {
   );
 
   testWidgets(
-    'adding bookmarks keeps adjacent pages and never toggles deletion',
+    'bookmark toggle affects only the exact page and keeps adjacent bookmarks',
     (WidgetTester tester) async {
       final _Library library = _Library();
       await open(tester, library);
       await tester.tap(find.byTooltip('打开阅读工具'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('添加书签'));
+      await tester.tap(find.byTooltip('书签'));
       await tester.pumpAndSettle();
       final WebReadingState reading = library.reading!;
       expect(reading.bookmarks, hasLength(1));
-      final WebPersonalItem first = reading.bookmarks.single;
-      await tester.tap(find.byTooltip('添加书签'));
+      WebPersonalItem first = reading.bookmarks.single;
+      await tester.tap(find.byTooltip('书签'));
       await tester.pumpAndSettle();
-      expect(reading.bookmarks, hasLength(1));
-      expect(find.text('这里已有书签'), findsOneWidget);
+      expect(reading.bookmarks, isEmpty);
+      expect(find.text('已取消书签'), findsOneWidget);
+      await tester.tap(find.byTooltip('书签'));
+      await tester.pumpAndSettle();
+      first = reading.bookmarks.single;
       await tester.tap(find.byTooltip('收起工具'));
       await tester.pumpAndSettle();
       await tester.tapAt(const Offset(380, 400));
       await tester.pumpAndSettle();
       expect(reading.fraction - first.fraction, greaterThan(0));
       expect(reading.fraction - first.fraction, lessThan(0.07));
-      await tester.tap(find.byTooltip('打开阅读工具'));
+      // Bookmark feedback can temporarily cover the bottom shortcut. The
+      // reader's central tap zone remains the primary way to reveal tools.
+      await tester.tapAt(const Offset(195, 400));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('添加书签'));
+      await tester.tap(find.byTooltip('书签'));
       await tester.pumpAndSettle();
       expect(reading.bookmarks, hasLength(2));
       expect(reading.bookmarks.first.id, first.id);
       expect(reading.bookmarks.every((mark) => !mark.deleted), isTrue);
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, '书签'));
+      await tester.tap(find.widgetWithText(TextButton, '目录'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(Tab, '书签'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('删除书签'), findsNWidgets(2));
       await tester.tap(find.byTooltip('删除书签').first);
@@ -327,6 +447,9 @@ void main() {
       action();
       await tester.tap(find.widgetWithText(TextButton, '上一章'));
       await tester.pumpAndSettle();
+      expect(find.text('回到前文'), findsOneWidget);
+      await tester.tap(find.text('确认前往'));
+      await tester.pumpAndSettle();
       library.pendingSave!.complete();
       await tester.pumpAndSettle();
       expect(find.byType(WebAiPanel), findsNothing);
@@ -353,6 +476,9 @@ void main() {
         'Keep my next question',
       );
       ask.onCitationTap!(0);
+      await tester.pumpAndSettle();
+      expect(find.text('回到前文'), findsOneWidget);
+      await tester.tap(find.text('确认前往'));
       await tester.pumpAndSettle();
       expect(find.byType(WebAskPanel), findsNothing);
       expect(library.reading!.returnOffset, isNotNull);

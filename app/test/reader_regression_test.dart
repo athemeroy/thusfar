@@ -94,6 +94,88 @@ void main() {
     root.deleteSync(recursive: true);
   });
 
+  test('speech following keeps knowledge at the words actually heard', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final BookData data = BookData.open(model.library.books.single);
+    final ReaderController reader = ReaderController(
+      library: model.library,
+      book: data,
+    );
+    reader.layout(
+      Paginator(
+        data,
+        const PageSpec(
+          width: 350,
+          height: 600,
+          fontSize: 16,
+          lineHeight: 1.7,
+          fontFamily: null,
+          color: Colors.black,
+          textScaler: TextScaler.noScaling,
+        ),
+      ),
+      0,
+    );
+    reader.jump(first.length, remember: false, heardThrough: first.length + 3);
+    expect(reader.page!.end, greaterThan(reader.cutoff));
+    expect(reader.cutoff, first.length + 3);
+    expect(model.library.progressOf(data.id)!.cutoff, first.length + 3);
+    reader.heardThrough(first.length + 6);
+    expect(reader.cutoff, first.length + 6);
+    reader.select((first.length, data.length));
+    expect(reader.selection!.$2, first.length + 6);
+    reader.jump(first.length);
+    expect(reader.cutoff, reader.page!.end);
+    reader.dispose();
+    data.notes.dispose();
+    data.dispose();
+  });
+
+  testWidgets('unread chapter and page jumps require an explicit choice', (
+    WidgetTester tester,
+  ) async {
+    await setTestViewport(tester, const Size(430, 900));
+    addTearDown(() => setTestViewport(tester, null));
+    await tester.pumpWidget(ThusfarApp(model: model));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Regression book').first);
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(215, 450));
+    await tester.pumpAndSettle();
+    final int before =
+        model.library.progressOf(model.library.books.single.id)?.pos ?? 0;
+    await tester.tap(find.text('下一章'));
+    await tester.pumpAndSettle();
+    expect(find.text('注意剧透'), findsOneWidget);
+    expect(
+      model.library.progressOf(model.library.books.single.id)?.pos ?? 0,
+      before,
+    );
+    await tester.tap(find.text('留在原地'));
+    await tester.pumpAndSettle();
+    expect(
+      model.library.progressOf(model.library.books.single.id)?.pos ?? 0,
+      before,
+    );
+    await tester.tap(find.text('目录'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '2');
+    await tester.pump();
+    await tester.tap(find.byTooltip('跳页'));
+    await tester.pumpAndSettle();
+    expect(find.text('注意剧透'), findsOneWidget);
+    expect(find.byType(TocPage), findsOneWidget);
+    await tester.tap(find.text('确认前往'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TocPage), findsNothing);
+    expect(
+      model.library.progressOf(model.library.books.single.id)!.pos,
+      first.length,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets(
     'vertical fold keeps text and tools on opposite sides of the hinge',
     (tester) async {
@@ -259,7 +341,7 @@ void main() {
             ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('摘录'));
+      await tester.tap(find.text('划线'));
       await tester.pumpAndSettle();
       expect(body.pager.book.notes.notes, hasLength(1));
       final Json note = body.pager.book.notes.notes.single;
@@ -799,7 +881,7 @@ void main() {
         await activate('上一页');
         expect(model.library.progressOf(model.library.books.single.id)!.pos, 0);
         await activate('阅读工具');
-        expect(find.byTooltip('回书架').hitTestable(), findsOneWidget);
+        expect(find.byTooltip('书架').hitTestable(), findsOneWidget);
         expect(model.library.progressOf(model.library.books.single.id)!.pos, 0);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
@@ -895,7 +977,7 @@ void main() {
               ),
         );
         await tester.pumpAndSettle();
-        await tester.tap(find.text('摘录'));
+        await tester.tap(find.text('划线'));
         await tester.pumpAndSettle();
         expect(body.pager.book.notes.notes, hasLength(1));
         final Json note = body.pager.book.notes.notes.single;
@@ -923,18 +1005,18 @@ void main() {
       await tester.pumpAndSettle();
       await tester.longPress(find.text('Regression book').first);
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('我的摘记'));
-      await tester.tap(find.text('我的摘记'));
+      await tester.ensureVisible(find.text('我的书摘'));
+      await tester.tap(find.text('我的书摘'));
       await tester.pumpAndSettle();
       expect(find.byType(ReaderScreen), findsOneWidget);
       expect(find.byType(TocPage), findsOneWidget);
-      expect(find.text('读书时长按一句话，就能摘录或写笔记'), findsOneWidget);
+      expect(find.text('笔墨未动\n读书时长按句子，划线或写想法。'), findsOneWidget);
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       await tester.tapAt(const Offset(215, 500));
       await tester.pumpAndSettle();
-      expect(find.byTooltip('更多操作'), findsOneWidget);
-      await tester.tap(find.byTooltip('回书架'));
+      expect(find.byTooltip('本书详情'), findsOneWidget);
+      await tester.tap(find.byTooltip('书架'));
       await tester.pumpAndSettle();
       expect(find.byType(ReaderScreen), findsNothing);
       expect(find.text('Regression book'), findsWidgets);
@@ -954,7 +1036,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tapAt(const Offset(215, 500));
       await tester.pumpAndSettle();
-      expect(find.byTooltip('更多操作'), findsOneWidget);
+      expect(find.byTooltip('本书详情'), findsOneWidget);
 
       await tester.tap(find.text('目录'));
       await tester.pumpAndSettle();
@@ -962,14 +1044,14 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byType(TocPage), findsNothing);
-      expect(find.byTooltip('更多操作'), findsOneWidget);
+      expect(find.byTooltip('本书详情'), findsOneWidget);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
       expect(find.byType(ReaderScreen), findsOneWidget);
       final Finder hiddenToolbar = find
           .ancestor(
-            of: find.byTooltip('更多操作'),
+            of: find.byTooltip('本书详情'),
             matching: find.byType(IgnorePointer),
           )
           .first;
@@ -1062,7 +1144,7 @@ void main() {
         .join('\n');
     expect(visible(), contains('Known passage'));
     expect(visible(), isNot(contains('ends here')));
-    await tester.tap(find.text('全书'));
+    await tester.tap(find.text('搜索全书').first);
     await tester.pumpAndSettle();
     expect(visible(), contains('ends here'));
     await tester.pumpWidget(const SizedBox());
@@ -1126,7 +1208,7 @@ void main() {
           );
       await tester.longPressAt(point);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('笔记'));
+      await tester.tap(find.text('写想法'));
       await tester.pumpAndSettle();
       final NoteEditor editor = tester.widget<NoteEditor>(
         find.byType(NoteEditor),
@@ -1287,14 +1369,14 @@ void main() {
     await tester.pumpAndSettle();
 
     // Select 楷
-    await tester.tap(find.text('楷'));
+    await tester.tap(find.text('文楷'));
     await tester.pumpAndSettle();
     expect(model.prefs.font, 1);
     expect(model.prefs.fontFamily, 'LXGWWenKaiScreen');
     expect(model.prefs.fontFallback, <String>['NotoSerifSC', 'serif']);
 
     // Select 黑
-    await tester.tap(find.text('黑'));
+    await tester.tap(find.text('黑体'));
     await tester.pumpAndSettle();
     expect(model.prefs.font, 2);
     expect(model.prefs.fontFamily, 'NotoSansSC');
@@ -1302,7 +1384,7 @@ void main() {
     expect(model.prefs.fontFallback.last, 'NotoSerifSC');
 
     // Reset back to 0 (宋)
-    await tester.tap(find.text('宋'));
+    await tester.tap(find.text('文宋'));
     await tester.pumpAndSettle();
     expect(model.prefs.font, 0);
     expect(model.prefs.fontFamily, 'NotoSerifSC');

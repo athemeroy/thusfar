@@ -533,31 +533,31 @@ void main() {
       configure();
       await open(tester);
       expect(processing.starts, 0);
-      await tester.tap(find.text('开始整理'));
+      await tester.tap(find.text('一键梳理'));
       await tester.pump();
       expect(processing.starts, 0);
       expect(find.textContaining('费用按你的模型接口计费'), findsOneWidget);
       await tester.tap(find.text('开始'));
       await tester.pump();
       expect(processing.starts, 1);
-      expect(find.text('已整理 0 / 2 段'), findsOneWidget);
+      expect(find.text('正在梳理 · 已完成 0%'), findsOneWidget);
       processing.status(entry, <String, Object?>{
         'state': 'running',
         'done': 1,
         'total': 2,
       });
       await tester.pump();
-      expect(find.text('已整理 1 / 2 段'), findsOneWidget);
+      expect(find.text('正在梳理 · 已完成 50%'), findsOneWidget);
       processing.pauseGate = Completer<void>();
-      await tester.tap(find.text('暂停整理'));
+      await tester.tap(find.text('暂停梳理'));
       await tester.pump();
       expect(processing.pauses, 1);
       expect(find.textContaining('已完成的内容会保留'), findsOneWidget);
-      expect(find.text('继续整理'), findsNothing);
+      expect(find.text('继续梳理'), findsNothing);
       processing.pauseGate!.complete();
       await tester.pumpAndSettle();
-      expect(find.text('继续整理'), findsOneWidget);
-      await tester.tap(find.text('继续整理'));
+      expect(find.text('继续梳理'), findsOneWidget);
+      await tester.tap(find.text('继续梳理'));
       await tester.pump();
       expect(processing.starts, 2);
       expect(tester.takeException(), isNull);
@@ -582,7 +582,7 @@ void main() {
       expect(find.text(error), findsNothing);
       expect(entry.status.error, error);
       expect(find.textContaining('没有收到完整结果，已完成的内容已保留'), findsOneWidget);
-      await tester.tap(find.text('继续整理'));
+      await tester.tap(find.text('继续梳理'));
       await tester.pumpAndSettle();
       expect(processing.starts, 0);
       expect(find.text('继续未完成的整理？'), findsOneWidget);
@@ -628,7 +628,7 @@ void main() {
             '${bookRoot.path}/status.json',
           ).readAsStringSync();
           await open(tester);
-          await tester.tap(find.text('继续整理'));
+          await tester.tap(find.text('继续梳理'));
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 300));
           expect(processing.starts, 0);
@@ -638,7 +638,7 @@ void main() {
           expect(readJournal(), originalJournal);
 
           if (decision == 'confirm') {
-            await tester.tap(find.widgetWithText(FilledButton, '继续整理'));
+            await tester.tap(find.widgetWithText(FilledButton, '继续梳理'));
           } else if (decision == 'cancel') {
             await tester.tap(find.text('暂不继续'));
           } else {
@@ -656,7 +656,7 @@ void main() {
             );
             expect(entry.status.done, 1);
             expect(entry.status.frontier, 17);
-            expect(find.text('继续整理'), findsOneWidget);
+            expect(find.text('继续梳理'), findsOneWidget);
           }
           expect(tester.takeException(), isNull);
         },
@@ -933,11 +933,13 @@ void main() {
       'total': 0,
     });
     await open(tester, settle: false);
-    expect(find.text('正在准备整理'), findsOneWidget);
+    expect(find.text('正在梳理'), findsOneWidget);
     expect(find.textContaining('正在检查书籍和整理缓存'), findsNothing);
-    expect(find.textContaining('准备 · 准备整理'), findsOneWidget);
+    await tester.tap(find.text('梳理记录'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.textContaining('准备整理'), findsWidgets);
     expect(find.textContaining('已等待 1 分'), findsNothing);
-    expect(find.text('整理记录'), findsOneWidget);
+    expect(find.text('梳理记录'), findsOneWidget);
 
     final double waitingSince =
         DateTime.now().millisecondsSinceEpoch / 1000 - 70;
@@ -958,7 +960,7 @@ void main() {
       'notice': '已发送 4 段，正在等待模型回复',
     });
     await tester.pump();
-    expect(find.text('已整理 0 / 603 段'), findsOneWidget);
+    expect(find.text('正在梳理 · 已完成 0%'), findsOneWidget);
     expect(find.text('已发送 4 段，正在等待模型回复'), findsOneWidget);
     expect(find.textContaining('已等待 1 分'), findsOneWidget);
 
@@ -977,7 +979,7 @@ void main() {
       'total': 603,
     });
     await tester.pump();
-    expect(find.textContaining('正文 · 已整理 9 段'), findsOneWidget);
+    expect(find.text('已整理 9 段'), findsOneWidget);
   });
 
   testWidgets('paused card names the unfinished segment and last stage', (
@@ -1044,7 +1046,7 @@ void main() {
     await tester.tap(find.text('停止自动重试'));
     await tester.pumpAndSettle();
     expect(processing.pauses, 1);
-    expect(find.text('继续整理'), findsOneWidget);
+    expect(find.text('继续梳理'), findsOneWidget);
   });
 
   testWidgets(
@@ -1063,8 +1065,8 @@ void main() {
       expect(find.textContaining('免费检查服务暂时无法使用'), findsOneWidget);
       expect(find.textContaining('proxy_requires_payment'), findsNothing);
       expect(settings.judgeFallbackEnabled, false);
-      await tester.ensureVisible(find.text('用已配置模型继续整理'));
-      await tester.tap(find.text('用已配置模型继续整理'));
+      await tester.ensureVisible(find.text('继续梳理'));
+      await tester.tap(find.text('继续梳理'));
       await tester.pumpAndSettle();
       expect(processing.starts, 1);
       expect(
@@ -1427,7 +1429,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await open(tester);
-    await tester.tap(find.text('开始整理'));
+    await tester.tap(find.text('一键梳理'));
     await tester.pump();
     expect(find.text('请先填写 AI 服务密钥'), findsOneWidget);
     expect(processing.starts, 0);
@@ -1435,12 +1437,12 @@ void main() {
     await tester.tap(find.text('去填写'));
     await tester.pump();
     processing.startError = StateError('正在暂停，请稍后继续');
-    await tester.tap(find.text('开始整理'));
+    await tester.tap(find.text('一键梳理'));
     await tester.pump();
     await tester.tap(find.text('开始'));
     await tester.pumpAndSettle();
     expect(find.text('正在暂停，请稍后继续'), findsOneWidget);
-    expect(find.text('开始整理'), findsOneWidget);
+    expect(find.text('一键梳理'), findsOneWidget);
   });
 
   testWidgets('quality retry is exposed only when requested by durable state', (
@@ -1457,7 +1459,7 @@ void main() {
     await tester.tap(find.text('重新检查未完成的资料'));
     await tester.pump();
     expect(processing.starts, 1);
-    expect(find.text('已整理 0 / 2 段'), findsOneWidget);
+    expect(find.text('正在梳理 · 已完成 0%'), findsOneWidget);
   });
 
   testWidgets('removal waits for actual settlement even if the drawer closes', (
@@ -1467,18 +1469,18 @@ void main() {
     processing.removalGate = Completer<void>();
     await open(tester, onRemoved: () => removed++);
     await tester.scrollUntilVisible(
-      find.text('移到回收站'),
+      find.text('移出书架'),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('移到回收站'));
+    await tester.tap(find.text('移出书架'));
     await tester.pump();
     await tester.scrollUntilVisible(
-      find.text('移到回收站'),
+      find.text('移出书架'),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('移到回收站'));
+    await tester.tap(find.text('移出书架'));
     await tester.pump();
     expect(processing.removals, 1);
     expect(bookRoot.existsSync(), isTrue);

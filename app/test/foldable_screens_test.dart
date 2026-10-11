@@ -10,6 +10,7 @@ import 'package:thusfar_app/screens/notes_screen.dart';
 import 'package:thusfar_app/screens/settings_screen.dart';
 import 'package:thusfar_app/screens/shelf_screen.dart';
 import 'package:thusfar_app/ui/cover.dart';
+import 'package:thusfar_app/ui/workspace_navigation.dart';
 
 Future<void> _font(String family, String path) async {
   await (FontLoader(family)..addFont(
@@ -120,7 +121,7 @@ void main() {
       });
       await tester.pumpWidget(ThusfarApp(model: model));
       await settle(tester);
-      final Finder navigation = find.byType(NavigationBar);
+      final Finder navigation = find.byType(WorkspaceNavigation);
       expect(navigation, findsOneWidget);
       expect(find.byType(NavigationRail), findsNothing);
       expect(
@@ -144,7 +145,7 @@ void main() {
       expectInPane(navigation);
       expectInPane(find.byType(ShelfScreen));
       for (final (String label, Type screen) in <(String, Type)>[
-        ('摘记', NotesScreen),
+        ('书摘', NotesScreen),
         ('设置', SettingsScreen),
         ('书架', ShelfScreen),
       ]) {
@@ -227,7 +228,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey<String>('foldable-nav-1')));
       await tester.pumpAndSettle();
       await settle(tester);
-      expect(find.text('读书时长按一句话，就能摘录或写笔记'), findsOneWidget);
+      expect(find.text('笔墨未动\n读书时长按句子，留存心中感动。'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey<String>('foldable-nav-2')));
       await tester.pumpAndSettle();
       expect(find.byType(SettingsScreen), findsOneWidget);
@@ -320,7 +321,7 @@ void main() {
       find.byType(MaterialApp),
       matchesGoldenFile('shots/foldable-tabletop-home.png'),
     );
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(WorkspaceNavigation), findsOneWidget);
 
     await tester.tap(find.text('阿Q正传').first);
     await tester.pumpAndSettle();
@@ -390,8 +391,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 80));
     expectPageUnmoved();
     await tester.pumpAndSettle();
-    expect(find.byTooltip('回书架').hitTestable(), findsOneWidget);
-    expect(tester.getRect(find.byTooltip('回书架')).top, greaterThan(500));
+    expect(find.byTooltip('书架').hitTestable(), findsOneWidget);
+    final Rect backControl = tester.getRect(find.byTooltip('书架'));
+    final Rect directoryControl = tester.getRect(find.text('目录'));
+    expect(backControl.top, lessThan(viewport.top));
+    expect(directoryControl.top, greaterThan(viewport.center.dy));
+    expect(directoryControl.top, greaterThan(backControl.bottom));
     final Rect controls = tester.getRect(
       find.byKey(const ValueKey<String>('reader-toolbar-panel')),
     );
@@ -428,7 +433,7 @@ void main() {
       tester.widget<PageBody>(find.byType(PageBody).first).page.start,
       pageEnd,
     );
-    expect(find.byTooltip('回书架').hitTestable(), findsNothing);
+    expect(find.byTooltip('书架').hitTestable(), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox());
   });

@@ -508,7 +508,7 @@ void main() {
           start: 0,
           end: 3,
           cutoff: cutoff,
-          text: '原文摘记',
+          text: '原文书摘',
         );
         final File notebook = File('${book.entry.dir.path}/notebook.json');
         final List<int> savedNotes = notebook.readAsBytesSync();

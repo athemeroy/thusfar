@@ -45,14 +45,14 @@ void main() {
     'done',
   ];
   const List<String> labels = <String>[
-    '整理',
-    '查看任务',
-    '整理中',
-    '收尾中',
-    '暂停中',
-    '继续整理',
-    '查看整理',
-    '已整理',
+    '智能梳理',
+    '等待梳理',
+    '正在梳理',
+    '即将完成',
+    '正在暂停',
+    '继续梳理',
+    '梳理受阻',
+    '梳理完成',
   ];
   Future<void> fixture({bool single = false, bool progress = true}) async {
     root = Directory.systemTemp.createTempSync('thusfar-scaled-shelf-');
@@ -187,12 +187,9 @@ void main() {
                 .first;
             for (int i = 0; i < states.length; i++) {
               final BookEntry book = library.byId('book-$i')!;
-              final Finder action = listView
-                  ? find.ancestor(
-                      of: find.byTooltip('${labels[i]}《${book.title}》'),
-                      matching: find.byType(IconButton),
-                    )
-                  : find.byKey(ValueKey<String>('process-${book.id}'));
+              final Finder action = find.byKey(
+                ValueKey<String>('process-${book.id}'),
+              );
               await tester.scrollUntilVisible(
                 action,
                 220,

@@ -138,7 +138,7 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
             fallback: '暂时无法读取手动补充的资料，请重试。',
           );
     return SheetPage(
-      title: widget.id == null ? '补充人物或概念' : '编辑手动补充',
+      title: widget.id == null ? '添加角色' : '编辑角色',
       slivers: <Widget>[
         if (problem != null)
           emptyState(context, problem)

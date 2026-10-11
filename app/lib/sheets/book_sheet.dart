@@ -37,6 +37,7 @@ class BookSheet extends StatefulWidget {
     required this.onNotes,
     required this.onModelSettings,
     required this.onExport,
+    this.onAutoPage,
     this.focusProcessing = false,
   });
 
@@ -49,6 +50,7 @@ class BookSheet extends StatefulWidget {
   final VoidCallback onNotes;
   final Future<void> Function() onModelSettings;
   final Future<void> Function() onExport;
+  final VoidCallback? onAutoPage;
   final bool focusProcessing;
 
   static Future<void> open(BuildContext context, BookSheet sheet) =>
@@ -443,7 +445,7 @@ class _BookSheetState extends State<BookSheet> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('继续整理'),
+              child: const Text('继续梳理'),
             ),
           ],
         ),
@@ -662,6 +664,14 @@ class _BookSheetState extends State<BookSheet> {
         SliverToBoxAdapter(child: _processingCard(context)),
         SliverList.list(
           children: <Widget>[
+            if (widget.onAutoPage != null)
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                title: const Text('自动翻页'),
+                subtitle: const Text('按你的阅读节奏逐页前进'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: widget.onAutoPage,
+              ),
             if (_hasImportedWebDraft())
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 20),
@@ -679,7 +689,7 @@ class _BookSheetState extends State<BookSheet> {
               ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-              title: const Text('我的摘记'),
+              title: const Text('我的书摘'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -703,7 +713,7 @@ class _BookSheetState extends State<BookSheet> {
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               title: Text(
-                queue >= 0 ? '在书单第 ${queue + 1} 位' : '加入接下来读',
+                queue >= 0 ? '在书单第 ${queue + 1} 位' : '加入在读',
                 style: const TextStyle(
                   fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
                 ),
@@ -724,14 +734,15 @@ class _BookSheetState extends State<BookSheet> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     duration: const Duration(seconds: 2),
-                    content: Text(wasIn ? '已从接下来读移除' : '已加入接下来读'),
+                    content: Text(wasIn ? '已从在读清单移除' : '已加入在读清单'),
                   ),
                 );
               },
             ),
             ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-              title: const Text('导出完整备份'),
+              title: const Text('导出本书'),
+              subtitle: const Text('包含阅读进度、书摘与想法'),
               trailing: Icon(Icons.chevron_right, color: t.ink3),
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -759,7 +770,7 @@ class _BookSheetState extends State<BookSheet> {
                         HapticFeedback.lightImpact();
                         setState(() => confirmRemove = true);
                       },
-                child: Text('移到回收站', style: TextStyle(color: t.danger)),
+                child: Text('移出书架', style: TextStyle(color: t.danger)),
               )
             else
               Container(
@@ -773,7 +784,7 @@ class _BookSheetState extends State<BookSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      '书籍、人物资料、摘记和阅读进度会保留，可在设置 → 回收站恢复；仍占用存储空间。',
+                      '书籍、人物资料、书摘和阅读进度会保留，可在设置 → 回收站恢复；仍占用存储空间。',
                       style: TextStyle(
                         color: t.danger,
                         fontSize: 14,
@@ -792,7 +803,7 @@ class _BookSheetState extends State<BookSheet> {
                         ),
                         const SizedBox(width: 10),
                         Pill(
-                          label: acting ? '正在移动…' : '移到回收站',
+                          label: acting ? '正在移动…' : '移出书架',
                           filled: true,
                           color: t.danger,
                           onTap: acting
@@ -983,11 +994,11 @@ class _BookSheetState extends State<BookSheet> {
         Text(
           s.state == 'queued' && !thisBookIsRunning
               ? queuedAt >= 0
-                    ? '等待整理 · 队列第 ${queuedAt + 1} 位'
-                    : '已加入整理队列'
+                    ? '等待梳理 · 前方 $queuedAt 本'
+                    : '等待梳理'
               : s.total > 0
-              ? '已整理 ${s.done} / ${s.total} 段'
-              : '正在准备整理',
+              ? '正在梳理 · 已完成 ${(100 * s.done / s.total).round()}%'
+              : '正在梳理',
           style: TextStyle(
             fontSize: 14,
             color: t.ink,
@@ -1051,7 +1062,7 @@ class _BookSheetState extends State<BookSheet> {
 
         const SizedBox(height: 10),
         Pill(
-          label: '暂停整理',
+          label: '暂停梳理',
           onTap: acting
               ? null
               : () {
@@ -1063,7 +1074,7 @@ class _BookSheetState extends State<BookSheet> {
     } else if (s.isDone) {
       body.add(
         Text(
-          '整理完成 · 已识别 ${s.people} 位人物',
+          '梳理完成 · 已识别 ${s.people} 位人物',
           style: TextStyle(fontSize: 15, color: t.ink),
         ),
       );
@@ -1082,7 +1093,9 @@ class _BookSheetState extends State<BookSheet> {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              '发现人物后，还需要整理资料才能生成人物小传。',
+              bios.count > 0
+                  ? '已备好 ${bios.count} 篇人物小传，读到后即可查看。'
+                  : '暂未生成人物小传，可以查看已有线索。',
               style: TextStyle(fontSize: 13, color: t.ink2),
             ),
           ),
@@ -1145,7 +1158,7 @@ class _BookSheetState extends State<BookSheet> {
         Text(
           s.raw['pause_reason'] == 'scope_complete'
               ? '所选范围已完成，可以选择接下来整理的章节。'
-              : '已暂停。已经整理好的部分可以直接看。',
+              : '梳理暂停 · 当前进度已保留，可随时继续。',
           style: TextStyle(fontSize: 14, color: t.ink),
         ),
         if (s.done > 0 || s.people > 0) ...<Widget>[
@@ -1183,7 +1196,7 @@ class _BookSheetState extends State<BookSheet> {
         ],
         const SizedBox(height: 10),
         Pill(
-          label: s.raw['pause_reason'] == 'scope_complete' ? '选择下一次范围' : '继续整理',
+          label: s.raw['pause_reason'] == 'scope_complete' ? '选择下一次范围' : '继续梳理',
           filled: true,
           color: t.zhu,
           onTap: acting
@@ -1211,7 +1224,7 @@ class _BookSheetState extends State<BookSheet> {
               DateTime.now().millisecondsSinceEpoch / 1000;
       body.addAll(<Widget>[
         Text(
-          autoRetry ? '暂时连不上 AI 服务，稍后会自动再试' : '整理遇到问题',
+          autoRetry ? '暂时连不上 AI 服务，稍后会自动再试' : '梳理受阻',
           style: TextStyle(
             fontSize: 15,
             color: t.amber,
@@ -1222,10 +1235,10 @@ class _BookSheetState extends State<BookSheet> {
         Text(
           freeAccessBlocked
               ? deniedWorkspaceKey
-                    ? 'classifier.dev 暂时无法使用。请在模型设置中检查该服务的密钥和余额，或换一个检查服务。进度已保留。'
+                    ? '检查服务暂不可用。请检查服务密钥和余额，或更换服务。进度已保留。'
                     : deniedAnonymous
                     ? '免费检查服务暂时无法使用。进度已保留，可以换一个检查服务继续。'
-                    : 'classifier.dev 暂时无法使用。请检查该服务的设置，或换一个检查服务。进度已保留。'
+                    : '检查服务暂不可用。请检查服务设置，或更换服务。进度已保留。'
               : jevAuthFailed
               ? 'Jev 密钥无效，请在模型设置中重新填写，或改用当前模型检查。进度已保留。'
               : modelBudgetExceeded
@@ -1245,7 +1258,7 @@ class _BookSheetState extends State<BookSheet> {
           ),
           const SizedBox(height: 8),
           Pill(
-            label: '用已配置模型继续整理',
+            label: '继续梳理',
             filled: true,
             color: t.zhu,
             onTap: acting ? null : _continueWithModel,
@@ -1317,7 +1330,7 @@ class _BookSheetState extends State<BookSheet> {
                     !paidUsesBudget &&
                     !widget.settings.hasClassifierKey))
               Pill(
-                label: autoRetry ? '现在重试' : '重试整理',
+                label: autoRetry ? '现在重试' : '重试梳理',
                 filled: true,
                 color: t.zhu,
                 onTap: acting
@@ -1374,7 +1387,7 @@ class _BookSheetState extends State<BookSheet> {
       if (!confirmStart) {
         body.add(
           Pill(
-            label: '开始整理',
+            label: '一键梳理',
             filled: true,
             color: t.zhu,
             onTap: acting
@@ -1445,15 +1458,23 @@ class _BookSheetState extends State<BookSheet> {
     if (s.isActive || s.isPaused || s.isError || s.isDone) {
       body.insert(
         0,
-        PreparationProgress(
-          status: s,
-          plan: _plan(),
-          latest:
-              activity.reversed
-                  .where((Json row) => row['stage'] != null)
-                  .firstOrNull ??
-              latestActivity,
-          biographies: bios.count,
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(bottom: 12),
+          shape: const Border(),
+          title: const Text('梳理进度', style: TextStyle(fontSize: 14)),
+          children: <Widget>[
+            PreparationProgress(
+              status: s,
+              plan: _plan(),
+              latest:
+                  activity.reversed
+                      .where((Json row) => row['stage'] != null)
+                      .firstOrNull ??
+                  latestActivity,
+              biographies: bios.count,
+            ),
+          ],
         ),
       );
       final String modelName = widget.settings.read().$2;
@@ -1538,37 +1559,32 @@ class _BookSheetState extends State<BookSheet> {
       final List<Json> shown = showAllActivity
           ? activity.reversed.take(24).toList()
           : activity.reversed.take(4).toList();
-      body.addAll(<Widget>[
-        const SizedBox(height: 14),
-        Divider(color: t.rule),
-        const SizedBox(height: 4),
-        Text(
-          '整理记录',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: t.ink,
-          ),
+      body.add(
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          shape: const Border(),
+          title: const Text('梳理记录', style: TextStyle(fontSize: 13)),
+          children: <Widget>[
+            for (final Json row in shown)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '${_activityTime(row['last_at'] ?? row['at'])}  ${_activityDescription(row)}',
+                    style: TextStyle(fontSize: 12, height: 1.5, color: t.ink2),
+                  ),
+                ),
+              ),
+            if (activity.length > 4)
+              TextButton(
+                onPressed: () =>
+                    setState(() => showAllActivity = !showAllActivity),
+                child: Text(showAllActivity ? '收起记录' : '查看更多'),
+              ),
+          ],
         ),
-        const SizedBox(height: 6),
-        for (final Json row in shown)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 5),
-            child: Text(
-              '${_activityTime(row['last_at'] ?? row['at'])}  ${_activityPhase(row)} · ${_activityDescription(row)}',
-              style: TextStyle(fontSize: 12, height: 1.4, color: t.ink2),
-            ),
-          ),
-        if (activity.length > 4)
-          TextButton(
-            onPressed: () => setState(() => showAllActivity = !showAllActivity),
-            child: Text(
-              showAllActivity
-                  ? '收起记录'
-                  : '查看最近 ${activity.length.clamp(0, 24)} 条记录',
-            ),
-          ),
-      ]);
+      );
     }
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),

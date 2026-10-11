@@ -547,10 +547,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('上传新快照'));
+      await tester.ensureVisible(find.text('上传新备份'));
       await _tapForTransfer(
         tester,
-        find.text('上传新快照'),
+        find.text('上传新备份'),
         client.uploadedReady,
         'upload',
         transferLibrary,
@@ -570,7 +570,7 @@ void main() {
         transferLibrary,
       );
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.text('远端书籍快照'), findsOneWidget);
+      expect(find.text('远端书籍备份'), findsOneWidget);
       expect(find.text('导入到此浏览器'), findsOneWidget);
       expect(transferLibrary.previewed.isCompleted, isTrue);
       expect(transferLibrary.imported.isCompleted, isFalse);

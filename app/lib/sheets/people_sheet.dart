@@ -51,7 +51,7 @@ class _PeoplePageState extends State<PeoplePage> {
   }
 
   Widget _add(BuildContext context) => Pill(
-    label: '补充人物或概念',
+    label: '添加角色',
     icon: Icons.person_add_alt_1_outlined,
     onTap: () {
       HapticFeedback.lightImpact();
@@ -82,13 +82,13 @@ class _PeoplePageState extends State<PeoplePage> {
     if (w == null || w.people.isEmpty) {
       final String message;
       final String? actionLabel = status.isActive
-          ? '查看整理过程'
+          ? '查看梳理'
           : status.isPaused
-          ? '继续整理'
+          ? '继续梳理'
           : status.isError
           ? '查看原因'
           : !link.c.book.hasKnowledge
-          ? '开始整理'
+          ? '一键梳理'
           : null;
       if (biosAhead) {
         final String state = status.isPaused
@@ -109,14 +109,14 @@ class _PeoplePageState extends State<PeoplePage> {
       } else if (!link.c.book.hasKnowledge) {
         message = readerMessage(
           link.c.book.manualError,
-          fallback: '这本书还没有可显示的人物资料',
+          fallback: '尚未整理\n开启智能梳理，逐步认识书中人物。',
         );
       } else {
         message = '截至这一页，还没有可展示的人物资料。';
       }
       return SheetPage(
         title: '人物',
-        tag: '截至第 $page 页',
+        tag: '止于当前 · 第 $page 页',
         bottom: _add(context),
         slivers: <Widget>[
           emptyState(
@@ -162,7 +162,7 @@ class _PeoplePageState extends State<PeoplePage> {
     return LayoutBuilder(
       builder: (context, box) {
         final Segmented tabs = Segmented(
-          labels: const <String>['本页', '本章', '全部', '关系图'],
+          labels: const <String>['本页', '本章', '全书', '关系'],
           index: tab,
           onChanged: (int i) {
             if (i == 3) {
@@ -174,7 +174,7 @@ class _PeoplePageState extends State<PeoplePage> {
         );
         return SheetPage(
           title: '人物',
-          tag: '截至第 $page 页',
+          tag: '止于当前 · 第 $page 页',
           bottom: _add(context),
           headerExtraHeight:
               tabs.heightForWidth(context, box.maxWidth) + (tab == 2 ? 56 : 0),
@@ -329,7 +329,7 @@ class _PeoplePageState extends State<PeoplePage> {
                           // a count of 0 would read as "never appears".
                           if (p.mentions > 0)
                             Text(
-                              '${p.mentions}',
+                              '${p.mentions} 次',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: t.ink3,

@@ -64,10 +64,18 @@ void main() {
     );
     final Uri key = Uri.parse('shots/02-reader.png');
     expect(mac15.getTestUri(key, null), key);
-    expect(mac26.getTestUri(key, null), Uri.parse('shots/macos-26/02-reader.png'));
-    expect(mac26.getTestUri(key, 2), Uri.parse('shots/macos-26/02-reader.2.png'));
-    expect(() => mac26.getTestUri(Uri.parse('../shots/a.png'), null),
-        throwsArgumentError);
+    expect(
+      mac26.getTestUri(key, null),
+      Uri.parse('shots/macos-26/02-reader.png'),
+    );
+    expect(
+      mac26.getTestUri(key, 2),
+      Uri.parse('shots/macos-26/02-reader.2.png'),
+    );
+    expect(
+      () => mac26.getTestUri(Uri.parse('../shots/a.png'), null),
+      throwsArgumentError,
+    );
   });
 
   // Both fixtures are opaque 64x64 RGBA images. Only the first pixel's red
@@ -88,7 +96,9 @@ void main() {
   );
 
   test('missing macOS 26 baseline never falls back to macOS 15', () async {
-    final Directory root = Directory.systemTemp.createTempSync('golden-missing-');
+    final Directory root = Directory.systemTemp.createTempSync(
+      'golden-missing-',
+    );
     addTearDown(() => root.deleteSync(recursive: true));
     final Uri testFile = root.uri.resolve('example_test.dart');
     final PlatformGoldenFileComparator mac15 = PlatformGoldenFileComparator(
@@ -111,26 +121,38 @@ void main() {
     );
   });
 
-  test('one channel of one pixel still fails and keeps all diff images', () async {
-    final Directory root = Directory.systemTemp.createTempSync('golden-strict-');
-    addTearDown(() => root.deleteSync(recursive: true));
-    final PlatformGoldenFileComparator comparator = PlatformGoldenFileComparator(
-      root.uri.resolve('example_test.dart'),
-      platformResolver: () => GoldenPlatform.macos26,
-    );
-    final Uri key = comparator.getTestUri(Uri.parse('shots/pixel.png'), null);
-    await comparator.update(key, original);
-    expect(File.fromUri(root.uri.resolveUri(key)).existsSync(), isTrue);
-    expect(await comparator.compare(original, key), isTrue);
-    await expectLater(
-      comparator.compare(changed, key),
-      throwsA(isA<FlutterError>()),
-    );
-    for (final String suffix in <String>[
-      'masterImage', 'testImage', 'isolatedDiff', 'maskedDiff',
-    ]) {
-      expect(File('${root.path}/failures/pixel_$suffix.png').existsSync(), isTrue);
-    }
-    expect(File('${root.path}/shots/pixel.png').existsSync(), isFalse);
-  });
+  test(
+    'one channel of one pixel still fails and keeps all diff images',
+    () async {
+      final Directory root = Directory.systemTemp.createTempSync(
+        'golden-strict-',
+      );
+      addTearDown(() => root.deleteSync(recursive: true));
+      final PlatformGoldenFileComparator comparator =
+          PlatformGoldenFileComparator(
+            root.uri.resolve('example_test.dart'),
+            platformResolver: () => GoldenPlatform.macos26,
+          );
+      final Uri key = comparator.getTestUri(Uri.parse('shots/pixel.png'), null);
+      await comparator.update(key, original);
+      expect(File.fromUri(root.uri.resolveUri(key)).existsSync(), isTrue);
+      expect(await comparator.compare(original, key), isTrue);
+      await expectLater(
+        comparator.compare(changed, key),
+        throwsA(isA<FlutterError>()),
+      );
+      for (final String suffix in <String>[
+        'masterImage',
+        'testImage',
+        'isolatedDiff',
+        'maskedDiff',
+      ]) {
+        expect(
+          File('${root.path}/failures/pixel_$suffix.png').existsSync(),
+          isTrue,
+        );
+      }
+      expect(File('${root.path}/shots/pixel.png').existsSync(), isFalse);
+    },
+  );
 }

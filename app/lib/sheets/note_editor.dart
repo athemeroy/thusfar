@@ -2,12 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:thusfar_core/thusfar_core.dart' show ValueError;
 
 import '../data/library.dart';
 import '../data/note_drafts.dart';
 import '../ui/theme.dart';
 
-/// S17 笔记编辑: quote on top, autofocus, drafts survive closing.
+/// S17 想法编辑: quote on top, autofocus, drafts survive closing.
 class NoteEditor extends StatefulWidget {
   const NoteEditor({
     super.key,
@@ -56,7 +57,7 @@ class NoteEditor extends StatefulWidget {
         ).existsSync() &&
         messenger.mounted) {
       messenger.showSnackBar(
-        const SnackBar(content: Text('草稿已保留，可在设置 → 未保存笔记草稿继续编辑')),
+        const SnackBar(content: Text('草稿已保留，可在设置 → 想法草稿继续编辑')),
       );
     }
   }
@@ -95,7 +96,7 @@ class _NoteEditorState extends State<NoteEditor> {
             draft.source !=
                 NoteDraft.sourceFor(widget.book, widget.start, widget.end)) {
           _draftBlocked = true;
-          error = '这份草稿对应的原文或笔记已变化，未自动载入。原草稿仍保留，本次编辑已锁定以避免覆盖。';
+          error = '这份草稿对应的原文或想法已变化，未自动载入。原草稿仍保留，本次编辑已锁定以避免覆盖。';
         } else if (draft.end > widget.cutoff || draft.cutoff > widget.cutoff) {
           _draftBlocked = true;
           error = '这份草稿涉及较后的阅读位置。为避免剧透，请回到写下它的位置后再恢复；原草稿仍保留。';
@@ -125,7 +126,7 @@ class _NoteEditorState extends State<NoteEditor> {
       initial = '';
       _draftBlocked = true;
       _recovered = false;
-      error = '这条笔记涉及较后的阅读位置，请回到写下它的位置后再编辑。笔记与草稿仍保留。';
+      error = '这条想法涉及较后的阅读位置，请回到写下它的位置后再编辑。想法与草稿仍保留。';
     }
     text = TextEditingController(text: initial)..addListener(_keepDraft);
   }
@@ -157,7 +158,7 @@ class _NoteEditorState extends State<NoteEditor> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('放弃未保存的修改？'),
-        content: const Text('只清除此草稿，已保存的笔记不变。'),
+        content: const Text('只清除此草稿，已保存的想法不变。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -204,6 +205,15 @@ class _NoteEditorState extends State<NoteEditor> {
         text: text.text.trim(),
         cutoff: widget.cutoff,
       );
+    } on ValueError catch (failure) {
+      setState(
+        () => error = failure.message.contains('在别处修改')
+            ? '这条想法已在别处修改。请重新打开，当前文字仍保留。'
+            : failure.message.contains('不存在')
+            ? '这条想法已被移除。当前文字仍保留，请复制后另存。'
+            : '操作未完成，请保留当前文字，稍后重试。',
+      );
+      return;
     } on Object {
       setState(() => error = '操作未完成，请保留当前文字，稍后重试。');
       return;
@@ -221,7 +231,7 @@ class _NoteEditorState extends State<NoteEditor> {
           if (legacy.existsSync()) legacy.deleteSync();
         }
       } on Object {
-        cleanupError = '笔记已保存，旧草稿未能删除。';
+        cleanupError = '想法已保存，旧草稿未能删除。';
       }
     }
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
@@ -236,8 +246,8 @@ class _NoteEditorState extends State<NoteEditor> {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: const Text('删除这条笔记？'),
-        content: const Text('摘录和想法都会从摘记列表移除。'),
+        title: const Text('删除这条想法？'),
+        content: const Text('划线和想法都会从书摘列表移除。'),
         actions: <Widget>[
           TextButton(
             onPressed: () {
@@ -360,7 +370,7 @@ class _NoteEditorState extends State<NoteEditor> {
                   children: [
                     Expanded(
                       child: Text(
-                        _staleDraft ? '原笔记已有新版本。已找回草稿，可另存一条笔记。' : '已恢复未保存的草稿',
+                        _staleDraft ? '原想法已有新版本。已找回草稿，可另存一条想法。' : '已恢复未保存的草稿',
                         style: TextStyle(color: t.ink2),
                       ),
                     ),
@@ -418,7 +428,7 @@ class _NoteEditorState extends State<NoteEditor> {
                     )
                   else
                     Pill(
-                      label: _staleDraft ? '另存为新笔记' : '保存',
+                      label: _staleDraft ? '另存为新想法' : '保存',
                       filled: true,
                       color: t.qing,
                       onTap: _save,

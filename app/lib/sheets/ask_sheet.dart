@@ -78,7 +78,7 @@ class _Exchange {
   List<AskTurn> references = const <AskTurn>[];
   final String question;
   final int position;
-  String stage = '理解你的问题';
+  String stage = '回想中 · 正在书中寻找相关线索…';
   String? error;
   Json? answer;
 }
@@ -286,7 +286,7 @@ class _AskPageState extends State<AskPage> {
       _inputError = null;
       entry.error = null;
       entry.answer = null;
-      entry.stage = '理解你的问题';
+      entry.stage = '回想中 · 正在书中寻找相关线索…';
       if (retry == null) _history.add(entry);
       if (retry == null) {
         _input.clear();
@@ -319,7 +319,7 @@ class _AskPageState extends State<AskPage> {
             return;
           }
           if (kind == 'stage') {
-            setState(() => entry.stage = value['text']! as String);
+            setState(() => entry.stage = '回想中 · 正在书中寻找相关线索…');
           }
         },
       );
@@ -366,7 +366,7 @@ class _AskPageState extends State<AskPage> {
     final Tokens t = context.tk;
     final int page = widget.link.pageNo(_cutoff > 0 ? _cutoff - 1 : 0);
     return SheetPage(
-      title: '问问这本书',
+      title: '问书',
       tag: '只参考前 $page 页',
       slivers: <Widget>[
         if (_quoteVisible && widget.quote != null)
@@ -471,7 +471,7 @@ class _AskPageState extends State<AskPage> {
                     onSubmitted: (_) => _submit(),
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: _busy ? '可以先写下一问…' : '问问已经读过的内容…',
+                      hintText: _busy ? '可以先写下一问…' : '问问剧情、线索或人物关系…',
                       filled: true,
                       fillColor: t.paper,
                       border: OutlineInputBorder(
@@ -552,7 +552,7 @@ class _AskPageState extends State<AskPage> {
                       ),
                     );
                   },
-                  child: const Text('定位原文（可返回回答）'),
+                  child: const Text('翻回原文'),
                 ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialog),
@@ -594,6 +594,14 @@ class _AskPageState extends State<AskPage> {
           ),
           const SizedBox(height: 16),
           if (answer != null) ...<Widget>[
+            if (withheld)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Tag('后文待续', color: t.amber),
+                ),
+              ),
             SelectableText(
               answer['text']! as String,
               style: TextStyle(
@@ -655,7 +663,7 @@ class _AskPageState extends State<AskPage> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: t.zhu.withValues(alpha: 0.12),
+                            color: t.qing.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -663,7 +671,7 @@ class _AskPageState extends State<AskPage> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: t.zhu,
+                              color: t.qing,
                               fontFeatures: const <FontFeature>[
                                 FontFeature.tabularFigures(),
                               ],

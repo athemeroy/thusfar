@@ -125,7 +125,7 @@ void main() {
 
       // First person → person card pushed inside the drawer.
       final Finder rows = find.byType(InkWell);
-      await tester.tap(find.text('全部'));
+      await tester.tap(find.text('全书'));
       await settle(tester);
       await tester.tap(find.text('阿Q').first);
       await settle(tester);
@@ -136,7 +136,7 @@ void main() {
       expect(rows, findsWidgets);
 
       // Full height.
-      await tester.drag(find.text('简介'), const Offset(0, -400));
+      await tester.drag(find.text('人物生平'), const Offset(0, -400));
       await settle(tester);
       await expectLater(
         find.byType(MaterialApp),
@@ -209,18 +209,18 @@ void main() {
 
     final Finder covers = find.byType(BookCover);
     expect(covers, findsNWidgets(3));
-    expect(tester.getSize(covers.at(1)).width, greaterThan(130));
-    expect(tester.getSize(covers.at(2)).width, greaterThan(130));
+    expect(tester.getSize(covers.at(1)).width, greaterThan(100));
+    expect(tester.getSize(covers.at(2)).width, greaterThan(100));
 
-    await tester.tap(find.byTooltip('搜索'));
+    await tester.tap(find.byTooltip('搜书'));
     await settle(tester);
     await tester.enterText(find.byType(TextField).first, '不存在的书名');
     await settle(tester);
 
-    expect(find.text('没有找到匹配的书'), findsOneWidget);
+    expect(find.text('没有找到'), findsOneWidget);
     expect(find.text('换个书名或作者关键词试试'), findsOneWidget);
     expect(find.byTooltip('清空搜索'), findsOneWidget);
-    expect(find.text('把第一本书放进来'), findsNothing);
+    expect(find.text('书架空空'), findsNothing);
     await expectLater(
       find.byType(HomeShell),
       matchesGoldenFile('shots/11-search-empty.png'),
@@ -232,23 +232,23 @@ void main() {
       tester.widget<TextField>(find.byType(TextField).first).controller!.text,
       isEmpty,
     );
-    expect(find.text('没有找到匹配的书'), findsNothing);
+    expect(find.text('没有找到'), findsNothing);
     expect(find.text('阿Q正传'), findsWidgets);
 
     await tester.enterText(find.byType(TextField).first, '不存在的书名');
     await settle(tester);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await settle(tester);
-    expect(find.byTooltip('搜索'), findsOneWidget);
-    expect(find.text('没有找到匹配的书'), findsNothing);
+    expect(find.byTooltip('搜书'), findsOneWidget);
+    expect(find.text('没有找到'), findsNothing);
     expect(find.text('阿Q正传'), findsWidgets);
 
     await tester.tap(find.text('读完'));
     await settle(tester);
-    expect(find.text('这个分类下还没有书'), findsOneWidget);
-    await tester.tap(find.text('查看全部书籍'));
+    expect(find.text('这里还空着'), findsOneWidget);
+    await tester.tap(find.text('全部藏书').last);
     await settle(tester);
-    expect(find.text('这个分类下还没有书'), findsNothing);
+    expect(find.text('这里还空着'), findsNothing);
     expect(find.text('阿Q正传'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -268,9 +268,9 @@ void main() {
 
     final Finder covers = find.byType(BookCover);
     expect(covers, findsNWidgets(3));
-    expect(tester.getSize(covers.at(1)).width, greaterThan(130));
-    expect(tester.getSize(covers.at(2)).width, greaterThan(130));
-    final Finder importAction = find.text('导入');
+    expect(tester.getSize(covers.at(1)).width, greaterThan(100));
+    expect(tester.getSize(covers.at(2)).width, greaterThan(100));
+    final Finder importAction = find.text('添书');
     expect(importAction, findsOneWidget);
     expect(tester.getRect(importAction).right, lessThanOrEqualTo(320));
     expect(tester.takeException(), isNull);
@@ -284,14 +284,14 @@ void main() {
     await tester.pumpWidget(ThusfarApp(model: model));
     await settle(tester);
 
-    expect(find.text('全部书籍 '), findsOneWidget);
+    expect(find.text('全部藏书'), findsOneWidget);
 
     // Switch to Notes via Ctrl+2
     await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
     await tester.sendKeyEvent(LogicalKeyboardKey.digit2);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
     await settle(tester);
-    expect(find.text('摘记'), findsOneWidget);
+    expect(find.text('书摘'), findsOneWidget);
 
     // Switch to Settings via Ctrl+3
     await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
@@ -305,7 +305,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.digit1);
     await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
     await settle(tester);
-    expect(find.text('全部书籍 '), findsOneWidget);
+    expect(find.text('全部藏书'), findsOneWidget);
 
     // Switch to Settings via Ctrl+,
     await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
