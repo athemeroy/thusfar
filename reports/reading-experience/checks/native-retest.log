@@ -1,0 +1,283 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/auto_page_turner_test.dart
+00:00 +0: /Users/athemeroy/projects/books-build/app/test/auto_page_turner_test.dart: uses natural next page and stops at the book end
+00:00 +1: /Users/athemeroy/projects/books-build/app/test/auto_page_turner_test.dart: touch pause and background stop cancel pending turns
+00:00 +2: /Users/athemeroy/projects/books-build/app/test/auto_page_turner_test.dart: sleep timer stops even while automatic turns are paused
+00:00 +3: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: speech following keeps knowledge at the words actually heard
+00:00 +4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +5: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +6: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +7: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +8: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:02 +9: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:03 +10: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: wide reader tools are bounded and nested back precedes closing
+00:03 +11: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: horizontal fold keeps text above the hinge and tools below it
+00:03 +12: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: narrow large text keeps the full knowledge boundary in the header
+00:03 +13: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:03 +14: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:03 +15: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:03 +16: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: search clear cancels pending work and keeps the read boundary
+00:04 +17: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: both selection handles adjust exact source bounds and theme repaint keeps anchor
+00:04 +18: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: typography fits narrow large text and offers an explicit close
+00:04 +19: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: selection end handle crosses visible paragraphs and shrinks back exactly
+00:04 +20: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:05 +21: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+00:05 +22: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+00:05 +23: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+00:05 +24: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+00:05 +25: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+00:05 +26: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+00:06 +27: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: folding and desktop resizing preserve the source anchor
+00:06 +28: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: folding and desktop resizing preserve the source anchor
+00:06 +29: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: rewind clears old answers and cancels late publications
+00:06 +30: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: book drawer notes opens notes and reader back returns in one tap
+00:06 +31: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: book drawer notes opens notes and reader back returns in one tap
+00:06 +32: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: stop retains next draft and fences late answer until transport settles
+00:06 +33: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: closing a sheet restores the reader toolbar before the next Back leaves reading
+00:07 +34: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: question and selected text have independent Unicode limits and follow-ups
+00:07 +35: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: page footnotes open through reader without exposing later notes
+00:07 +36: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: same-prefix reopen restores answer, draft and scroll without a request
+00:07 +37: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: read-only search clips snippets within a partially read block
+00:07 +38: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: source navigation marks return intent; earlier cutoff cannot restore answer
+00:07 +39: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: note modal IME animation preserves reading position and saves original range once
+00:07 +40: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: note modal IME animation preserves reading position and saves original range once
+00:08 +41: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(390.0, 844.0) with keyboard
+00:08 +42: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: preview clips trailing context at cutoff
+00:08 +43: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(360.0, 640.0) with keyboard
+00:08 +44: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(360.0, 640.0) with keyboard
+00:08 +45: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: typography sheet switches font and propagates to reader spec
+00:08 +46: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: typography sheet switches font and propagates to reader spec
+00:08 +47: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: typography sheet switches font and propagates to reader spec
+00:09 +48: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: selection, persona and cutoff are captured; only verified result appears
+00:10 +49: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: selection, persona and cutoff are captured; only verified result appears
+00:10 +50: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.0x keeps actions and progress
+00:10 +51: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.0x keeps actions and progress
+00:10 +52: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.0x keeps actions and progress
+00:10 +52: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: page cue selects exact source for multi-angle generation and restores full page cue range
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "这一页暂时没有特别适合评论的句子，继续读也很好。": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart:246:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart line 246
+The test description was:
+  page cue selects exact source for multi-angle generation and restores full page cue range
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:10 +52 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.0x keeps actions and progress
+00:10 +52 -1: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: page cue selects exact source for multi-angle generation and restores full page cue range [E]
+  Test failed. See exception logs above.
+  The test description was: page cue selects exact source for multi-angle generation and restores full page cue range
+  
+00:10 +53 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.0x keeps actions and progress
+00:10 +54 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 320.0px 1.0x keeps actions and progress
+00:11 +55 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:11 +56 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:11 +57 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:11 +58 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:11 +59 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:11 +60 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:11 +61 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc hides crossing excerpts and later knowledge until explicitly enabled
+00:12 +62 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.0x keeps actions and progress
+00:12 +63 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc edits notes and deletion requires confirmation
+00:12 +64 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc edits notes and deletion requires confirmation
+00:12 +65 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 540.0px 1.0x keeps actions and progress
+00:12 +66 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 540.0px 1.0x keeps actions and progress
+00:12 +67 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: global notes exposes edit and refreshes durable edited text
+00:13 +68 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: global notes exposes edit and refreshes durable edited text
+00:13 +69 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: global notes exposes edit and refreshes durable edited text
+00:13 +70 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.6x keeps actions and progress
+00:13 +71 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.6x keeps actions and progress
+00:13 +72 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: notes search clears its field and cached records refresh on library change
+00:13 +73 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 320.0px 1.6x keeps actions and progress
+00:13 +74 -1: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: book-name search and copying export exactly the visible notes
+00:13 +75 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:14 +76 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:14 +77 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:14 +78 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:14 +79 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:14 +80 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:14 +81 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:14 +82 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.6x keeps actions and progress
+00:14 +83 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 540.0px 1.6x keeps actions and progress
+00:14 +84 -1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:15 +85 -1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:15 +86 -1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:15 +87 -1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:15 +88 -1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:15 +89 -1: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 320.0px 2.0x keeps actions and progress
+00:16 +90 -1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text
+
+Warning: A call to tap() with finder "Found 1 widget with text "智能梳理": [
+  Text("智能梳理", dependencies: [DefaultSelectionStyle, DefaultTextStyle, MediaQuery, _ScrollableScope]),
+]" derived an Offset (Offset(136.0, 474.5)) that would not hit test on the specified widget.
+Maybe the widget is actually off-screen, or another widget is obscuring it, or the widget cannot receive pointer events.
+Indeed, Offset(136.0, 474.5) is outside the bounds of the root of the render tree, Size(320.0, 440.0).
+The finder corresponds to this RenderBox: RenderParagraph#8ab9a relayoutBoundary=up18
+The hit test result at that offset is: HitTestResult(HitTestEntry<HitTestTarget>#a49bf(_ReusableRenderView#6fb5e), HitTestEntry<HitTestTarget>#9029d(<AutomatedTestWidgetsFlutterBinding>))
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2165:25)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart:100:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+#6      StackZoneSpecification._registerCallback.<anonymous closure> (package:stack_trace/src/stack_zone_specification.dart:114:42)
+<asynchronous suspension>
+To silence this warning, pass "warnIfMissed: false" to "tap()".
+To make this warning fatal, set WidgetController.hitTestWarningShouldBeFatal to true.
+
+00:16 +91 -1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: <1>
+  Actual: <0>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart:101:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart line 101
+The test description was:
+  first import and model actions remain reachable on a short screen with large text
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:16 +91 -2: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 2.0x keeps actions and progress
+00:16 +91 -2: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text [E]
+  Test failed. See exception logs above.
+  The test description was: first import and model actions remain reachable on a short screen with large text
+  
+00:16 +92 -2: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 2.0x keeps actions and progress
+00:16 +93 -2: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 540.0px 2.0x keeps actions and progress
+00:17 +94 -2: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 540.0px 2.0x keeps actions and progress
+00:17 +95 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: AppModel defers worker startup until explicit initialize
+00:17 +96 -2: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: hinged shelf respects its 320px pane at 2.0x
+00:17 +97 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: real worker isolate leaves explicitly disabled work paused
+00:17 +98 -2: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: (tearDownAll)
+00:17 +98 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: real isolate makes no model requests before native readiness (native start failure)
+00:17 +99 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: real isolate makes no model requests before native readiness (user pause before acknowledgement)
+00:17 +100 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker pauses unowned manual work without replacing its receipt
+00:17 +101 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker keeps authorized work queued for the next startup
+00:17 +102 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker fails closed for inflight request evidence
+00:17 +103 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker fails closed for received request evidence
+00:17 +104 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker fails closed for invalid request evidence
+00:17 +105 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker respects an already recorded user pause
+00:17 +106 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker does not overwrite an active independent lease
+00:17 +107 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:17 +108 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:17 +109 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:17 +110 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:17 +111 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:17 +112 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +113 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +114 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +115 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +116 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +117 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +118 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +119 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +120 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +121 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +122 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +123 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +124 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +125 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +126 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +127 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +128 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +129 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +130 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +131 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:18 +132 -2: /Users/athemeroy/projects/books-build/app/test/backup_test.dart: newer native note tombstone survives an older backup
+00:18 +133 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:18 +134 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:18 +135 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:18 +136 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:18 +137 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, cancel)
+00:18 +138 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, confirm)
+00:19 +139 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, dismiss)
+00:19 +140 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, cancel)
+00:19 +141 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, confirm)
+00:19 +142 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, dismiss)
+00:19 +143 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: background-limit pause forwards to legacy processing implementations
+00:19 +144 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: foreground resumes a background-limit pause after late settlement
+00:19 +145 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: foreground does not silently resume background_time_limit with unsettled request evidence
+00:19 +146 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: foreground does not silently resume background_unavailable with unsettled request evidence
+00:19 +147 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: HomeShell hidden paused and detached lifecycle does not cancel processing
+00:19 +148 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: background completion survives detached screen recreation and library reload
+00:19 +149 -2: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: preflight and model wait remain visible before first segment
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextContainingWidgetFinder:<Found 2 widgets with text containing 准备整理: [
+            Text("准备整理", inherit: true, color: Color(alpha: 1.0000, red: 0.3725, green: 0.3412,
+blue: 0.2980, colorSpace: ColorSpace.sRGB), size: 13.0, height: 1.4x, dependencies:
+[DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
+            Text("08:39  准备整理", inherit: true, color: Color(alpha: 1.0000, red: 0.3725, green:
+0.3412, blue: 0.2980, colorSpace: ColorSpace.sRGB), size: 12.0, height: 1.5x, dependencies:
+[DefaultSelectionStyle, DefaultTextStyle, MediaQuery]),
+          ]>
+   Which: is too many
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:940:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart line 940
+The test description was:
+  preflight and model wait remain visible before first segment
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:20 +149 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: preflight and model wait remain visible before first segment [E]
+  Test failed. See exception logs above.
+  The test description was: preflight and model wait remain visible before first segment
+  
+00:20 +149 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused card names the unfinished segment and last stage
+00:20 +150 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: automatic retry can be stopped from the book card
+00:20 +151 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: classifier 403 offers a one-book model route and a pause-to-disable action
+00:20 +152 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: Jev gateway consent and allowance stay on one book
+00:20 +153 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: bio rejection offers direct model recheck for this book
+00:20 +154 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: bio rejection offers direct Jev recheck for this book
+00:20 +155 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: completed book can recheck a deferred biography with Jev
+00:20 +156 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: invalid model biography check offers official Jev route
+00:20 +157 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: Jev 401 explains the key and switches this book to model
+00:20 +158 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paid route stays recorded until idle when UI status is stale
+00:21 +159 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: historic anonymous error stays anonymous after adding workspace key
+00:21 +160 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: book budget top-up preserves usage and resumes the same book
+00:21 +161 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: Jev allowance top-up preserves usage and resumes only this book
+00:21 +162 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: missing key and start failures remain visible and retryable
+00:21 +163 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: quality retry is exposed only when requested by durable state
+00:21 +164 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: removal waits for actual settlement even if the drawer closes
+00:21 +165 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: remove refuses an active lease or cancelling status and retains the book
+00:21 +166 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: processing refresh invalidates worlds and mentions while keeping text and notes
+00:21 +167 -3: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: open reader refreshes chapter spoiler verdicts after processing
+00:21 +168 -3: Some tests failed.
+
+Failing tests:
+  /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: page cue selects exact source for multi-angle generation and restores full page cue range
+  /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text
+  /Users/athemeroy/projects/books-build/app/test/processing_test.dart: preflight and model wait remain visible before first segment

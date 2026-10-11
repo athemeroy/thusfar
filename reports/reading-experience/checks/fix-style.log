@@ -1,0 +1,40 @@
+Computing fixes in app...
+Applying fixes...
+
+lib/data/backup.dart
+  curly_braces_in_flow_control_structures - 2 fixes
+
+lib/data/library.dart
+  curly_braces_in_flow_control_structures - 7 fixes
+
+lib/data/reading_activity.dart
+  curly_braces_in_flow_control_structures - 2 fixes
+
+lib/reader/reader_screen.dart
+  curly_braces_in_flow_control_structures - 1 fix
+
+lib/reading/read_aloud.dart
+  curly_braces_in_flow_control_structures - 2 fixes
+
+lib/reading/speech_web.dart
+  curly_braces_in_flow_control_structures - 1 fix
+
+lib/screens/notes_screen.dart
+  curly_braces_in_flow_control_structures - 2 fixes
+
+lib/screens/shelf_screen.dart
+  curly_braces_in_flow_control_structures - 2 fixes
+
+lib/web/web_app.dart
+  curly_braces_in_flow_control_structures - 13 fixes
+
+lib/web/web_notes_center.dart
+  curly_braces_in_flow_control_structures - 2 fixes
+
+lib/web/web_storage.dart
+  curly_braces_in_flow_control_structures - 1 fix
+
+test/notes_test.dart
+  curly_braces_in_flow_control_structures - 1 fix
+
+36 fixes made in 12 files.

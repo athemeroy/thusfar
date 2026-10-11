@@ -1,0 +1,16 @@
+Analyzing app...                                                
+
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/backup.dart:337:5 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/backup.dart:398:11 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/backup.dart:399:11 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/backup.dart:400:11 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/shelf_organization.dart:116:7 • use_null_aware_elements
+   info • Use the null-aware marker '?' rather than a null check via an 'if'. Try using '?' • lib/data/shelf_organization.dart:117:7 • use_null_aware_elements
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/reader/reader_screen.dart:437:56 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/reader/reader_screen.dart:444:56 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block. Try wrapping the statement in a block • lib/reader/reader_screen.dart:563:51 • curly_braces_in_flow_control_structures
+   info • The import of 'package:flutter/foundation.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/widgets.dart'. Try removing the import directive • lib/reading/read_aloud.dart:3:8 • unnecessary_import
+   info • The import of 'dart:typed_data' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/services.dart'. Try removing the import directive • lib/screens/notes_screen.dart:5:8 • unnecessary_import
+   info • Unnecessary braces in a string interpolation. Try removing the braces • lib/sheets/book_sheet.dart:997:34 • unnecessary_brace_in_string_interps
+
+12 issues found. (ran in 3.0s)

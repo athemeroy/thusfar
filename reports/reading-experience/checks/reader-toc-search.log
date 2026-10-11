@@ -1,0 +1,16 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart
+00:00 +0: (setUpAll)
+00:00 +0: title search only matches the rendered safe label
+00:00 +1: ordinal lookup is one based, includes front matter, never clamps
+00:00 +2: search cannot expose hidden future titles through results or counts
+00:01 +3: ordinal jump previews exact chapter and requires existing unread warning
+00:01 +4: invalid ordinals never jump or silently clamp
+00:01 +5: current chapter locator and known chapter jumps preserve source offsets
+00:01 +6: repeated searches reset long-list scroll and cancel pending jumps
+00:01 +7: Chinese composition waits for committed text
+00:01 +8: read boundary and title verdict changes refresh existing search
+00:02 +9: opening and cancelling search keeps directory position and reading location
+00:02 +10: narrow large-text controls and future warning do not overflow
+00:02 +11: narrow drawer survives keyboard, back, close and reopen
+00:03 +12: (tearDownAll)
+00:03 +12: All tests passed!

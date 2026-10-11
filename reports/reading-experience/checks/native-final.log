@@ -1,0 +1,15 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart
+00:00 +0: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:00 +1: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:00 +2: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:00 +3: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:00 +4: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:00 +5: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:01 +6: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:01 +7: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: failed verification exposes error with retry, never a draft
+00:01 +8: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text
+00:01 +9: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text
+00:01 +10: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: page cue selects exact source for multi-angle generation and restores full page cue range
+00:01 +11: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:01 +12: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: closing sheet cancels request and ignores late failure
+00:02 +13: All tests passed!

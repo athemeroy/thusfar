@@ -1,0 +1,21 @@
+{
+  "source": "Original functions.exec / write_stdin stdout receipts, archived verbatim after execution; no test rerun.",
+  "reader-processing-preflight.log": {
+    "session_id": 57718,
+    "stdout_chunk_ids": [
+      "0cc5d6",
+      "b36e6c"
+    ],
+    "exit_code": 0,
+    "command": "flutter --no-version-check test --no-pub test/processing_test.dart --plain-name \"preflight and model wait remain visible before first segment\" --reporter expanded"
+  },
+  "reader-toc-search.log": {
+    "session_id": 16532,
+    "stdout_chunk_ids": [
+      "b078bc",
+      "aa9d68"
+    ],
+    "exit_code": 0,
+    "command": "flutter --no-version-check test --no-pub test/toc_search_test.dart --reporter expanded"
+  }
+}

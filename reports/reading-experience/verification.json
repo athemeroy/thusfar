@@ -1,0 +1,40 @@
+{
+  "build_host": "mini",
+  "version": "2.1.0",
+  "version_code": 72,
+  "package": "com.yedu.zhupi.v2probe",
+  "signer_sha256": "2228582f6dfcccc2988ad53b8026b7be3d652fe661dd06ac95b119a318a29acc",
+  "sha256": "7df818238cbb00e50fb922a5f74d71cf8e08ceb18010c468fea72db9d16c475c",
+  "apk": "yedu-2.1.0-reading72-arm64.apk",
+  "date": "2026-10-11",
+  "baseline": "be19cc35400e02957c9be59935181b204932f63a",
+  "branch": "feat/reading-experience-20261011",
+  "static_analysis": "No issues found",
+  "browser_regressions": {
+    "passed": 52,
+    "method": "49 initial passes plus 3 targeted rerun passes"
+  },
+  "native_visual_checks": {
+    "passed": 14,
+    "method": "10 initial passes plus failing paths rerun; 5 targeted visual passes"
+  },
+  "native_tests": "Targeted reading, spoiler, backup, shelf, selection, speech and activity suites; all observed failures resolved. Logs retain initial failures and targeted reruns without adding run counts together.",
+  "manual_browser": [
+    "TXT file-picker import",
+    "EPUB file-picker import and local illustration",
+    "jump confirmation and cancellation",
+    "bookmark",
+    "typography panel and scroll-mode selection",
+    "create thought",
+    "global notes",
+    "Markdown download content",
+    "create collection",
+    "desktop reload preserves library"
+  ],
+  "unverified": [
+    "Android device installation and speaker output: device executor was disabled",
+    "Live paid model provider requests: no paid calls made"
+  ],
+  "web": "https://yedu-reading.naszqun.com:47443/",
+  "apk_url": "https://yedu-reading.naszqun.com:47443/downloads/yedu-2.1.0-reading72-arm64.apk"
+}
