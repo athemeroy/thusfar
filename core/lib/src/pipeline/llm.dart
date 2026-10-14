@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import '../async_util.dart';
 import '../env.dart';
 import '../errors.dart';
 import '../py/py_json_decode.dart';
@@ -33,10 +34,15 @@ final class TransientLLMError extends LLMError {
   const TransientLLMError(super.message);
 }
 
+/// The connection failed before any HTTP request could be sent.
+final class ConnectionNotSent extends LLMError {
+  const ConnectionNotSent(this.cause) : super('暂时连不上 AI 服务，正在重新连接');
+  final Object cause;
+}
+
 /// The provider may have processed a dispatched request. Never retry implicitly.
 final class UnknownOutcomeLLMError extends LLMError {
-  const UnknownOutcomeLLMError(this.code)
-    : super('模型请求结果无法确认，已暂停；继续前请检查服务商记录，重新请求可能重复计费');
+  const UnknownOutcomeLLMError(this.code) : super('没有收到完整结果，整理已暂停。已完成的内容已保留。');
   final String code;
 }
 
@@ -198,7 +204,9 @@ String? keyFor(String model) {
 
 /// One prepared HTTP request.
 final class ChatRequest {
-  const ChatRequest(this.url, this.headers, this.body);
+  const ChatRequest(this.url, this.headers, this.body, {this.method = 'POST'});
+
+  final String method;
 
   final Uri url;
   final Map<String, String> headers;
@@ -406,6 +414,7 @@ final class IoTransport implements ChatTransport {
     cancellation?.checkpoint();
     final ModelRequestTrace? trace = ModelRequestTrace.current;
     HttpClientRequest? active;
+    bool opened = false;
     bool abandoned = false;
     final void Function()? remove = cancellation?.onCancel(() {
       abandoned = true;
@@ -415,7 +424,10 @@ final class IoTransport implements ChatTransport {
     Future<T> wait<T>(Future<T> operation) =>
         cancellation?.wait(operation) ?? operation;
     try {
-      final Future<HttpClientRequest> opening = _client.postUrl(request.url);
+      final Future<HttpClientRequest> opening = _client.openUrl(
+        request.method,
+        request.url,
+      );
       // postUrl may settle after the deadline/cancel race. Abort that late
       // socket as well; no request may survive to overlap an explicit resume.
       unawaited(
@@ -428,6 +440,9 @@ final class IoTransport implements ChatTransport {
         }, onError: (Object _, StackTrace __) {}),
       );
       final HttpClientRequest req = await wait(opening.timeout(timeout));
+      opened = true;
+      // Result polling must never forward credentials to a redirect target.
+      if (request.method == 'GET') req.followRedirects = false;
       cancellation?.checkpoint();
       request.headers.forEach(req.headers.set);
       trace?.record('send_started');
@@ -438,7 +453,11 @@ final class IoTransport implements ChatTransport {
         resp.statusCode,
         resp.headers.contentType?.toString() ?? '',
         resp.timeout(timeout),
-        headers: <String, String>{if (retry != null) 'Retry-After': retry},
+        headers: <String, String>{
+          if (retry != null) 'Retry-After': retry,
+          for (final String name in ['location', 'preference-applied'])
+            if (resp.headers.value(name) case final String value) name: value,
+        },
       );
     } on Object catch (error) {
       abandoned = true;
@@ -449,6 +468,12 @@ final class IoTransport implements ChatTransport {
         );
       }
       active?.abort();
+      if (!opened &&
+          (error is SocketException ||
+              error is HandshakeException ||
+              error is TimeoutException)) {
+        throw ConnectionNotSent(error);
+      }
       rethrow;
     } finally {
       remove?.call();
@@ -559,12 +584,122 @@ Future<ChatResponse> postRequest(
   } on Object catch (error) {
     trace?.record(
       'transport_error',
-      code: ModelRequestTrace.exceptionCode(error),
+      code: ModelRequestTrace.exceptionCode(
+        error is ConnectionNotSent ? error.cause : error,
+      ),
     );
     abandoned = true;
     if (arrived != null) unawaited(_disposeResponseBody(arrived!.body, trace));
     rethrow;
   }
+}
+
+/// An explicitly accepted asynchronous job survives a dropped client socket.
+/// Only GET is retried; never resubmit an uncertain inference POST.
+Future<Object?> pollRetainedResult(
+  Uri origin,
+  ChatResponse accepted,
+  Map<String, String> headers,
+  ModelRequestTrace? trace,
+) async {
+  final String? location = accepted.headers['location'];
+  final Uri resultUrl = origin.resolve(location ?? '');
+  unawaited(discardChatResponse(accepted));
+  if (accepted.headers['preference-applied'] != 'respond-async' ||
+      location == null ||
+      location.isEmpty ||
+      resultUrl.scheme != origin.scheme ||
+      resultUrl.host != origin.host ||
+      resultUrl.port != origin.port ||
+      resultUrl.userInfo.isNotEmpty ||
+      resultUrl.fragment.isNotEmpty) {
+    throw const LLMError('AI 服务没有返回有效的结果地址');
+  }
+  final RunCancellation? cancellation = RunCancellation.current;
+  Future<T> wait<T>(Future<T> future) => cancellation?.wait(future) ?? future;
+  // Android can suspend every thread while an accepted server job completes.
+  // Charge scheduled polling and bounded reads, not that suspended wall time.
+  // Each read has its own deadline; retries can only fetch the accepted job.
+  const Duration interval = Duration(seconds: 2);
+  const Duration readLimit = Duration(seconds: 15);
+  Duration budget = const Duration(hours: 2);
+  Duration retryDelay = interval;
+  while (budget > Duration.zero) {
+    final Duration delay = retryDelay < budget ? retryDelay : budget;
+    await wait(sleep(delay));
+    budget -= delay;
+    if (budget <= Duration.zero) break;
+    retryDelay = Duration(seconds: math.min(60, retryDelay.inSeconds * 2));
+    cancellation?.checkpoint();
+    final Stopwatch readClock = Stopwatch()..start();
+    Duration readRemaining() {
+      final Duration remaining = readLimit - readClock.elapsed;
+      if (remaining <= Duration.zero) {
+        throw TimeoutException('读取保存结果超时');
+      }
+      return remaining;
+    }
+
+    try {
+      final ChatResponse response = await wait(
+        postRequest(
+          ChatRequest(
+            resultUrl,
+            <String, String>{
+              'Accept': 'application/json',
+              if (headers['Authorization'] case final String key)
+                'Authorization': key,
+            },
+            '',
+            method: 'GET',
+          ),
+          readLimit,
+          trace: trace,
+        ),
+      );
+      if (response.status == 202) {
+        retryDelay = interval;
+        unawaited(discardChatResponse(response));
+        continue;
+      }
+      if (response.status == 404 ||
+          response.status == 408 ||
+          response.status == 429 ||
+          response.status >= 500) {
+        unawaited(discardChatResponse(response));
+        continue;
+      }
+      if (response.status != 200) {
+        unawaited(discardChatResponse(response));
+        throw LLMError('读取保存的结果失败：HTTP ${response.status}');
+      }
+      final List<int> bytes = [];
+      final StreamIterator<List<int>> chunks = StreamIterator(response.body);
+      try {
+        while (await wait(chunks.moveNext().timeout(readRemaining()))) {
+          bytes.addAll(chunks.current);
+          if (bytes.length > 16 * 1024 * 1024) {
+            throw const LLMError('保存的结果超过大小上限');
+          }
+        }
+      } finally {
+        unawaited(chunks.cancel());
+      }
+      return jsonDecode(utf8.decode(bytes));
+    } on ConnectionNotSent {
+      continue;
+    } on IOException {
+      // The server retains the result; re-reading it creates no new inference.
+      continue;
+    } on TimeoutException {
+      continue;
+    } finally {
+      // A timer can fire late after suspension. Count at most this read's
+      // advertised deadline; the next GET must get a chance to recover.
+      budget -= readClock.elapsed > readLimit ? readLimit : readClock.elapsed;
+    }
+  }
+  throw TimeoutException('等待保存的结果超过两小时');
 }
 
 /// Injected wait for retries; tests make it instant.
@@ -586,6 +721,7 @@ double stallTimeout(String model) {
 bool transientFailure(Object error) {
   if (error is UnknownOutcomeLLMError) return false;
   if (error is DeadlineExceeded ||
+      error is ConnectionNotSent ||
       error is TransientLLMError ||
       error is TimeoutException ||
       error is SocketException ||
@@ -613,7 +749,38 @@ final class ChatResult {
 }
 
 /// Streamed chat completion in any supported protocol (`chat`).
+final Semaphore _bookModelSlot = Semaphore(1);
+
 Future<ChatResult> chat(
+  String fullModel,
+  List<Map<String, String>> messages, {
+  int maxTokens = 8000,
+  double temperature = 0.2,
+  double? timeout,
+  int? retries,
+  String? keyName,
+  void Function(String partial)? onText,
+  ChatEndpoint? endpoint,
+}) {
+  Future<ChatResult> request() => _chat(
+    fullModel,
+    messages,
+    maxTokens: maxTokens,
+    temperature: temperature,
+    timeout: timeout,
+    retries: retries,
+    keyName: keyName,
+    onText: onText,
+    endpoint: endpoint,
+  );
+  if (ModelRequestScope.current != null &&
+      environ['LLM_MAX_CONCURRENT'] == '1') {
+    return _bookModelSlot.run(request);
+  }
+  return request();
+}
+
+Future<ChatResult> _chat(
   String fullModel,
   List<Map<String, String>> messages, {
   int maxTokens = 8000,
@@ -654,7 +821,7 @@ Future<ChatResult> chat(
     ModelRequestReceipt? receipt;
     bool responseSettled = false;
     try {
-      final ChatRequest req = buildRequest(
+      ChatRequest req = buildRequest(
         protocol,
         model,
         messages,
@@ -665,9 +832,11 @@ Future<ChatResult> chat(
         baseUrl: baseUrl,
       );
       final Stopwatch clock = Stopwatch()..start();
+      final Stopwatch deadline = Stopwatch()..start();
+      bool retained = false;
       Duration remaining() {
         final int milliseconds =
-            (wall * 1000).round() - clock.elapsedMilliseconds;
+            (wall * 1000).round() - deadline.elapsedMilliseconds;
         if (milliseconds <= 0) {
           throw TimeoutException('模型请求超过 ${wall.round()} 秒总时限');
         }
@@ -676,7 +845,15 @@ Future<ChatResult> chat(
 
       double? first;
       receipt = ModelRequestScope.current?.begin();
-      final ChatResponse resp = await waitFor(
+      // Only book processing asks for retained results. Interactive chat and
+      // ordinary providers retain their normal streaming behaviour.
+      if (receipt != null) {
+        req = ChatRequest(req.url, {
+          ...req.headers,
+          'Prefer': 'respond-async',
+        }, req.body);
+      }
+      ChatResponse resp = await waitFor(
         postRequest(
           req,
           Duration(
@@ -688,6 +865,26 @@ Future<ChatResult> chat(
           trace: receipt?.trace,
         ).timeout(remaining()),
       );
+      if (receipt != null && resp.status == 202) {
+        retained = true;
+        final Object? result = await waitFor(
+          pollRetainedResult(req.url, resp, req.headers, receipt.trace),
+        );
+        // This is now a complete, retained reply. A wall timer left over from
+        // dispatch must not discard it or race a still-running polling future.
+        deadline.reset();
+        if (result is! Map<String, Object?> ||
+            result['status'] is! int ||
+            result['content_type'] is! String ||
+            result['body'] is! String) {
+          throw const UnknownOutcomeLLMError('response_interrupted');
+        }
+        resp = ChatResponse(
+          result['status']! as int,
+          result['content_type']! as String,
+          Stream.value(utf8.encode(result['body']! as String)),
+        );
+      }
       if (resp.status >= 400) {
         if (!const <int>{
           400,
@@ -813,7 +1010,7 @@ Future<ChatResult> chat(
         '_secs': (secs * 100).round() / 100,
         '_ttft': ((first ?? secs) * 100).round() / 100,
       };
-      if (adaptive) {
+      if (adaptive && !retained) {
         final List<double> seen = _replySeconds.putIfAbsent(
           fullModel,
           () => <double>[],
@@ -831,6 +1028,9 @@ Future<ChatResult> chat(
       throw f.error;
     } on DeadlineExceeded catch (e) {
       throw DeadlineExceeded(redactSecrets(e.message, <String>[key]));
+    } on ConnectionNotSent catch (e) {
+      receipt?.rejected();
+      last = e;
     } on LLMError catch (e) {
       if (!responseSettled) {
         receipt?.unknown('provider_outcome_unknown');

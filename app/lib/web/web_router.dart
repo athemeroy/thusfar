@@ -215,9 +215,9 @@ class _LocalBookRouteState extends State<_LocalBookRoute> {
         _book = book;
         _reading = reading;
       });
-    } on Object catch (error) {
+    } on Object {
       if (mounted && source == widget.library) {
-        setState(() => _error = '$error');
+        setState(() => _error = '暂时无法读取书库，请检查浏览器剩余空间后重试。');
       }
     }
   }

@@ -93,9 +93,9 @@ class _WebShelfState extends State<WebShelf> {
       }
       _library = library;
       await _refresh();
-    } on Object catch (error) {
+    } on Object {
       if (mounted && source == widget.library) {
-        setState(() => _error = '$error');
+        setState(() => _error = '暂时无法读取书库，请检查浏览器剩余空间后重试。');
       }
     }
   }
@@ -207,8 +207,8 @@ class _WebShelfState extends State<WebShelf> {
             content: SingleChildScrollView(
               child: Text(
                 '${archive.books.map((bytes) => '• ${BackupSummary.read(bytes).title}').join('\n')}\n\n这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
-                '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
-                '已有书籍保留此浏览器的逐书整理和付费路由，继续前请核对。'
+                '服务密钥需要重新填写，请妥善保管备份。'
+                '已有书籍会保留当前的整理和付费设置。'
                 '是否同时使用备份里的阅读清单、排版和模型设置？',
               ),
             ),
@@ -274,7 +274,7 @@ class _WebShelfState extends State<WebShelf> {
       if (_importedBook == null) {
         _message('已导入到此浏览器的本地书库');
       }
-    } on Object catch (error) {
+    } on Object {
       if (zipRestoreStarted) {
         try {
           await _refresh();
@@ -282,7 +282,7 @@ class _WebShelfState extends State<WebShelf> {
           // The original restore error remains the actionable message.
         }
       }
-      _message('导入失败：$error');
+      _message('无法导入，请检查文件是否完整及浏览器剩余空间。');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -294,9 +294,9 @@ class _WebShelfState extends State<WebShelf> {
     setState(() => _busy = true);
     try {
       await library.exportLibraryZip();
-      _message('已下载整个书库 ZIP；含书籍、摘记与设置，独立 API 密钥未包含，请妥善保管。');
-    } on Object catch (error) {
-      _message('导出书库失败：$error');
+      _message('书库备份已下载。服务密钥需要重新填写，请妥善保管备份。');
+    } on Object {
+      _message('书库未能导出，请检查浏览器剩余空间后重试。');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -328,8 +328,8 @@ class _WebShelfState extends State<WebShelf> {
         ),
       );
       await _refresh();
-    } on Object catch (error) {
-      _message('打开失败：$error');
+    } on Object {
+      _message('暂时无法打开这本书，请重试。');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -356,8 +356,8 @@ class _WebShelfState extends State<WebShelf> {
         ),
       );
       await _refresh();
-    } on Object catch (error) {
-      _message('打开整理失败：$error');
+    } on Object {
+      _message('暂时无法打开整理页面，请重试。');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -375,8 +375,8 @@ class _WebShelfState extends State<WebShelf> {
         ),
       );
       await _refresh();
-    } on Object catch (error) {
-      _message('打开 WebDAV 失败：$error');
+    } on Object {
+      _message('暂时无法打开云端备份，请重试。');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -393,8 +393,8 @@ class _WebShelfState extends State<WebShelf> {
         ),
       );
       await _refresh();
-    } on Object catch (error) {
-      _message('打开恢复中心失败：$error');
+    } on Object {
+      _message('暂时无法打开恢复记录，请重试。');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -446,8 +446,8 @@ class _WebShelfState extends State<WebShelf> {
     } else if (choice == 'export') {
       try {
         await library.exportBackup(book.id);
-      } on Object catch (error) {
-        _message('导出失败：$error');
+      } on Object {
+        _message('未能导出，请检查浏览器剩余空间后重试。');
       }
     } else if (choice == 'remove' && mounted) {
       final bool? confirmed = await showDialog<bool>(
@@ -474,8 +474,8 @@ class _WebShelfState extends State<WebShelf> {
           if (_importedBook?.id == book.id) _importedBook = null;
           await _refresh();
           _message('已移到回收站，书籍和阅读记录可恢复');
-        } on Object catch (error) {
-          _message('未能移到回收站：$error');
+        } on Object {
+          _message('未能移到回收站，请重试。');
         } finally {
           if (mounted) setState(() => _busy = false);
         }
@@ -588,7 +588,7 @@ class _WebShelfState extends State<WebShelf> {
                               onPressed: _busy || _library == null
                                   ? null
                                   : _openWebDav,
-                              tooltip: 'WebDAV 快照',
+                              tooltip: '云端备份',
                               icon: const Icon(Icons.cloud_sync_outlined),
                             ),
                           ],
@@ -667,7 +667,7 @@ class _WebShelfState extends State<WebShelf> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            '暂时无法打开本地书库：$_error',
+                            '暂时无法打开书库，请重试。',
                             style: TextStyle(color: t.danger),
                           ),
                           const SizedBox(height: 12),
@@ -711,7 +711,7 @@ class _WebShelfState extends State<WebShelf> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                '导入 TXT 或 EPUB，文件不会上传到 GitHub；书库保存在当前浏览器。只有你主动整理时，相关正文才会发给选定的模型服务商。',
+                                '导入 TXT 或 EPUB，即可开始阅读。书籍保存在当前浏览器；使用 AI 时，相关原文会发送给你选择的服务。',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: t.ink2, height: 1.6),
                               ),

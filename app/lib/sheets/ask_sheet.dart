@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -213,7 +214,7 @@ class _AskPageState extends State<AskPage> {
     setState(() {
       _stopping = true;
       if (_history.isNotEmpty && _history.last.answer == null) {
-        _history.last.error = '已停止显示回答。等待当前连接结束后可发送下一问；已发生的费用可能无法取消。';
+        _history.last.error = '正在停止回答，稍后可发送下一问。已产生的费用可能无法退回。';
       }
     });
   }
@@ -331,7 +332,12 @@ class _AskPageState extends State<AskPage> {
       _showLatest();
     } on Object catch (e) {
       if (!mounted || generation != _generation) return;
-      setState(() => entry.error = llm.explain(e) ?? '这次没能完成回答，请稍后重试。');
+      setState(
+        () => entry.error = readerMessage(
+          llm.explain(e),
+          fallback: '这次没能完成回答，请检查网络和 AI 设置后重试。',
+        ),
+      );
       _showLatest();
     } finally {
       if (mounted && generation == _generation) {
@@ -361,7 +367,7 @@ class _AskPageState extends State<AskPage> {
     final int page = widget.link.pageNo(_cutoff > 0 ? _cutoff - 1 : 0);
     return SheetPage(
       title: '问问这本书',
-      tag: '只用前 $page 页 · 最近3轮追问',
+      tag: '只参考前 $page 页',
       slivers: <Widget>[
         if (_quoteVisible && widget.quote != null)
           SliverToBoxAdapter(
@@ -465,7 +471,7 @@ class _AskPageState extends State<AskPage> {
                     onSubmitted: (_) => _submit(),
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: _busy ? '可以先写下一问，连接结束后发送…' : '问问已经读过的内容…',
+                      hintText: _busy ? '可以先写下一问…' : '问问已经读过的内容…',
                       filled: true,
                       fillColor: t.paper,
                       border: OutlineInputBorder(
@@ -490,7 +496,7 @@ class _AskPageState extends State<AskPage> {
                 IconButton.filled(
                   key: const ValueKey<String>('ask-send'),
                   tooltip: _busy
-                      ? (_stopping ? '正在结束连接' : '停止当前回答')
+                      ? (_stopping ? '正在停止回答' : '停止当前回答')
                       : '发送问题（可能收费）',
                   onPressed: _busy
                       ? (_stopping ? null : _stop)

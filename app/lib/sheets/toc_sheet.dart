@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -37,6 +38,8 @@ class TocPage extends StatefulWidget {
 class _TocPageState extends State<TocPage> {
   late int tab = widget.tab;
   bool showLater = false;
+  late bool _positionToc = widget.tab == 0;
+  final GlobalKey _titleNoticeKey = GlobalKey();
   int? confirm;
   final TextEditingController pageInput = TextEditingController();
 
@@ -51,51 +54,82 @@ class _TocPageState extends State<TocPage> {
     final ReaderLink link = widget.link;
     return ListenableBuilder(
       listenable: Listenable.merge(<Listenable>[link.c, link.c.book.notes]),
-      builder: (BuildContext context, _) => SheetPage(
-        title: link.c.book.entry.title,
-        headerExtraHeight:
-            Segmented(
-              labels: const <String>['目录', '书签', '摘记'],
-              index: tab,
-              onChanged: (_) {},
-            ).heightForWidth(context, MediaQuery.sizeOf(context).width) +
-            (tab == 0
-                ? 10 +
-                      math.max(
-                        44,
-                        MediaQuery.textScalerOf(context).scale(16) * 1.5 + 10,
-                      )
-                : 0),
-        headerExtra: Column(
-          children: <Widget>[
-            Segmented(
-              labels: const <String>['目录', '书签', '摘记'],
-              index: tab,
-              onChanged: (int i) => setState(() => tab = i),
-            ),
-            if (tab == 0) _jumpBox(context),
-          ],
-        ),
-        slivers: <Widget>[
-          if (tab != 0 && link.c.book.notes.error != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  link.c.book.notes.error!,
-                  style: TextStyle(color: context.tk.danger),
+      builder: (BuildContext context, _) {
+        if (tab == 0 && _positionToc) {
+          _positionToc = false;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || tab != 0) return;
+            final ScrollController scroll = SheetScope.of(context).scroll;
+            if (!scroll.hasClients) return;
+            final RenderBox? notice =
+                _titleNoticeKey.currentContext?.findRenderObject()
+                    as RenderBox?;
+            final double offset =
+                link.c.chapter * _chapterRowHeight(context) +
+                (notice?.size.height ?? 0);
+            scroll.jumpTo(offset.clamp(0, scroll.position.maxScrollExtent));
+          });
+        }
+        return SheetPage(
+          title: link.c.book.entry.title,
+          headerExtraHeight:
+              Segmented(
+                labels: const <String>['目录', '书签', '摘记'],
+                index: tab,
+                onChanged: (_) {},
+              ).heightForWidth(context, MediaQuery.sizeOf(context).width) +
+              (tab == 0
+                  ? 10 +
+                        math.max(
+                          44,
+                          MediaQuery.textScalerOf(context).scale(16) * 1.5 + 10,
+                        )
+                  : 0),
+          headerExtra: Column(
+            children: <Widget>[
+              Segmented(
+                labels: const <String>['目录', '书签', '摘记'],
+                index: tab,
+                onChanged: (int i) {
+                  if (i == tab) return;
+                  SheetScope.of(context).scroll.jumpTo(0);
+                  setState(() {
+                    tab = i;
+                    confirm = null;
+                    _positionToc = i == 0;
+                  });
+                },
+              ),
+              if (tab == 0) _jumpBox(context),
+            ],
+          ),
+          slivers: <Widget>[
+            if (tab != 0 && link.c.book.notes.error != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    readerMessage(
+                      link.c.book.notes.error,
+                      fallback: '暂时无法读取摘记，请重新打开后重试。',
+                    ),
+                    style: TextStyle(color: context.tk.danger),
+                  ),
                 ),
               ),
-            ),
-          ...switch (tab) {
-            0 => _toc(context),
-            1 => _bookmarks(context),
-            _ => _notes(context),
-          },
-        ],
-      ),
+            ...switch (tab) {
+              0 => _toc(context),
+              1 => _bookmarks(context),
+              _ => _notes(context),
+            },
+          ],
+        );
+      },
     );
   }
+
+  double _chapterRowHeight(BuildContext context) =>
+      math.max(52, MediaQuery.textScalerOf(context).scale(15) * 1.4 * 2 + 16);
 
   Widget _jumpBox(BuildContext context) {
     final Tokens t = context.tk;
@@ -176,6 +210,7 @@ class _TocPageState extends State<TocPage> {
       if (titlesPending)
         SliverToBoxAdapter(
           child: Container(
+            key: _titleNoticeKey,
             margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -219,6 +254,7 @@ class _TocPageState extends State<TocPage> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 15,
+              height: 1.4,
               color: current ? t.zhu : (isRead ? t.ink : t.ink2),
               fontWeight: current ? FontWeight.w600 : FontWeight.w400,
             ),
@@ -235,7 +271,7 @@ class _TocPageState extends State<TocPage> {
                   }
                 },
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 52),
+                  height: _chapterRowHeight(context),
                   padding: EdgeInsets.fromLTRB(20.0 + 14 * c.depth, 8, 20, 8),
                   child: Row(
                     children: <Widget>[
@@ -368,11 +404,11 @@ class _TocPageState extends State<TocPage> {
                           try {
                             current.restore(receipt);
                             if (context.mounted) notes.refresh();
-                          } on Object catch (e) {
+                          } on Object {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(SnackBar(content: Text('$e')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('操作未完成，请稍后重试。')),
+                              );
                             }
                           } finally {
                             current.dispose();
@@ -382,10 +418,10 @@ class _TocPageState extends State<TocPage> {
                     ),
                   );
                   return true;
-                } on Object catch (e) {
+                } on Object {
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('$e')));
+                  ).showSnackBar(SnackBar(content: Text('操作未完成，请稍后重试。')));
                   return false;
                 }
               },
@@ -462,9 +498,9 @@ class _TocPageState extends State<TocPage> {
                   Clipboard.setData(
                     ClipboardData(text: notesMarkdown(link.c.book)),
                   );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('摘记已复制为 Markdown')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('摘记已复制')));
                 },
                 child: Text('导出', style: TextStyle(color: t.qing)),
               ),

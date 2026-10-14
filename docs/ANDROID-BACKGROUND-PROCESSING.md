@@ -1,5 +1,45 @@
 # Android 后台整理：运行链与验收
 
+## Find N5：恢复后先超时、后取得保存结果
+
+23:54 导出的复现记录中，系统省电豁免已开启，用户也确认允许后台活动。
+23:41:44 切后台后，原生和 worker 心跳再次长时间中断。23:51:00 恢复执行时，
+两次正文请求先被外层总时限标为 unknown/timeout，书籍随即暂停；约 0.3 秒后，
+仍未被取消的取结果任务却成功读取了服务器已保留的两个完整回复。
+省电设置没有解决目标设备的执行停顿，不能把本次问题归因为未授权。
+
+已明确修复：接受异步任务后，不再用实时流式请求的墙钟超时包住整段轮询。
+轮询仍有独立、有限的等待预算，只计计划等待和每次最多 15 秒的读取；
+一次读取的头和正文共享时限，长时间停止调度不会耗尽所有后续读取机会。
+完整保存结果返回后重新开始解析时限，不将手机暂停时间用于学习模型速度。
+普通流式请求仍保留总时限；未知的首次 POST 不重发，手动暂停仍终止读取。
+
+新增回归：已接收任务的结果在原流式总时限之后返回，仍能提交且只发一次 POST。
+保存结果、System One 读取、普通流式超时及取消相关 11 项检查通过。
+这解决恢复时误暂停，尚不能证明 Find N5 在后台持续执行；后者需目标手机的系统记录。
+
+## Find N5：手机后台设置入口
+
+2026-10-05 的复现中，原生线程和 Dart worker 都在约 23:01–23:19
+停止留下心跳，回到前台后恢复。elapsed 与 uptime 同增约 18 分钟，
+不能把这段时间归因于设备深睡眠，也尚未定位到某个厂商组件。
+当时省电豁免为 false；前台服务存在不能证明任务仍在执行。
+
+设置页和整理进度页现有“切到后台继续整理”入口。用户主动点击后，
+可以请求系统电池优化豁免、打开本应用的耗电管理和通知设置。
+从系统设置返回会读取实际授权状态；取消授权不会显示成功。
+厂商独立的后台开关无法完整读取，因此即使系统豁免已开，也保留手动检查说明。
+入口不会暂停、重新提交或接管已有整理任务。
+
+用户选择继续由手机整理，并自行操作 Find N5。安装后先允许后台运行，
+在耗电管理中允许后台活动，再继续原书、切换应用或锁屏 20 分钟。
+对比已完成段数及心跳是否持续；本次没有把目标设备验证标记为通过。
+必要自动检查仅覆盖拒绝授权、返回后读取实际授权及设置跳转；APK 在 MINI 构建。
+
+同次复现的最后一次模型失败是个人服务器的另一问题：Decider 常驻后，
+Qwen 空闲卸载再启动时被旧显存门槛拒绝。服务器配置已调整，实际冷启动
+请求成功。此项无需更换 APK，也不能解决手机停止安排下一步的问题。
+
 ## 这次修复针对什么
 
 已知用户现象是前台及服务器长回复正常，切后台后服务器记录客户端断开。该记录是连接结束的结果，单凭它不能区分 Activity/engine 销毁、请求取消或超时、设备睡眠、Doze、网络变化、厂商限制。
@@ -151,3 +191,122 @@ Use one reproduction on the affected device, export immediately after the error
 without manually resuming the book, and compare the same request's events. JVM
 and offline tests verify bounded/redacted evidence and resource cleanup only;
 they cannot establish device-background execution or a provider-side outcome.
+
+## Resuming an accepted System One check
+
+Find N5 diagnostics showed successful foreground-service admission, delayed native
+and Dart samples after backgrounding, and `http_exception` before receiving the
+last two replies. The matching NAS window contained two `/v1/systemone` 499s.
+These observations do not establish which device/system component cut the socket.
+
+System One requests now offer `Prefer: respond-async`. Ordinary 200 responses keep
+the existing path. A service may explicitly accept with 202,
+`Preference-Applied: respond-async`, and a same-origin `Location`. The client then
+reads that result with GET. Dropped reads, temporary server errors and partial
+responses retry GET for up to ten minutes; they do not replay inference POSTs.
+Explicit pause still cancels client work. Initial acceptance lost before headers,
+process death and expired server results retain the existing uncertain-outcome
+handling. Book-generation support is described below; ordinary providers keep their existing streaming path.
+
+The personal service implementation is in `tools/systemone/`: it computes accepted
+checks independently of the HTTP connection and retains the latest 256 completed
+results on disk. Identical authenticated inputs and model revision share one job.
+Polling requires authentication, never starts inference and never recreates a lost
+job. No request text is written to this result store. Existing synchronous clients
+remain supported. This protocol is optional, not tied to a model name in the app.
+
+When the background-session observer itself has not run for over 60 seconds, it
+allows one heartbeat interval for delayed worker evidence before retiring a stale
+worker. That grace neither fabricates a heartbeat nor renews the CPU lease.
+
+Focused validation: lost/partial polling replies recover with one inference POST;
+cross-origin result URLs are rejected; initial POST failure and expired jobs never
+resubmit inference; explicit pause stops polling; completed server results survive
+a service restart; observer suspension does not immediately cancel healthy work,
+and truly missing workers still expire. Device confirmation remains necessary.
+
+## Retaining book-generation results
+
+The next Find N5 reproduction advanced to 24/603 segments and completed a
+chapter biography. Its System One polls returned 202 then 200 successfully.
+The failing request was a Qwen stream started at 22:40:01: it had HTTP 200 and
+329,887 received bytes before `http_exception` at 22:41:05, just as the activity
+resumed. It had no explicit user cancellation. This is a different path from
+the earlier pre-connection failure and the synchronous System One requests.
+
+Book-processing chat now offers the same optional asynchronous protocol.
+The personal NAS relay in `tools/resumable_chat` completes the original Qwen
+request independently of the phone, saves the entire response, and returns it
+in a status/content-type/body envelope. The shared result poller retries reads
+of that saved response, including interrupted downloads. The client parses the
+original SSE only after the entire envelope is available, preserving completion
+checks and avoiding partial text or duplicate generation. Interactive chat does
+not opt in. Other providers can ignore the preference and return their usual
+stream. Neither the model nor book extraction/biography validation changed.
+
+Validation includes a local upstream continuing after the original connection
+closes, a truncated result read, retrieval after restart, authentication, and
+exactly one upstream generation. A real Dart client through NAS TLS to Qwen
+recovered from an injected first GET failure: one inference POST, two result
+GETs, nonempty completed response, no uncertain request left. Find N5 hardware
+confirmation remains necessary. Initial lost acceptance, process death, expired
+results and a broken NAS-to-Qwen connection retain explicit recovery semantics.
+
+## Find N5 observation on 2026-10-06
+
+APK 2.0.14 (66), built from `85e9095` on MINI with the existing release signature,
+was installed over version 64 without clearing reader data. Existing processing
+was resumed. With the app in the background, notification progress increased
+from 29 to 31 of 603 segments. While charging with the screen locked, processing
+continued. After unplugging, screen-off progress increased from 38 to 44.
+
+For about three minutes of the unplugged test, both ADB connections (explicit
+endpoint and mDNS alias) were disconnected and zero connected devices were
+confirmed on the build host. Progress increased from 40 to 44 during that
+interval. Reconnecting did not foreground the app. Retrieved native and worker
+heartbeats covered the interval, with a maximum observed worker gap of 15,032 ms.
+The final system snapshot confirmed screen off, no connected power source, and
+foreground-service process state. The temporary five-minute display timeout was
+restored to the user's original 30 seconds and read back.
+
+This short run did not reproduce the earlier whole-process suspension. It does
+not establish that long unattended operation, other network conditions, or the
+previous OEM interruption are fixed. No new app behavior change was made based
+on this non-reproduction. Raw system logs stay in the private NAS report; only
+sanitized timing and state are recorded here.
+
+### 2026-10-06：长时间断网后的结果恢复
+
+已受理的模型结果读取由十分钟改为两小时的运行时间预算。临时网络错误和 408/429/5xx 后按 2、4、8、16、32、60 秒退避，最长一分钟；正常的 202 等待仍每两秒读取，恢复后重置退避。仍只重读同一结果，不重发推理请求。手动停止继续生效。
+
+Find N5 的另一段中断与 Clash 开启同时出现。将页读加入排除名单并正常退出保存后，系统 VPN 的 UID 范围确认排除页读。VPN 开启、锁屏时进度 58 → 59，后续读数 65，原息屏时间 30 秒已恢复。此结果不证明所有 OPPO 后台限制已消除。后续新包验证改用用户指定的小米。
+
+第 24 章截图中的人物已识别，完整小传缺失。该书小传批次在内部章序 19、25 等位置生成，不是逐章发布；后面的版本不会显示在第 24 章。10:11 导出的本机诊断确认这些批次完成，第 25 批候选 9、通过 6。诊断不含姓名，不能据此断言截图人物是哪一个候选。空白小传提示不再声称继续整理就一定能补齐这一页的小传。
+
+### 2026-10-06：回家后的第 170 段暂停
+
+11:34 导出诊断中，进度为 169/603，第 170 段请求先收到多个 202，11:26:02 的结果 GET 收到 404，触发 provider_outcome_unknown 并暂停。此前原生和工作线程心跳连续，工作线程最大间隔 15,023 ms。NAS 对应结果在 11:26:11 保存成功，状态 200；服务日志中没有手机最后那次 404。无法据此确定是哪一层入口返回了 404，但不能称为 Qwen 停算或服务器丢失结果。
+
+已受理结果读取将 404 同临时错误一起退避，只重读同一结果。明确过期的 410 和身份错误仍保留失败处理。手机正文并发调整为 1，且工作 isolate 的模型请求共用单个槽位，覆盖正文、提要和小传的不同队列；上一份结果读取结束后才提交下一份推理。独立合成传输测试验证 404 后恢复及请求不重叠，没有调用正式 Qwen。
+
+### 2026-10-06：68 版锁屏后抓到 OPPO Hans 冻结
+
+自动连接发现 Find N5 的新端口并通过已有设备身份检查，无需重新配对。覆盖安装 68 成功，169/603 段、人物资料和阅读位置保留。恢复整理后锁屏，11:42:12.420 和 11:42:20.285 的系统日志明确记录 OplusHansManager freeze，场景为 StrictMode-3/LcdOff。11:42:18 的通知 CPU 锁短暂解冻，11:42:19 工作线程发出一次心跳，随后再次冻结。NAS 11:42:59 已保存模型结果，手机仍停在 169。
+
+ActivityManager 的 isFrozen=false 和 isForeground=true 不能排除 OPPO 厂商冻结；dumpsys power 显示 CPU 锁被放入 OS 代理，真实 Wake Locks 为 0。该次设备正在充电，标准 Doze 状态为 ACTIVE。APK 更新和重试测试通过，但锁屏持续整理测试尚未通过，不能报告后台停顿已修复。继续检查厂商耗电管理。原始记录保留在私人 NAS，不发布书籍、设备标识或网络地址。
+
+### 2026-10-06：开启页读启动权限后的锁屏恢复
+
+通过手机实际设置确认，“完全允许后台行为”和标准 Doze 用户豁免已经开启。最近任务锁定后仍在 11:49:36 被 Hans 冻结；单独关闭“睡眠待机优化”后仍在 11:54:13 被冻结。这些设置不能解释为已解决。本轮将睡眠待机优化恢复为原来的开启状态。
+
+设置 → 应用中的“自启动”和“关联启动”原来均未允许页读。仅打开页读的这两个开关，退出并重新进入设置，分别确认 checked=true，其他应用保持原设置。APK 产品代码仍为 3604f78 / 版本 68，没有为此重打 APK。
+
+13:11:38 开始新的锁屏测试。进度从打开页读时的 265/603 推进至 266、268、271；连续息屏观察约 274 秒。中间断开这台手机的全部 ADB 连接，断开与重连前设备列表均为零连接，该间隔约 148 秒，进度仍从 268 推进至 271。重新连接未打开页读，系统仍为 Asleep，原生和工作线程心跳连续，已收集记录中的工作线程最大间隔为 15,003 ms，没有再记录页读 Hans 冻结。自动息屏恢复并读回 30 秒，整理保持运行。
+
+该结果证明本轮启动权限调整后，充电状态的短时锁屏路径已恢复。拔电后的长期运行尚未在这些新设置下验证，不能由此承诺所有 OPPO 后台限制永久消失。原始记录仍只保留在私人 NAS；文档不包含正文、密钥、请求地址或设备标识。
+
+### 2026-10-06：启动权限调整后，拔电锁屏验证
+
+用户拔电后，13:32:38 读取系统状态确认 mIsPowered=false、mPlugType=0，电量 100%，原进度 294/603。返回桌面并锁屏，确认 Asleep，然后断开这台手机的全部 ADB 连接。约 184 秒后，重连前设备列表仍为零连接；重新连接没有打开页读，系统仍 Asleep、未充电，进度已推进至 299/603。保留的日志包含各 9 次原生和工作线程心跳，工作线程最大间隔 15,000 ms，没有记录新的页读 Hans 冻结。原息屏时间 30 秒读回确认，整理保持运行，验证结束后调试连接再次断开。
+
+该次验证补齐拔电后的短时锁屏使用路径，没有重打 APK，也没有重复模型回归或向正式 Qwen 发测试推理请求。现有原书任务正常处理。三分钟观察不能替代整夜运行验证。原始系统记录保留在私人 NAS，仅记录脱敏状态和计数。

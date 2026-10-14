@@ -289,16 +289,11 @@ extension RunnerSupport on Runner {
     try {
       final (Object? data, Json u) = await backend.generate(
         model,
-        [
-          {
-            'role': 'user',
-            'content': _fmt(prompts.relationWords, {
+        prompts.relationWords.messages({
               'title': book['title'],
               'text': _cut(text, 12000),
               'pairs': rows,
             }),
-          },
-        ],
         jsonOutput: true,
         maxTokens: 600 * lang.scale(book),
         temperature: 0.2,

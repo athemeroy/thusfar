@@ -227,7 +227,7 @@ class WebDavClient {
     } on TimeoutException {
       throw const WebDavException('连接 WebDAV 超时。');
     } on HandshakeException {
-      throw const WebDavException('WebDAV HTTPS 证书验证失败。');
+      throw const WebDavException('无法安全连接云端，请检查服务地址。');
     } on SocketException {
       throw const WebDavException('无法连接 WebDAV，请检查地址和网络。');
     } on HttpException {
@@ -246,14 +246,14 @@ class WebDavClient {
       .replaceAll('&apos;', "'");
 
   static String _statusMessage(int code, String action) {
-    if (code == 401 || code == 403) return 'WebDAV 登录或访问权限被拒绝（HTTP $code）。';
-    if (code == 404) return 'WebDAV 文件夹或备份不存在（HTTP 404）。';
+    if (code == 401 || code == 403) return 'WebDAV 登录或访问权限被拒绝。';
+    if (code == 404) return 'WebDAV 文件夹或备份不存在。';
     if (code == 405 || code == 501) {
-      return 'WebDAV 服务不支持$action所需的方法（HTTP $code）。';
+      return '云端服务暂时无法完成$action。';
     }
-    if (code == 409) return 'WebDAV 文件夹不存在或无法写入（HTTP 409）。';
-    if (code == 412) return '远端已有同名快照，未覆盖（HTTP 412）。';
-    if (code == 507) return 'WebDAV 空间不足（HTTP 507）。';
-    return 'WebDAV $action失败（HTTP $code）。';
+    if (code == 409) return 'WebDAV 文件夹不存在或无法写入。';
+    if (code == 412) return '远端已有同名快照，未覆盖。';
+    if (code == 507) return 'WebDAV 空间不足。';
+    return 'WebDAV $action失败。';
   }
 }

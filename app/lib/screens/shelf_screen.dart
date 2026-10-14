@@ -1328,7 +1328,7 @@ class _ShelfScreenState extends State<ShelfScreen> {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        '整理人物需要一个模型 API 密钥，导入以后再填也可以。',
+                        '先导入书籍即可阅读。需要 AI 整理时，再填写服务密钥。',
                         style: TextStyle(fontSize: 12, color: t.ink3),
                       ),
                     ),

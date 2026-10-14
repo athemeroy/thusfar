@@ -1,3 +1,5 @@
+import '../ui/reader_message.dart';
+import '../ui/info_button.dart';
 // Browser-only, prefix-bounded questions about a book. Answers remain in this
 // route's memory. The model credential is shared only in this browser tab's
 // memory and disappears when the page is closed or refreshed.
@@ -250,7 +252,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
     _generation++;
     setState(() {
       _stopping = true;
-      _history.last.error = '已停止显示回答，等待当前连接结束；已发生的费用可能无法取消。';
+      _history.last.error = '正在停止回答。已产生的费用可能无法退回。';
     });
     _activeRequest?.abort();
   }
@@ -585,7 +587,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                     ),
                     if (provider == 'custom') ...<Widget>[
                       const SizedBox(height: 12),
-                      const Text('接口协议'),
+                      const Text('服务类型'),
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 8,
@@ -632,7 +634,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                           error = null;
                         });
                       },
-                      decoration: const InputDecoration(labelText: '模型 API 地址'),
+                      decoration: const InputDecoration(labelText: '服务地址'),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -651,13 +653,18 @@ class _WebAskPanelState extends State<WebAskPanel> {
                               candidateProtocol,
                               candidateEndpoint.text,
                             )
-                            ? '模型 API 密钥（本机可留空）'
-                            : '你自己的模型 API 密钥',
+                            ? '模型 服务密钥（本机可留空）'
+                            : '你自己的模型 服务密钥',
                       ),
+                    ),
+                    const InfoButton(
+                      title: '问书与隐私',
+                      message:
+                          '密钥和问答记录只保留在当前页面，关闭后会清除。使用电脑上的模型时，请确认电脑和模型服务已开启。',
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      '每次发送至多发起 1 次模型请求，服务商可能收费。问题与检索到的已读原文会发送到所选接口；密钥和问答记录只留在当前标签页内存。浏览器直连需要服务商允许此网页来源跨域访问；本机 Ollama 指当前浏览设备，不是 NAS，也可能需要配置允许来源。',
+                      '问题和相关原文会发送给你选择的 AI 服务，服务商可能收费。',
                       style: TextStyle(
                         color: context.tk.ink2,
                         fontSize: 12,
@@ -688,7 +695,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                               candidateProtocol,
                               candidateEndpoint.text,
                             ))) {
-                      throw const WebModelException('请填写自己的模型 API 密钥。');
+                      throw const WebModelException('请填写自己的模型 服务密钥。');
                     }
                     Navigator.pop(context, true);
                   } on WebModelException catch (failure) {
@@ -734,7 +741,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
     try {
       outer = jsonDecode(raw);
     } on FormatException {
-      throw const _AskFailure('模型接口没有返回 JSON。');
+      throw const _AskFailure('没有收到可用的回答，请检查 AI 设置后重试。');
     }
     if (outer is! Json ||
         outer['choices'] is! List ||
@@ -762,7 +769,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
     try {
       decoded = jsonDecode(content);
     } on FormatException {
-      throw const _AskFailure('模型没有生成有效的问答 JSON。');
+      throw const _AskFailure('没有收到可用的回答，请再试一次。');
     }
     if (decoded is! Json ||
         decoded['answer'] is! String ||
@@ -1176,7 +1183,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '每次发送最多1次请求 · 可先写下一问 · 停止不保证退费',
+                      '服务商可能收费，停止回答不一定能退回已产生的费用',
                       style: TextStyle(color: t.ink2, fontSize: 12),
                     ),
                   ],
@@ -1223,7 +1230,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  '问书草稿 · 截止原文位置 ${exchange.cutoff}',
+                  'AI 回答 · 只参考已读内容',
                   style: TextStyle(
                     color: t.zhu,
                     fontSize: 12,
@@ -1235,7 +1242,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                   const LinearProgressIndicator(minHeight: 3),
                 if (exchange.error != null)
                   Text(
-                    '${exchange.error}\n这次请求可能已由服务商计费。',
+                    '${readerMessage(exchange.error, fallback: '这次没能完成回答，请检查网络和 AI 设置后重试。')}\n服务商可能已收取本次费用。',
                     style: TextStyle(color: t.danger, height: 1.5),
                   ),
                 if (exchange.error != null)
@@ -1273,6 +1280,11 @@ class _WebAskPanelState extends State<WebAskPanel> {
                     ),
                   ),
                   if (answer.citations.isNotEmpty) ...<Widget>[
+                    const InfoButton(
+                      title: '问书与隐私',
+                      message:
+                          '密钥和问答记录只保留在当前页面，关闭后会清除。使用电脑上的模型时，请确认电脑和模型服务已开启。',
+                    ),
                     const SizedBox(height: 14),
                     Text(
                       '原文出处',
@@ -1313,9 +1325,9 @@ class _WebAskPanelState extends State<WebAskPanel> {
                   if (answer.promptTokens + answer.outputTokens >
                       0) ...<Widget>[
                     const SizedBox(height: 12),
-                    Text(
-                      '本次用量：输入 ${answer.promptTokens} / 输出 ${answer.outputTokens} token',
-                      style: TextStyle(color: t.ink2, fontSize: 12),
+                    const InfoButton(
+                      title: '问书费用',
+                      message: '费用由你选择的服务商收取，请在该服务的账户中查看账单。',
                     ),
                   ],
                 ],

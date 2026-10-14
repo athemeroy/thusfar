@@ -309,8 +309,8 @@ class ProcessingNotificationService : Service() {
                     notificationId(task.id) + 1_000_000,
                     Notification.Builder(this, CHANNEL_ID)
                         .setSmallIcon(R.drawable.ic_stat_book)
-                        .setContentTitle("页读后台整理时段已结束")
-                        .setContentText("打开页读查看整理状态")
+                        .setContentTitle("后台整理已暂停")
+                        .setContentText("打开页读后继续整理")
                         .setContentIntent(tap)
                         .setAutoCancel(true)
                         .setVisibility(Notification.VISIBILITY_PRIVATE)

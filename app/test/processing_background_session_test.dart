@@ -307,6 +307,38 @@ void main() {
   );
 
   test(
+    'resume lets delayed worker evidence arrive without cancelling its request',
+    () async {
+      session = create();
+      await session.acquire(first);
+      await session.refresh();
+      now = const Duration(minutes: 4);
+      await session.refresh();
+      expect(unavailable, isEmpty);
+      expect(events.where((e) => e.startsWith('update:')).length, 1);
+      session.workerHeartbeat();
+      await session.refresh();
+      expect(unavailable, isEmpty);
+      expect(events.last, 'update:first:running');
+    },
+  );
+
+  test(
+    'resume grace cannot keep a missing worker alive indefinitely',
+    () async {
+      session = create();
+      await session.acquire(first);
+      now = const Duration(minutes: 4);
+      await session.refresh();
+      expect(unavailable, isEmpty);
+      now += const Duration(seconds: 30);
+      await session.refresh();
+      expect(unavailable, ['first']);
+      expect(events.last, 'stop:first');
+    },
+  );
+
+  test(
     'late cancelled start cannot stop a newer lease for the same book',
     () async {
       final Completer<bool> firstReady = Completer<bool>();
@@ -413,11 +445,14 @@ void main() {
         },
       );
       await session.acquire(first);
+      now = const Duration(seconds: 30);
+      await session.refresh();
       now = const Duration(seconds: 61);
       final Future<void> pending = session.refresh();
       await Future<void>.delayed(Duration.zero);
       expect(events, <String>[
         'start:first:preparing',
+        'update:first:running',
         'stop:first',
         'pause:first',
       ]);

@@ -25,6 +25,10 @@ internal object ProcessingEngineHost {
         val app = context.applicationContext
         val created = FlutterEngine(app)
         engine = created
+        MethodChannel(created.dartExecutor.binaryMessenger, "thusfar/background_settings")
+            .setMethodCallHandler { call, result ->
+                BackgroundProcessingSettings.handle(app, call.method, result)
+            }
         val appPaths = MethodChannel(created.dartExecutor.binaryMessenger, "thusfar/paths")
         paths = appPaths
         appPaths.setMethodCallHandler { call, result ->

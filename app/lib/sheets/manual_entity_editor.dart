@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -130,7 +131,12 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
         ? '这一页还看不到该条目，或它已被删除。'
         : _rewound
         ? '阅读位置已回到之前，请关闭后重新打开补充。'
-        : widget.link.c.book.manualError;
+        : widget.link.c.book.manualError == null
+        ? null
+        : readerMessage(
+            widget.link.c.book.manualError,
+            fallback: '暂时无法读取手动补充的资料，请重试。',
+          );
     return SheetPage(
       title: widget.id == null ? '补充人物或概念' : '编辑手动补充',
       slivers: <Widget>[
@@ -184,26 +190,31 @@ class _ManualEntityEditorState extends State<ManualEntityEditor> {
                   ),
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: note,
-                    builder: (BuildContext context, TextEditingValue val, Widget? _) {
-                      final int count = val.text.trim().length;
-                      if (count == 0) return const SizedBox.shrink();
-                      return Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 4, right: 4),
-                          child: Text(
-                            '$count 字',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: t.ink3,
-                              fontFeatures: const <FontFeature>[
-                                FontFeature.tabularFigures(),
-                              ],
+                    builder:
+                        (
+                          BuildContext context,
+                          TextEditingValue val,
+                          Widget? _,
+                        ) {
+                          final int count = val.text.trim().length;
+                          if (count == 0) return const SizedBox.shrink();
+                          return Align(
+                            alignment: Alignment.centerRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 4, right: 4),
+                              child: Text(
+                                '$count 字',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: t.ink3,
+                                  fontFeatures: const <FontFeature>[
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
+                          );
+                        },
                   ),
                   if (_locked)
                     Text(
