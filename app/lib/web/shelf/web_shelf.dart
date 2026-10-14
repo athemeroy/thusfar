@@ -1513,4 +1513,3 @@ class _ShelfBookCard extends StatelessWidget {
     );
   }
 }
-

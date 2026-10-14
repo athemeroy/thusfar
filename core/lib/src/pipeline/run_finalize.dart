@@ -89,6 +89,8 @@ extension RunnerFinalization on Runner {
     List<Object?> args,
     _RunPool target,
   ) {
+    final int dependencyEnd = _int(args[kind == 'saga' ? 0 : 1]);
+    if (!permitsEnd(dependencyEnd)) return null;
     final File path = File('${work.path}/jobs/$kind-$key.json');
     Json job = {
       'kind': kind,
@@ -174,9 +176,10 @@ extension RunnerFinalization on Runner {
     File path,
     List<Object?> args,
   ) async {
-    int contentFailures = job['content_failures'] is int
-        ? _int(job['content_failures']).clamp(0, 2).toInt()
-        : job['state'] == 'pending' && job['failure_kind'] == 'bio_content'
+    int contentFailures =
+        job['content_failures'] is int
+            ? _int(job['content_failures']).clamp(0, 2).toInt()
+            : job['state'] == 'pending' && job['failure_kind'] == 'bio_content'
             ? _int(job['generation_attempt']).clamp(0, 2).toInt()
             : 0;
 
@@ -209,10 +212,7 @@ extension RunnerFinalization on Runner {
   }
 
   /// 执行常规类型的任务（recap, saga 等）
-  Future<Object?> _executeRegularJob(
-    Json job,
-    List<Object?> args,
-  ) async {
+  Future<Object?> _executeRegularJob(Json job, List<Object?> args) async {
     return switch (job['kind']) {
       'recap' => await chapterRecapJob(
         _int(args[0]),
@@ -243,9 +243,11 @@ extension RunnerFinalization on Runner {
     Object? result;
     try {
       // 根据任务类型分发到对应的处理函数
-      result = job['kind'] == 'bio'
-          ? await _executeBioJob(job, path, args)
-          : await _executeRegularJob(job, args);
+      result =
+          job['kind'] == 'bio'
+              ? await _executeBioJob(job, path, args)
+              : await _executeRegularJob(job, args);
+      if (job['kind'] == 'bio' && result == null) return null;
       if (result == false) throw const llm.LLMError('章节整理尚未通过验证');
     } on Cancelled {
       rethrow;
@@ -410,10 +412,10 @@ extension RunnerFinalization on Runner {
                 'recap-$ci',
                 recapModel,
                 prompts.chapterRecap.messages({
-                          'title': book['title'],
-                          'chapter': chapterName(ci),
-                          'events': text,
-                        }, systemNote: lang.outNote(book)),
+                  'title': book['title'],
+                  'chapter': chapterName(ci),
+                  'events': text,
+                }, systemNote: lang.outNote(book)),
                 maxTokens: 1200 * lang.scale(book),
                 temperature: 0.3,
               ))!
@@ -493,11 +495,11 @@ extension RunnerFinalization on Runner {
               'saga-$end',
               recapModel,
               prompts.saga.messages({
-                        'title': book['title'],
-                        'chapter': chapterName(chapters.last),
-                        'saga': before.isEmpty ? '（故事刚开始）' : before,
-                        'recaps': recaps.join('\n'),
-                      }, systemNote: lang.outNote(book)),
+                'title': book['title'],
+                'chapter': chapterName(chapters.last),
+                'saga': before.isEmpty ? '（故事刚开始）' : before,
+                'recaps': recaps.join('\n'),
+              }, systemNote: lang.outNote(book)),
               maxTokens: 2500 * lang.scale(book),
               temperature: 0.3,
             ))!
@@ -548,12 +550,12 @@ extension RunnerFinalization on Runner {
               'classic-recap-$ci',
               recapModel,
               prompts.recap.messages({
-                    'title': book['title'],
-                    'chapter': chapterName(ci),
-                    'saga': _str(before, '（故事刚开始）'),
-                    'events': ev,
-                    'profiles': pr,
-                  }),
+                'title': book['title'],
+                'chapter': chapterName(ci),
+                'saga': _str(before, '（故事刚开始）'),
+                'events': ev,
+                'profiles': pr,
+              }),
               maxTokens: 3000,
               temperature: 0.3,
             ))!
@@ -1190,13 +1192,18 @@ extension RunnerFinalization on Runner {
     final Object? data = await cachedGeneration(
       generationAttempt == 0 ? 'bio-$ci' : 'bio-$ci-attempt-$generationAttempt',
       model,
-      prompts.consolidate.messages({
-                'title': book['title'],
-                'chapter': chapterName(ci),
-                'dossiers': dossiers,
-              }, systemNote: lang.outNote(book), extraUser: (generationAttempt == 0
-                  ? ''
-                  : '\n上次生成的小传没有完整通过核对。请为上面列出的每个 ID 单独返回 tagline 和 bio；仅写资料有证据支持的事实，资料不足时允许简介短于建议字数，不要补造内容。')),
+      prompts.consolidate.messages(
+        {
+          'title': book['title'],
+          'chapter': chapterName(ci),
+          'dossiers': dossiers,
+        },
+        systemNote: lang.outNote(book),
+        extraUser:
+            (generationAttempt == 0
+                ? ''
+                : '\n上次生成的小传没有完整通过核对。请为上面列出的每个 ID 单独返回 tagline 和 bio；仅写资料有证据支持的事实，资料不足时允许简介短于建议字数，不要补造内容。'),
+      ),
       maxTokens: 6000 * lang.scale(book),
       temperature: 0.2,
       jsonOutput: true,

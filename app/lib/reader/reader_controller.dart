@@ -21,7 +21,7 @@ class ReaderController extends ChangeNotifier {
   final BookData book;
   Paginator? pager;
 
-  /// Anchor for the virtual page index; see [pageAt].
+  /// Anchor for the virtual page index; follows the last displayed page.
   static const int base = 1 << 20;
   int _anchorChapter = 0;
   int _anchorPage = 0;
@@ -80,6 +80,11 @@ class ReaderController extends ChangeNotifier {
   void onPage(int index) {
     final PageData? next = pageAt(index);
     if (next == null) return;
+    // Keep virtual indexes stable while making adjacent turns start here.
+    // Walking from the original chapter makes a long reading session quadratic.
+    _anchorChapter = next.chapter;
+    _anchorPage = next.index;
+    _anchorIndex = index;
     currentIndex = index;
     page = next;
     _listeningCutoff = null;
