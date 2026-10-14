@@ -68,7 +68,7 @@ void main() {
     await render();
 
     expect(find.byType(FloatingActionButton), findsNothing);
-    await tester.tap(find.text('导入'));
+    await tester.tap(find.text('添书'));
     expect(imports, 1);
 
     await tester.tap(find.byKey(ValueKey<String>('process-${book.id}')));
@@ -86,12 +86,12 @@ void main() {
     });
     library.refreshStatus(book);
     await render();
-    expect(find.text('整理任务'), findsOneWidget);
-    expect(find.textContaining('1 本待处理或进行中'), findsOneWidget);
-
-    await tester.tap(find.text('整理任务'));
+    expect(find.text('整理任务'), findsNothing);
+    await tester.tap(find.byTooltip('排序方式'));
     await tester.pumpAndSettle();
-    expect(find.text('正在准备整理'), findsOneWidget);
+    await tester.tap(find.text('梳理进度'));
+    await tester.pumpAndSettle();
+    expect(find.text('正在梳理'), findsWidgets);
     expect(find.text('整理中 0%'), findsNothing);
 
     await tester.tap(find.text('Fixture Book').last);

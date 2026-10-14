@@ -96,18 +96,18 @@ void main() {
     expect(prefs.pageHorizontalMargin, 22);
 
     await tester.dragUntilVisible(
-      find.text('楷'),
+      find.text('文楷'),
       find.byType(ListView).last,
       const Offset(0, -100),
     );
-    await tester.tap(find.text('楷'));
+    await tester.tap(find.text('文楷'));
     await tester.pumpAndSettle();
     expect(prefs.fontFamily, 'LXGWWenKaiScreen');
-    await tester.tap(find.text('黑'));
+    await tester.tap(find.text('黑体'));
     await tester.pumpAndSettle();
     expect(prefs.fontFamily, 'NotoSansSC');
     prefs.update((Prefs p) => p.spacing = 2);
-    await tester.tap(find.text('恢复文字默认值'));
+    await tester.tap(find.text('重置排版'));
     await tester.pumpAndSettle();
     expect(prefs.lineHeight, 1.85);
     expect(prefs.pageHorizontalMargin, 20);
@@ -148,8 +148,8 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      await reveal('段间距');
-      await tester.tap(find.byTooltip('段间距增加'));
+      await reveal('段落间距');
+      await tester.tap(find.byTooltip('段落间距增加'));
       await tester.pumpAndSettle();
       expect(prefs.paragraphSpacing, 0.25);
       expect(prefs.lineHeight, 1.85);
@@ -160,7 +160,7 @@ void main() {
       expect(Prefs(file).paragraphSpacing, 0.25);
       expect(Prefs(file).firstLineIndent, 1.5);
       for (int reset = 0; reset < 3; reset++) {
-        await tester.tap(find.text('恢复文字默认值'));
+        await tester.tap(find.text('重置排版'));
         await tester.pumpAndSettle();
         expect(prefs.paragraphSpacing, 0);
         expect(prefs.firstLineIndent, 2);

@@ -150,7 +150,7 @@ class _DirectoryCorrectionPageState extends State<DirectoryCorrectionPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Text(
-                    '修正本书的目录与章节查找，仅保存在本机。原文、阅读位置、摘记和人物资料保留；AI 整理仍按原章节进行，不会重新调用模型。',
+                    '修正本书的目录与章节查找，仅保存在本机。原文、阅读位置、书摘和人物资料保留；AI 整理仍按原章节进行，不会重新调用模型。',
                     style: TextStyle(fontSize: 14, height: 1.6, color: t.ink2),
                   ),
                   const SizedBox(height: 8),

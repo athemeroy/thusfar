@@ -163,8 +163,8 @@ void main() {
       service.replies.single.complete(comment());
       await tester.pumpAndSettle();
       expect(find.text('这一声关门，比开口说话还让人在意。'), findsOneWidget);
-      await tester.ensureVisible(find.text('回到原句'));
-      await tester.tap(find.text('回到原句'));
+      await tester.ensureVisible(find.text('翻回原文'));
+      await tester.tap(find.text('翻回原文'));
       expect(jump, 0);
     },
   );
@@ -224,8 +224,8 @@ void main() {
         ],
       });
       await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('侦探视角'));
-      await tester.tap(find.text('侦探视角'));
+      await tester.ensureVisible(find.text('侦探 · AI 视角'));
+      await tester.tap(find.text('侦探 · AI 视角'));
       await tester.pump();
       expect(service.requests.last, {
         'mode': 'auto',
@@ -243,7 +243,7 @@ void main() {
       expect(service.requests.last['page_end'], 48);
       service.replies.last.complete({'reason': 'cues', 'items': []});
       await tester.pumpAndSettle();
-      expect(find.text('这一页暂时没有特别适合评论的句子，继续读也很好。'), findsOneWidget);
+      expect(find.text('静心独享\n此页适合静读，无需多言。'), findsOneWidget);
     },
   );
   testWidgets('closing sheet cancels request and ignores late failure', (

@@ -25,6 +25,198 @@ void main() {
     );
   });
 
+  test('native runtime export is bounded and rejects private fields', () {
+    const String secret = 'PRIVATE-BOOK-API-URL';
+    final String encoded = utf8.decode(
+      ProcessingDiagnostics.bytes(
+        bookDirectory: book,
+        workerHealth: const <String, Object?>{},
+        backgroundRuntime: <String, Object?>{
+          'sdk': 35,
+          'pid': 123,
+          'device_idle': true,
+          'private': secret,
+          'service': <String, Object?>{
+            'running': true,
+            'wake_lock_held': true,
+            'title': secret,
+          },
+          'events': <Object?>[
+            for (int i = 0; i < 80; i++)
+              <String, Object?>{
+                'event': i == 79 ? secret : 'foreground_started',
+                'error_type': secret,
+                'message': secret,
+                'at_ms': i,
+                'elapsed_ms': i,
+                'uptime_ms': i,
+              },
+          ],
+        },
+      ),
+    );
+    expect(encoded, isNot(contains(secret)));
+    final Map<String, Object?> decoded =
+        jsonDecode(encoded) as Map<String, Object?>;
+    final Map<String, Object?> native =
+        decoded['android_runtime']! as Map<String, Object?>;
+    expect(native['device_idle'], isTrue);
+    expect(
+      (native['service']! as Map<String, Object?>)['wake_lock_held'],
+      isTrue,
+    );
+    expect(native['events'], hasLength(64));
+  });
+
+  test('judge failure export keeps structural codes and counts only', () {
+    const String secret = 'PRIVATE-QUESTION-RESPONSE-URL-KEY';
+    final File failure = File(
+      '${book.path}/work/judge/model-answer-failure.json',
+    );
+    failure.parent.createSync(recursive: true);
+    failure.writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'at': 1234,
+        'attempts': 2,
+        'question_count': 3,
+        'unresolved_count': 1,
+        'raw': secret,
+        'question_id': secret,
+        'reasons': <String, Object?>{
+          'inconsistent_sum': 1,
+          'invalid_choice': secret,
+          secret: 1,
+        },
+      }),
+    );
+    File('${book.path}/status.json').writeAsStringSync(
+      jsonEncode(<String, Object?>{
+        'state': 'paused',
+        'pause_reason': 'request_outcome_unknown',
+        'error': '已配置模型的判断回答不完整或概率无效：$secret',
+      }),
+    );
+    final String encoded = utf8.decode(
+      ProcessingDiagnostics.bytes(
+        bookDirectory: book,
+        workerHealth: const <String, Object?>{},
+      ),
+    );
+    expect(encoded, isNot(contains(secret)));
+    final Map<String, Object?> output =
+        jsonDecode(encoded) as Map<String, Object?>;
+    expect(output['last_model_judge_failure'], <String, Object?>{
+      'at': 1234,
+      'attempts': 2,
+      'question_count': 3,
+      'unresolved_count': 1,
+      'reasons': <String, int>{'inconsistent_sum': 1},
+    });
+    expect(
+      (output['status'] as Map<String, Object?>)['error_code'],
+      'model_judge_invalid_answer',
+    );
+  });
+
+  test(
+    'request and heartbeat export retains cause and rejects arbitrary strings',
+    () {
+      const String secret = 'PRIVATE-BODY-URL-KEY-EXCEPTION';
+      void save(String path, Object value) =>
+          File('${book.path}/$path').writeAsStringSync(jsonEncode(value));
+      save('status.json', <String, Object?>{
+        'state': 'paused',
+        'error': '上次请求结果不确定',
+        'failure_code': 'network_interrupted',
+      });
+      save('work/model-request-journal.json', <String, Object?>{
+        'requests': <Object?>[
+          <String, Object?>{
+            'id': 1,
+            'phase': 'unknown',
+            'code': 'network_interrupted',
+            'key': secret,
+          },
+        ],
+      });
+      save('work/model-request-diagnostics.json', <String, Object?>{
+        'id_scope': secret,
+        'attempts': <Object?>[
+          for (int i = 0; i < 40; i++)
+            <String, Object?>{
+              'id': i,
+              'run_id': 1234,
+              'phase': i == 39 ? secret : 'unknown',
+              'code': 'network_interrupted',
+              'last_byte_at_ms': 2000,
+              'bytes_received': 10,
+              'url': secret,
+              'events': <Object?>[
+                for (int j = 0; j < 20; j++)
+                  <String, Object?>{
+                    'event': 'transport_error',
+                    'code': j == 0 ? secret : 'socket_exception',
+                    'at_ms': 2100,
+                    'message': secret,
+                  },
+              ],
+            },
+        ],
+      });
+      save('work/worker-heartbeat.json', <String, Object?>{
+        'samples': <Object?>[
+          for (int i = 0; i < 80; i++)
+            <String, Object?>{
+              'sequence': i,
+              'gap_ms': 15000,
+              'finished': false,
+              'message': secret,
+            },
+        ],
+      });
+      final String encoded = utf8.decode(
+        ProcessingDiagnostics.bytes(
+          bookDirectory: book,
+          workerHealth: const <String, Object?>{},
+          backgroundRuntime: <String, Object?>{
+            'heartbeats': <Object?>[
+              <String, Object?>{
+                'event': 'worker_heartbeat',
+                'worker_at_ms': 3000,
+                'ui_at_ms': 3100,
+                'at_ms': 3200,
+                'worker_gap_ms': 15000,
+                'process_importance': 125,
+                'secret': secret,
+              },
+            ],
+          },
+        ),
+      );
+      expect(encoded, isNot(contains(secret)));
+      final Map<String, Object?> output =
+          jsonDecode(encoded) as Map<String, Object?>;
+      expect(
+        (output['status']! as Map<String, Object?>)['failure_code'],
+        'network_interrupted',
+      );
+      final Map<String, Object?> requests =
+          output['model_requests']! as Map<String, Object?>;
+      expect(requests['id_scope'], 'local_only');
+      expect(requests['unsettled'], hasLength(1));
+      final List<Object?> attempts = requests['attempts']! as List<Object?>;
+      expect(attempts, hasLength(32));
+      expect((attempts.last! as Map<String, Object?>)['events'], hasLength(16));
+      expect(output['worker_heartbeats'], hasLength(64));
+      final List<Object?> beats =
+          (output['android_runtime']! as Map<String, Object?>)['heartbeats']!
+              as List<Object?>;
+      expect((beats.single! as Map<String, Object?>)['worker_at_ms'], 3000);
+      expect((beats.single! as Map<String, Object?>)['at_ms'], 3200);
+      expect((beats.single! as Map<String, Object?>)['ui_at_ms'], 3100);
+    },
+  );
+
   test('file name is stable and does not include a book title', () {
     expect(
       ProcessingDiagnostics.fileName(DateTime(2026, 9, 27, 16, 8, 9)),

@@ -1,0 +1,1006 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/reading_activity_test.dart
+00:00 +0: /Users/athemeroy/projects/books-build/app/test/reading_activity_test.dart: only active reading counts and idle time stops at 90 seconds
+00:00 +1: /Users/athemeroy/projects/books-build/app/test/reading_activity_test.dart: midnight splits days and two readers never double count
+00:00 +2: /Users/athemeroy/projects/books-build/app/test/read_aloud_test.dart: speech chunks preserve source offsets and surrogate pairs
+00:00 +3: /Users/athemeroy/projects/books-build/app/test/read_aloud_test.dart: speech chunks preserve source offsets and surrogate pairs
+00:00 +4: /Users/athemeroy/projects/books-build/app/test/read_aloud_test.dart: only heard boundaries advance progress; pause resumes safely
+00:00 +5: /Users/athemeroy/projects/books-build/app/test/read_aloud_test.dart: timer stops speech and rejects late progress
+00:00 +6: /Users/athemeroy/projects/books-build/app/test/read_aloud_test.dart: background pauses and disposal rejects every pending callback
+00:00 +7: /Users/athemeroy/projects/books-build/app/test/read_aloud_test.dart: missing speech shows actionable message without playing
+00:02 +8: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: speech following keeps knowledge at the words actually heard
+00:02 +9: /Users/athemeroy/projects/books-build/app/test/people_search_test.dart: people search stays visible when returning to the all tab
+00:04 +10: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:04 +11: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:04 +11: /Users/athemeroy/projects/books-build/app/test/people_search_test.dart: unread biographies keep a paused book action visible
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextContainingWidgetFinder:<Found 0 widgets with text containing 已有 1 篇核对通过的人物小传: []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/people_search_test.dart:274:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/people_search_test.dart line 274
+The test description was:
+  unread biographies keep a paused book action visible
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:04 +11 -1: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:04 +11 -1: /Users/athemeroy/projects/books-build/app/test/people_search_test.dart: unread biographies keep a paused book action visible [E]
+  Test failed. See exception logs above.
+  The test description was: unread biographies keep a paused book action visible
+  
+00:05 +12 -1: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with widget matching predicate: []" (used in a call to "tap()") could
+not find any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart:163:18)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unread chapter and page jumps require an explicit choice
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +12 -2: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: wide reader tools are bounded and nested back precedes closing
+00:05 +12 -2: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice [E]
+  Test failed. See exception logs above.
+  The test description was: unread chapter and page jumps require an explicit choice
+  
+00:06 +13 -2: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:06 +14 -2: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:06 +15 -2: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:06 +16 -2: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:06 +17 -2: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: search clear cancels pending work and keeps the read boundary
+00:07 +18 -2: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: search clear cancels pending work and keeps the read boundary
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 2 widgets with text "搜索全书": [
+  Text("搜索全书", inherit: true, color: Color(alpha: 1.0000, red: 0.3725, green: 0.3412, blue: 0.2980,
+colorSpace: ColorSpace.sRGB), size: 13.0, weight: 400, dependencies: [DefaultSelectionStyle,
+DefaultTextStyle, MediaQuery]),
+  Text("搜索全书", inherit: true, color: Color(alpha: 1.0000, red: 0.1569, green: 0.3569, blue: 0.2941,
+colorSpace: ColorSpace.sRGB), size: 15.0, textAlign: center, dependencies: [DefaultSelectionStyle,
+DefaultTextStyle, MediaQuery]),
+]" (used in a call to "tap()") ambiguously found multiple matching widgets. The "tap()" method needs
+a single target.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2100:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart:311:18)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  search clear cancels pending work and keeps the read boundary
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:07 +18 -3: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:07 +18 -3: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: search clear cancels pending work and keeps the read boundary [E]
+  Test failed. See exception logs above.
+  The test description was: search clear cancels pending work and keeps the read boundary
+  
+00:07 +19 -3: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: typography fits narrow large text and offers an explicit close
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.getSize (package:flutter_test/src/controller.dart:2178:47)
+#2      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart:361:16)
+<asynchronous suspension>
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  typography fits narrow large text and offers an explicit close
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:07 +19 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: both selection handles adjust exact source bounds and theme repaint keeps anchor
+00:07 +19 -4: /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: typography fits narrow large text and offers an explicit close [E]
+  Test failed. See exception logs above.
+  The test description was: typography fits narrow large text and offers an explicit close
+  
+00:08 +20 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: selection end handle crosses visible paragraphs and shrinks back exactly
+00:08 +21 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:08 +22 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:08 +23 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:08 +24 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:08 +25 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:08 +26 -4: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: image zoom resets and Escape closes without a reading side effect
+00:08 +27 -4: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: image zoom resets and Escape closes without a reading side effect
+00:09 +28 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: arrow keys and the mouse wheel turn pages on a computer
+00:09 +29 -4: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: drawer preserves input and scroll across repeated nested visits at Size(390.0, 844.0)
+00:09 +30 -4: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: drawer preserves input and scroll across repeated nested visits at Size(390.0, 844.0)
+00:09 +31 -4: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: drawer preserves input and scroll across repeated nested visits at Size(390.0, 844.0)
+00:09 +32 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: screen reader page actions turn available pages and expose reading tools
+00:09 +33 -4: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: drawer preserves input and scroll across repeated nested visits at Size(1440.0, 900.0)
+00:09 +33 -4: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: folding and desktop resizing preserve the source anchor
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following PathNotFoundException was thrown running a test:
+Cannot copy file to
+'/var/folders/fb/zmcp7b5d7797sx6mcg9_tffm0000gn/T/thusfar-reader-regression-tjTycd/books/fixture0001/book.json',
+path = '../reference/oracle/goldens/books/aq_deepseek/book.json' (OS Error: No such file or
+directory, errno = 2)
+
+When the exception was thrown, this was the stack:
+#0      _File.throwIfError (dart:io/file_impl.dart:779:7)
+#1      _File.copySync (dart:io/file_impl.dart:419:5)
+#2      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart:899:7)
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  folding and desktop resizing preserve the source anchor
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:09 +33 -5: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: drawer preserves input and scroll across repeated nested visits at Size(1440.0, 900.0)
+00:09 +33 -5: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: folding and desktop resizing preserve the source anchor [E]
+  Test failed. See exception logs above.
+  The test description was: folding and desktop resizing preserve the source anchor
+  
+00:09 +34 -5: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: book drawer notes opens notes and reader back returns in one tap
+00:10 +35 -5: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:10 +36 -5: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:10 +37 -5: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:10 +37 -5: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: read-only search clips snippets within a partially read block
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "全书": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart:1146:18)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  read-only search clips snippets within a partially read block
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:10 +37 -6: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:10 +37 -6: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: read-only search clips snippets within a partially read block [E]
+  Test failed. See exception logs above.
+  The test description was: read-only search clips snippets within a partially read block
+  
+00:10 +37 -6: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: note modal IME animation preserves reading position and saves original range once
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following PathNotFoundException was thrown running a test:
+Cannot copy file to
+'/var/folders/fb/zmcp7b5d7797sx6mcg9_tffm0000gn/T/thusfar-reader-regression-rSTvML/books/fixture0001/book.json',
+path = '../reference/oracle/goldens/books/aq_deepseek/book.json' (OS Error: No such file or
+directory, errno = 2)
+
+When the exception was thrown, this was the stack:
+#0      _File.throwIfError (dart:io/file_impl.dart:779:7)
+#1      _File.copySync (dart:io/file_impl.dart:419:5)
+#2      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart:1162:9)
+#3      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:29)
+<asynchronous suspension>
+#4      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  note modal IME animation preserves reading position and saves original range once
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:10 +37 -7: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:10 +37 -7: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: note modal IME animation preserves reading position and saves original range once [E]
+  Test failed. See exception logs above.
+  The test description was: note modal IME animation preserves reading position and saves original range once
+  
+00:10 +38 -7: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:10 +39 -7: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:11 +40 -7: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:11 +41 -7: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: saved return anchor survives library reload and can be cleared
+00:12 +42 -7: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: selection, persona and cutoff are captured; only verified result appears
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart:166:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  selection, persona and cutoff are captured; only verified result appears
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:13 +42 -8: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+00:13 +42 -8: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: selection, persona and cutoff are captured; only verified result appears [E]
+  Test failed. See exception logs above.
+  The test description was: selection, persona and cutoff are captured; only verified result appears
+  
+00:13 +42 -8: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "检查有没有剧透": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart:186:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart line 186
+The test description was:
+  explicit submit captures prefix, offers stop, stages, and previews citation
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:13 +42 -9: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: failed verification exposes error with retry, never a draft
+00:13 +42 -9: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation [E]
+  Test failed. See exception logs above.
+  The test description was: explicit submit captures prefix, offers stop, stages, and previews citation
+  
+00:14 +43 -9: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: failure is visible and retry keeps the original question and cutoff
+00:14 +44 -9: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: failure is visible and retry keeps the original question and cutoff
+00:14 +45 -9: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: page cue selects exact source for multi-angle generation and restores full page cue range
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart:227:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  page cue selects exact source for multi-angle generation and restores full page cue range
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:14 +45 -10: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: rewind clears old answers and cancels late publications
+00:14 +45 -10: /Users/athemeroy/projects/books-build/app/test/marginalia_sheet_test.dart: page cue selects exact source for multi-angle generation and restores full page cue range [E]
+  Test failed. See exception logs above.
+  The test description was: page cue selects exact source for multi-angle generation and restores full page cue range
+  
+00:14 +46 -10: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: rewind clears old answers and cancels late publications
+00:14 +47 -10: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: prefill and quoted text wait for an explicit submit; disposal cancels
+00:14 +48 -10: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: stop retains next draft and fences late answer until transport settles
+00:14 +49 -10: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: question and selected text have independent Unicode limits and follow-ups
+00:15 +50 -10: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: title search only matches the rendered safe label
+00:15 +51 -10: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: same-prefix reopen restores answer, draft and scroll without a request
+00:15 +52 -10: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: ordinal lookup is one based, includes front matter, never clamps
+00:15 +53 -10: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: source navigation marks return intent; earlier cutoff cannot restore answer
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "定位原文（可返回回答）": []" (used in a call to "tap()") could not find
+any matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart:365:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  source navigation marks return intent; earlier cutoff cannot restore answer
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:15 +53 -11: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: search cannot expose hidden future titles through results or counts
+00:15 +53 -11: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: source navigation marks return intent; earlier cutoff cannot restore answer [E]
+  Test failed. See exception logs above.
+  The test description was: source navigation marks return intent; earlier cutoff cannot restore answer
+  
+00:15 +54 -11: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: search cannot expose hidden future titles through results or counts
+00:16 +54 -11: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(390.0, 844.0) with keyboard
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _HitTestableWidgetFinder:<Found 0 widgets with text "检查有没有剧透" (considering only
+hit-testable widgets with a RenderBox): []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart:449:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart line 449
+The test description was:
+  new answer follows bottom or offers pinned shortcut at Size(390.0, 844.0) with keyboard
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:16 +54 -12: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: search cannot expose hidden future titles through results or counts
+00:16 +54 -12: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(390.0, 844.0) with keyboard [E]
+  Test failed. See exception logs above.
+  The test description was: new answer follows bottom or offers pinned shortcut at Size(390.0, 844.0) with keyboard
+  
+00:16 +55 -12: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(360.0, 640.0) with keyboard
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _HitTestableWidgetFinder:<Found 0 widgets with text "检查有没有剧透" (considering only
+hit-testable widgets with a RenderBox): []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart:449:9)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart line 449
+The test description was:
+  new answer follows bottom or offers pinned shortcut at Size(360.0, 640.0) with keyboard
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:16 +55 -13: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: ordinal jump previews exact chapter and requires existing unread warning
+00:16 +55 -13: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(360.0, 640.0) with keyboard [E]
+  Test failed. See exception logs above.
+  The test description was: new answer follows bottom or offers pinned shortcut at Size(360.0, 640.0) with keyboard
+  
+00:16 +56 -13: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new selected excerpt at the same cutoff overrides saved quote state and draft
+00:16 +57 -13: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: invalid ordinals never jump or silently clamp
+00:16 +58 -13: /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: open citation preview hides its source immediately after rewind
+00:16 +59 -13: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: current chapter locator and known chapter jumps preserve source offsets
+00:16 +60 -13: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: repeated searches reset long-list scroll and cancel pending jumps
+00:17 +61 -13: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: Chinese composition waits for committed text
+00:17 +62 -13: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:17 +63 -13: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:18 +64 -13: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:18 +65 -13: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:18 +66 -13: /Users/athemeroy/projects/books-build/app/test/toc_search_test.dart: narrow drawer survives keyboard, back, close and reopen
+00:19 +67 -13: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: corrected directory opens and returns at the source position
+00:19 +68 -13: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: large text keeps the current chapter visible
+00:20 +69 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: literal deletion preserves original coordinates and emoji boundaries
+00:20 +70 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: shorter and longer replacements cite their complete original match
+00:20 +71 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: overlap priority is deterministic, literal and never cascades
+00:20 +72 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: whole paragraph removal and edge deletions have valid empty mappings
+00:20 +73 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: invalid empty patterns, surrogate halves, multiline and amplification are rejected
+00:20 +74 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: portable storage scope, edit, disable, order and deletion survive reopen
+00:20 +75 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: portable storage export rebinds book rules, retains global scope and skips duplicates
+00:20 +76 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: portable storage corruption is preserved and never silently overwritten
+00:20 +77 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration pagination, source quotes, notes and rule changes keep source anchors
+00:20 +78 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration whole chapter deletion remains navigable without revealing next chapter
+00:20 +79 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: phone shelf fits bundled font metrics at 1.0x
+00:21 +80 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration editor previews current-page source, saves scope and returns, then toggles and deletes
+00:21 +81 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 1.0x keeps actions and progress
+00:22 +82 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration mapped long press and handle select source, create a book rule and cancel safely
+00:22 +83 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 320.0px 1.0x keeps actions and progress
+00:22 +84 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 320.0px 1.0x keeps actions and progress
+00:22 +85 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 320.0px 1.0x keeps actions and progress
+00:22 +86 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration saving and toggling a rule repaginates live reader without rewriting progress
+00:22 +87 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:23 +88 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.0x keeps actions and progress
+00:23 +89 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration wrapped selection actions stay clear of the selected text at 2.0 scale
+00:23 +90 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.0x keeps actions and progress
+00:23 +91 -13: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration manager is reachable from more menu
+00:23 +92 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 540.0px 1.0x keeps actions and progress
+00:23 +93 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 540.0px 1.0x keeps actions and progress
+00:24 +94 -13: /Users/athemeroy/projects/books-build/app/test/shelf_processing_action_test.dart: fixture shelf offers one-tap processing beside reading
+00:24 +95 -13: /Users/athemeroy/projects/books-build/app/test/shelf_processing_action_test.dart: fixture shelf offers one-tap processing beside reading
+00:24 +96 -13: /Users/athemeroy/projects/books-build/app/test/shelf_processing_action_test.dart: fixture shelf offers one-tap processing beside reading
+00:25 +97 -13: /Users/athemeroy/projects/books-build/app/test/shelf_processing_action_test.dart: fixture shelf offers one-tap processing beside reading
+00:25 +98 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 320.0px 1.6x keeps actions and progress
+00:25 +99 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 1.6x keeps actions and progress
+00:25 +100 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.6x keeps actions and progress
+00:25 +101 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.6x keeps actions and progress
+00:25 +102 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.6x keeps actions and progress
+00:26 +103 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.6x keeps actions and progress
+00:26 +104 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.6x keeps actions and progress
+00:26 +105 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: list 360.0px 1.6x keeps actions and progress
+00:26 +106 -13: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc hides crossing excerpts and later knowledge until explicitly enabled
+00:26 +107 -13: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc hides crossing excerpts and later knowledge until explicitly enabled
+00:26 +108 -13: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc hides crossing excerpts and later knowledge until explicitly enabled
+00:26 +109 -13: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc hides crossing excerpts and later knowledge until explicitly enabled
+00:26 +110 -13: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc hides crossing excerpts and later knowledge until explicitly enabled
+00:26 +111 -13: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 2.0x keeps actions and progress
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: true
+  Actual: <false>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart:225:17)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart line 225
+The test description was:
+  grid 320.0px 2.0x keeps actions and progress
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:27 +111 -14: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc edits notes and deletion requires confirmation
+00:27 +111 -14: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 320.0px 2.0x keeps actions and progress [E]
+  Test failed. See exception logs above.
+  The test description was: grid 320.0px 2.0x keeps actions and progress
+  
+00:27 +112 -14: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc edits notes and deletion requires confirmation
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "删除这条笔记？": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/notes_test.dart:249:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/notes_test.dart line 249
+The test description was:
+  Toc edits notes and deletion requires confirmation
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:27 +112 -15: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 2.0x keeps actions and progress
+00:27 +112 -15: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: Toc edits notes and deletion requires confirmation [E]
+  Test failed. See exception logs above.
+  The test description was: Toc edits notes and deletion requires confirmation
+  
+00:28 +112 -15: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: editor reports stale-save conflict and retains typed text
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextContainingWidgetFinder:<Found 0 widgets with text containing 摘记已在别处修改: []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/notes_test.dart:283:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/notes_test.dart line 283
+The test description was:
+  editor reports stale-save conflict and retains typed text
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:28 +112 -16: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 360.0px 2.0x keeps actions and progress
+00:28 +112 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: editor reports stale-save conflict and retains typed text [E]
+  Test failed. See exception logs above.
+  The test description was: editor reports stale-save conflict and retains typed text
+  
+00:28 +113 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: global notes exposes edit and refreshes durable edited text
+00:28 +114 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: global notes exposes edit and refreshes durable edited text
+00:28 +115 -16: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 540.0px 2.0x keeps actions and progress
+00:28 +116 -16: /Users/athemeroy/projects/books-build/app/test/shelf_accessibility_test.dart: grid 540.0px 2.0x keeps actions and progress
+00:28 +117 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: notes search clears its field and cached records refresh on library change
+00:28 +118 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: notes search clears its field and cached records refresh on library change
+00:28 +119 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: notes search clears its field and cached records refresh on library change
+00:28 +120 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: book-name search and copying export exactly the visible notes
+00:29 +121 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: direct draft reopening after rewind hides later knowledge and preserves bytes
+00:29 +122 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: unavailable source-mismatched draft is never overwritten or deleted
+00:29 +123 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: unavailable unreadable draft is never overwritten or deleted
+00:29 +124 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: editing an existing note keeps its draft across dismissal
+00:29 +125 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: editing an existing note keeps its draft across dismissal
+00:29 +126 -16: /Users/athemeroy/projects/books-build/app/test/shelf_organization_test.dart: rename and remove a collection preserve books and completed state
+00:29 +127 -16: /Users/athemeroy/projects/books-build/app/test/notes_test.dart: legacy draft with unknown reading boundary remains hidden and intact
+00:29 +128 -16: /Users/athemeroy/projects/books-build/app/test/shelf_organization_test.dart: single-book and library archives carry shelf labels without changing progress
+00:29 +129 -16: /Users/athemeroy/projects/books-build/app/test/shelf_organization_test.dart: single-book and library archives carry shelf labels without changing progress
+00:29 +130 -16: /Users/athemeroy/projects/books-build/app/test/shelf_organization_test.dart: preview and invalid archive labels cannot mutate a shelf
+00:29 +130 -17: loading /Users/athemeroy/projects/books-build/app/test/library_zip_test.dart [E]
+  Failed to load "/Users/athemeroy/projects/books-build/app/test/library_zip_test.dart": Does not exist.
+00:30 +131 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +132 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +133 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +134 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +135 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +136 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +137 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +138 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +139 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +140 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +141 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +142 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +143 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +144 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +145 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +146 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +147 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +148 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +149 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +150 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +151 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +152 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +153 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:30 +154 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:31 +155 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: completed import receipts can be dismissed and new batches remain visible
+00:31 +156 -17: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: real worker isolate leaves explicitly disabled work paused
+00:31 +157 -17: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart:87:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  first import and model actions remain reachable on a short screen with large text
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:31 +157 -18: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: real isolate makes no model requests before native readiness (native start failure)
+00:31 +157 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: first import and model actions remain reachable on a short screen with large text [E]
+  Test failed. See exception logs above.
+  The test description was: first import and model actions remain reachable on a short screen with large text
+  
+00:31 +158 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:31 +159 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:31 +160 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:31 +161 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:31 +162 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:31 +163 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:31 +164 -18: /Users/athemeroy/projects/books-build/app/test/native_workspace_test.dart: storage size loads away from build and settings fit a narrow large-text screen
+00:31 +165 -18: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker respects an already recorded user pause
+00:31 +166 -18: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: dead worker does not overwrite an active independent lease
+00:31 +167 -18: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:32 +168 -18: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:32 +169 -18: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+00:32 +170 -18: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "已整理 0 / 2 段": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:543:7)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart line 543
+The test description was:
+  start is explicit, progress updates, pause settles, and resume works
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:32 +170 -19: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: start is explicit, progress updates, pause settles, and resume works [E]
+  Test failed. See exception logs above.
+  The test description was: start is explicit, progress updates, pause settles, and resume works
+  
+00:32 +170 -19: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:32 +171 -19: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:32 +172 -19: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:32 +173 -19: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:32 +174 -19: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+00:32 +175 -19: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "继续整理": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:585:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  paused task shows the actual judgment failure and still confirms paid replay
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:32 +175 -20: /Users/athemeroy/projects/books-build/app/test/selection_bounds_test.dart: note editor only displays the clipped selected word before cutoff
+00:32 +175 -20: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused task shows the actual judgment failure and still confirms paid replay [E]
+  Test failed. See exception logs above.
+  The test description was: paused task shows the actual judgment failure and still confirms paid replay
+  
+00:33 +175 -20: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, cancel)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "继续整理": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:631:24)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unknown request resume requires explicit confirmation (unknown pause marker, cancel)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:33 +175 -21: /Users/athemeroy/projects/books-build/app/test/selection_bounds_test.dart: note editor only displays the clipped selected word before cutoff
+00:33 +175 -21: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, cancel) [E]
+  Test failed. See exception logs above.
+  The test description was: unknown request resume requires explicit confirmation (unknown pause marker, cancel)
+  
+00:33 +175 -21: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, confirm)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "继续整理": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:631:24)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unknown request resume requires explicit confirmation (unknown pause marker, confirm)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:33 +175 -22: /Users/athemeroy/projects/books-build/app/test/selection_bounds_test.dart: note editor only displays the clipped selected word before cutoff
+00:33 +175 -22: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, confirm) [E]
+  Test failed. See exception logs above.
+  The test description was: unknown request resume requires explicit confirmation (unknown pause marker, confirm)
+  
+00:33 +175 -22: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, dismiss)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "继续整理": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:631:24)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unknown request resume requires explicit confirmation (unknown pause marker, dismiss)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:33 +175 -23: /Users/athemeroy/projects/books-build/app/test/selection_bounds_test.dart: note editor only displays the clipped selected word before cutoff
+00:33 +175 -23: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (unknown pause marker, dismiss) [E]
+  Test failed. See exception logs above.
+  The test description was: unknown request resume requires explicit confirmation (unknown pause marker, dismiss)
+  
+00:33 +176 -23: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, cancel)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "继续整理": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:631:24)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unknown request resume requires explicit confirmation (journal without pause marker, cancel)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:33 +176 -24: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, cancel) [E]
+  Test failed. See exception logs above.
+  The test description was: unknown request resume requires explicit confirmation (journal without pause marker, cancel)
+  
+00:33 +176 -24: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, confirm)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "继续整理": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:631:24)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unknown request resume requires explicit confirmation (journal without pause marker, confirm)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:33 +176 -25: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, confirm) [E]
+  Test failed. See exception logs above.
+  The test description was: unknown request resume requires explicit confirmation (journal without pause marker, confirm)
+  
+00:33 +176 -25: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, dismiss)
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following assertion was thrown running a test:
+The finder "Found 0 widgets with text "继续整理": []" (used in a call to "tap()") could not find any
+matching widgets.
+
+When the exception was thrown, this was the stack:
+#0      WidgetController._getElementPoint (package:flutter_test/src/controller.dart:2095:7)
+#1      WidgetController.getCenter (package:flutter_test/src/controller.dart:1947:12)
+#2      WidgetController.tap (package:flutter_test/src/controller.dart:1080:7)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:631:24)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  unknown request resume requires explicit confirmation (journal without pause marker, dismiss)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:33 +176 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: unknown request resume requires explicit confirmation (journal without pause marker, dismiss) [E]
+  Test failed. See exception logs above.
+  The test description was: unknown request resume requires explicit confirmation (journal without pause marker, dismiss)
+  
+00:33 +176 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: background-limit pause forwards to legacy processing implementations
+00:33 +177 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: foreground resumes a background-limit pause after late settlement
+00:34 +178 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: foreground does not silently resume background_time_limit with unsettled request evidence
+00:34 +179 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: foreground does not silently resume background_unavailable with unsettled request evidence
+00:34 +180 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: HomeShell hidden paused and detached lifecycle does not cancel processing
+00:34 +181 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: background completion survives detached screen recreation and library reload
+00:34 +182 -26: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: preflight and model wait remain visible before first segment
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "正在准备整理": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:936:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart line 936
+The test description was:
+  preflight and model wait remain visible before first segment
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:34 +182 -27: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: preflight and model wait remain visible before first segment [E]
+  Test failed. See exception logs above.
+  The test description was: preflight and model wait remain visible before first segment
+  
+00:34 +182 -27: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paused card names the unfinished segment and last stage
+00:34 +183 -27: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: automatic retry can be stopped from the book card
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "继续整理": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:1047:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart line 1047
+The test description was:
+  automatic retry can be stopped from the book card
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:35 +183 -28: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: automatic retry can be stopped from the book card [E]
+  Test failed. See exception logs above.
+  The test description was: automatic retry can be stopped from the book card
+  
+00:35 +183 -28: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: classifier 403 offers a one-book model route and a pause-to-disable action
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.ensureVisible (package:flutter_test/src/controller.dart:2389:32)
+#3      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:1066:20)
+<asynchronous suspension>
+#4      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#5      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  classifier 403 offers a one-book model route and a pause-to-disable action
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:35 +183 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: classifier 403 offers a one-book model route and a pause-to-disable action [E]
+  Test failed. See exception logs above.
+  The test description was: classifier 403 offers a one-book model route and a pause-to-disable action
+  
+00:35 +183 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: Jev gateway consent and allowance stay on one book
+00:35 +184 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: bio rejection offers direct model recheck for this book
+00:35 +185 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: bio rejection offers direct Jev recheck for this book
+00:36 +186 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: completed book can recheck a deferred biography with Jev
+00:36 +187 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: invalid model biography check offers official Jev route
+00:36 +188 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: Jev 401 explains the key and switches this book to model
+00:36 +189 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: paid route stays recorded until idle when UI status is stale
+00:36 +190 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: historic anonymous error stays anonymous after adding workspace key
+00:36 +191 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: book budget top-up preserves usage and resumes the same book
+00:36 +192 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: Jev allowance top-up preserves usage and resumes only this book
+00:36 +193 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: missing key and start failures remain visible and retryable
+00:36 +194 -29: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: quality retry is exposed only when requested by durable state
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "已整理 0 / 2 段": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:1460:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart line 1460
+The test description was:
+  quality retry is exposed only when requested by durable state
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:37 +194 -30: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: quality retry is exposed only when requested by durable state [E]
+  Test failed. See exception logs above.
+  The test description was: quality retry is exposed only when requested by durable state
+  
+00:37 +194 -30: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: removal waits for actual settlement even if the drawer closes
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following StateError was thrown running a test:
+Bad state: No element
+
+When the exception was thrown, this was the stack:
+#0      Iterable.single (dart:core/iterable.dart:694:25)
+#1      WidgetController.element (package:flutter_test/src/controller.dart:888:30)
+#2      WidgetController.dragUntilVisible.<anonymous closure> (package:flutter_test/src/controller.dart:2489:38)
+<asynchronous suspension>
+#3      TestAsyncUtils.guard.<anonymous closure> (package:flutter_test/src/test_async_utils.dart:130:27)
+<asynchronous suspension>
+#4      WidgetController.scrollUntilVisible.<anonymous closure> (package:flutter_test/src/controller.dart:2439:7)
+<asynchronous suspension>
+#5      TestAsyncUtils.guard.<anonymous closure> (package:flutter_test/src/test_async_utils.dart:130:27)
+<asynchronous suspension>
+#6      main.<anonymous closure> (file:///Users/athemeroy/projects/books-build/app/test/processing_test.dart:1469:5)
+<asynchronous suspension>
+#7      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#8      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+The test description was:
+  removal waits for actual settlement even if the drawer closes
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:37 +194 -31: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: removal waits for actual settlement even if the drawer closes [E]
+  Test failed. See exception logs above.
+  The test description was: removal waits for actual settlement even if the drawer closes
+  
+00:37 +194 -31: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: remove refuses an active lease or cancelling status and retains the book
+00:37 +195 -31: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: processing refresh invalidates worlds and mentions while keeping text and notes
+00:37 +196 -31: /Users/athemeroy/projects/books-build/app/test/processing_test.dart: open reader refreshes chapter spoiler verdicts after processing
+00:37 +197 -31: Some tests failed.
+
+Failing tests:
+  /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: search clear cancels pending work and keeps the read boundary
+  /Users/athemeroy/projects/books-build/app/test/adaptive_sheet_test.dart: typography fits narrow large text and offers an explicit close
+  /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: explicit submit captures prefix, offers stop, stages, and previews citation
+  /Users/athemeroy/projects/books-build/app/test/ask_sheet_test.dart: new answer follows bottom or offers pinned shortcut at Size(360.0, 640.0) with keyboard
+  ... and 27 more

@@ -1,0 +1,28 @@
+services:
+  yedu-chat-results:
+    image: python:3.12-alpine
+    pull_policy: never
+    container_name: yedu-chat-results
+    restart: unless-stopped
+    command: [python, /tools/resumable_chat/server.py, --upstream, 'http://192.168.31.213:1236/v1/chat/completions', --key-file, /private/api-key, --results, /results]
+    volumes:
+      - ./tools:/tools:ro
+      - ./private:/private:ro
+      - ./results:/results
+    networks:
+      - traefik_net
+    mem_limit: 256m
+    cpu_shares: 128
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  traefik_net:
+    external: true

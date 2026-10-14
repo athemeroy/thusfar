@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:thusfar_app/data/library.dart';
 import 'package:thusfar_app/data/model_settings.dart';
 import 'package:thusfar_app/data/processing.dart';
+import 'package:thusfar_app/data/processing_background_session.dart';
 import 'package:thusfar_app/main.dart';
 import 'package:thusfar_app/sheets/book_sheet.dart';
 import 'package:thusfar_app/ui/theme.dart';
@@ -22,6 +23,7 @@ class FixtureProcessing extends BookProcessing {
   Json? lastPlan;
   int pauses = 0;
   int removals = 0;
+  int closes = 0;
   Completer<void>? pauseGate;
   Completer<void>? removalGate;
   Object? startError;
@@ -75,7 +77,7 @@ class FixtureProcessing extends BookProcessing {
   }
 
   @override
-  Future<void> close() async {}
+  Future<void> close() async => closes++;
 }
 
 Json fixtureBook() => <String, Object?>{
@@ -196,6 +198,21 @@ void main() {
     }
   }
 
+  Future<void> expectCheckSettings(
+    WidgetTester tester,
+    List<String> messages,
+  ) async {
+    final Finder info = find.byTooltip('了解本书的检查设置');
+    await tester.ensureVisible(info);
+    await tester.tap(info);
+    await tester.pumpAndSettle();
+    for (final String message in messages) {
+      expect(find.textContaining(message), findsOneWidget);
+    }
+    await tester.tap(find.text('知道了'));
+    await tester.pumpAndSettle();
+  }
+
   test('AppModel defers worker startup until explicit initialize', () async {
     late FixtureProcessing fake;
     final AppModel model = AppModel(
@@ -235,6 +252,117 @@ void main() {
       actual.dispose();
     }
   });
+
+  for (final bool pauseBeforeReady in <bool>[false, true]) {
+    test(
+      'real isolate makes no model requests before native readiness '
+      '(${pauseBeforeReady ? 'user pause before acknowledgement' : 'native start failure'})',
+      () async {
+        // The configured model route is a loopback HTTP server. No fixture
+        // contains credentials that could authorize a paid model request.
+        final HttpServer server = await HttpServer.bind(
+          InternetAddress.loopbackIPv4,
+          0,
+        );
+        int modelRequests = 0;
+        server.listen((HttpRequest request) async {
+          modelRequests++;
+          request.response.statusCode = HttpStatus.serviceUnavailable;
+          request.response.write(
+            'Offline fixture: model work is not permitted',
+          );
+          await request.response.close();
+        });
+        final Completer<bool> nativeReady = Completer<bool>();
+        final Completer<void> nativeRequested = Completer<void>();
+        final List<String> stops = <String>[];
+        final ProcessingBackgroundSession background =
+            ProcessingBackgroundSession(
+              start: (BookEntry book, String phase) {
+                expect(book.id, entry.id);
+                expect(phase, 'preparing');
+                if (!nativeRequested.isCompleted) nativeRequested.complete();
+                return nativeReady.future;
+              },
+              update: (_, _) async => true,
+              stop: (String id) async {
+                stops.add(id);
+              },
+              onUnavailable: (_) async {},
+            );
+        final ProcessingController actual = ProcessingController(
+          library,
+          background: background,
+        );
+        try {
+          expect(
+            settings.save(
+              url: 'http://127.0.0.1:${server.port}/v1',
+              model: 'offline-fixture',
+              key: 'offline-placeholder-not-a-real-key',
+            ),
+            isNull,
+          );
+          writeJson(File('${bookRoot.path}/status.json'), <String, Object?>{
+            'state': 'paused',
+            'done': 1,
+            'total': 2,
+            'frontier': 17,
+          });
+          library.refreshStatus(entry);
+          await actual.initialize().timeout(const Duration(seconds: 10));
+          await actual.startBook(entry).timeout(const Duration(seconds: 10));
+          await nativeRequested.future.timeout(const Duration(seconds: 10));
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          expect(modelRequests, 0);
+          expect(entry.status.done, 1);
+          expect(entry.status.frontier, 17);
+          expect(actual.health['current'], entry.id);
+
+          if (pauseBeforeReady) {
+            await actual
+                .pauseBookUntilIdle(entry)
+                .timeout(const Duration(seconds: 10));
+            nativeReady.complete(true);
+          } else {
+            nativeReady.completeError(
+              StateError('native foreground service failed'),
+            );
+          }
+          final DateTime deadline = DateTime.now().add(
+            const Duration(seconds: 10),
+          );
+          while (actual.health['current'] != null &&
+              DateTime.now().isBefore(deadline)) {
+            await Future<void>.delayed(const Duration(milliseconds: 10));
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          library.refreshStatus(entry);
+          expect(actual.health['current'], isNull);
+          expect(modelRequests, 0);
+          expect(stops, contains(entry.id));
+          expect(entry.status.isActive, isFalse);
+          expect(entry.status.done, 1);
+          expect(entry.status.frontier, 17);
+          if (pauseBeforeReady) {
+            expect(entry.status.state, 'paused');
+            expect(entry.status.raw['pause_reason'], 'user');
+            expect(
+              (readJson(File('${bookRoot.path}/meta.json')) as Json)['auto'],
+              false,
+            );
+          }
+        } finally {
+          if (!nativeReady.isCompleted) {
+            nativeReady.completeError(StateError('fixture cleanup'));
+          }
+          await actual.close().timeout(const Duration(seconds: 10));
+          actual.dispose();
+          await server.close(force: true);
+        }
+      },
+    );
+  }
 
   test(
     'dead worker pauses unowned manual work without replacing its receipt',
@@ -307,6 +435,63 @@ void main() {
     },
   );
 
+  for (final String journalKind in <String>[
+    'inflight',
+    'received',
+    'invalid',
+  ]) {
+    test(
+      'dead worker fails closed for $journalKind request evidence',
+      () async {
+        final File status = File('${bookRoot.path}/status.json');
+        final File meta = File('${bookRoot.path}/meta.json');
+        final File journal = File(
+          '${bookRoot.path}/work/model-request-journal.json',
+        );
+        writeJson(meta, <String, Object?>{'auto': true});
+        writeJson(status, <String, Object?>{
+          'state': 'running',
+          'done': 10,
+          'total': 603,
+          'frontier': 9042,
+          'retryable': true,
+          'retry_at': 1780000000,
+        });
+        journal.parent.createSync(recursive: true);
+        if (journalKind == 'invalid') {
+          journal.writeAsStringSync('{"version":1,"requests":');
+        } else {
+          writeJson(journal, <String, Object?>{
+            'version': 1,
+            'requests': <Json>[
+              <String, Object?>{'id': 1, 'phase': journalKind},
+            ],
+          });
+        }
+        final String originalJournal = journal.readAsStringSync();
+        library.refreshStatus(entry);
+
+        await reconcileStoppedWorker(library, '整理任务意外停止');
+
+        final Json saved = readJson(status)! as Json;
+        expect(saved['state'], 'paused');
+        expect(saved['pause_reason'], 'request_outcome_unknown');
+        expect(saved['request_outcome'], 'unknown');
+        expect(saved['retryable'], false);
+        expect(saved.containsKey('retry_at'), false);
+        expect(saved['done'], 10);
+        expect(saved['total'], 603);
+        expect(saved['frontier'], 9042);
+        expect((readJson(meta) as Json)['auto'], false);
+        expect(journal.readAsStringSync(), originalJournal);
+        expect(
+          File('${bookRoot.path}/work/activity.json').readAsStringSync(),
+          contains('没有收到完整结果，已完成的内容已保留'),
+        );
+      },
+    );
+  }
+
   test('dead worker respects an already recorded user pause', () async {
     final File status = File('${bookRoot.path}/status.json');
     writeJson(File('${bookRoot.path}/meta.json'), <String, Object?>{
@@ -348,36 +533,136 @@ void main() {
       configure();
       await open(tester);
       expect(processing.starts, 0);
-      await tester.tap(find.text('开始整理'));
+      await tester.tap(find.text('一键梳理'));
       await tester.pump();
       expect(processing.starts, 0);
-      expect(find.textContaining('会调用你的模型接口'), findsOneWidget);
+      expect(find.textContaining('费用按你的模型接口计费'), findsOneWidget);
       await tester.tap(find.text('开始'));
       await tester.pump();
       expect(processing.starts, 1);
-      expect(find.text('已整理 0 / 2 段'), findsOneWidget);
+      expect(find.text('正在梳理 · 已完成 0%'), findsOneWidget);
       processing.status(entry, <String, Object?>{
         'state': 'running',
         'done': 1,
         'total': 2,
       });
       await tester.pump();
-      expect(find.text('已整理 1 / 2 段'), findsOneWidget);
+      expect(find.text('正在梳理 · 已完成 50%'), findsOneWidget);
       processing.pauseGate = Completer<void>();
-      await tester.tap(find.text('暂停整理'));
+      await tester.tap(find.text('暂停梳理'));
       await tester.pump();
       expect(processing.pauses, 1);
-      expect(find.textContaining('已经整理好的内容会保留'), findsOneWidget);
-      expect(find.text('继续整理'), findsNothing);
+      expect(find.textContaining('已完成的内容会保留'), findsOneWidget);
+      expect(find.text('继续梳理'), findsNothing);
       processing.pauseGate!.complete();
       await tester.pumpAndSettle();
-      expect(find.text('继续整理'), findsOneWidget);
-      await tester.tap(find.text('继续整理'));
+      expect(find.text('继续梳理'), findsOneWidget);
+      await tester.tap(find.text('继续梳理'));
       await tester.pump();
       expect(processing.starts, 2);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'paused task shows the actual judgment failure and still confirms paid replay',
+    (WidgetTester tester) async {
+      configure();
+      const String error = '已配置模型的判断回答不完整或概率无效：概率合计不为 1（未完成 1/1 个问题）';
+      processing.status(entry, <String, Object?>{
+        'state': 'paused',
+        'done': 1,
+        'total': 2,
+        'frontier': 17,
+        'pause_reason': 'request_outcome_unknown',
+        'error': error,
+      });
+      await open(tester);
+      expect(find.textContaining('检查模型没有给出可用的答案'), findsOneWidget);
+      expect(find.text(error), findsNothing);
+      expect(entry.status.error, error);
+      expect(find.textContaining('没有收到完整结果，已完成的内容已保留'), findsOneWidget);
+      await tester.tap(find.text('继续梳理'));
+      await tester.pumpAndSettle();
+      expect(processing.starts, 0);
+      expect(find.text('继续未完成的整理？'), findsOneWidget);
+      expect(find.textContaining('这部分可能再次收费'), findsOneWidget);
+      await tester.tap(find.text('暂不继续'));
+      await tester.pumpAndSettle();
+      expect(processing.starts, 0);
+      expect(entry.status.error, error);
+    },
+  );
+
+  for (final bool journalOnly in <bool>[false, true]) {
+    for (final String decision in <String>['cancel', 'confirm', 'dismiss']) {
+      testWidgets(
+        'unknown request resume requires explicit confirmation '
+        '(${journalOnly ? 'journal without pause marker' : 'unknown pause marker'}, $decision)',
+        (WidgetTester tester) async {
+          configure();
+          processing.status(entry, <String, Object?>{
+            'state': 'paused',
+            'done': 1,
+            'total': 2,
+            'frontier': 17,
+            'pause_reason': journalOnly
+                ? 'interrupted'
+                : 'request_outcome_unknown',
+          });
+          final File journal = File(
+            '${bookRoot.path}/work/model-request-journal.json',
+          );
+          if (journalOnly) {
+            writeJson(journal, <String, Object?>{
+              'version': 1,
+              'requests': <Json>[
+                <String, Object?>{'id': 1, 'phase': 'inflight'},
+              ],
+            });
+          }
+          String? readJournal() =>
+              journal.existsSync() ? journal.readAsStringSync() : null;
+          final String? originalJournal = readJournal();
+          final String originalStatus = File(
+            '${bookRoot.path}/status.json',
+          ).readAsStringSync();
+          await open(tester);
+          await tester.tap(find.text('继续梳理'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(processing.starts, 0);
+          expect(find.text('继续未完成的整理？'), findsOneWidget);
+          expect(find.textContaining('上次未收到结果的部分可能需要重新处理'), findsOneWidget);
+          expect(find.textContaining('这部分可能再次收费'), findsOneWidget);
+          expect(readJournal(), originalJournal);
+
+          if (decision == 'confirm') {
+            await tester.tap(find.widgetWithText(FilledButton, '继续梳理'));
+          } else if (decision == 'cancel') {
+            await tester.tap(find.text('暂不继续'));
+          } else {
+            await tester.binding.handlePopRoute();
+          }
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(find.text('继续未完成的整理？'), findsNothing);
+          expect(processing.starts, decision == 'confirm' ? 1 : 0);
+          if (decision != 'confirm') {
+            expect(readJournal(), originalJournal);
+            expect(
+              File('${bookRoot.path}/status.json').readAsStringSync(),
+              originalStatus,
+            );
+            expect(entry.status.done, 1);
+            expect(entry.status.frontier, 17);
+            expect(find.text('继续梳理'), findsOneWidget);
+          }
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
 
   test(
     'background-limit pause forwards to legacy processing implementations',
@@ -427,6 +712,205 @@ void main() {
     },
   );
 
+  for (final String reason in <String>[
+    'background_time_limit',
+    'background_unavailable',
+  ]) {
+    testWidgets(
+      'foreground does not silently resume $reason with unsettled request evidence',
+      (WidgetTester tester) async {
+        configure();
+        late FixtureProcessing appProcessing;
+        final AppModel model = AppModel(
+          root,
+          createProcessing: (Library value) =>
+              appProcessing = FixtureProcessing(value),
+        );
+        model.prefs.update(
+          (p) => p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch,
+        );
+        await model.initialize();
+        final BookEntry appBook = model.library.books.single;
+        appProcessing.status(appBook, <String, Object?>{
+          'state': 'paused',
+          'pause_reason': reason,
+          'done': 1,
+          'total': 2,
+          'frontier': 17,
+        });
+        final File journal = File(
+          '${appBook.dir.path}/work/model-request-journal.json',
+        );
+        writeJson(journal, <String, Object?>{
+          'version': 1,
+          'requests': <Json>[
+            <String, Object?>{'id': 1, 'phase': 'inflight'},
+          ],
+        });
+        final String evidence = journal.readAsStringSync();
+        try {
+          await tester.pumpWidget(ThusfarApp(model: model));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 20));
+          expect(appProcessing.starts, 0);
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.paused,
+          );
+          await tester.pump();
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 20));
+          expect(appProcessing.starts, 0);
+          expect(appBook.status.done, 1);
+          expect(appBook.status.frontier, 17);
+          expect(journal.readAsStringSync(), evidence);
+        } finally {
+          await tester.pumpWidget(const SizedBox());
+          model.dispose();
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'HomeShell hidden paused and detached lifecycle does not cancel processing',
+    (WidgetTester tester) async {
+      configure();
+      late FixtureProcessing appProcessing;
+      final AppModel model = AppModel(
+        root,
+        createProcessing: (Library value) =>
+            appProcessing = FixtureProcessing(value),
+      );
+      model.prefs.update(
+        (p) => p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch,
+      );
+      await model.initialize();
+      final BookEntry appBook = model.library.books.single;
+      appProcessing.status(appBook, <String, Object?>{
+        'state': 'running',
+        'done': 3,
+        'total': 10,
+        'frontier': 9042,
+      });
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pump();
+      try {
+        for (final AppLifecycleState state in <AppLifecycleState>[
+          AppLifecycleState.inactive,
+          AppLifecycleState.hidden,
+          AppLifecycleState.paused,
+          AppLifecycleState.detached,
+        ]) {
+          tester.binding.handleAppLifecycleStateChanged(state);
+          await tester.pump();
+          expect(
+            appProcessing.pauses,
+            0,
+            reason: '$state must not pause the worker',
+          );
+          expect(
+            appProcessing.closes,
+            0,
+            reason: '$state must not close the worker',
+          );
+          expect(
+            appProcessing.starts,
+            0,
+            reason: '$state must not duplicate a run',
+          );
+          expect(appBook.status.state, 'running');
+          expect(appBook.status.done, 3);
+          expect(appBook.status.frontier, 9042);
+        }
+        await tester.pumpWidget(const SizedBox());
+        expect(
+          appProcessing.closes,
+          0,
+          reason: 'disposing a screen does not own worker lifetime',
+        );
+        expect(appProcessing.pauses, 0);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpWidget(const SizedBox());
+        model.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'background completion survives detached screen recreation and library reload',
+    (WidgetTester tester) async {
+      configure();
+      late FixtureProcessing appProcessing;
+      final AppModel model = AppModel(
+        root,
+        createProcessing: (Library value) =>
+            appProcessing = FixtureProcessing(value),
+      );
+      model.prefs.update(
+        (p) => p.updateCheckedAt = DateTime.now().millisecondsSinceEpoch,
+      );
+      await model.initialize();
+      final BookEntry appBook = model.library.books.single;
+      appProcessing.status(appBook, <String, Object?>{
+        'state': 'running',
+        'done': 3,
+        'total': 10,
+        'frontier': 9042,
+      });
+      await tester.pumpWidget(ThusfarApp(model: model));
+      await tester.pump();
+      try {
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+        appProcessing.status(appBook, <String, Object?>{
+          'state': 'done',
+          'done': 10,
+          'total': 10,
+          'frontier': 20000,
+        });
+        final String durable = File(
+          '${appBook.dir.path}/status.json',
+        ).readAsStringSync();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.detached,
+        );
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(ThusfarApp(model: model));
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 20));
+        await model.library.scan();
+        final BookEntry reloaded = model.library.books.single;
+        expect(reloaded.status.state, 'done');
+        expect(reloaded.status.done, 10);
+        expect(reloaded.status.total, 10);
+        expect(reloaded.status.frontier, 20000);
+        expect(
+          File('${appBook.dir.path}/status.json').readAsStringSync(),
+          durable,
+        );
+        expect(appProcessing.pauses, 0);
+        expect(appProcessing.closes, 0);
+        expect(appProcessing.starts, 0);
+      } finally {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpWidget(const SizedBox());
+        model.dispose();
+      }
+    },
+  );
+
   testWidgets('preflight and model wait remain visible before first segment', (
     WidgetTester tester,
   ) async {
@@ -449,11 +933,13 @@ void main() {
       'total': 0,
     });
     await open(tester, settle: false);
-    expect(find.text('正在准备整理'), findsOneWidget);
-    expect(find.textContaining('正在检查书籍和整理缓存'), findsWidgets);
-    expect(find.textContaining('准备 · 正在检查书籍和整理缓存'), findsOneWidget);
+    expect(find.text('正在梳理'), findsOneWidget);
+    expect(find.textContaining('正在检查书籍和整理缓存'), findsNothing);
+    await tester.tap(find.text('梳理记录'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.textContaining('准备整理'), findsWidgets);
     expect(find.textContaining('已等待 1 分'), findsNothing);
-    expect(find.text('整理记录'), findsOneWidget);
+    expect(find.text('梳理记录'), findsOneWidget);
 
     final double waitingSince =
         DateTime.now().millisecondsSinceEpoch / 1000 - 70;
@@ -474,7 +960,7 @@ void main() {
       'notice': '已发送 4 段，正在等待模型回复',
     });
     await tester.pump();
-    expect(find.text('已整理 0 / 603 段'), findsOneWidget);
+    expect(find.text('正在梳理 · 已完成 0%'), findsOneWidget);
     expect(find.text('已发送 4 段，正在等待模型回复'), findsOneWidget);
     expect(find.textContaining('已等待 1 分'), findsOneWidget);
 
@@ -493,7 +979,7 @@ void main() {
       'total': 603,
     });
     await tester.pump();
-    expect(find.textContaining('正文 · 已完成 9 / 603 段'), findsOneWidget);
+    expect(find.text('已整理 9 段'), findsOneWidget);
   });
 
   testWidgets('paused card names the unfinished segment and last stage', (
@@ -526,13 +1012,13 @@ void main() {
     await open(tester);
     expect(find.text('下一段：第 11 / 603 段，尚未完成。'), findsOneWidget);
     expect(find.textContaining('上次整理中断后已暂停'), findsOneWidget);
-    expect(find.textContaining('第 11 段 · 人物关联已等待'), findsWidgets);
+    expect(find.textContaining('第 11 段 · 整理人物关系已等待'), findsWidgets);
     await tester.scrollUntilVisible(
-      find.text('导出整理诊断'),
+      find.text('导出问题记录'),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    expect(find.text('导出整理诊断').hitTestable(), findsOneWidget);
+    expect(find.text('导出问题记录').hitTestable(), findsOneWidget);
   });
 
   testWidgets('automatic retry can be stopped from the book card', (
@@ -555,12 +1041,12 @@ void main() {
       'retry_at': DateTime.now().millisecondsSinceEpoch / 1000 + 600,
     });
     await open(tester);
-    expect(find.text('模型请求遇到问题，等待自动重试'), findsOneWidget);
+    expect(find.text('暂时连不上 AI 服务，稍后会自动再试'), findsOneWidget);
     expect(find.textContaining('自动重试；已经整理好的部分会保留'), findsOneWidget);
     await tester.tap(find.text('停止自动重试'));
     await tester.pumpAndSettle();
     expect(processing.pauses, 1);
-    expect(find.text('继续整理'), findsOneWidget);
+    expect(find.text('继续梳理'), findsOneWidget);
   });
 
   testWidgets(
@@ -576,11 +1062,11 @@ void main() {
         'retryable': false,
       });
       await open(tester);
-      expect(find.textContaining('上次匿名判断请求被拒绝'), findsOneWidget);
+      expect(find.textContaining('免费检查服务暂时无法使用'), findsOneWidget);
       expect(find.textContaining('proxy_requires_payment'), findsNothing);
       expect(settings.judgeFallbackEnabled, false);
-      await tester.ensureVisible(find.text('用已配置模型继续整理'));
-      await tester.tap(find.text('用已配置模型继续整理'));
+      await tester.ensureVisible(find.text('继续梳理'));
+      await tester.tap(find.text('继续梳理'));
       await tester.pumpAndSettle();
       expect(processing.starts, 1);
       expect(
@@ -604,9 +1090,9 @@ void main() {
         ),
         false,
       );
-      expect(find.textContaining('判断路线：免费优先'), findsOneWidget);
-      await tester.ensureVisible(find.text('暂停并停用本书判断兜底'));
-      await tester.tap(find.text('暂停并停用本书判断兜底'));
+      await expectCheckSettings(tester, <String>['内容检查：免费服务不可用时，改用 fixture']);
+      await tester.ensureVisible(find.text('暂停并使用设置中的检查方式'));
+      await tester.tap(find.text('暂停并使用设置中的检查方式'));
       await tester.pumpAndSettle();
       expect(processing.pauses, 1);
       expect(
@@ -635,19 +1121,21 @@ void main() {
     });
     await open(tester);
     expect(settings.judgeFallbackEnabled, false);
-    await tester.ensureVisible(find.text('用 Jev 网关继续整理'));
-    await tester.tap(find.text('用 Jev 网关继续整理'));
+    await tester.ensureVisible(find.text('用 Jev 继续整理'));
+    await tester.tap(find.text('用 Jev 继续整理'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(settings.judgeFallbackEnabled, false);
     final Json meta = readJson(File('${bookRoot.path}/meta.json')) as Json;
     expect(meta['judge_fallback_route'], 'jev');
     expect(meta.containsKey('judge_model_fallback'), false);
-    expect(find.textContaining('判断路线：免费优先，失败后使用 Jev 网关'), findsOneWidget);
-    expect(find.textContaining('本书 Jev 网关额度：0/1000 次'), findsOneWidget);
+    await expectCheckSettings(tester, <String>[
+      '内容检查：免费服务不可用时，改用 Jev（仅本书）',
+      '本书已使用 Jev 0 次，允许 1000 次',
+    ]);
     processing.pauseGate = Completer<void>();
-    await tester.ensureVisible(find.text('暂停并停用本书判断兜底'));
-    await tester.tap(find.text('暂停并停用本书判断兜底'));
+    await tester.ensureVisible(find.text('暂停并使用设置中的检查方式'));
+    await tester.tap(find.text('暂停并使用设置中的检查方式'));
     await tester.pump();
     expect(
       (readJson(File('${bookRoot.path}/meta.json'))
@@ -677,8 +1165,8 @@ void main() {
       'error': '第 2 章人物小传通过 0/2 位（拦截 2，缺失 0），已保留模型草稿',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('本书用已配置模型直接核对'));
-    await tester.tap(find.text('本书用已配置模型直接核对'));
+    await tester.ensureVisible(find.text('用当前模型重新检查'));
+    await tester.tap(find.text('用当前模型重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -686,7 +1174,7 @@ void main() {
           as Json)['judge_fallback_route'],
       'model-direct',
     );
-    expect(find.textContaining('判断路线：直接使用'), findsOneWidget);
+    await expectCheckSettings(tester, <String>['内容检查：fixture（仅本书）']);
   });
 
   testWidgets('bio rejection offers direct Jev recheck for this book', (
@@ -705,8 +1193,8 @@ void main() {
       'error': '第 2 章人物小传通过 0/2 位（拦截 2，缺失 0），已保留模型草稿',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
-    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    await tester.ensureVisible(find.text('用 Jev 重新检查'));
+    await tester.tap(find.text('用 Jev 重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -714,7 +1202,7 @@ void main() {
           as Json)['judge_fallback_route'],
       'jev-direct',
     );
-    expect(find.textContaining('判断路线：直接使用 Jev 网关'), findsOneWidget);
+    await expectCheckSettings(tester, <String>['内容检查：Jev（仅本书）']);
   });
 
   testWidgets('completed book can recheck a deferred biography with Jev', (
@@ -742,9 +1230,9 @@ void main() {
       'bio_review': <String, Object?>{'blocked': 2},
     });
     await open(tester);
-    expect(find.text('重试待核对部分'), findsOneWidget);
-    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
-    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    expect(find.text('重新检查未完成的资料'), findsOneWidget);
+    await tester.ensureVisible(find.text('用 Jev 重新检查'));
+    await tester.tap(find.text('用 Jev 重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -773,8 +1261,8 @@ void main() {
       'error': '人物小传验证失败：已配置模型的判断回答不完整或概率无效',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('本书用 Jev 网关直接核对'));
-    await tester.tap(find.text('本书用 Jev 网关直接核对'));
+    await tester.ensureVisible(find.text('用 Jev 重新检查'));
+    await tester.tap(find.text('用 Jev 重新检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -799,10 +1287,10 @@ void main() {
           '人物小传验证失败：Jev HTTP 401: {"error":{"message":"Authentication failed"}}',
     });
     await open(tester);
-    expect(find.textContaining('TypeSafe AI 拒绝了已保存的 Jev 密钥'), findsOneWidget);
+    expect(find.textContaining('Jev 密钥无效'), findsOneWidget);
     expect(find.textContaining('Authentication failed'), findsNothing);
-    await tester.ensureVisible(find.text('本书改用已配置模型直接核对'));
-    await tester.tap(find.text('本书改用已配置模型直接核对'));
+    await tester.ensureVisible(find.text('改用当前模型检查'));
+    await tester.tap(find.text('改用当前模型检查'));
     await tester.pumpAndSettle();
     expect(processing.starts, 1);
     expect(
@@ -827,8 +1315,8 @@ void main() {
     });
     processing.pauseGate = Completer<void>();
     await open(tester);
-    await tester.ensureVisible(find.text('停用本书判断兜底'));
-    await tester.tap(find.text('停用本书判断兜底'));
+    await tester.ensureVisible(find.text('使用设置中的检查方式'));
+    await tester.tap(find.text('使用设置中的检查方式'));
     await tester.pump();
     expect(
       processing.pauses,
@@ -866,7 +1354,7 @@ void main() {
         classifierKey: 'funded-workspace-key',
       );
       await open(tester);
-      expect(find.textContaining('上次匿名判断请求被拒绝'), findsOneWidget);
+      expect(find.textContaining('免费检查服务暂时无法使用'), findsOneWidget);
       expect(find.textContaining('上次 classifier.dev 工作区密钥被拒绝'), findsNothing);
     },
   );
@@ -894,8 +1382,8 @@ void main() {
       'error': '模型判断额度已达上限；已保留整理缓存',
     });
     await open(tester);
-    await tester.ensureVisible(find.text('追加 1000 次额度并继续'));
-    await tester.tap(find.text('追加 1000 次额度并继续'));
+    await tester.ensureVisible(find.text('再允许检查 1000 次'));
+    await tester.tap(find.text('再允许检查 1000 次'));
     await tester.pumpAndSettle();
     final Json after = readJson(allowance) as Json;
     expect(after['calls'], 1);
@@ -925,8 +1413,8 @@ void main() {
         'error': '付费裁判预算已达上限；已保留缓存',
       });
       await open(tester);
-      await tester.ensureVisible(find.text('追加 500 次 Jev 网关额度并继续'));
-      await tester.tap(find.text('追加 500 次 Jev 网关额度并继续'));
+      await tester.ensureVisible(find.text('再允许使用 Jev 500 次'));
+      await tester.tap(find.text('再允许使用 Jev 500 次'));
       await tester.pumpAndSettle();
       final Json after = readJson(allowance) as Json;
       expect(after['calls'], 1000);
@@ -941,20 +1429,20 @@ void main() {
     WidgetTester tester,
   ) async {
     await open(tester);
-    await tester.tap(find.text('开始整理'));
+    await tester.tap(find.text('一键梳理'));
     await tester.pump();
-    expect(find.text('还没有填写模型 API 密钥'), findsOneWidget);
+    expect(find.text('请先填写 AI 服务密钥'), findsOneWidget);
     expect(processing.starts, 0);
     configure();
     await tester.tap(find.text('去填写'));
     await tester.pump();
     processing.startError = StateError('正在暂停，请稍后继续');
-    await tester.tap(find.text('开始整理'));
+    await tester.tap(find.text('一键梳理'));
     await tester.pump();
     await tester.tap(find.text('开始'));
     await tester.pumpAndSettle();
     expect(find.text('正在暂停，请稍后继续'), findsOneWidget);
-    expect(find.text('开始整理'), findsOneWidget);
+    expect(find.text('一键梳理'), findsOneWidget);
   });
 
   testWidgets('quality retry is exposed only when requested by durable state', (
@@ -968,10 +1456,10 @@ void main() {
     });
     await open(tester);
     expect(processing.starts, 0);
-    await tester.tap(find.text('重试待核对部分'));
+    await tester.tap(find.text('重新检查未完成的资料'));
     await tester.pump();
     expect(processing.starts, 1);
-    expect(find.text('已整理 0 / 2 段'), findsOneWidget);
+    expect(find.text('正在梳理 · 已完成 0%'), findsOneWidget);
   });
 
   testWidgets('removal waits for actual settlement even if the drawer closes', (
@@ -981,18 +1469,18 @@ void main() {
     processing.removalGate = Completer<void>();
     await open(tester, onRemoved: () => removed++);
     await tester.scrollUntilVisible(
-      find.text('移到回收站'),
+      find.text('移出书架'),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('移到回收站'));
+    await tester.tap(find.text('移出书架'));
     await tester.pump();
     await tester.scrollUntilVisible(
-      find.text('移到回收站'),
+      find.text('移出书架'),
       240,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('移到回收站'));
+    await tester.tap(find.text('移出书架'));
     await tester.pump();
     expect(processing.removals, 1);
     expect(bookRoot.existsSync(), isTrue);

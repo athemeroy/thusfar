@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart';
@@ -50,7 +51,7 @@ class _PeoplePageState extends State<PeoplePage> {
   }
 
   Widget _add(BuildContext context) => Pill(
-    label: '补充人物或概念',
+    label: '添加角色',
     icon: Icons.person_add_alt_1_outlined,
     onTap: () {
       HapticFeedback.lightImpact();
@@ -81,13 +82,13 @@ class _PeoplePageState extends State<PeoplePage> {
     if (w == null || w.people.isEmpty) {
       final String message;
       final String? actionLabel = status.isActive
-          ? '查看整理过程'
+          ? '查看梳理'
           : status.isPaused
-          ? '继续整理'
+          ? '继续梳理'
           : status.isError
           ? '查看原因'
           : !link.c.book.hasKnowledge
-          ? '开始整理'
+          ? '一键梳理'
           : null;
       if (biosAhead) {
         final String state = status.isPaused
@@ -95,25 +96,27 @@ class _PeoplePageState extends State<PeoplePage> {
             : status.isError
             ? '\n整理停下了，可以查看原因。'
             : '';
-        message =
-            '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。$state';
+        message = '已有 ${bios.count} 篇人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。$state';
       } else if (status.isActive) {
         final String progress = status.total > 0
             ? '已完成 ${status.done}/${status.total} 段。'
             : '正在准备书籍。';
-        message = '这本书正在整理人物，$progress人物小传会在章节整理并核对后逐步出现。';
+        message = '这本书正在整理人物，$progress整理完一章后，会生成人物小传。';
       } else if (status.isPaused) {
         message = '人物整理已暂停。已经完成的内容仍会保留。';
       } else if (status.isError) {
         message = '人物整理停下了。请查看原因，再决定是否继续。';
       } else if (!link.c.book.hasKnowledge) {
-        message = link.c.book.manualError ?? '这本书还没有整理人物';
+        message = readerMessage(
+          link.c.book.manualError,
+          fallback: '尚未整理\n开启智能梳理，逐步认识书中人物。',
+        );
       } else {
         message = '截至这一页，还没有可展示的人物资料。';
       }
       return SheetPage(
         title: '人物',
-        tag: '截至第 $page 页',
+        tag: '止于当前 · 第 $page 页',
         bottom: _add(context),
         slivers: <Widget>[
           emptyState(
@@ -159,7 +162,7 @@ class _PeoplePageState extends State<PeoplePage> {
     return LayoutBuilder(
       builder: (context, box) {
         final Segmented tabs = Segmented(
-          labels: const <String>['本页', '本章', '全部', '关系图'],
+          labels: const <String>['本页', '本章', '全书', '关系'],
           index: tab,
           onChanged: (int i) {
             if (i == 3) {
@@ -171,7 +174,7 @@ class _PeoplePageState extends State<PeoplePage> {
         );
         return SheetPage(
           title: '人物',
-          tag: '截至第 $page 页',
+          tag: '止于当前 · 第 $page 页',
           bottom: _add(context),
           headerExtraHeight:
               tabs.heightForWidth(context, box.maxWidth) + (tab == 2 ? 56 : 0),
@@ -216,7 +219,13 @@ class _PeoplePageState extends State<PeoplePage> {
           ),
           slivers: <Widget>[
             if (link.c.book.manualError != null)
-              emptyState(context, link.c.book.manualError!),
+              emptyState(
+                context,
+                readerMessage(
+                  link.c.book.manualError,
+                  fallback: '暂时无法读取手动补充的人物资料。',
+                ),
+              ),
             if (biosAhead)
               SliverToBoxAdapter(
                 child: Container(
@@ -233,7 +242,7 @@ class _PeoplePageState extends State<PeoplePage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '已有 ${bios.count} 篇核对通过的人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。',
+                          '已有 ${bios.count} 篇人物小传。首批读到$unlockAt后解锁；当前只显示已读部分。',
                           style: TextStyle(
                             fontSize: 13,
                             height: 1.5,
@@ -320,7 +329,7 @@ class _PeoplePageState extends State<PeoplePage> {
                           // a count of 0 would read as "never appears".
                           if (p.mentions > 0)
                             Text(
-                              '${p.mentions}',
+                              '${p.mentions} 次',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: t.ink3,

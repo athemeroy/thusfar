@@ -728,6 +728,8 @@ class MarginaliaService {
                 for (final String name in [
                   'JUDGE_MODEL',
                   'JEV_ROUTE',
+                  'JUDGE_API_URL',
+                  'JUDGE_API_MODEL',
                   'LLM_BASE_URL',
                   'LLM_BASE_URL_OPENAI',
                   'LLM_BASE_URL_GEMINI',
@@ -901,6 +903,8 @@ class MarginaliaService {
               for (final String name in [
                 'JUDGE_MODEL',
                 'JEV_ROUTE',
+                'JUDGE_API_URL',
+                'JUDGE_API_MODEL',
                 'LLM_BASE_URL',
                 'LLM_BASE_URL_OPENAI',
                 'LLM_BASE_URL_GEMINI',

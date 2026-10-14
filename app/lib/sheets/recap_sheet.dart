@@ -49,7 +49,7 @@ class RecapPage extends StatelessWidget {
             action: onOpenProcessing == null || status.isDone
                 ? null
                 : Pill(
-                    label: status.isIdle ? '开始整理' : '查看整理过程',
+                    label: status.isIdle ? '一键梳理' : '查看梳理',
                     filled: true,
                     color: t.zhu,
                     onTap: onOpenProcessing!,
@@ -68,7 +68,7 @@ class RecapPage extends StatelessWidget {
       tag: '截至第 $page 页',
       slivers: <Widget>[
         if (saga != null) ...<Widget>[
-          const SliverToBoxAdapter(child: SectionTitle('到上一章为止')),
+          const SliverToBoxAdapter(child: SectionTitle('此前脉络')),
           SliverToBoxAdapter(
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -90,13 +90,13 @@ class RecapPage extends StatelessWidget {
             ),
           ),
         ],
-        const SliverToBoxAdapter(child: SectionTitle('本章到这里')),
+        const SliverToBoxAdapter(child: SectionTitle('本章进展')),
         if (here.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Text(
-                '本章还没有整理出的事件',
+                '正在发生 · 本章暂未梳理出事件。',
                 style: TextStyle(color: t.ink3, fontSize: 14),
               ),
             ),

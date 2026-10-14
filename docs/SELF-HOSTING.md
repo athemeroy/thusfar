@@ -27,3 +27,26 @@
 读书和导入书籍无需模型。主动整理人物线索或问书时，网页版直接从用户的浏览器向所选模型服务商发请求；GitHub Pages 不提供模型额度。可选 OpenAI 兼容、Gemini 与 Claude 兼容协议，也能编辑接口地址和模型名称。模型服务商必须允许浏览器跨域请求，且网络需要能连接它。浏览器的 API 密钥仅保存在当前标签页内存中，刷新后需重填。
 
 安装版在设备的私有目录保存用户填写的密钥。安装版的人物资料核对流程与网页版的带引文草稿有区别；请按界面标注使用结果。详情见仓库首页的功能和数据说明。
+
+### Stable generation prefixes
+
+Generation requests now put fixed task instructions and output schemas in a system
+message. Book title, chapter, events, previous summaries, character dossiers and
+biography repair hints belong in the following user message. This applies to
+chapter recaps, rolling summaries, the legacy combined recap, biographies,
+biography rewrites and uncommon relationship descriptions. Existing extraction
+and judging system messages remain separate. Language instructions are stable
+for the book's selected output language. No model or private endpoint is required.
+
+The biography evidence rules, spoiler boundary, output schemas and subsequent
+validators are retained. Message changes produce new draft fingerprints through
+the existing full-message digest; verified results and extraction caches remain
+available. Retry hints do not alter the biography system prefix.
+
+A stable prefix is necessary but does not guarantee an inference-cache hit.
+Strata 0.1.36 defaults to a 2,048-token minimum for a system-prefix checkpoint
+(`--prompt-cache-root`). Short instructions and alternating tasks can still report
+zero reused tokens. Do not add irrelevant instructions to meet that threshold or
+claim a speed improvement from formatting tests. Engine cache policy should be
+measured separately, including total request time, without competing with active
+book inference. This change does not reconfigure or restart the model service.

@@ -116,7 +116,7 @@ void main() {
 
       await tester.tap(find.text('本章'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('全部'));
+      await tester.tap(find.text('全书'));
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(field).controller!.text, 'Alice');
       expect(find.text('Bob'), findsNothing);
@@ -213,8 +213,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('这本书还没有整理人物'), findsOneWidget);
-      await tester.tap(find.text('开始整理'));
+      expect(find.text('尚未整理\n开启智能梳理，逐步认识书中人物。'), findsOneWidget);
+      await tester.tap(find.text('一键梳理'));
       await tester.pump();
       expect(started, 1);
       expect(tester.takeException(), isNull);
@@ -271,9 +271,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('已有 1 篇核对通过的人物小传'), findsOneWidget);
-      expect(find.text('继续整理'), findsOneWidget);
-      await tester.tap(find.text('继续整理'));
+      expect(find.textContaining('已有 1 篇人物小传'), findsOneWidget);
+      expect(find.text('继续梳理'), findsOneWidget);
+      await tester.tap(find.text('继续梳理'));
       expect(opened, 1);
       expect(tester.takeException(), isNull);
     } finally {

@@ -1,0 +1,365 @@
+-j/--concurrency was parsed but will be ignored, this option is not supported when running Integration Tests or web tests.
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/browser/web_shelf_and_notes_test.dart
+00:00 +0: test/browser/web_shelf_and_notes_test.dart: native highlights keep their category, anchors and shelf labels
+00:00 +1: test/browser/web_shelf_and_notes_test.dart: Web shelf edits replace the embedded native copy when exported
+00:00 +2: test/browser/web_shelf_and_notes_test.dart: preview and invalid shelf references leave browser data unchanged
+00:00 +3: test/browser/web_shelf_and_notes_test.dart: a conflicting personal record cannot overwrite shelf labels
+00:00 +4: test/browser/web_shelf_and_notes_test.dart: precise reading positions survive browser save, merge and export
+00:00 +5: test/browser/web_shelf_and_notes_test.dart: old native projections infer style without changing their revision
+00:00 +6: loading /Users/athemeroy/projects/books-build/app/test/browser/web_reader_flows_test.dart
+00:11 +6: test/browser/web_reader_flows_test.dart: narrow large-text tools keep navigation and safe search reachable
+00:11 +7: test/browser/web_reader_flows_test.dart: chapter jumps require consent and preserve position when cancelled
+00:12 +8: test/browser/web_reader_flows_test.dart: saved source restores the same passage when page fraction differs
+00:12 +9: test/browser/web_reader_flows_test.dart: automatic paging survives its controls closing and stops for other panels
+00:12 +10: test/browser/web_reader_flows_test.dart: reflow keeps the same source through repeated resize and type changes
+00:13 +11: test/browser/web_reader_flows_test.dart: bookmark toggle affects only the exact page and keeps adjacent bookmarks
+
+Warning: A call to tap() with finder "Found 1 widget with widget matching predicate: [
+  RawTooltip-[LabeledGlobalKey<RawTooltipState>#2e453]("打开阅读工具", hover delay: 0:00:00.400000, touch delay: 0:00:01.500000, dismiss delay: 0:00:00.100000, triggerMode: TooltipTriggerMode.longPress, enableFeedback: true, positionDelegate: Closure: (TooltipPositionContext) => Offset from: (...args) => context[property](...args), state: RawTooltipState#3e9a2(ticker inactive)),
+]" derived an Offset (Offset(195.0, 820.0)) that would not hit test on the specified widget.
+Maybe the widget is actually off-screen, or another widget is obscuring it, or the widget cannot receive pointer events.
+The finder corresponds to this RenderBox: _RenderLayoutSurrogateProxyBox#e8323 relayoutBoundary=up7
+The hit test result at that offset is: HitTestResult(_RenderInkFeatures#df2be@Offset(180.0, 29.0), RenderCustomPaint#e89a7@Offset(180.0, 29.0), RenderPhysicalShape#463b8@Offset(180.0, 29.0), RenderPadding#49c83@Offset(195.0, 34.0), RenderPadding#0e319@Offset(195.0, 34.0), RenderPointerListener#5f12e@Offset(195.0, 34.0), RenderSemanticsGestureHandler#ac470@Offset(195.0, 34.0), RenderSemanticsAnnotations#b53aa@Offset(195.0, 34.0), RenderPositionedBox#9552b@Offset(195.0, 34.0), RenderAnimatedOpacity#47c48@Offset(195.0, 34.0), RenderClipRect#dc9f3@Offset(195.0, 34.0), RenderOffstage#0002f@Offset(195.0, 34.0), RenderConstrainedBox#0debe@Offset(195.0, 34.0), RenderCustomMultiChildLayoutBox#aea50@Offset(195.0, 820.0), _RenderInkFeatures#43e78@Offset(195.0, 820.0), RenderPhysicalModel#32363@Offset(195.0, 820.0), RenderSemanticsAnnotations#c5667@Offset(195.0, 820.0), RenderRepaintBoundary#8025e@Offset(195.0, 820.0), RenderIgnorePointer#69c1a@Offset(195.0, 820.0), RenderAnimatedOpacity#e682e@Offset(195.0, 820.0), RenderAnimatedOpacity#1a9fc@Offset(195.0, 820.0), _RenderColoredBox#69c91@Offset(195.0, 820.0), RenderAnimatedOpacity#2304a@Offset(195.0, 820.0), RenderIgnorePointer#60e09@Offset(195.0, 820.0), RenderAnimatedOpacity#e6136@Offset(195.0, 820.0), RenderRepaintBoundary#20de9@Offset(195.0, 820.0), RenderSemanticsAnnotations#2176c@Offset(195.0, 820.0), RenderOffstage#6746f@Offset(195.0, 820.0), RenderSemanticsAnnotations#0da9a@Offset(195.0, 820.0), _RenderTheater#c2288@Offset(195.0, 820.0), RenderAbsorbPointer#b73dc@Offset(195.0, 820.0), RenderPointerListener#afcdd@Offset(195.0, 820.0), RenderSemanticsAnnotations#e4cad@Offset(195.0, 820.0), RenderCustomPaint#93cbd@Offset(195.0, 820.0), RenderSemanticsAnnotations#a0a62@Offset(195.0, 820.0), RenderSemanticsAnnotations#73f9b@Offset(195.0, 820.0), RenderSemanticsAnnotations#ed8f3@Offset(195.0, 820.0), RenderTapRegionSurface#53dec@Offset(195.0, 820.0), RenderSemanticsAnnotations#54c0a@Offset(195.0, 820.0), RenderSemanticsAnnotations#acc28@Offset(195.0, 820.0), RenderSemanticsAnnotations#1b778@Offset(195.0, 820.0), HitTestEntry<HitTestTarget>#c354b(_ReusableRenderView#d32d3), HitTestEntry<HitTestTarget>#390f3(<AutomatedTestWidgetsFlutterBinding>))
+../dart-sdk/lib/_internal/js_dev_runtime/patch/core_patch.dart 749:28                get current
+package:flutter_test/src/controller.dart 2165:25                                     [_getElementPoint]
+package:flutter_test/src/controller.dart 1947:12                                     getCenter
+package:flutter_test/src/controller.dart 1080:7                                      tap
+web_reader_flows_test.dart 338:19                                                    <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 589:19               <fn>
+../dart-sdk/lib/async/zone_root.dart 48:47                                           _rootRunUnary
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 816:35                                               runUnary
+../dart-sdk/lib/async/future_impl.dart 222:18                                        handleValue
+../dart-sdk/lib/async/future_impl.dart 948:44                                        handleValueCallback
+../dart-sdk/lib/async/future_impl.dart 977:13                                        _propagateToListeners
+../dart-sdk/lib/async/future_impl.dart 720:5                                         [_completeWithValue]
+../dart-sdk/lib/async/future_impl.dart 804:7                                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+package:fake_async/fake_async.dart 189:17                                            <fn>
+package:fake_async/fake_async.dart 200:19                                            flushMicrotasks
+package:flutter_test/src/binding.dart 2507:16                                        <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 537:3                _asyncStartSync
+package:flutter_test/src/binding.dart 2512:7                                         <fn>
+../dart-sdk/lib/async/future.dart 287:40                                             <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 27:47                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+../dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+../dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 183:69               <fn>
+To silence this warning, pass "warnIfMissed: false" to "tap()".
+To make this warning fatal, set WidgetController.hitTestWarningShouldBeFatal to true.
+
+
+Warning: A call to tap() with finder "Found 1 widget with widget matching predicate: [
+  RawTooltip-[LabeledGlobalKey<RawTooltipState>#43ada]("书签", hover delay: 0:00:00.400000, touch delay: 0:00:01.500000, dismiss delay: 0:00:00.100000, triggerMode: TooltipTriggerMode.longPress, enableFeedback: true, positionDelegate: Closure: (TooltipPositionContext) => Offset from: (...args) => context[property](...args), state: RawTooltipState#276df(ticker inactive)),
+]" derived an Offset (Offset(214.0, -24.0)) that would not hit test on the specified widget.
+Maybe the widget is actually off-screen, or another widget is obscuring it, or the widget cannot receive pointer events.
+Indeed, Offset(214.0, -24.0) is outside the bounds of the root of the render tree, Size(390.0, 844.0).
+The finder corresponds to this RenderBox: _RenderLayoutSurrogateProxyBox#befbb relayoutBoundary=up18
+The hit test result at that offset is: HitTestResult(HitTestEntry<HitTestTarget>#023db(_ReusableRenderView#d32d3), HitTestEntry<HitTestTarget>#486ca(<AutomatedTestWidgetsFlutterBinding>))
+../dart-sdk/lib/_internal/js_dev_runtime/patch/core_patch.dart 749:28                get current
+package:flutter_test/src/controller.dart 2165:25                                     [_getElementPoint]
+package:flutter_test/src/controller.dart 1947:12                                     getCenter
+package:flutter_test/src/controller.dart 1080:7                                      tap
+web_reader_flows_test.dart 340:19                                                    <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 589:19               <fn>
+../dart-sdk/lib/async/zone_root.dart 48:47                                           _rootRunUnary
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 816:35                                               runUnary
+../dart-sdk/lib/async/future_impl.dart 222:18                                        handleValue
+../dart-sdk/lib/async/future_impl.dart 948:44                                        handleValueCallback
+../dart-sdk/lib/async/future_impl.dart 977:13                                        _propagateToListeners
+../dart-sdk/lib/async/future_impl.dart 720:5                                         [_completeWithValue]
+../dart-sdk/lib/async/future_impl.dart 804:7                                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+package:fake_async/fake_async.dart 189:17                                            <fn>
+package:fake_async/fake_async.dart 200:19                                            flushMicrotasks
+package:flutter_test/src/binding.dart 2507:16                                        <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 537:3                _asyncStartSync
+package:flutter_test/src/binding.dart 2512:7                                         <fn>
+../dart-sdk/lib/async/future.dart 287:40                                             <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 27:47                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+../dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+../dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 183:69               <fn>
+To silence this warning, pass "warnIfMissed: false" to "tap()".
+To make this warning fatal, set WidgetController.hitTestWarningShouldBeFatal to true.
+
+BROWSER TEST FAILURE (bookmark toggle affects only the exact page and keeps adjacent bookmarks): Expected: an object with length of <2>
+  Actual: [Instance of 'WebPersonalItem']
+   Which: has length of <1>
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:matcher/src/expect/expect.dart 187:31                                        fail
+package:matcher/src/expect/expect.dart 182:3                                         _expect
+package:matcher/src/expect/expect.dart 65:3                                          expect$
+package:flutter_test/src/widget_tester.dart 473:18                                   expect$
+web_reader_flows_test.dart 342:7                                                     <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 589:19               <fn>
+../dart-sdk/lib/async/zone_root.dart 48:47                                           _rootRunUnary
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 816:35                                               runUnary
+../dart-sdk/lib/async/future_impl.dart 222:18                                        handleValue
+../dart-sdk/lib/async/future_impl.dart 948:44                                        handleValueCallback
+../dart-sdk/lib/async/future_impl.dart 977:13                                        _propagateToListeners
+../dart-sdk/lib/async/future_impl.dart 720:5                                         [_completeWithValue]
+../dart-sdk/lib/async/future_impl.dart 804:7                                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+package:fake_async/fake_async.dart 189:17                                            <fn>
+package:fake_async/fake_async.dart 200:19                                            flushMicrotasks
+package:flutter_test/src/binding.dart 2507:16                                        <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 537:3                _asyncStartSync
+package:flutter_test/src/binding.dart 2512:7                                         <fn>
+../dart-sdk/lib/async/future.dart 287:40                                             <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 27:47                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+../dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+../dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 183:69               <fn>
+
+00:13 +11 -1: test/browser/web_reader_flows_test.dart: bookmark toggle affects only the exact page and keeps adjacent bookmarks [E]
+  Test failed. See exception logs above.
+  The test description was: bookmark toggle affects only the exact page and keeps adjacent bookmarks
+  
+00:13 +11 -1: test/browser/web_reader_flows_test.dart: 人物 ignores repeated taps during a slow save
+00:13 +12 -1: test/browser/web_reader_flows_test.dart: 人物 does not reopen a reader dismissed during save
+00:14 +13 -1: test/browser/web_reader_flows_test.dart: 人物 cancels stale cutoff after rewind during save
+00:14 +14 -1: test/browser/web_reader_flows_test.dart: 问书 ignores repeated taps during a slow save
+00:14 +15 -1: test/browser/web_reader_flows_test.dart: 问书 does not reopen a reader dismissed during save
+00:14 +16 -1: test/browser/web_reader_flows_test.dart: 问书 cancels stale cutoff after rewind during save
+00:14 +17 -1: test/browser/web_reader_flows_test.dart: citation jump restores the original source and retained Ask draft
+00:15 +18 -1: test/browser/web_reader_flows_test.dart: failed save is visible and panel can be retried
+00:15 +19 -1: loading /Users/athemeroy/projects/books-build/app/test/browser/web_ai_cancellation_test.dart
+00:26 +19 -1: test/browser/web_ai_cancellation_test.dart: reader recap opens directly without starting preparation
+00:26 +20 -1: test/browser/web_ai_cancellation_test.dart: reading above preparation keeps the same run alive
+00:27 +21 -1: test/browser/web_ai_cancellation_test.dart: stop from reading saves current chunk without scheduling another
+00:27 +22 -1: test/browser/web_ai_cancellation_test.dart: selected chapter range skips earlier and later chunks
+00:27 +23 -1: test/browser/web_ai_cancellation_test.dart: read scope freezes boundary and sends only complete earlier chunks
+00:28 +24 -1: test/browser/web_ai_cancellation_test.dart: cancelling configuration never acquires a lease or calls a model
+00:28 +25 -1: test/browser/web_ai_cancellation_test.dart: cancelling the large-run confirmation never starts preparation
+00:28 +26 -1: test/browser/web_ai_cancellation_test.dart: Back during initial lease renewal cannot resurrect a run
+00:28 +27 -1: test/browser/web_ai_cancellation_test.dart: Pause during request gate blocks the call
+00:29 +28 -1: test/browser/web_ai_cancellation_test.dart: Back during request gate blocks the call
+00:29 +29 -1: test/browser/web_ai_cancellation_test.dart: Back during a retry gate prevents a second billable request
+00:29 +30 -1: test/browser/web_ai_cancellation_test.dart: Back preserves an in-flight result but never starts the next chunk
+00:29 +31 -1: loading /Users/athemeroy/projects/books-build/app/test/browser/web_ask_panel_test.dart
+00:40 +31 -1: test/browser/web_ask_panel_test.dart: verified selected evidence excludes same-block suffix and later chapter; full question survives
+BROWSER TEST FAILURE (verified selected evidence excludes same-block suffix and later chapter; full question survives): The finder "Found 0 widgets with text "返回这条回答": []" (used in a call to "tap()") could not find any matching widgets.
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter_test/src/controller.dart 2095:7                                      [_getElementPoint]
+package:flutter_test/src/controller.dart 1947:12                                     getCenter
+package:flutter_test/src/controller.dart 1080:7                                      tap
+web_ask_panel_test.dart 157:19                                                       <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 589:19               <fn>
+../dart-sdk/lib/async/zone_root.dart 48:47                                           _rootRunUnary
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 816:35                                               runUnary
+../dart-sdk/lib/async/future_impl.dart 222:18                                        handleValue
+../dart-sdk/lib/async/future_impl.dart 948:44                                        handleValueCallback
+../dart-sdk/lib/async/future_impl.dart 977:13                                        _propagateToListeners
+../dart-sdk/lib/async/future_impl.dart 720:5                                         [_completeWithValue]
+../dart-sdk/lib/async/future_impl.dart 804:7                                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+package:fake_async/fake_async.dart 189:17                                            <fn>
+package:fake_async/fake_async.dart 200:19                                            flushMicrotasks
+package:flutter_test/src/binding.dart 2507:16                                        <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 537:3                _asyncStartSync
+package:flutter_test/src/binding.dart 2512:7                                         <fn>
+../dart-sdk/lib/async/future.dart 287:40                                             <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 27:47                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+../dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+../dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 183:69               <fn>
+
+00:41 +31 -2: test/browser/web_ask_panel_test.dart: verified selected evidence excludes same-block suffix and later chapter; full question survives [E]
+  Test failed. See exception logs above.
+  The test description was: verified selected evidence excludes same-block suffix and later chapter; full question survives
+  
+00:41 +31 -2: test/browser/web_ask_panel_test.dart: retry preserves original question selection and context without duplicate clicks
+00:41 +32 -2: test/browser/web_ask_panel_test.dart: stop and reopen fence late response and keep next draft until connection settles
+00:41 +33 -2: test/browser/web_ask_panel_test.dart: source navigation snapshot restores only exact original evidence scope
+00:42 +34 -2: test/browser/web_ask_panel_test.dart: narrow keyboard viewport follows new question and keeps old-answer reading position
+00:42 +35 -2: loading /Users/athemeroy/projects/books-build/app/test/browser/web_reader_customizations_test.dart
+00:53 +35 -2: test/browser/web_reader_customizations_test.dart: native metadata roundtrips without enabling Web reader transforms
+00:53 +36 -2: test/browser/web_reader_customizations_test.dart: same-book browser merge keeps original native source identity and legacy omission
+00:54 +37 -2: test/browser/web_reader_customizations_test.dart: customization conflict previews and imports leave local metadata untouched
+00:54 +38 -2: test/browser/web_reader_customizations_test.dart: source mismatch, malformed directory, unknown fields and global rule injection are rejected
+00:54 +39 -2: test/browser/web_reader_customizations_test.dart: legacy backups remain readable and do not invent customization metadata
+00:54 +40 -2: test/browser/web_reader_customizations_test.dart: chapter verdict enrichment does not invalidate immutable source metadata
+00:54 +41 -2: test/browser/web_reader_customizations_test.dart: disabled directory sidecar is preserved without becoming enabled
+00:54 +42 -2: test/browser/web_reader_customizations_test.dart: full ZIP preserves global order only after explicit settings consent
+00:54 +43 -2: test/browser/web_reader_customizations_test.dart: full ZIP export removes absent book scope without binding it to new shelf entries
+00:54 +44 -2: test/browser/web_reader_customizations_test.dart: different full-library rule order is reported without overwriting stored data or settings
+00:54 +45 -2: test/browser/web_reader_customizations_test.dart: damaged retained full-library customizations fail export rather than disappearing
+00:54 +46 -2: test/browser/web_reader_customizations_test.dart: direct library restore cannot retain a forged source binding
+00:54 +47 -2: test/browser/web_reader_customizations_test.dart: WebDAV upload and confirmed snapshot merge retain native customizations
+BROWSER TEST FAILURE (WebDAV upload and confirmed snapshot merge retain native customizations): Bad state: No element
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+../dart-sdk/lib/core/iterable.dart 694:25                                            get single
+package:flutter_test/src/controller.dart 888:18                                      element
+package:flutter_test/src/controller.dart 2389:32                                     ensureVisible
+web_reader_customizations_test.dart 550:19                                           <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 589:19               <fn>
+../dart-sdk/lib/async/zone_root.dart 48:47                                           _rootRunUnary
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 816:35                                               runUnary
+../dart-sdk/lib/async/future_impl.dart 222:18                                        handleValue
+../dart-sdk/lib/async/future_impl.dart 948:44                                        handleValueCallback
+../dart-sdk/lib/async/future_impl.dart 977:13                                        _propagateToListeners
+../dart-sdk/lib/async/future_impl.dart 720:5                                         [_completeWithValue]
+../dart-sdk/lib/async/future_impl.dart 804:7                                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+package:fake_async/fake_async.dart 189:17                                            <fn>
+package:fake_async/fake_async.dart 200:19                                            flushMicrotasks
+package:flutter_test/src/binding.dart 2510:18                                        <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 618:19               <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 643:23               <fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 138:31                         <fn>
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 589:19               <fn>
+../dart-sdk/lib/async/zone_root.dart 48:47                                           _rootRunUnary
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 816:35                                               runUnary
+../dart-sdk/lib/async/future_impl.dart 222:18                                        handleValue
+../dart-sdk/lib/async/future_impl.dart 948:44                                        handleValueCallback
+../dart-sdk/lib/async/future_impl.dart 977:13                                        _propagateToListeners
+../dart-sdk/lib/async/future_impl.dart 720:5                                         [_completeWithValue]
+../dart-sdk/lib/async/future_impl.dart 804:7                                         <fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15                         [_run]
+package:stack_trace/src/stack_zone_specification.dart 114:48                         <fn>
+../dart-sdk/lib/async/zone_root.dart 35:13                                           _rootRun
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/async/zone.dart 810:35                                               run
+../dart-sdk/lib/async/zone.dart 702:7                                                runGuarded
+../dart-sdk/lib/async/zone.dart 743:23                                               <fn>
+../dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+../dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+../dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+../dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 183:69               <fn>
+
+00:54 +47 -3: test/browser/web_reader_customizations_test.dart: WebDAV upload and confirmed snapshot merge retain native customizations [E]
+  Test failed. See exception logs above.
+  The test description was: WebDAV upload and confirmed snapshot merge retain native customizations
+  
+00:54 +47 -3: test/browser/web_reader_customizations_test.dart: full ZIP export rejects a reused native ID with stale retained source policy
+00:54 +48 -3: test/browser/web_reader_customizations_test.dart: removed-book self-export reimports without a false policy conflict
+00:54 +49 -3: Some tests failed.
+
+Failing tests:
+  test/browser/web_ask_panel_test.dart: verified selected evidence excludes same-block suffix and later chapter; full question survives
+  test/browser/web_reader_customizations_test.dart: WebDAV upload and confirmed snapshot merge retain native customizations
+  test/browser/web_reader_flows_test.dart: bookmark toggle affects only the exact page and keeps adjacent bookmarks

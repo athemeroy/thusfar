@@ -1,0 +1,12 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/screens_test.dart
+00:00 +0: /Users/athemeroy/projects/books-build/app/test/screens_test.dart: (setUpAll)
+00:00 +0: /Users/athemeroy/projects/books-build/app/test/screens_test.dart: screens
+00:10 +1: /Users/athemeroy/projects/books-build/app/test/screens_test.dart: shelf search explains empty results and can recover
+00:12 +2: /Users/athemeroy/projects/books-build/app/test/screens_test.dart: (tearDownAll)
+00:12 +2: loading /Users/athemeroy/projects/books-build/app/test/foldable_screens_test.dart
+00:13 +2: /Users/athemeroy/projects/books-build/app/test/foldable_screens_test.dart: (setUpAll)
+00:14 +2: /Users/athemeroy/projects/books-build/app/test/foldable_screens_test.dart: unfolded vertical hinge keeps reading text and controls separate
+00:18 +3: /Users/athemeroy/projects/books-build/app/test/foldable_screens_test.dart: tabletop hinge keeps controls behind a tap
+00:18 +4: /Users/athemeroy/projects/books-build/app/test/foldable_screens_test.dart: phone reader keeps the title clear when controls appear
+00:20 +5: /Users/athemeroy/projects/books-build/app/test/foldable_screens_test.dart: (tearDownAll)
+00:20 +5: All tests passed!

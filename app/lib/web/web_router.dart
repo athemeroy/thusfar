@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'web_app.dart';
+import 'web_activity_route.dart';
 import 'web_storage.dart';
 
 /// A browser route contains only a local book ID. Text and model configuration
@@ -126,6 +127,7 @@ class WebReadingRouter extends RouterDelegate<WebReadingRoute>
     final String? bookId = _bookId;
     return Navigator(
       key: navigatorKey,
+      observers: <NavigatorObserver>[webReadingRoutes],
       pages: <Page<void>>[
         MaterialPage<void>(
           key: const ValueKey<String>('web-shelf'),
@@ -215,9 +217,9 @@ class _LocalBookRouteState extends State<_LocalBookRoute> {
         _book = book;
         _reading = reading;
       });
-    } on Object catch (error) {
+    } on Object {
       if (mounted && source == widget.library) {
-        setState(() => _error = '$error');
+        setState(() => _error = '暂时无法读取书库，请检查浏览器剩余空间后重试。');
       }
     }
   }

@@ -959,6 +959,8 @@ String _configFingerprint() =>
                 'QA_MODEL',
                 'JUDGE_MODEL',
                 'JEV_ROUTE',
+                'JUDGE_API_URL',
+                'JUDGE_API_MODEL',
                 'JUDGE_RETRIEVAL',
                 'QUERY_TRANSLATION',
                 'LLM_BASE_URL',

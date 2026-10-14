@@ -168,6 +168,8 @@ void main() {
     int chunks = 2,
     int chapters = 1,
     int? cutoff,
+    int initialTab = 0,
+    bool showPreparation = true,
   }) async {
     tester.view.physicalSize = const Size(1100, 1200);
     tester.view.devicePixelRatio = 1;
@@ -211,6 +213,8 @@ void main() {
             reading: WebReadingState(),
             library: library,
             analyze: model.analyze,
+            initialTab: initialTab,
+            showPreparation: showPreparation,
             readingBuilder: (_, _) =>
                 const Scaffold(body: Text('Reading while preparing')),
           ),
@@ -221,9 +225,15 @@ void main() {
   }
 
   Future<void> configure(WidgetTester tester) async {
-    await tester.tap(find.text('开始整理'));
+    await tester.tap(find.text('一键梳理'));
     await tester.pumpAndSettle();
-    expect(find.text('整理这本书'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('智能梳理'),
+      ),
+      findsOneWidget,
+    );
   }
 
   Future<void> start(WidgetTester tester) async {
@@ -231,13 +241,27 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(AlertDialog),
-        matching: find.text('开始整理'),
+        matching: find.text('开始梳理'),
       ),
     );
     // The accepted dialog is still mounted during its reverse transition.
     // Finish that transition before any test taps the preparation underneath.
     await tester.pumpAndSettle();
   }
+
+  testWidgets('reader recap opens directly without starting preparation', (
+    WidgetTester tester,
+  ) async {
+    await open(tester, initialTab: 1, showPreparation: false);
+    expect(find.text('正在发生'), findsOneWidget);
+    expect(find.text('全书已梳理 0%'), findsNothing);
+    expect(model.calls, 0);
+    await tester.tap(find.byTooltip('梳理设置'));
+    await tester.pumpAndSettle();
+    expect(find.text('全书已梳理 0%'), findsOneWidget);
+    expect(model.calls, 0);
+    expect(library.acquisitions, 0);
+  });
 
   testWidgets('reading above preparation keeps the same run alive', (
     WidgetTester tester,
@@ -247,7 +271,7 @@ void main() {
     await open(tester, chunks: 3);
     await start(tester);
     await until(tester, () => model.calls == 1);
-    await tester.tap(find.text('边读边整理'));
+    await tester.tap(find.text('继续阅读'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Reading while preparing'), findsOneWidget);
@@ -272,7 +296,7 @@ void main() {
       await open(tester, chunks: 3);
       await start(tester);
       await until(tester, () => model.calls == 1);
-      await tester.tap(find.text('边读边整理'));
+      await tester.tap(find.text('继续阅读'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(find.byTooltip('停止整理'));
@@ -378,7 +402,7 @@ void main() {
           navigator.currentState!.pop();
           expect(panel.mounted, isTrue); // Exit animation has not disposed it.
         } else {
-          await tester.tap(find.text('暂停整理'));
+          await tester.tap(find.text('暂停梳理'));
         }
         renewal.complete(true);
         await until(tester, () => library.releases == 1);

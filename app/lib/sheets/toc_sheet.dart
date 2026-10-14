@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -39,7 +40,11 @@ class TocPage extends StatefulWidget {
 class _TocPageState extends State<TocPage> {
   late int tab = widget.tab;
   bool showLater = false;
-  int? confirm;
+  late bool _positionToc = widget.tab == 0;
+  final GlobalKey _titleNoticeKey = GlobalKey();
+  final GlobalKey _correctionKey = GlobalKey();
+  final GlobalKey _directoryErrorKey = GlobalKey();
+  List<Chapter>? _positionedChapters;
   final TextEditingController pageInput = TextEditingController();
 
   @override
@@ -57,51 +62,92 @@ class _TocPageState extends State<TocPage> {
         link.c.book.notes,
         link.c.book.directory,
       ]),
-      builder: (BuildContext context, _) => SheetPage(
-        title: link.c.book.entry.title,
-        headerExtraHeight:
-            Segmented(
-              labels: const <String>['目录', '书签', '摘记'],
-              index: tab,
-              onChanged: (_) {},
-            ).heightForWidth(context, MediaQuery.sizeOf(context).width) +
-            (tab == 0
-                ? 10 +
-                      math.max(
-                        44,
-                        MediaQuery.textScalerOf(context).scale(16) * 1.5 + 10,
-                      )
-                : 0),
-        headerExtra: Column(
-          children: <Widget>[
-            Segmented(
-              labels: const <String>['目录', '书签', '摘记'],
-              index: tab,
-              onChanged: (int i) => setState(() => tab = i),
-            ),
-            if (tab == 0) _jumpBox(context),
-          ],
-        ),
-        slivers: <Widget>[
-          if (tab != 0 && link.c.book.notes.error != null)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  link.c.book.notes.error!,
-                  style: TextStyle(color: context.tk.danger),
+      builder: (BuildContext context, _) {
+        final ReaderDirectory directory = link.c.book.directory;
+        if (tab == 0 &&
+            (_positionToc ||
+                !identical(_positionedChapters, directory.chapters))) {
+          _positionedChapters = directory.chapters;
+          _positionToc = false;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || tab != 0) return;
+            final ScrollController scroll = SheetScope.of(context).scroll;
+            if (!scroll.hasClients) return;
+            final double precedingHeight =
+                <GlobalKey>[
+                  _correctionKey,
+                  _directoryErrorKey,
+                  _titleNoticeKey,
+                ].fold(0, (height, key) {
+                  final RenderBox? box =
+                      key.currentContext?.findRenderObject() as RenderBox?;
+                  return height + (box?.size.height ?? 0);
+                });
+            final double offset =
+                directory.chapterAt(link.c.start) * _chapterRowHeight(context) +
+                precedingHeight;
+            scroll.jumpTo(offset.clamp(0, scroll.position.maxScrollExtent));
+          });
+        }
+        return SheetPage(
+          title: link.c.book.entry.title,
+          headerExtraHeight:
+              Segmented(
+                labels: const <String>['目录', '书签', '想法'],
+                index: tab,
+                onChanged: (_) {},
+              ).heightForWidth(context, MediaQuery.sizeOf(context).width) +
+              (tab == 0
+                  ? 10 +
+                        math.max(
+                          44,
+                          MediaQuery.textScalerOf(context).scale(16) * 1.5 + 10,
+                        )
+                  : 0),
+          headerExtra: Column(
+            children: <Widget>[
+              Segmented(
+                labels: const <String>['目录', '书签', '想法'],
+                index: tab,
+                onChanged: (int i) {
+                  if (i == tab) return;
+                  SheetScope.of(context).scroll.jumpTo(0);
+                  setState(() {
+                    tab = i;
+                    _positionToc = i == 0;
+                  });
+                },
+              ),
+              if (tab == 0) _jumpBox(context),
+            ],
+          ),
+          slivers: <Widget>[
+            if (tab != 0 && link.c.book.notes.error != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    readerMessage(
+                      link.c.book.notes.error,
+                      fallback: '暂时无法读取书摘，请重新打开后重试。',
+                    ),
+                    style: TextStyle(color: context.tk.danger),
+                  ),
                 ),
               ),
-            ),
-          ...switch (tab) {
-            0 => _toc(context),
-            1 => _bookmarks(context),
-            _ => _notes(context),
-          },
-        ],
-      ),
+            ...switch (tab) {
+              0 => _toc(context),
+              1 => _bookmarks(context),
+              _ => _notes(context),
+            },
+          ],
+        );
+      },
     );
   }
+
+  double _chapterRowHeight(BuildContext context) =>
+      math.max(52, MediaQuery.textScalerOf(context).scale(15) * 1.4 * 2 + 16);
 
   Widget _jumpBox(BuildContext context) {
     final Tokens t = context.tk;
@@ -134,7 +180,7 @@ class _TocPageState extends State<TocPage> {
                       widget.link.jump(_offsetOfPage(n.clamp(1, total)));
                     },
                     decoration: InputDecoration(
-                      hintText: '跳到第 __ 页（共${exact ? '' : '约 '}$total 页）',
+                      hintText: '输入页码（1–${exact ? '' : '约 '}$total）',
                       filled: true,
                       fillColor: t.paper,
                       contentPadding: const EdgeInsets.symmetric(
@@ -146,7 +192,7 @@ class _TocPageState extends State<TocPage> {
                       ),
                       suffixIcon: hasText
                           ? IconButton(
-                              tooltip: '跳转到该页',
+                              tooltip: '跳页',
                               icon: const Icon(
                                 Icons.arrow_forward_rounded,
                                 size: 18,
@@ -204,6 +250,7 @@ class _TocPageState extends State<TocPage> {
       if (directory.supportsCorrection)
         SliverToBoxAdapter(
           child: Padding(
+            key: _correctionKey,
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
             child: Align(
               alignment: Alignment.centerLeft,
@@ -211,7 +258,6 @@ class _TocPageState extends State<TocPage> {
                 icon: const Icon(Icons.rule, size: 18),
                 label: Text(directory.enabled ? '已修正目录 · 管理' : '修正 TXT 目录'),
                 onPressed: () {
-                  setState(() => confirm = null);
                   SheetScope.of(
                     context,
                   ).state.push(DirectoryCorrectionPage(link: link));
@@ -224,12 +270,14 @@ class _TocPageState extends State<TocPage> {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(20),
+            key: _directoryErrorKey,
             child: Text(directory.error!, style: TextStyle(color: t.danger)),
           ),
         ),
       if (titlesPending)
         SliverToBoxAdapter(
           child: Container(
+            key: _titleNoticeKey,
             margin: const EdgeInsets.fromLTRB(20, 12, 20, 4),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -244,7 +292,7 @@ class _TocPageState extends State<TocPage> {
                 const SizedBox(width: 9),
                 Expanded(
                   child: Text(
-                    '章节标题尚待核对，明显剧透的标题暂时隐藏。可在书籍整理页重试。',
+                    '未读章节的剧透标题暂时隐藏，读到后揭晓。',
                     style: TextStyle(fontSize: 13, height: 1.5, color: t.ink2),
                   ),
                 ),
@@ -272,6 +320,7 @@ class _TocPageState extends State<TocPage> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 15,
+              height: 1.4,
               color: current ? t.zhu : (isRead ? t.ink : t.ink2),
               fontWeight: current ? FontWeight.w600 : FontWeight.w400,
             ),
@@ -281,14 +330,10 @@ class _TocPageState extends State<TocPage> {
               InkWell(
                 onTap: () {
                   HapticFeedback.lightImpact();
-                  if (isRead) {
-                    link.jump(c.o0);
-                  } else {
-                    setState(() => confirm = confirm == i ? null : i);
-                  }
+                  link.jump(c.o0);
                 },
                 child: Container(
-                  constraints: const BoxConstraints(minHeight: 52),
+                  height: _chapterRowHeight(context),
                   padding: EdgeInsets.fromLTRB(20.0 + 14 * c.depth, 8, 20, 8),
                   child: Row(
                     children: <Widget>[
@@ -343,33 +388,6 @@ class _TocPageState extends State<TocPage> {
                   ),
                 ),
               ),
-              if (confirm == i)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(34, 0, 20, 10),
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: <Widget>[
-                      Text(
-                        '会看到后面的内容',
-                        style: TextStyle(fontSize: 13, color: t.amber),
-                      ),
-                      TextButton(
-                        onPressed: () => setState(() => confirm = null),
-                        child: const Text('取消'),
-                      ),
-                      Pill(
-                        label: '跳过去',
-                        dense: true,
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          link.jump(c.o0);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
             ],
           );
         },
@@ -433,11 +451,11 @@ class _TocPageState extends State<TocPage> {
                           try {
                             current.restore(receipt);
                             if (context.mounted) notes.refresh();
-                          } on Object catch (e) {
+                          } on Object {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(
-                                context,
-                              ).showSnackBar(SnackBar(content: Text('$e')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('操作未完成，请稍后重试。')),
+                              );
                             }
                           } finally {
                             current.dispose();
@@ -447,10 +465,10 @@ class _TocPageState extends State<TocPage> {
                     ),
                   );
                   return true;
-                } on Object catch (e) {
+                } on Object {
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('$e')));
+                  ).showSnackBar(SnackBar(content: Text('操作未完成，请稍后重试。')));
                   return false;
                 }
               },
@@ -514,31 +532,35 @@ class _TocPageState extends State<TocPage> {
           padding: const EdgeInsets.fromLTRB(20, 8, 12, 0),
           child: Row(
             children: <Widget>[
-              Text('也显示后面的', style: TextStyle(fontSize: 13, color: t.ink2)),
+              Expanded(
+                child: Text(
+                  '显示未读想法 · 可能剧透',
+                  style: TextStyle(fontSize: 12, color: t.ink2),
+                ),
+              ),
               Switch(
                 value: showLater,
                 onChanged: (bool v) => setState(() => showLater = v),
                 activeThumbColor: t.qing,
               ),
-              const Spacer(),
               TextButton(
                 onPressed: () {
                   HapticFeedback.lightImpact();
                   Clipboard.setData(
                     ClipboardData(text: notesMarkdown(link.c.book)),
                   );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('摘记已复制为 Markdown')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('已复制')));
                 },
-                child: Text('导出', style: TextStyle(color: t.qing)),
+                child: Text('复制', style: TextStyle(color: t.qing)),
               ),
             ],
           ),
         ),
       ),
       if (shown.isEmpty)
-        emptyState(context, '读书时长按一句话，就能摘录或写笔记')
+        emptyState(context, '笔墨未动\n读书时长按句子，划线或写想法。')
       else
         SliverList.list(
           children: <Widget>[
@@ -595,7 +617,7 @@ class NoteTile extends StatelessWidget {
     final bool writtenNote = text.isNotEmpty;
     final Color accent = writtenNote ? t.qing : (bookmark ? t.amber : t.zhu);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       child: Material(
         color: t.sheet,
         borderRadius: BorderRadius.circular(18),
@@ -655,8 +677,8 @@ class NoteTile extends StatelessWidget {
                                   bookmark
                                       ? '书签'
                                       : writtenNote
-                                      ? '我的笔记'
-                                      : '摘录',
+                                      ? '我的想法'
+                                      : '划线',
                                   style: TextStyle(
                                     fontSize: 11,
                                     letterSpacing: .5,
@@ -727,7 +749,7 @@ class NoteTile extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: 36, right: 8),
                     child: IconButton(
-                      tooltip: '编辑笔记',
+                      tooltip: '编辑想法',
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         onEdit!();
@@ -749,14 +771,18 @@ String notesMarkdown(BookData book) {
   final List<String> lines = <String>[
     '# ${book.entry.title}',
     '',
-    '个人摘记（包含全书已保存的摘记）',
+    '个人书摘（包含全书已保存的划线与想法）',
     '',
   ];
   for (final Json item in book.notes.live) {
-    lines.addAll(<String>[
-      '## ${item['kind'] == 'bookmark' ? '书签' : '摘记'} · 原文位置 ${item['start']}',
-      '',
-    ]);
+    final String kind = item['kind'] == 'bookmark'
+        ? '书签'
+        : '${item['text'] ?? ''}'.isEmpty
+        ? '划线'
+        : '想法';
+    final String chapter =
+        book.chapters[book.chapterAt((item['start']! as num).toInt())].title;
+    lines.addAll(<String>['## $kind · $chapter', '']);
     lines.addAll(<String>[
       for (final String l in '${item['quote']}'.split('\n')) '> $l',
     ]);

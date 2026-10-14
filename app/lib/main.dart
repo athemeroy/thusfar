@@ -1,3 +1,4 @@
+import 'ui/reader_message.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show DisplayFeature, DisplayFeatureType, DisplayFeatureState;
@@ -6,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:thusfar_core/thusfar_core.dart' show PyException;
+import 'package:thusfar_core/jobs.dart' show hasUnsettledModelRequests;
 import 'package:url_launcher/url_launcher.dart';
 
 import 'data/backup.dart';
@@ -13,6 +15,7 @@ import 'reader/tap_layout.dart';
 import 'data/restore_report.dart';
 import 'ui/restore_report_view.dart';
 import 'data/library_zip.dart';
+import 'data/shelf_organization.dart';
 import 'data/library.dart';
 import 'data/model_settings.dart';
 import 'data/prefs.dart';
@@ -29,6 +32,7 @@ import 'screens/shelf_screen.dart';
 import 'sheets/book_sheet.dart';
 import 'ui/cover.dart';
 import 'ui/theme.dart';
+import 'ui/workspace_navigation.dart';
 
 /// Books named on the command line ("打开方式" on Windows and Linux). They
 /// are the reader's own files and are never deleted after import.
@@ -180,10 +184,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Future<void>? _backgroundResume;
   Timer? _importFeedback;
   Timer? _updatePromptRetry;
-  final Set<String> _notifiedBooks = <String>{};
-  final Map<String, String> _notificationStamps = <String, String>{};
-  bool _notificationSyncBusy = false;
-  bool _notificationSyncPending = false;
   bool _appResumed = true;
   bool _readingShares = false;
   bool _sharesAgain = false;
@@ -199,9 +199,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     m.processing.addListener(_changed);
     WidgetsBinding.instance.addObserver(this);
     ProcessingNotificationBridge.onOpenBook(_openProcessingNotification);
-    ProcessingNotificationBridge.onBackgroundTimeLimit(
-      _handleBackgroundTimeLimit,
-    );
     _paths.setMethodCallHandler((MethodCall call) async {
       if (call.method == 'importsAvailable') await _takeSharedImports();
     });
@@ -210,11 +207,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       if (mounted) unawaited(_checkForUpdates());
       if (mounted) unawaited(_takeProcessingNotification());
       if (mounted) {
-        unawaited(
-          _takeBackgroundTimeLimit().whenComplete(
-            _resumeBackgroundLimitedBooks,
-          ),
-        );
+        unawaited(_resumeBackgroundLimitedBooks());
       }
     });
     if (m.startupError != null) {
@@ -234,7 +227,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     m.processing.removeListener(_changed);
     WidgetsBinding.instance.removeObserver(this);
     ProcessingNotificationBridge.onOpenBook(null);
-    ProcessingNotificationBridge.onBackgroundTimeLimit(null);
     _paths.setMethodCallHandler(null);
     _importFeedback?.cancel();
     _updatePromptRetry?.cancel();
@@ -244,16 +236,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _appResumed = state == AppLifecycleState.resumed;
+    unawaited(ProcessingNotificationBridge.recordLifecycle(state.name));
     if (state == AppLifecycleState.resumed) {
       unawaited(
         _refreshLibraryOnResume().then((_) => _resumeBackgroundLimitedBooks()),
       );
       unawaited(_checkForUpdates());
-      _queueNotificationSync();
     }
-    if (state == AppLifecycleState.detached) {
-      unawaited(m.processing.close().catchError((Object _) {}));
-    }
+    // Android's app-owned engine can outlive every Activity/view. Detached
+    // is not an instruction to cancel an authorized worker or its requests.
   }
 
   Future<void> _checkForUpdates({bool manual = false}) async {
@@ -368,7 +359,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           if (!mounted || !_appResumed) return;
           m.library.refreshStatus(book);
           if (!book.status.isPaused ||
-              book.status.raw['pause_reason'] != 'background_time_limit') {
+              hasUnsettledModelRequests(book.dir) ||
+              !<String>{
+                'background_time_limit',
+                'background_unavailable',
+              }.contains(book.status.raw['pause_reason'])) {
             continue;
           }
           try {
@@ -382,7 +377,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void _changed() {
     if (mounted) {
       setState(() {});
-      _queueNotificationSync();
       // Cancellation can settle after the first foreground scan. The worker
       // refresh is the authoritative transition from cancelling to paused.
       if (_appResumed &&
@@ -390,7 +384,11 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           m.library.books.any(
             (BookEntry book) =>
                 book.status.isPaused &&
-                book.status.raw['pause_reason'] == 'background_time_limit',
+                !hasUnsettledModelRequests(book.dir) &&
+                <String>{
+                  'background_time_limit',
+                  'background_unavailable',
+                }.contains(book.status.raw['pause_reason']),
           )) {
         unawaited(_resumeBackgroundLimitedBooks());
       }
@@ -413,154 +411,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _takeBackgroundTimeLimit() async {
-    try {
-      final List<String> ids =
-          await ProcessingNotificationBridge.takeBackgroundTimeLimitBookIds();
-      if (ids.isNotEmpty) await _handleBackgroundTimeLimit(ids);
-    } on Object {
-      // The task state remains visible from the library if Android is offline.
-    }
-  }
-
-  Future<void> _handleBackgroundTimeLimit(List<String> bookIds) async {
-    bool affected = false;
-    for (final String id in bookIds.toSet()) {
-      final BookEntry? book = m.library.byId(id);
-      if (book == null) continue;
-      m.library.refreshStatus(book);
-      if (!book.status.isRunning) continue;
-      affected = true;
-      try {
-        await m.processing.pauseForBackgroundLimit(book);
-      } on Object {
-        // The worker may already have stopped; its durable status is read below.
-      }
-      m.library.refreshStatus(book);
-    }
-    if (mounted && affected) {
-      _queueNotificationSync();
-      _updateMessage('系统后台整理时段已结束。请打开整理任务查看状态后继续。');
-    }
-  }
-
-  void _queueNotificationSync() {
-    _notificationSyncPending = true;
-    if (_notificationSyncBusy) return;
-    unawaited(_syncNotifications());
-  }
-
-  Future<void> _syncNotifications() async {
-    _notificationSyncBusy = true;
-    try {
-      while (_notificationSyncPending && mounted) {
-        _notificationSyncPending = false;
-        final Map<String, Object?> health = m.processing.health;
-        final Set<String> owned = <String>{
-          if (health['current'] is String) health['current']! as String,
-          for (final Object? id
-              in (health['queued'] as List<Object?>?) ?? const [])
-            if (id is String) id,
-        };
-        final Map<String, BookEntry> active = <String, BookEntry>{
-          if (health['alive'] == true)
-            for (final BookEntry book in m.library.books)
-              if (book.status.isActive && owned.contains(book.id))
-                book.id: book,
-        };
-        for (final String id in _notifiedBooks.toList()) {
-          if (active.containsKey(id)) continue;
-          await ProcessingNotificationBridge.stop(id);
-          _notifiedBooks.remove(id);
-          _notificationStamps.remove(id);
-        }
-        for (final BookEntry book in active.values) {
-          final ProcessStatus status = book.status;
-          final String notice = status.notice ?? '';
-          final String phase = status.state == 'queued'
-              ? 'queued'
-              : status.state == 'finalizing'
-              ? 'finalizing'
-              : notice.contains('等待') || notice.contains('模型')
-              ? 'waiting'
-              : status.done == 0
-              ? 'preparing'
-              : 'running';
-          final String stamp =
-              '$phase/${status.done}/${status.total}/${book.title}';
-          if (_notificationStamps[book.id] == stamp) continue;
-          try {
-            if (_notifiedBooks.contains(book.id)) {
-              final bool present = await ProcessingNotificationBridge.update(
-                bookId: book.id,
-                title: book.title,
-                phase: phase,
-                done: status.done,
-                total: status.total,
-              );
-              if (!present) {
-                _notifiedBooks.remove(book.id);
-                _notificationStamps.remove(book.id);
-                continue;
-              }
-            } else if (_appResumed) {
-              await ProcessingNotificationBridge.start(
-                bookId: book.id,
-                title: book.title,
-                phase: phase,
-                done: status.done,
-                total: status.total,
-              );
-              _notifiedBooks.add(book.id);
-              // Permission approval can outlive the task that requested it.
-              // Re-read durable status before leaving any notification up.
-              _notificationSyncPending = true;
-            } else {
-              continue;
-            }
-            _notificationStamps[book.id] = stamp;
-          } on Object {
-            _notifiedBooks.remove(book.id);
-            _notificationStamps.remove(book.id);
-          }
-        }
-      }
-    } finally {
-      _notificationSyncBusy = false;
-    }
-  }
-
-  static const List<NavigationDestination> _destinations =
-      <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.auto_stories_outlined),
-          selectedIcon: Icon(Icons.auto_stories),
-          label: '书架',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.edit_note_outlined),
-          selectedIcon: Icon(Icons.edit_note),
-          label: '摘记',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.tune_outlined),
-          selectedIcon: Icon(Icons.tune),
-          label: '设置',
-        ),
-      ];
-
   void _selectTab(int index) {
     if (tab != index) HapticFeedback.selectionClick();
     setState(() => tab = index);
   }
 
-  Widget _bottomNavigation(Tokens t) => NavigationBar(
-    height: 72,
-    backgroundColor: t.sheet,
-    selectedIndex: tab,
-    onDestinationSelected: _selectTab,
-    destinations: _destinations,
-  );
+  Widget _bottomNavigation(Tokens t) =>
+      WorkspaceNavigation(selectedIndex: tab, onSelected: _selectTab);
 
   Widget _navigationRail(Tokens t) => NavigationRail(
     backgroundColor: t.sheet,
@@ -585,7 +442,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       NavigationRailDestination(
         icon: Icon(Icons.edit_note_outlined),
         selectedIcon: Icon(Icons.edit_note),
-        label: Text('摘记'),
+        label: Text('书摘'),
       ),
       NavigationRailDestination(
         icon: Icon(Icons.tune_outlined),
@@ -598,7 +455,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   Widget _foldableNavigation(Tokens t) {
     const List<(IconData, String)> destinations = <(IconData, String)>[
       (Icons.auto_stories_outlined, '书架'),
-      (Icons.edit_note_outlined, '摘记'),
+      (Icons.edit_note_outlined, '书摘'),
       (Icons.tune_outlined, '设置'),
     ];
     return Center(
@@ -925,7 +782,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
           ? '没有导出'
           : '已导出《${b.title}》，含本书规则和目录设置；全局规则请用整库 ZIP 或单独导出';
     } on PyException catch (error) {
-      message = error.message;
+      message = readerMessage(error.message, fallback: '操作未完成，请检查文件和剩余空间后重试。');
     } on Object {
       message = '导出没有完成，请检查书籍文件和可用存储空间后重试。';
     }
@@ -974,6 +831,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         'listView': p.listView,
       },
       if (transfer['web'] is Map<String, Object?>) 'web': transfer['web'],
+      'shelfOrganization': m.library.organization.exportPortable(
+        m.library.books.map((book) => book.id).toList(),
+      ),
       'shelf': <String, Object?>{
         'readingQueue': <int>[
           ...<int>{
@@ -995,9 +855,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               'protocol': m.settings.protocol,
               'base_url': url,
               'model': model,
-              'jev_route': m.settings.judgeFallbackEnabled
-                  ? 'free-then-model'
-                  : 'free-only',
+              'jev_route': m.settings.judgeRoute,
+              'judge_url': m.settings.judgeUrl,
+              'judge_model': m.settings.judgeModel,
             });
       }
     } on Object {
@@ -1015,9 +875,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         key: '',
         clearKey: true,
         protocol: model['protocol']! as String,
-        judgeFallback: model['jev_route'] == null
-            ? null
-            : model['jev_route'] == 'free-then-model',
+        judgeRoute: model['jev_route'] as String?,
+        judgeUrl: model['judge_url'] as String? ?? '',
+        judgeModel: model['judge_model'] as String? ?? '',
+        clearJudgeKey: true,
       );
       if (error != null) return error;
       applyModelEnvironment(m.settings);
@@ -1100,12 +961,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       );
       message = path == null
           ? '没有导出'
-          : '已导出 ${m.library.books.length} 本书及设置；独立 API 密钥未包含，请妥善保管 ZIP';
+          : '已导出 ${m.library.books.length} 本书及设置。服务密钥需要重新填写，请妥善保管备份';
     } on PyException catch (error) {
-      message = error.message;
+      message = readerMessage(error.message, fallback: '操作未完成，请检查文件和剩余空间后重试。');
     } on Object catch (error) {
       message = error is FormatException
-          ? error.message
+          ? readerMessage(error.message, fallback: '操作未完成，请检查文件和剩余空间后重试。')
           : '书库 ZIP 未能导出，请检查书籍文件和可用存储空间。';
     }
     if (!mounted) return;
@@ -1164,8 +1025,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               content: SingleChildScrollView(
                 child: Text(
                   '${archive.books.map((bytes) => '• ${BackupSummary.read(bytes).title}').join('\n')}\n\n这份 ZIP 含 ${archive.books.length} 本书。相同书籍会安全合并；冲突不会覆盖本地。'
-                  '独立填写的 API 密钥不在备份中；自定义模型地址可能含敏感路径，请妥善保管 ZIP。'
-                  '已有书籍保留本机逐书整理和付费路由，继续前请核对。'
+                  '服务密钥需要重新填写，请妥善保管备份。'
+                  '已有书籍会保留当前的整理和付费设置。'
                   '本书规则和 TXT 修正目录随书恢复，现有规则顺序和启用选择保留；目录或规则冲突会停止该项。'
                   '${archive.customizations == null ? '' : '使用备份设置时，还会追加整库全局净化规则（影响所有书）；保留当前设置则不导入全局规则。'}'
                   '是否同时使用备份里的阅读清单、排版和模型设置？',
@@ -1217,6 +1078,19 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     restored.settings,
                   );
                   if (settingError == null) {
+                    if (restored.settings['shelfOrganization'] != null) {
+                      final organization = ShelfOrganization.fromJson(
+                        m.library.organization.toJson(),
+                      );
+                      organization.mergePortable(
+                        restored.settings['shelfOrganization'],
+                        <String>[
+                          for (int i = 0; i < restored.total; i++)
+                            restored.ids[i]!,
+                        ],
+                      );
+                      m.library.saveOrganization(organization);
+                    }
                     final Map<String, Object?> shelf =
                         restored.settings['shelf'] as Map<String, Object?>? ??
                         <String, Object?>{};
@@ -1337,7 +1211,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             lower.endsWith('.azw')) {
           item.error = 'MOBI 请先转成 EPUB';
         } else if (backupsOnly) {
-          item.error = '请选择页读 ZIP 书库或 JSON 单书备份';
+          item.error = '请选择页读导出的书库或单书备份';
         } else if (lower.endsWith('.txt') || lower.endsWith('.epub')) {
           item.progress = 0.3;
           if (mounted) setState(() {});
@@ -1348,10 +1222,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             ..existed = r.existed
             ..progress = 1;
         } else {
-          item.error = '支持 TXT、EPUB、ZIP 或 JSON 备份';
+          item.error = '支持 TXT、EPUB 和页读备份';
         }
       } on PyException catch (error) {
-        item.error = error.message;
+        item.error = readerMessage(
+          error.message,
+          fallback: '无法导入，请检查文件和剩余空间后重试。',
+        );
       } on Object {
         item.error = '无法导入这个文件，请检查文件内容和存储空间后重试。';
       } finally {

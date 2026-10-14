@@ -1,0 +1,7 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/browser/web_reader_flows_test.dart
+00:00 +0: test/browser/web_reader_flows_test.dart: bookmark toggle affects only the exact page and keeps adjacent bookmarks
+00:01 +1: loading /Users/athemeroy/projects/books-build/app/test/browser/web_ask_panel_test.dart
+00:12 +1: test/browser/web_ask_panel_test.dart: verified selected evidence excludes same-block suffix and later chapter; full question survives
+00:12 +2: loading /Users/athemeroy/projects/books-build/app/test/browser/web_reader_customizations_test.dart
+00:24 +2: test/browser/web_reader_customizations_test.dart: WebDAV upload and confirmed snapshot merge retain native customizations
+00:24 +3: All tests passed!

@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -77,7 +78,7 @@ class _Exchange {
   List<AskTurn> references = const <AskTurn>[];
   final String question;
   final int position;
-  String stage = '理解你的问题';
+  String stage = '回想中 · 正在书中寻找相关线索…';
   String? error;
   Json? answer;
 }
@@ -213,7 +214,7 @@ class _AskPageState extends State<AskPage> {
     setState(() {
       _stopping = true;
       if (_history.isNotEmpty && _history.last.answer == null) {
-        _history.last.error = '已停止显示回答。等待当前连接结束后可发送下一问；已发生的费用可能无法取消。';
+        _history.last.error = '正在停止回答，稍后可发送下一问。已产生的费用可能无法退回。';
       }
     });
   }
@@ -285,7 +286,7 @@ class _AskPageState extends State<AskPage> {
       _inputError = null;
       entry.error = null;
       entry.answer = null;
-      entry.stage = '理解你的问题';
+      entry.stage = '回想中 · 正在书中寻找相关线索…';
       if (retry == null) _history.add(entry);
       if (retry == null) {
         _input.clear();
@@ -318,7 +319,7 @@ class _AskPageState extends State<AskPage> {
             return;
           }
           if (kind == 'stage') {
-            setState(() => entry.stage = value['text']! as String);
+            setState(() => entry.stage = '回想中 · 正在书中寻找相关线索…');
           }
         },
       );
@@ -331,7 +332,12 @@ class _AskPageState extends State<AskPage> {
       _showLatest();
     } on Object catch (e) {
       if (!mounted || generation != _generation) return;
-      setState(() => entry.error = llm.explain(e) ?? '这次没能完成回答，请稍后重试。');
+      setState(
+        () => entry.error = readerMessage(
+          llm.explain(e),
+          fallback: '这次没能完成回答，请检查网络和 AI 设置后重试。',
+        ),
+      );
       _showLatest();
     } finally {
       if (mounted && generation == _generation) {
@@ -360,8 +366,8 @@ class _AskPageState extends State<AskPage> {
     final Tokens t = context.tk;
     final int page = widget.link.pageNo(_cutoff > 0 ? _cutoff - 1 : 0);
     return SheetPage(
-      title: '问问这本书',
-      tag: '只用前 $page 页 · 最近3轮追问',
+      title: '问书',
+      tag: '只参考前 $page 页',
       slivers: <Widget>[
         if (_quoteVisible && widget.quote != null)
           SliverToBoxAdapter(
@@ -465,7 +471,7 @@ class _AskPageState extends State<AskPage> {
                     onSubmitted: (_) => _submit(),
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
-                      hintText: _busy ? '可以先写下一问，连接结束后发送…' : '问问已经读过的内容…',
+                      hintText: _busy ? '可以先写下一问…' : '问问剧情、线索或人物关系…',
                       filled: true,
                       fillColor: t.paper,
                       border: OutlineInputBorder(
@@ -490,7 +496,7 @@ class _AskPageState extends State<AskPage> {
                 IconButton.filled(
                   key: const ValueKey<String>('ask-send'),
                   tooltip: _busy
-                      ? (_stopping ? '正在结束连接' : '停止当前回答')
+                      ? (_stopping ? '正在停止回答' : '停止当前回答')
                       : '发送问题（可能收费）',
                   onPressed: _busy
                       ? (_stopping ? null : _stop)
@@ -546,7 +552,7 @@ class _AskPageState extends State<AskPage> {
                       ),
                     );
                   },
-                  child: const Text('定位原文（可返回回答）'),
+                  child: const Text('翻回原文'),
                 ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialog),
@@ -588,6 +594,14 @@ class _AskPageState extends State<AskPage> {
           ),
           const SizedBox(height: 16),
           if (answer != null) ...<Widget>[
+            if (withheld)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Tag('后文待续', color: t.amber),
+                ),
+              ),
             SelectableText(
               answer['text']! as String,
               style: TextStyle(
@@ -649,7 +663,7 @@ class _AskPageState extends State<AskPage> {
                             vertical: 1,
                           ),
                           decoration: BoxDecoration(
-                            color: t.zhu.withValues(alpha: 0.12),
+                            color: t.qing.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -657,7 +671,7 @@ class _AskPageState extends State<AskPage> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: t.zhu,
+                              color: t.qing,
                               fontFeatures: const <FontFeature>[
                                 FontFeature.tabularFigures(),
                               ],

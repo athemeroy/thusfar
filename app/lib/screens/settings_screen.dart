@@ -1,3 +1,4 @@
+import '../ui/info_button.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
@@ -8,10 +9,13 @@ import 'package:flutter/services.dart';
 import '../data/library.dart';
 import '../data/model_settings.dart';
 import '../data/prefs.dart';
+import '../data/reading_activity.dart';
+import 'reading_activity_screen.dart';
 import '../sheets/typography_sheet.dart';
 import '../ui/device.dart';
 import '../ui/theme.dart';
 import 'recovery_screen.dart';
+import 'background_processing_screen.dart';
 
 /// S18 设置.
 class SettingsScreen extends StatefulWidget {
@@ -118,6 +122,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Widget _choiceTile({
+    required String title,
+    required List<String> labels,
+    required int selected,
+    required ValueChanged<int> onSelected,
+  }) => ListTile(
+    title: Text(title),
+    subtitle: Text(labels[selected]),
+    trailing: const Icon(Icons.chevron_right),
+    onTap: () async {
+      final int? value = await showModalBottomSheet<int>(
+        context: context,
+        builder: (BuildContext sheet) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(20),
+            children: <Widget>[
+              Text(
+                title,
+                style: TextStyle(
+                  fontFamily: display,
+                  fontSize: 22,
+                  color: context.tk.ink,
+                ),
+              ),
+              const SizedBox(height: 12),
+              for (int i = 0; i < labels.length; i++)
+                ListTile(
+                  title: Text(labels[i]),
+                  selected: selected == i,
+                  trailing: selected == i ? const Icon(Icons.check) : null,
+                  onTap: () => Navigator.pop(sheet, i),
+                ),
+            ],
+          ),
+        ),
+      );
+      if (value != null && mounted) {
+        HapticFeedback.selectionClick();
+        onSelected(value);
+      }
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
@@ -128,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ? settings.protocolLabel
         : 'Google Gemini';
     Widget group(String title, List<Widget> rows) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -195,12 +243,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 SliverList.list(
                   children: <Widget>[
-                    group('模型', <Widget>[
+                    group('阅读', <Widget>[
                       ListTile(
-                        title: const Text('模型接口'),
+                        title: const Text('阅读记录'),
+                        subtitle: const Text('看看阅读时长，设定每日目标。'),
+                        trailing: Icon(Icons.chevron_right, color: t.ink3),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => ReadingActivityScreen(
+                              store: ReadingActivityStore.forRoot(
+                                library.root.path,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      ListTile(
+                        title: const Text('阅读排版'),
+                        subtitle: Text(
+                          '字号 ${prefs.fontSize.toStringAsFixed(1)} pt · '
+                          '行距 ${prefs.lineHeight.toStringAsFixed(2)}×',
+                        ),
+                        trailing: Icon(Icons.chevron_right, color: t.ink3),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          openTypography(context, prefs);
+                        },
+                      ),
+                      _choiceTile(
+                        title: '翻页手感',
+                        labels: const <String>['左右平推', '仿真覆页', '瞬时切换'],
+                        selected: prefs.anim.index,
+                        onSelected: (int value) => prefs.update(
+                          (Prefs p) => p.anim = PageAnim.values[value],
+                        ),
+                      ),
+                      SwitchListTile(
+                        title: const Text('音量键翻页'),
+                        value: prefs.volumeKeys,
+                        activeThumbColor: t.ink,
+                        onChanged: (bool v) {
+                          HapticFeedback.selectionClick();
+                          prefs.update((Prefs p) => p.volumeKeys = v);
+                        },
+                      ),
+                      _choiceTile(
+                        title: '夜间模式',
+                        labels: const <String>['跟随系统', '始终开启', '始终关闭'],
+                        selected: prefs.night.index,
+                        onSelected: (int value) => prefs.update(
+                          (Prefs p) => p.night = NightMode.values[value],
+                        ),
+                      ),
+                    ]),
+                    group('智能助手', <Widget>[
+                      ListTile(
+                        title: const Text('智能梳理'),
                         subtitle: Text(
                           model.isEmpty
-                              ? '$provider · 未配置模型'
+                              ? '设置后可梳理人物与前情'
                               : '$provider · ${model.split('+').first}',
                         ),
                         trailing: Row(
@@ -223,72 +324,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                       ),
                     ]),
-                    group('阅读', <Widget>[
-                      ListTile(
-                        title: const Text('阅读排版'),
-                        subtitle: Text(
-                          '字号 ${prefs.fontSize.toStringAsFixed(1)} pt · '
-                          '行距 ${prefs.lineHeight.toStringAsFixed(2)}×',
-                        ),
-                        trailing: Icon(Icons.chevron_right, color: t.ink3),
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          openTypography(context, prefs);
-                        },
-                      ),
-                      ListTile(
-                        title: const Text('翻页动画'),
-                        trailing: DropdownButton<int>(
-                          value: prefs.anim.index,
-                          underline: const SizedBox.shrink(),
-                          items: const <DropdownMenuItem<int>>[
-                            DropdownMenuItem<int>(value: 0, child: Text('平移')),
-                            DropdownMenuItem<int>(value: 1, child: Text('覆盖')),
-                            DropdownMenuItem<int>(value: 2, child: Text('无')),
-                          ],
-                          onChanged: (int? v) {
-                            HapticFeedback.selectionClick();
-                            prefs.update(
-                              (Prefs p) => p.anim = PageAnim.values[v ?? 0],
-                            );
-                          },
-                        ),
-                      ),
-                      SwitchListTile(
-                        title: const Text('音量键翻页'),
-                        value: prefs.volumeKeys,
-                        activeThumbColor: t.ink,
-                        onChanged: (bool v) {
-                          HapticFeedback.selectionClick();
-                          prefs.update((Prefs p) => p.volumeKeys = v);
-                        },
-                      ),
-                      ListTile(
-                        title: const Text('夜间模式'),
-                        trailing: DropdownButton<int>(
-                          value: prefs.night.index,
-                          underline: const SizedBox.shrink(),
-                          items: const <DropdownMenuItem<int>>[
-                            DropdownMenuItem<int>(
-                              value: 0,
-                              child: Text('跟随系统'),
+                    if (Platform.isAndroid)
+                      group('后台梳理', <Widget>[
+                        ListTile(
+                          title: const Text('后台继续梳理'),
+                          subtitle: const Text('允许后台运行，查看手机的耗电设置'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  const BackgroundProcessingScreen(),
                             ),
-                            DropdownMenuItem<int>(value: 1, child: Text('总是')),
-                            DropdownMenuItem<int>(value: 2, child: Text('从不')),
-                          ],
-                          onChanged: (int? v) {
-                            HapticFeedback.selectionClick();
-                            prefs.update(
-                              (Prefs p) => p.night = NightMode.values[v ?? 0],
-                            );
-                          },
+                          ),
                         ),
-                      ),
-                    ]),
-                    group('数据', <Widget>[
+                      ]),
+                    group('数据管理', <Widget>[
                       ListTile(
                         title: const Text('回收站'),
-                        subtitle: const Text('恢复移除的书籍，或确认永久删除以释放空间'),
+                        subtitle: const Text('恢复或永久删除书籍'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -297,8 +350,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       ListTile(
-                        title: const Text('未保存笔记草稿'),
-                        subtitle: const Text('继续上次未保存的笔记或修改'),
+                        title: const Text('想法草稿'),
+                        subtitle: const Text('接着写未保存的想法'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -307,8 +360,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       ListTile(
-                        title: const Text('上次恢复报告'),
-                        subtitle: const Text('逐本查看导入、合并、冲突与设置结果'),
+                        title: const Text('恢复记录'),
+                        subtitle: const Text('查看哪些书籍和设置已恢复'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -319,8 +372,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       ListTile(
-                        title: const Text('导出整个书库 ZIP'),
-                        subtitle: const Text('一本文件带走书籍、摘记、阅读进度和设置'),
+                        title: const Text('备份书库'),
+                        subtitle: const Text('保存书籍、书摘、进度与设置'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: () {
                           HapticFeedback.lightImpact();
@@ -328,8 +381,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                       ),
                       ListTile(
-                        title: const Text('导入书库或单书备份'),
-                        subtitle: const Text('同一本书安全合并；独立 API 密钥需在新设备重填'),
+                        title: const Text('恢复备份'),
+                        subtitle: const Text('从备份恢复书籍和阅读记录'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: () {
                           HapticFeedback.lightImpact();
@@ -338,7 +391,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('WebDAV 同步'),
-                        subtitle: const Text('将书籍快照上传到自己的云端，在其他设备导入'),
+                        subtitle: const Text('上传备份，在其他设备恢复'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: onWebDav,
                       ),
@@ -366,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('检查更新'),
-                        subtitle: const Text('查看 GitHub 最新正式版'),
+                        subtitle: const Text('查看是否有新版本'),
                         trailing: Icon(Icons.chevron_right, color: t.ink3),
                         onTap: onCheckUpdate,
                       ),
@@ -405,8 +458,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       ListTile(
                         title: const Text('隐私'),
+                        trailing: const InfoButton(
+                          title: '数据与隐私',
+                          message:
+                              '测试连接会发送一条测试消息。备份不包含单独填写的服务密钥，换设备后需要重新填写。导出或分享时，由你选择保存位置和接收方。请妥善保管备份。',
+                        ),
                         subtitle: Text(
-                          '书和笔记保存在这台$deviceWord。整理、问书和 AI 批注会把所需原文发送到你配置的接口；测试连接会发送一条测试消息。导出和分享由你选择保存位置或接收方。',
+                          '书和笔记保存在这台$deviceWord。使用 AI 时，相关原文会发送给你选择的服务。',
                           style: TextStyle(color: t.ink2, height: 1.5),
                         ),
                       ),

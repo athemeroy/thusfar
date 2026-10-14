@@ -247,13 +247,13 @@ void main() {
       expect(find.bySemanticsLabel(RegExp('.*秘密凶手.*')), findsNothing);
       await tester.tap(safeLabel);
       await tester.pumpAndSettle();
-      expect(find.text('会看到后面的内容'), findsOneWidget);
+      expect(find.text('注意剧透 · 将跳至未读位置'), findsOneWidget);
       expect(jumps, isEmpty);
       expect(controller.start, start);
       expect(controller.cutoff, cutoff);
-      await tester.tap(find.text('取消'));
+      await tester.tap(find.text('留在原地'));
       await tester.pumpAndSettle();
-      expect(find.text('会看到后面的内容'), findsNothing);
+      expect(find.text('注意剧透 · 将跳至未读位置'), findsNothing);
       expect(tester.takeException(), isNull);
       semantics.dispose();
     },
@@ -270,8 +270,8 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.go);
       await tester.pumpAndSettle();
       expect(jumps, isEmpty);
-      expect(find.text('会看到后面的内容'), findsOneWidget);
-      await tester.tap(find.text('跳过去'));
+      expect(find.text('注意剧透 · 将跳至未读位置'), findsOneWidget);
+      await tester.tap(find.text('确认前往'));
       expect(jumps, <int>[book.chapters[450].o0]);
       expect(tester.takeException(), isNull);
     },
@@ -293,7 +293,7 @@ void main() {
       await tester.testTextInput.receiveAction(TextInputAction.go);
       await tester.pumpAndSettle();
       expect(jumps, isEmpty);
-      expect(find.text('跳过去'), findsNothing);
+      expect(find.text('确认前往'), findsNothing);
     }
   });
 
@@ -307,7 +307,7 @@ void main() {
       expect(jumps, isEmpty);
       await tester.tap(find.text('第230章 山间旅程'));
       expect(jumps, <int>[book.chapters[229].o0]);
-      expect(find.text('会看到后面的内容'), findsNothing);
+      expect(find.text('注意剧透 · 将跳至未读位置'), findsNothing);
       await search(tester, '1');
       await tester.testTextInput.receiveAction(TextInputAction.go);
       expect(jumps.last, 0);
@@ -327,12 +327,12 @@ void main() {
       expect(find.text('第499章 山间旅程'), findsOneWidget);
       await tester.tap(find.text('第499章 山间旅程'));
       await tester.pumpAndSettle();
-      expect(find.text('会看到后面的内容'), findsOneWidget);
+      expect(find.text('注意剧透 · 将跳至未读位置'), findsOneWidget);
       await search(tester, '第498章');
-      expect(find.text('跳过去'), findsNothing);
+      expect(find.text('确认前往'), findsNothing);
       await tester.tap(find.text('章节序号'));
       await tester.pumpAndSettle();
-      expect(find.text('跳过去'), findsNothing);
+      expect(find.text('确认前往'), findsNothing);
       expect(tester.widget<TextField>(getInput()).controller!.text, isEmpty);
       await search(tester, '452');
       expect(find.text('第452章'), findsOneWidget);
@@ -412,11 +412,11 @@ void main() {
     await search(tester, '451');
     await tester.tap(find.byType(ListTile));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('跳过去'));
+    await tester.ensureVisible(find.text('确认前往'));
     await tester.pumpAndSettle();
-    expect(find.text('会看到后面的内容'), findsOneWidget);
+    expect(find.text('注意剧透 · 将跳至未读位置'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await tester.tap(find.text('取消'));
+    await tester.tap(find.text('留在原地'));
     await tester.pumpAndSettle();
     expect(jumps, isEmpty);
     expect(tester.takeException(), isNull);

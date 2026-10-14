@@ -10,6 +10,7 @@ import 'package:thusfar_core/manual_entities.dart' as manual;
 import 'package:thusfar_core/notebook.dart' as notebook;
 
 import 'restore_report.dart';
+import 'shelf_organization.dart';
 
 export 'package:thusfar_core/thusfar_core.dart' show Json;
 
@@ -197,6 +198,7 @@ class Library extends ChangeNotifier {
   Map<String, Progress> progress = <String, Progress>{};
   List<String> readingList = <String>[];
   bool loaded = false;
+  ShelfOrganization organization = ShelfOrganization();
 
   File get _restoreReportFile => File('${root.path}/restore-report.json');
   RestoreReport? get lastRestoreReport {
@@ -270,6 +272,9 @@ class Library extends ChangeNotifier {
           in (rl['items'] as List<Object?>?) ?? const <Object?>[])
         '$x',
     ];
+    organization = ShelfOrganization.fromJson(
+      readJson(File('${root.path}/shelf-organization.json')),
+    );
     loaded = true;
     notifyListeners();
   }
@@ -362,6 +367,102 @@ class Library extends ChangeNotifier {
         e.key: e.value.toJson(),
     });
     notifyListeners();
+  }
+
+  bool isFinished(String id) =>
+      organization.books[id]?.finished ?? ((progressOf(id)?.pct ?? 0) >= 99);
+
+  String? collectionOf(String id) => organization.books[id]?.collection;
+
+  void saveOrganization(ShelfOrganization next) {
+    // Write first: a failed save must not change the visible shelf state.
+    writeJson(File('${root.path}/shelf-organization.json'), next.toJson());
+    organization = next;
+    notifyListeners();
+  }
+
+  void setBookCollection(String id, String? collection) {
+    final ShelfOrganization next = ShelfOrganization.fromJson(
+      organization.toJson(),
+    );
+    if (collection != null && !next.collections.contains(collection)) {
+      throw const FormatException('这个分类已不存在。');
+    }
+    next.books[id] = ShelfBookState(
+      collection: collection,
+      finished: next.books[id]?.finished,
+    );
+    saveOrganization(next);
+  }
+
+  void setBookFinished(String id, bool finished) {
+    final ShelfOrganization next = ShelfOrganization.fromJson(
+      organization.toJson(),
+    );
+    next.books[id] = ShelfBookState(
+      collection: next.books[id]?.collection,
+      finished: finished,
+    );
+    saveOrganization(next);
+  }
+
+  void createCollection(String name) {
+    final String clean = name.trim();
+    if (clean.isEmpty || clean.length > 30) {
+      throw const FormatException('分类名请用 1–30 个字。');
+    }
+    final ShelfOrganization next = ShelfOrganization.fromJson(
+      organization.toJson(),
+    );
+    if (next.collections.contains(clean)) {
+      throw const FormatException('已有同名分类。');
+    }
+    if (next.collections.length >= 100) {
+      throw const FormatException('分类已满，请先合并一些分类。');
+    }
+    next.collections.add(clean);
+    saveOrganization(next);
+  }
+
+  void renameCollection(String oldName, String newName) {
+    final String clean = newName.trim();
+    if (clean == oldName) return;
+    if (clean.isEmpty || clean.length > 30) {
+      throw const FormatException('分类名请用 1–30 个字。');
+    }
+    final ShelfOrganization next = ShelfOrganization.fromJson(
+      organization.toJson(),
+    );
+    if (next.collections.contains(clean)) {
+      throw const FormatException('已有同名分类。');
+    }
+    final int index = next.collections.indexOf(oldName);
+    if (index < 0) return;
+    next.collections[index] = clean;
+    for (final String id in next.books.keys.toList()) {
+      final ShelfBookState state = next.books[id]!;
+      if (state.collection == oldName) {
+        next.books[id] = ShelfBookState(
+          collection: clean,
+          finished: state.finished,
+        );
+      }
+    }
+    saveOrganization(next);
+  }
+
+  void removeCollection(String name) {
+    final ShelfOrganization next = ShelfOrganization.fromJson(
+      organization.toJson(),
+    );
+    next.collections.remove(name);
+    for (final String id in next.books.keys.toList()) {
+      final ShelfBookState state = next.books[id]!;
+      if (state.collection == name) {
+        next.books[id] = ShelfBookState(finished: state.finished);
+      }
+    }
+    saveOrganization(next);
   }
 
   void setReadingList(List<String> items) {

@@ -24,8 +24,8 @@ class _TrashScreenState extends State<TrashScreen> {
   void _refresh() {
     try {
       _books = widget.library.listTrash();
-    } on Object catch (e) {
-      _error = '无法读取回收站：$e';
+    } on Object {
+      _error = '暂时无法读取回收站，请重试。';
     }
   }
 
@@ -68,8 +68,8 @@ class _TrashScreenState extends State<TrashScreen> {
           SnackBar(content: Text(permanent ? '已永久删除' : '已恢复到书架，阅读进度和摘记已保留')),
         );
       }
-    } on Object catch (e) {
-      _error = '$e';
+    } on Object {
+      _error = '操作未完成，请稍后重试。';
     }
     if (mounted) {
       setState(() {
@@ -111,7 +111,7 @@ class _TrashScreenState extends State<TrashScreen> {
                   Text(
                     '${book.removed.toLocal().toString().split('.').first} · ${(book.bytes / 1024 / 1024).toStringAsFixed(1)} MB',
                   ),
-                  if (book.issue != null) Text(book.issue!),
+                  if (book.issue != null) const Text('这本书暂时无法恢复，请保留备份后重试。'),
                   Wrap(
                     spacing: 12,
                     children: [
@@ -160,8 +160,8 @@ class _NoteDraftsScreenState extends State<NoteDraftsScreen> {
         for (final book in widget.library.books)
           for (final draft in NoteDraft.list(book.dir)) (book, draft),
       ];
-    } on Object catch (e) {
-      _error = '$e';
+    } on Object {
+      _error = '操作未完成，请稍后重试。';
     }
   }
 
@@ -197,8 +197,8 @@ class _NoteDraftsScreenState extends State<NoteDraftsScreen> {
         existing: existing,
       );
       if (mounted) setState(_read);
-    } on Object catch (e) {
-      if (mounted) setState(() => _error = '$e');
+    } on Object {
+      if (mounted) setState(() => _error = '操作未完成，请稍后重试。');
     } finally {
       book.dispose();
     }
@@ -226,7 +226,7 @@ class _NoteDraftsScreenState extends State<NoteDraftsScreen> {
             child: ListTile(
               title: Text(book.title),
               subtitle: Text(
-                '${draft.noteId == null ? '新笔记草稿' : '现有笔记的未保存修改'} · 原文位置 ${draft.start}–${draft.end}',
+                draft.noteId == null ? '新笔记草稿' : '现有笔记的未保存修改',
               ),
               trailing: const Icon(Icons.edit_note),
               onTap: () => _open(book, draft),

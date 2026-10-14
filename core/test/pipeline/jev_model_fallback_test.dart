@@ -368,6 +368,76 @@ void main() {
     },
   );
 
+  for (final (String code, String answer) in <(String, String)>[
+    ('invalid_json', 'PRIVATE-MODEL-REPLY'),
+    ('missing_answer', '{}'),
+    ('invalid_choice', '{"q1":{"choice":"PRIVATE-OPTION"}}'),
+    (
+      'incomplete_probabilities',
+      '{"q1":{"choice":"yes","probabilities":{"yes":1}}}',
+    ),
+    (
+      'non_numeric_probability',
+      '{"q1":{"choice":"yes","probabilities":{"yes":"0.9","no":0.1}}}',
+    ),
+    (
+      'non_finite_probability',
+      '{"q1":{"choice":"yes","probabilities":{"yes":NaN,"no":0.1}}}',
+    ),
+    (
+      'probability_out_of_range',
+      '{"q1":{"choice":"yes","probabilities":{"yes":1.1,"no":-0.1}}}',
+    ),
+    (
+      'inconsistent_sum',
+      '{"q1":{"choice":"yes","probabilities":{"yes":0.9,"no":0.9}}}',
+    ),
+    (
+      'zero_choice_probability',
+      '{"q1":{"choice":"yes","probabilities":{"yes":0,"no":1}}}',
+    ),
+  ]) {
+    test('invalid model answer records only safe reason $code', () async {
+      environ['JEV_ROUTE'] = 'model';
+      final JudgeTransport fake = JudgeTransport(
+        modelReplies: <String>[answer, answer],
+      );
+      llm.transport = fake;
+      await expectLater(
+        judge.jev('PRIVATE-PASSAGE', questions),
+        throwsA(
+          isA<judge.ModelJudgeInvalidAnswer>().having(
+            (error) => error.message,
+            'bounded unresolved count',
+            contains('未完成 1/1'),
+          ),
+        ),
+      );
+      expect(fake.requests, hasLength(2));
+      final String text =
+          File(
+            '${root.path}/book/work/judge/model-answer-failure.json',
+          ).readAsStringSync();
+      final Json diagnostic = jsonDecode(text) as Json;
+      expect(diagnostic['reasons'], <String, int>{code: 1});
+      expect(diagnostic['attempts'], 2);
+      expect(diagnostic['question_count'], 1);
+      expect(diagnostic['unresolved_count'], 1);
+      for (final String private in <String>[
+        'PRIVATE',
+        'q1',
+        'offline-model-key',
+        'offline.invalid',
+      ]) {
+        expect(text, isNot(contains(private)));
+      }
+      expect(
+        Directory('${root.path}/book/work/judge/cache').existsSync(),
+        false,
+      );
+    });
+  }
+
   test(
     'malformed JSON is repaired once instead of aborting the book',
     () async {

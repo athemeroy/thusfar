@@ -60,3 +60,4 @@ test/shots/**
 !test/shots/macos-26/
 !test/shots/macos-26/*.png
 !test/shots/macos-26/manifest.json
+test/failures/

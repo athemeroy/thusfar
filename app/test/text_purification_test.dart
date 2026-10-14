@@ -530,7 +530,9 @@ void main() {
         await tester.pumpAndSettle();
         final int end = body().layers.selection!.$2;
         expect(end, first.indexOf('旧名字') + '旧名字'.length);
-        await tester.tap(find.text('净化'));
+        await tester.tap(find.byTooltip('更多选文操作'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('文本净化'));
         await tester.pumpAndSettle();
         final TextField field = tester.widget<TextField>(
           find.byKey(const ValueKey<String>('purification-find')),
@@ -674,7 +676,7 @@ void main() {
         );
         await tester.tapAt(rect.center);
         await tester.pumpAndSettle();
-        await tester.tap(find.byTooltip('更多操作'));
+        await tester.tap(find.byTooltip('本书详情'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('文本净化'));
         await tester.pumpAndSettle();
@@ -761,8 +763,12 @@ void main() {
           );
           expect(actions.top, greaterThanOrEqualTo(0));
           expect(actions.bottom, lessThanOrEqualTo(740));
-          expect(find.text('净化').hitTestable(), findsOneWidget);
+          await tester.tap(find.byTooltip('更多选文操作'));
+          await tester.pumpAndSettle();
+          expect(find.text('文本净化').hitTestable(), findsOneWidget);
           expect(find.text('复制').hitTestable(), findsOneWidget);
+          await tester.binding.handlePopRoute();
+          await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox.shrink());
         },
@@ -780,7 +786,7 @@ void main() {
       final Rect rect = tester.getRect(viewport);
       await tester.tapAt(rect.center);
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('更多操作'));
+      await tester.tap(find.byTooltip('本书详情'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('文本净化'));
       await tester.pumpAndSettle();

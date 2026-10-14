@@ -1,3 +1,5 @@
+import '../ui/reader_message.dart';
+import '../ui/info_button.dart';
 // Browser-only, prefix-bounded questions about a book. Answers remain in this
 // route's memory. The model credential is shared only in this browser tab's
 // memory and disappears when the page is closed or refreshed.
@@ -250,7 +252,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
     _generation++;
     setState(() {
       _stopping = true;
-      _history.last.error = '已停止显示回答，等待当前连接结束；已发生的费用可能无法取消。';
+      _history.last.error = '正在停止回答。已产生的费用可能无法退回。';
     });
     _activeRequest?.abort();
   }
@@ -392,9 +394,6 @@ class _WebAskPanelState extends State<WebAskPanel> {
     _key.dispose();
     super.dispose();
   }
-
-  static String _head(String value, int runes) =>
-      String.fromCharCodes(value.runes.take(runes));
 
   static Set<String> _terms(String question) {
     final Set<String> terms = <String>{};
@@ -585,7 +584,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                     ),
                     if (provider == 'custom') ...<Widget>[
                       const SizedBox(height: 12),
-                      const Text('接口协议'),
+                      const Text('服务类型'),
                       const SizedBox(height: 6),
                       Wrap(
                         spacing: 8,
@@ -632,7 +631,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                           error = null;
                         });
                       },
-                      decoration: const InputDecoration(labelText: '模型 API 地址'),
+                      decoration: const InputDecoration(labelText: '服务地址'),
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -651,13 +650,18 @@ class _WebAskPanelState extends State<WebAskPanel> {
                               candidateProtocol,
                               candidateEndpoint.text,
                             )
-                            ? '模型 API 密钥（本机可留空）'
-                            : '你自己的模型 API 密钥',
+                            ? '模型 服务密钥（本机可留空）'
+                            : '你自己的模型 服务密钥',
                       ),
+                    ),
+                    const InfoButton(
+                      title: '问书与隐私',
+                      message:
+                          '密钥和问答记录只保留在当前页面，关闭后会清除。使用电脑上的模型时，请确认电脑和模型服务已开启。',
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      '每次发送至多发起 1 次模型请求，服务商可能收费。问题与检索到的已读原文会发送到所选接口；密钥和问答记录只留在当前标签页内存。浏览器直连需要服务商允许此网页来源跨域访问；本机 Ollama 指当前浏览设备，不是 NAS，也可能需要配置允许来源。',
+                      '问题和相关原文会发送给你选择的 AI 服务，服务商可能收费。',
                       style: TextStyle(
                         color: context.tk.ink2,
                         fontSize: 12,
@@ -688,7 +692,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                               candidateProtocol,
                               candidateEndpoint.text,
                             ))) {
-                      throw const WebModelException('请填写自己的模型 API 密钥。');
+                      throw const WebModelException('请填写自己的模型 服务密钥。');
                     }
                     Navigator.pop(context, true);
                   } on WebModelException catch (failure) {
@@ -734,7 +738,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
     try {
       outer = jsonDecode(raw);
     } on FormatException {
-      throw const _AskFailure('模型接口没有返回 JSON。');
+      throw const _AskFailure('没有收到可用的回答，请检查 AI 设置后重试。');
     }
     if (outer is! Json ||
         outer['choices'] is! List ||
@@ -762,7 +766,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
     try {
       decoded = jsonDecode(content);
     } on FormatException {
-      throw const _AskFailure('模型没有生成有效的问答 JSON。');
+      throw const _AskFailure('没有收到可用的回答，请再试一次。');
     }
     if (decoded is! Json ||
         decoded['answer'] is! String ||
@@ -951,11 +955,11 @@ class _WebAskPanelState extends State<WebAskPanel> {
                 Navigator.pop(dialog);
                 widget.onCitationTap!(citation.blockIndex);
               },
-              child: const Text('定位原文（可返回回答）'),
+              child: const Text('翻回原文'),
             ),
           FilledButton(
             onPressed: () => Navigator.pop(dialog),
-            child: const Text('返回这条回答'),
+            child: const Text('继续问书'),
           ),
         ],
       ),
@@ -978,7 +982,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            const Text('问问这本书'),
+            const Text('问书'),
             Text(
               widget.book.meta.title,
               maxLines: 1,
@@ -989,7 +993,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
         ),
         actions: <Widget>[
           IconButton(
-            tooltip: '问书模型设置',
+            tooltip: '问书设置',
             onPressed: _busy ? null : () => unawaited(_configure()),
             icon: const Icon(Icons.tune),
           ),
@@ -1003,7 +1007,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
               Expanded(
                 child: ListView(
                   controller: _scroll,
-                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
                   children: <Widget>[
                     Container(
                       padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
@@ -1011,22 +1015,31 @@ class _WebAskPanelState extends State<WebAskPanel> {
                         color: t.sheet,
                         borderRadius: BorderRadius.circular(14),
                         border: Border(
-                          left: BorderSide(color: t.zhu, width: 3),
+                          left: BorderSide(color: t.qing, width: 3),
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(
-                            '已读界线 · $chapterTitle',
-                            style: TextStyle(
-                              color: t.ink,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  '止于当前 · $chapterTitle',
+                                  style: TextStyle(color: t.qing, fontSize: 12),
+                                ),
+                              ),
+                              InfoButton(
+                                title: '问书范围',
+                                message: _selection.isNotEmpty
+                                    ? '只参考已读内容和本次选文。选文已与原文核对，范围到选文末尾。回答仍需结合原文判断。'
+                                    : '只参考已经读过的正文。无法确认位置的选文仅用于理解问题，不当作书中事实。回答仍需结合原文判断。',
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 5),
                           Text(
-                            '从 ${_sources.length} 段安全原文中检索。${_selection.isNotEmpty ? '本次含已核对选文，仅到选文末尾：${_head(_selection.last.text, 40)}。' : '只含已滚过的正文；无法核对位置的选文仅作为问题指向。'}后文不发送。最近3轮对话仅用于追问指代，回答仍是待核对的 AI 草稿。',
+                            '只参考已读内容，后文不发送。',
                             style: TextStyle(
                               color: t.ink2,
                               fontSize: 12,
@@ -1050,7 +1063,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                             children: <Widget>[
                               Expanded(
                                 child: Text(
-                                  '所选文字（最多 $askSelectionLimit 字）· ${widget.selectedText!.trim()}',
+                                  '问这段 · ${widget.selectedText!.trim()}',
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1131,9 +1144,9 @@ class _WebAskPanelState extends State<WebAskPanel> {
                   border: Border(top: BorderSide(color: t.rule)),
                 ),
                 padding: EdgeInsets.fromLTRB(
-                  16,
+                  20,
                   10,
-                  16,
+                  20,
                   10 + MediaQuery.paddingOf(context).bottom,
                 ),
                 child: Column(
@@ -1154,7 +1167,8 @@ class _WebAskPanelState extends State<WebAskPanel> {
                             onSubmitted: (_) => unawaited(_ask()),
                             onChanged: (_) => setState(() {}),
                             decoration: InputDecoration(
-                              hintText: _busy ? '可以先写下一问…' : '问问已经读过的内容…',
+                              labelText: '向书提问',
+                              hintText: _busy ? '可以先写下一问…' : '问问剧情、线索或人物关系…',
                             ),
                           ),
                         ),
@@ -1162,7 +1176,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                         IconButton.filled(
                           key: const ValueKey<String>('web-ask-send'),
                           tooltip: _busy
-                              ? (_stopping ? '正在结束连接' : '停止当前回答')
+                              ? (_stopping ? '正在停止' : '停止回答')
                               : '发送问题（可能收费）',
                           onPressed: _busy
                               ? (_stopping ? null : _stop)
@@ -1176,7 +1190,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      '每次发送最多1次请求 · 可先写下一问 · 停止不保证退费',
+                      '问题与相关原文会发给所选服务。可能收费，停止后仍可能计费。',
                       style: TextStyle(color: t.ink2, fontSize: 12),
                     ),
                   ],
@@ -1222,20 +1236,46 @@ class _WebAskPanelState extends State<WebAskPanel> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(
-                  '问书草稿 · 截止原文位置 ${exchange.cutoff}',
-                  style: TextStyle(
-                    color: t.zhu,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: t.paper,
+                        border: Border.all(color: t.rule),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        exchange.answer == null && exchange.error == null
+                            ? '回想中'
+                            : exchange.answer?.citations.isEmpty == true
+                            ? '后文待续'
+                            : '待核对',
+                        style: TextStyle(color: t.ink2, fontSize: 12),
+                      ),
+                    ),
+                    const InfoButton(
+                      title: '回答说明',
+                      message: '回答由 AI 生成。引用能在已读原文中找到，但结论尚未核对。可翻回原文判断。',
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
-                if (exchange.answer == null && exchange.error == null)
-                  const LinearProgressIndicator(minHeight: 3),
+                if (exchange.answer == null &&
+                    exchange.error == null) ...<Widget>[
+                  Text(
+                    '正在书中寻找相关线索…',
+                    style: TextStyle(color: t.ink2, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(minHeight: 3, color: t.qing),
+                ],
                 if (exchange.error != null)
                   Text(
-                    '${exchange.error}\n这次请求可能已由服务商计费。',
+                    '${readerMessage(exchange.error, fallback: '这次没能完成回答，请检查网络和 AI 设置后重试。')}\n服务商可能已收取本次费用。',
                     style: TextStyle(color: t.danger, height: 1.5),
                   ),
                 if (exchange.error != null)
@@ -1277,7 +1317,7 @@ class _WebAskPanelState extends State<WebAskPanel> {
                     Text(
                       '原文出处',
                       style: TextStyle(
-                        color: t.ink2,
+                        color: t.qing,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1293,15 +1333,17 @@ class _WebAskPanelState extends State<WebAskPanel> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(11),
                             decoration: BoxDecoration(
-                              color: t.paper,
+                              color: t.qingSoft,
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: t.rule),
+                              border: Border.all(
+                                color: t.qing.withValues(alpha: .2),
+                              ),
                             ),
                             child: Text(
                               '[${citation.id}] ${citation.chapterTitle} · ${citation.quote}',
                               style: TextStyle(
                                 fontFamily: serif,
-                                color: t.ink2,
+                                color: t.qing,
                                 fontSize: 13,
                                 height: 1.5,
                               ),
@@ -1313,9 +1355,9 @@ class _WebAskPanelState extends State<WebAskPanel> {
                   if (answer.promptTokens + answer.outputTokens >
                       0) ...<Widget>[
                     const SizedBox(height: 12),
-                    Text(
-                      '本次用量：输入 ${answer.promptTokens} / 输出 ${answer.outputTokens} token',
-                      style: TextStyle(color: t.ink2, fontSize: 12),
+                    const InfoButton(
+                      title: '问书费用',
+                      message: '费用由你选择的服务商收取，请在该服务的账户中查看账单。',
                     ),
                   ],
                 ],

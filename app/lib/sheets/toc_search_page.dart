@@ -279,19 +279,19 @@ class _TocSearchPageState extends State<TocSearchPage> {
                           spacing: 8,
                           children: <Widget>[
                             Text(
-                              '会看到后面的内容',
+                              '注意剧透 · 将跳至未读位置',
                               style: TextStyle(fontSize: 13, color: t.amber),
                             ),
                             TextButton(
                               onPressed: () => setState(() => _confirm = null),
-                              child: const Text('取消'),
+                              child: const Text('留在原地'),
                             ),
                             FilledButton(
                               onPressed: () {
                                 HapticFeedback.lightImpact();
-                                link.jump(chapter.o0);
+                                link.jumpConfirmed(chapter.o0);
                               },
-                              child: const Text('跳过去'),
+                              child: const Text('确认前往'),
                             ),
                           ],
                         ),

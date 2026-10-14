@@ -183,7 +183,7 @@ void main() {
             .onPressed,
         isNotNull,
       );
-      expect(find.text('检查有没有剧透'), findsOneWidget);
+      expect(find.text('回想中 · 正在书中寻找相关线索…'), findsOneWidget);
       service.replies.single.complete(response(24));
       await tester.pumpAndSettle();
       expect(find.text('Alice came. [1]'), findsOneWidget);
@@ -362,7 +362,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('ask-cite-1')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('定位原文（可返回回答）'));
+      await tester.tap(find.text('翻回原文'));
       await tester.pumpAndSettle();
       expect(jump, 0);
       expect(controller.returnToAsk, isTrue);
@@ -446,7 +446,7 @@ void main() {
         await send(tester, 'Second?');
         await tester.pump(const Duration(milliseconds: 300));
         await tester.pump(const Duration(milliseconds: 300));
-        expect(find.text('检查有没有剧透').hitTestable(), findsOneWidget);
+        expect(find.text('回想中 · 正在书中寻找相关线索…').hitTestable(), findsOneWidget);
         service.replies.last.complete(response(24, text: 'Second answer. [1]'));
         await tester.pumpAndSettle();
         expect(scroll.position.extentAfter, lessThan(1));
@@ -516,7 +516,7 @@ void main() {
       await tester.pump();
       expect(find.text(controller.book.textBetween(0, 24)), findsNothing);
       expect(find.text('已隐藏之前位置的原文和回答。'), findsOneWidget);
-      expect(find.text('定位原文（可返回回答）'), findsNothing);
+      expect(find.text('翻回原文'), findsNothing);
       await tester.tap(find.text('返回问书'));
       await tester.pumpAndSettle();
     },

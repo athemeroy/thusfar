@@ -1,0 +1,22 @@
+services:
+  yedu-reading:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - /volume2/docker/yedu-reading/site:/usr/share/nginx/html:ro
+      - /volume2/docker/yedu-reading/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - traefik_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.yedu-reading.rule=Host(`yedu-reading.naszqun.com`)
+      - traefik.http.routers.yedu-reading.entrypoints=web
+      - traefik.http.routers.yedu-reading.service=yedu-reading
+      - traefik.http.routers.yedu-reading-sec.rule=Host(`yedu-reading.naszqun.com`)
+      - traefik.http.routers.yedu-reading-sec.entrypoints=websecure
+      - traefik.http.routers.yedu-reading-sec.tls=true
+      - traefik.http.routers.yedu-reading-sec.service=yedu-reading
+      - traefik.http.services.yedu-reading.loadbalancer.server.port=80
+networks:
+  traefik_net:
+    external: true

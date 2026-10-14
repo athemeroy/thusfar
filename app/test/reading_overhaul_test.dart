@@ -428,7 +428,7 @@ void main() {
         ),
       );
       await tester.pump(const Duration(milliseconds: 250));
-      expect(find.text('找到 650 处'), findsNothing);
+      expect(find.text('已读篇幅中共找到 650 处'), findsNothing);
       tester.testTextInput.updateEditingValue(
         const TextEditingValue(
           text: 'needle',
@@ -437,7 +437,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 180));
       await tester.pumpAndSettle();
-      expect(find.text('找到 650 处'), findsOneWidget);
+      expect(find.text('已读篇幅中共找到 650 处'), findsOneWidget);
       FocusManager.instance.primaryFocus?.unfocus();
       final Finder more = find.byKey(
         const ValueKey<String>('reader-search-more'),
@@ -463,7 +463,7 @@ void main() {
       reader.touch();
       await tester.pump(const Duration(milliseconds: 180));
       await tester.pumpAndSettle();
-      expect(find.text('找到 1 处'), findsOneWidget);
+      expect(find.text('已读篇幅中共找到 1 处'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );

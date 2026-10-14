@@ -154,7 +154,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(citation, isNull);
       expect(find.text(selected), findsOneWidget);
-      await tester.tap(find.text('返回这条回答'));
+      await tester.tap(find.text('继续问书'));
       await tester.pumpAndSettle();
       expect(find.text('Bob sat down. [2]'), findsOneWidget);
       expect(requests.length, 1);
@@ -237,7 +237,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey<String>('web-ask-cite-2')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('定位原文（可返回回答）'));
+      await tester.tap(find.text('翻回原文'));
       await tester.pumpAndSettle();
       expect(citation, 1);
       await tester.pumpWidget(const SizedBox());

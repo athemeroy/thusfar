@@ -98,7 +98,7 @@ class _MetricControlState extends State<_MetricControl> {
     final Tokens t = context.tk;
     final double value = _draft.clamp(widget.minimum, widget.maximum);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Row(
         children: <Widget>[
           SizedBox(
@@ -149,11 +149,15 @@ class _MetricControlState extends State<_MetricControl> {
             icon: const Icon(Icons.add, size: 18),
           ),
           SizedBox(
-            width: 46,
+            width: 52,
             child: Text(
               widget.format(value),
               textAlign: TextAlign.end,
-              style: TextStyle(fontSize: 11, color: t.ink2),
+              style: TextStyle(
+                fontSize: 12,
+                color: t.ink2,
+                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
+              ),
             ),
           ),
         ],
@@ -172,7 +176,7 @@ class _TypographyPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final Tokens t = context.tk;
     Widget row(String label, Widget child) => Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Row(
         children: <Widget>[
           SizedBox(
@@ -320,14 +324,14 @@ class _TypographyPanel extends StatelessWidget {
                       p.pageVerticalMargin = 16;
                       p.font = 0;
                     }),
-                    child: const Text('恢复文字默认值'),
+                    child: const Text('重置排版'),
                   ),
                 ),
                 Expanded(
                   child: ListView(
                     children: <Widget>[
                       metric(
-                        '字号',
+                        '字号大小',
                         prefs.fontSize,
                         14,
                         32,
@@ -336,7 +340,7 @@ class _TypographyPanel extends StatelessWidget {
                         (double v) => prefs.update((Prefs p) => p.fontSize = v),
                       ),
                       metric(
-                        '行距',
+                        '行间高度',
                         prefs.lineHeight,
                         1.2,
                         2.4,
@@ -346,7 +350,7 @@ class _TypographyPanel extends StatelessWidget {
                             prefs.update((Prefs p) => p.lineHeightOverride = v),
                       ),
                       metric(
-                        '字距',
+                        '字符间距',
                         prefs.letterSpacing,
                         -0.5,
                         2.5,
@@ -377,9 +381,9 @@ class _TypographyPanel extends StatelessWidget {
                             prefs.update((Prefs p) => p.pageVerticalMargin = v),
                       ),
                       row(
-                        '字体',
+                        '正文字体',
                         choice(
-                          const <String>['宋', '楷', '黑'],
+                          const <String>['文宋', '文楷', '黑体'],
                           prefs.font,
                           (int i) => prefs.update((Prefs p) => p.font = i),
                           fontFamilies: const <String?>[
@@ -410,7 +414,7 @@ class _TypographyPanel extends StatelessWidget {
                         ),
                       ),
                       row(
-                        '纸色',
+                        '纸张质感',
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -483,7 +487,7 @@ class _TypographyPanel extends StatelessWidget {
                         ),
                       ),
                       metric(
-                        '段间距',
+                        '段落间距',
                         prefs.paragraphSpacing,
                         0,
                         2,
@@ -505,14 +509,14 @@ class _TypographyPanel extends StatelessWidget {
                       const Padding(
                         padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
                         child: Text(
-                          '段间距独立于行距，页首不留空；缩进不改变原文和摘录。',
+                          '段落留白与首行缩进可独立调整。',
                           style: TextStyle(fontSize: 12),
                         ),
                       ),
                       row(
-                        '翻页',
+                        '翻页手感',
                         choice(
-                          const <String>['平移', '覆盖', '无'],
+                          const <String>['左右平推', '仿真覆页', '瞬时切换'],
                           prefs.anim.index,
                           (int i) => prefs.update(
                             (Prefs p) => p.anim = PageAnim.values[i],

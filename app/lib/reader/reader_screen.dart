@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -18,6 +19,9 @@ import '../data/purification_store.dart';
 import '../data/reader_directory.dart';
 import '../data/processing.dart';
 import '../data/seen.dart';
+import '../data/reading_activity.dart';
+import '../reading/read_aloud.dart';
+import '../reading/auto_page_turner.dart';
 import '../sheets/ask_sheet.dart';
 import '../sheets/book_sheet.dart';
 import '../sheets/common.dart';
@@ -70,7 +74,8 @@ class ReaderScreen extends StatefulWidget {
   State<ReaderScreen> createState() => _ReaderScreenState();
 }
 
-class _ReaderScreenState extends State<ReaderScreen> {
+class _ReaderScreenState extends State<ReaderScreen>
+    with WidgetsBindingObserver {
   late final BookData book = BookData.open(widget.entry);
   late final ReaderController c = ReaderController(
     library: widget.library,
@@ -100,12 +105,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
   int? _drag;
   bool _whoIsActive = false;
   bool _whoIsLoading = false;
+  int _whoIsGeneration = 0;
+  bool _jumpConfirmationOpen = false;
+  final ReadAloudController _readAloud = ReadAloudController();
+  final AutoPageTurner _autoTurner = AutoPageTurner();
+  late final ReadingActivitySession _activity = ReadingActivityStore.forRoot(
+    widget.library.root.path,
+  ).startSession(bookId: book.id, title: widget.entry.title);
+  bool _foreground = true;
+  int _overlayDepth = 0;
+  bool _autoPagePending = false;
   Json? _whoIsResult;
-  String? _whoIsWord;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _autoTurner.addListener(_repaint);
+    _foreground =
+        WidgetsBinding.instance.lifecycleState == null ||
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    _activity.setActive(_foreground);
     _lastAnimation = widget.prefs.anim;
     widget.prefs.addListener(_relayout);
     _purification.addListener(_purificationChanged);
@@ -116,6 +136,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _activity.dispose();
+    _autoTurner.removeListener(_repaint);
+    _autoTurner.dispose();
+    _readAloud.dispose();
     widget.prefs.removeListener(_relayout);
     _purification.removeListener(_purificationChanged);
     _purification.dispose();
@@ -130,6 +155,27 @@ class _ReaderScreenState extends State<ReaderScreen> {
     pc?.dispose();
     _focus.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _activity.setActive(_foreground && _overlayDepth == 0);
+  }
+
+  Future<T?> _withOverlay<T>(
+    Future<T?> Function() open, {
+    bool stopAuto = true,
+  }) async {
+    if (stopAuto) _autoTurner.stop();
+    _overlayDepth++;
+    _activity.setActive(false);
+    try {
+      return await open();
+    } finally {
+      _overlayDepth--;
+      if (mounted) _activity.setActive(_foreground && _overlayDepth == 0);
+    }
   }
 
   void _refreshKnowledge() {
@@ -252,20 +298,88 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Color _ink(Tokens t) => _night ? Tokens.night.ink : Tokens.light.ink;
 
-  ReaderLink get link =>
-      ReaderLink(c: c, jump: _jumpFromSheet, openAsk: _openAsk);
+  ReaderLink get link => ReaderLink(
+    c: c,
+    jump: _jumpFromSheet,
+    openAsk: _openAsk,
+    jumpAfterConfirmation: (int offset, {(int, int)? highlight}) =>
+        _requestJump(
+          offset,
+          highlight: highlight,
+          closeSheets: true,
+          allowUnread: true,
+        ),
+  );
 
   void _jumpFromSheet(int offset, {(int, int)? highlight}) {
-    Navigator.of(context).popUntil((Route<dynamic> r) => r is PageRoute);
-    _jump(offset, highlight: highlight);
+    _requestJump(offset, highlight: highlight, closeSheets: true);
   }
 
-  void _jump(int offset, {(int, int)? highlight, bool remember = true}) {
+  Future<void> _requestJump(
+    int offset, {
+    (int, int)? highlight,
+    bool remember = true,
+    bool closeSheets = false,
+    bool allowUnread = false,
+  }) async {
+    if (_jumpConfirmationOpen || c.pager == null) return;
+    _activity.touch();
+    unawaited(_readAloud.stop());
+    final int position = c.cutoff;
+    final int chapter = book.chapterAt(offset);
+    final PageData target = c.pager!.pages(
+      chapter,
+    )[c.pager!.pageOf(chapter, offset)];
+    final int read = SeenStore.instance.maxRead(book.id, position);
+    final bool ahead =
+        !allowUnread && target.start >= read && target.start > c.start;
+    final bool back = target.end < position && book.hasKnowledge;
+    if (ahead || back) {
+      _jumpConfirmationOpen = true;
+      final bool? accepted = await _withOverlay<bool>(
+        () => showDialog<bool>(
+          context: context,
+          builder: (BuildContext dialogContext) => AlertDialog(
+            title: Text(ahead ? '注意剧透' : '回到前文'),
+            content: Text(
+              ahead ? '将跳至未读位置，可能提前知晓后续。' : '人物与前情将同步收窄至该页。可随时返回当前页。',
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('留在原地'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('确认前往'),
+              ),
+            ],
+          ),
+        ),
+      );
+      _jumpConfirmationOpen = false;
+      if (!mounted || accepted != true || c.cutoff != position) return;
+    }
+    if (!mounted) return;
+    if (closeSheets) {
+      Navigator.of(context).popUntil((Route<dynamic> r) => r is PageRoute);
+    }
+    _jump(offset, highlight: highlight, remember: remember);
+  }
+
+  void _jump(
+    int offset, {
+    (int, int)? highlight,
+    bool remember = true,
+    int? heardThrough,
+  }) {
+    if (heardThrough == null) unawaited(_readAloud.stop());
     _layoutAnchor = offset;
     final int index = c.jump(
       offset,
       remember: remember,
       highlight: highlight ?? (offset, offset + 1),
+      heardThrough: heardThrough,
     );
     pc?.dispose();
     pc = PageController(initialPage: index);
@@ -284,12 +398,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
     c.setToolbar(false);
     _sheetOpen = true;
     try {
-      await openSheet<void>(
-        context,
-        page,
-        initial: initial,
-        full: full,
-        anchorPoint: anchorPoint ?? _toolsBounds.center,
+      await _withOverlay<void>(
+        () => openSheet<void>(
+          context,
+          page,
+          initial: initial,
+          full: full,
+          anchorPoint: anchorPoint ?? _toolsBounds.center,
+        ),
       );
     } finally {
       _sheetOpen = false;
@@ -306,13 +422,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _clearSelection() {
+    _whoIsGeneration++;
     c.select(null);
     if (_whoIsActive) {
       setState(() {
         _whoIsActive = false;
         _whoIsLoading = false;
         _whoIsResult = null;
-        _whoIsWord = null;
       });
     }
   }
@@ -321,25 +437,40 @@ class _ReaderScreenState extends State<ReaderScreen> {
     HapticFeedback.lightImpact();
     final String word = book.textBetween(s, e).trim();
     if (word.isEmpty) return;
+    final int generation = ++_whoIsGeneration;
+    final int cutoff = c.cutoff;
     setState(() {
       _whoIsActive = true;
       _whoIsLoading = true;
       _whoIsResult = null;
-      _whoIsWord = word;
     });
 
     try {
-      final Json res = await ask.whoIs(book.book, book.records, c.cutoff, s, e);
-      if (!mounted) return;
+      final Json res = await ask.whoIs(book.book, book.records, cutoff, s, e);
+      if (!mounted ||
+          generation != _whoIsGeneration ||
+          c.cutoff != cutoff ||
+          c.selection != (s, e)) {
+        return;
+      }
       setState(() {
         _whoIsLoading = false;
         _whoIsResult = res;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted ||
+          generation != _whoIsGeneration ||
+          c.cutoff != cutoff ||
+          c.selection != (s, e)) {
+        return;
+      }
       setState(() {
         _whoIsLoading = false;
-        _whoIsResult = <String, Object?>{'ok': false, 'word': word};
+        _whoIsResult = <String, Object?>{
+          'ok': false,
+          'word': word,
+          'unavailable': true,
+        };
       });
     }
   }
@@ -381,24 +512,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   void _openBookSheet({bool focus = false}) {
     c.setToolbar(false);
-    BookSheet.open(
-      context,
-      BookSheet(
-        library: widget.library,
-        entry: widget.entry,
-        settings: widget.settings,
-        processing: widget.processing,
-        onRemoved: () {
-          if (mounted) Navigator.of(context).pop();
-        },
-        onRead: () => Navigator.of(context).pop(),
-        onNotes: () {
-          Navigator.of(context).pop();
-          _sheet(TocPage(link: link, tab: 2), full: true);
-        },
-        onModelSettings: widget.onModelSettings,
-        onExport: () => widget.onExport(widget.entry),
-        focusProcessing: focus,
+    _withOverlay<void>(
+      () => BookSheet.open(
+        context,
+        BookSheet(
+          library: widget.library,
+          entry: widget.entry,
+          settings: widget.settings,
+          processing: widget.processing,
+          onRemoved: () {
+            if (mounted) Navigator.of(context).pop();
+          },
+          onRead: () => Navigator.of(context).pop(),
+          onAutoPage: () {
+            Navigator.of(context).pop();
+            _openAutoPages();
+          },
+          onNotes: () {
+            Navigator.of(context).pop();
+            _sheet(TocPage(link: link, tab: 2), full: true);
+          },
+          onModelSettings: widget.onModelSettings,
+          onExport: () => widget.onExport(widget.entry),
+          focusProcessing: focus,
+        ),
       ),
     );
   }
@@ -431,6 +568,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   void _onPageChanged(int index) {
     if (index == c.currentIndex) return;
+    if (!_autoPagePending) _activity.touch();
+    _autoPagePending = false;
+    unawaited(_readAloud.stop());
     final int before = c.chapter;
     c.onPage(index);
     _layoutAnchor = c.start;
@@ -439,6 +579,63 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   // ---------------------------------------------------------------- selection
+
+  Future<void> _openReadAloud() async {
+    final Chapter chapter = book.chapters[c.chapter];
+    final List<ReadAloudPassage> passages = <ReadAloudPassage>[];
+    for (final Block block in book.blocks) {
+      if (block.o >= chapter.o1) break;
+      if ((block.kind != 'p' && block.kind != 'h') ||
+          block.o + block.text.length <= c.start) {
+        continue;
+      }
+      final int from = math.max(c.start, block.o);
+      final int to = math.min(chapter.o1, block.o + block.text.length);
+      if (from >= to) continue;
+      passages.add(
+        ReadAloudPassage(
+          text: block.text.substring(from - block.o, to - block.o),
+          start: from,
+        ),
+      );
+    }
+    await _withOverlay<void>(
+      () => openReadAloud(
+        context,
+        _readAloud,
+        passages: passages,
+        onProgress: (int heard) {
+          if (!mounted || heard <= c.cutoff) return;
+          if (heard > (c.page?.end ?? 0)) {
+            _jump(heard - 1, remember: false, heardThrough: heard);
+          } else {
+            c.heardThrough(heard);
+          }
+          SeenStore.instance.maxRead(book.id, heard);
+        },
+      ),
+    );
+  }
+
+  Future<void> _openAutoPages() async {
+    unawaited(_readAloud.stop());
+    c.setToolbar(false);
+    await _withOverlay<void>(
+      () => openAutoPageTurner(
+        context,
+        _autoTurner,
+        nextPage: () {
+          if (!mounted || _sheetOpen || c.pageAt(c.currentIndex + 1) == null) {
+            return false;
+          }
+          _autoPagePending = true;
+          _turn(1);
+          return true;
+        },
+      ),
+      stopAuto: false,
+    );
+  }
 
   (int, int)? _hitRange(Offset local) {
     final PageData? page = c.page;
@@ -503,6 +700,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _longPress(LongPressStartDetails d) {
+    _whoIsGeneration++;
+    _whoIsActive = false;
     final (int, int)? hit = _hitRange(d.localPosition);
     if (hit == null) return;
     final int at = hit.$1;
@@ -520,6 +719,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final int at = hit.$1;
     HapticFeedback.selectionClick();
     if (_whoIsActive) {
+      _whoIsGeneration++;
       _whoIsActive = false;
       _whoIsResult = null;
       _whoIsLoading = false;
@@ -536,7 +736,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              error is PyException ? error.message : '摘记未能保存，请检查存储空间后重试',
+              readerMessage(
+                error is PyException ? error.message : null,
+                fallback: '书摘未能保存，请检查剩余空间后重试。',
+              ),
             ),
           ),
         );
@@ -559,7 +762,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     messenger.showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 4),
-        content: const Text('已摘录'),
+        content: const Text('已划线'),
         action: SnackBarAction(
           label: '撤销',
           onPressed: () {
@@ -576,8 +779,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   SnackBar(
                     content: Text(
                       error is PyException
-                          ? error.message
-                          : '撤销未能完成，请重新打开摘记后重试',
+                          ? readerMessage(
+                              error.message,
+                              fallback: '撤销未能完成，请重新打开书摘后重试。',
+                            )
+                          : '撤销未能完成，请重新打开书摘后重试',
                     ),
                   ),
                 );
@@ -628,7 +834,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
             builder: (BuildContext context) => Scaffold(
               backgroundColor: paper,
               resizeToAvoidBottomInset: false,
-              body: _readerPane(context, paper),
+              body: Listener(
+                onPointerDown: (_) {
+                  _autoTurner.pause();
+                  _activity.touch();
+                },
+                child: _readerPane(context, paper),
+              ),
             ),
           ),
         ),
@@ -666,6 +878,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (!_readingBounds.contains(event.localPosition)) return;
     final double dy = event.scrollDelta.dy;
     if (dy.abs() < 4) return;
+    _autoTurner.pause();
     _wheelLocked = true;
     _wheelTimer?.cancel();
     _wheelTimer = Timer(const Duration(milliseconds: 350), () {
@@ -735,6 +948,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
       autofocus: true,
       onKeyEvent: (FocusNode _, KeyEvent e) {
         if (_sheetOpen || e is KeyUpEvent) return KeyEventResult.ignored;
+        _autoTurner.pause();
+        _activity.touch();
         final HardwareKeyboard keyboard = HardwareKeyboard.instance;
         if (keyboard.isControlPressed ||
             keyboard.isMetaPressed ||
@@ -916,6 +1131,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   bottom: box.maxHeight - reading.bottom + safeBottom + 48,
                   child: Center(child: _returnPill(context)),
                 ),
+              Positioned.fromRect(
+                rect: reading,
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    key: const ValueKey<String>('reader-focus-shade'),
+                    opacity: c.toolbar || c.selection != null ? 1 : 0,
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : Motion.toolbar,
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: .04),
+                    ),
+                  ),
+                ),
+              ),
               if (c.selection != null) ...<Widget>[
                 _selectionHandle(context, top, start: true),
                 _selectionHandle(context, top, start: false),
@@ -1025,7 +1255,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 world: book.hasKnowledge
                     ? (current ? w : book.world(page.end))
                     : null,
-                cutoff: page.end,
+                cutoff: current ? c.cutoff : page.end,
                 notes: book.notes.live,
                 selection: current ? c.selection : null,
                 flash: current ? c.flash : null,
@@ -1117,6 +1347,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
             style: TextStyle(fontSize: 11, color: t.ink3),
           ),
         ),
+        if (_autoTurner.running || _autoTurner.paused)
+          Flexible(
+            child: Text(
+              _autoTurner.running
+                  ? '自动翻页 · ${_autoTurner.intervalSeconds} 秒'
+                  : '自动翻页已暂停',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: t.qing),
+            ),
+          ),
         if (book.knowledgeError != null)
           Tooltip(
             message: book.knowledgeError!,
@@ -1402,6 +1643,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
           ),
           behavior: HitTestBehavior.opaque,
           onPanStart: (DragStartDetails details) {
+            _whoIsGeneration++;
+            setState(() => _whoIsActive = false);
             _handleDragPointer = details.globalPosition;
             _handleDragSource = sourcePoint;
             HapticFeedback.selectionClick();
@@ -1452,7 +1695,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         on();
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 14),
         child: Text(label, style: TextStyle(color: t.sheet, fontSize: 14)),
       ),
     );
@@ -1475,7 +1718,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 child: Wrap(
                   alignment: WrapAlignment.center,
                   children: <Widget>[
-                    action('摘录', _excerpt),
+                    action('划线', _excerpt),
                     action('批注', () {
                       _clearSelection();
                       _sheet(
@@ -1483,36 +1726,45 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         full: true,
                       );
                     }),
-                    action('笔记', () {
+                    action('写想法', () {
                       _clearSelection();
-                      NoteEditor.open(
-                        context,
-                        book: book,
-                        start: s,
-                        end: e,
-                        cutoff: c.cutoff,
+                      _withOverlay<void>(
+                        () => NoteEditor.open(
+                          context,
+                          book: book,
+                          start: s,
+                          end: e,
+                          cutoff: c.cutoff,
+                        ),
                       );
                     }),
                     if (len <= 12) action('这是谁', () => _identifyWho(s, e)),
-                    action('问书', () {
+                    action('问这段', () {
                       final String quote = book.textBetween(s, e);
                       _clearSelection();
                       _openAsk(quote: quote, selectedStart: s, selectedEnd: e);
                     }),
-                    action(
-                      '净化',
-                      () => _openPurification(find: book.textBetween(s, e)),
+                    PopupMenuButton<String>(
+                      tooltip: '更多选文操作',
+                      icon: Icon(Icons.more_horiz, color: t.sheet, size: 20),
+                      onSelected: (String value) {
+                        if (value == 'purify') {
+                          _openPurification(find: book.textBetween(s, e));
+                        } else {
+                          Clipboard.setData(
+                            ClipboardData(text: book.textBetween(s, e)),
+                          );
+                          _clearSelection();
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(const SnackBar(content: Text('已复制')));
+                        }
+                      },
+                      itemBuilder: (_) => const <PopupMenuEntry<String>>[
+                        PopupMenuItem(value: 'copy', child: Text('复制')),
+                        PopupMenuItem(value: 'purify', child: Text('文本净化')),
+                      ],
                     ),
-                    action('复制', () {
-                      HapticFeedback.lightImpact();
-                      Clipboard.setData(
-                        ClipboardData(text: book.textBetween(s, e)),
-                      );
-                      _clearSelection();
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('已复制')));
-                    }),
                   ],
                 ),
               ),
@@ -1549,11 +1801,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 child: CircularProgressIndicator(strokeWidth: 2, color: t.zhu),
               ),
               const SizedBox(width: 10),
-              Text('正在判断…', style: TextStyle(fontSize: 13, color: t.ink2)),
+              Text(
+                '辨认中 · 正在回忆书中线索…',
+                style: TextStyle(fontSize: 13, color: t.ink2),
+              ),
             ] else if (_whoIsResult != null &&
                 _whoIsResult!['ok'] == true) ...<Widget>[
               Text(
-                '这里的「${_whoIsResult!['word'] ?? _whoIsWord}」指 ',
+                '人物确认 · 这里是指 ',
                 style: TextStyle(fontSize: 13, color: t.ink2),
               ),
               Text(
@@ -1561,12 +1816,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: t.zhu,
+                  color: t.qing,
                 ),
               ),
               const SizedBox(width: 10),
               Pill(
-                label: '打开人物卡',
+                label: '查看资料',
+                color: t.qing,
                 filled: true,
                 dense: true,
                 onTap: () {
@@ -1578,10 +1834,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
             ] else ...<Widget>[
               Icon(Icons.help_outline, size: 16, color: t.ink3),
               const SizedBox(width: 6),
-              Text('这里看不出指的是谁', style: TextStyle(fontSize: 13, color: t.ink3)),
+              Text(
+                _whoIsResult?['unavailable'] == true
+                    ? '辨认暂不可用，请稍后重试'
+                    : '暂未认出，可继续读读看',
+                style: TextStyle(fontSize: 13, color: t.ink3),
+              ),
+              if (_whoIsResult?['unavailable'] == true) ...<Widget>[
+                const SizedBox(width: 8),
+                Pill(label: '重试', dense: true, onTap: () => _identifyWho(s, e)),
+              ],
               const SizedBox(width: 8),
               Pill(
-                label: '问问这本书',
+                label: '问这段',
                 dense: true,
                 onTap: () {
                   final String quote = book.textBetween(s, e);
@@ -1597,6 +1862,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               tooltip: '关闭',
               onPressed: () {
                 HapticFeedback.selectionClick();
+                _whoIsGeneration++;
                 setState(() => _whoIsActive = false);
               },
             ),
@@ -1623,25 +1889,37 @@ class _ReaderScreenState extends State<ReaderScreen> {
           opacity: on ? 1 : 0,
           duration: duration,
           curve: Curves.easeInOut,
-          child: Align(
-            alignment: Alignment.bottomCenter,
+          child: SafeArea(
             child: KeyedSubtree(
               key: const ValueKey<String>('reader-toolbar-panel'),
-              child: Material(
-                color: t.sheet,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: mq.padding.bottom, top: 4),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      _toolbarActions(context, marked),
-                      if (p != null) ...<Widget>[
-                        _progressRow(context, p),
-                        _toolsRow(context, ai),
-                      ],
-                    ],
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  Material(
+                    color: t.sheet,
+                    borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(20),
+                    ),
+                    child: _toolbarActions(context, marked),
                   ),
-                ),
+                  if (p != null)
+                    Material(
+                      color: t.sheet,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(24),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            _progressRow(context, p),
+                            _toolsRow(context, ai),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -1666,7 +1944,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
               c.setToolbar(false);
               Navigator.of(context).pop();
             },
-            tooltip: '回书架',
+            tooltip: '书架',
           ),
           Expanded(
             child: Column(
@@ -1701,12 +1979,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
             onPressed: _toggleBookmark,
           ),
           IconButton(
-            tooltip: '搜索',
+            tooltip: '搜原文',
             icon: const Icon(Icons.search),
             onPressed: () => _sheet(SearchPage(link: link), full: true),
           ),
           PopupMenuButton<int>(
-            tooltip: '更多操作',
+            tooltip: '本书详情',
             icon: const Icon(Icons.more_horiz),
             onSelected: (int i) {
               HapticFeedback.lightImpact();
@@ -1715,18 +1993,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   _openBookSheet();
                 case 1:
                   Clipboard.setData(ClipboardData(text: notesMarkdown(book)));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('摘记已复制为 Markdown')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('已复制')));
                 case 2:
                   c.setToolbar(false);
-                  openTypography(
-                    context,
-                    widget.prefs,
-                    anchorPoint: _toolsBounds.center,
+                  _withOverlay<void>(
+                    () => openTypography(
+                      context,
+                      widget.prefs,
+                      anchorPoint: _toolsBounds.center,
+                    ),
                   );
                 case 4:
                   _openPurification();
+                case 5:
+                  _openReadAloud();
+                case 6:
+                  _openAutoPages();
                 case 3:
                   if (c.page != null) {
                     _sheet(
@@ -1742,11 +2026,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
               }
             },
             itemBuilder: (_) => const <PopupMenuEntry<int>>[
-              PopupMenuItem<int>(value: 0, child: Text('这本书')),
-              PopupMenuItem<int>(value: 1, child: Text('导出摘记')),
+              PopupMenuItem<int>(value: 0, child: Text('本书详情')),
+              PopupMenuItem<int>(value: 1, child: Text('导出书摘')),
               PopupMenuItem<int>(value: 2, child: Text('阅读设置')),
               PopupMenuItem<int>(value: 3, child: Text('本页批注')),
               PopupMenuItem<int>(value: 4, child: Text('文本净化')),
+              PopupMenuItem<int>(value: 5, child: Text('听书')),
+              PopupMenuItem<int>(value: 6, child: Text('自动翻页')),
             ],
           ),
         ],
@@ -1802,7 +2088,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPressed: c.chapter > 0
                     ? () {
                         HapticFeedback.lightImpact();
-                        _jump(book.chapters[c.chapter - 1].o0, remember: false);
+                        _requestJump(book.chapters[c.chapter - 1].o0);
                       }
                     : null,
                 child: const Text('上一章'),
@@ -1839,7 +2125,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         HapticFeedback.lightImpact();
                         final int target = _offsetOfPage(v.round(), p);
                         setState(() => _drag = null);
-                        _jump(target);
+                        _requestJump(target);
                       },
                     ),
                   ],
@@ -1849,7 +2135,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 onPressed: c.chapter + 1 < book.chapters.length
                     ? () {
                         HapticFeedback.lightImpact();
-                        _jump(book.chapters[c.chapter + 1].o0, remember: false);
+                        _requestJump(book.chapters[c.chapter + 1].o0);
                       }
                     : null,
                 child: const Text('下一章'),
@@ -1934,10 +2220,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
         tool(Icons.chat_bubble_outline, '问书', true, () => _openAsk()),
         tool(Icons.text_fields, '排版', false, () {
           c.setToolbar(false);
-          openTypography(
-            context,
-            widget.prefs,
-            anchorPoint: _toolsBounds.center,
+          _withOverlay<void>(
+            () => openTypography(
+              context,
+              widget.prefs,
+              anchorPoint: _toolsBounds.center,
+            ),
           );
         }),
       ],

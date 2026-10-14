@@ -132,7 +132,7 @@ class WebModelProvider {
 
   static Uri validateBase(String endpoint) {
     if (endpoint.length > 2048) {
-      throw const WebModelException('模型 API 地址过长。');
+      throw const WebModelException('服务地址过长，请检查是否填错。');
     }
     final Uri? uri = Uri.tryParse(endpoint.trim());
     if (uri == null ||
@@ -142,11 +142,11 @@ class WebModelProvider {
         uri.hasQuery ||
         uri.hasFragment ||
         uri.path.contains('://')) {
-      throw const WebModelException('模型 API 地址无效，请填写不含账号、参数和片段的地址。');
+      throw const WebModelException('服务地址无效，请填写服务商提供的连接地址。');
     }
     final bool local = _loopback(uri);
     if (uri.scheme != 'https' && !(local && uri.scheme == 'http')) {
-      throw const WebModelException('模型地址须使用 HTTPS；本机 localhost 可用 HTTP。');
+      throw const WebModelException('此地址无法安全连接，请使用服务商提供的安全地址。');
     }
     return uri;
   }
@@ -186,7 +186,7 @@ class WebModelProvider {
     final String variant = plus < 0 ? '' : name.substring(plus + 1);
     final String key = apiKey.trim();
     if (key.isEmpty && !allowsEmptyKey(protocol, endpoint)) {
-      throw const WebModelException('请填写自己的模型 API 密钥。');
+      throw const WebModelException('请填写服务密钥。');
     }
     final Map<String, String> headers = <String, String>{
       'Content-Type': 'application/json',
@@ -314,15 +314,15 @@ class WebModelProvider {
             result.complete(_normalize(protocol, response));
           }
         } else if (status == 401 || status == 403) {
-          fail('模型密钥无效或没有此模型的访问权限（HTTP $status）。');
+          fail('模型密钥无效或没有此模型的访问权限。');
         } else if (status == 402) {
-          fail('模型账户余额不足或需要开通计费（HTTP 402）。');
+          fail('模型账户余额不足或需要开通计费。');
         } else if (status == 429) {
-          fail('模型请求过于频繁或额度已用尽（HTTP 429）。');
+          fail('模型请求过于频繁或额度已用尽。');
         } else if (status >= 500) {
-          fail('模型服务暂时不可用（HTTP $status）。');
+          fail('模型服务暂时不可用。');
         } else {
-          fail('模型请求失败（HTTP $status），请检查协议、地址、模型和账户权限。');
+          fail('连接失败，请检查服务地址、模型名称和账户。');
         }
       } on WebModelException catch (error) {
         fail(
@@ -331,13 +331,13 @@ class WebModelProvider {
               : error.message,
         );
       } on Object {
-        fail('模型响应无法解析，请检查所选协议与 API 地址；若请求已到达服务商，可能已计费。');
+        fail('没有收到可用的回答，请检查 AI 设置后重试。服务商可能已经收费。');
       }
     });
     request.onError.listen(
       (_) => fail(
-        '浏览器无法连接模型：请检查网络，以及服务商是否允许当前网页来源跨域访问。'
-        '本机 Ollama 位于当前浏览设备，且需要允许该网页来源。',
+        '浏览器无法连接 AI 服务，请检查网络和服务设置。'
+        '使用电脑上的模型时，请确认电脑和模型服务已开启。',
       ),
     );
     request.onTimeout.listen((_) => fail('模型请求超过 90 秒；若已到达服务商，仍可能计费。'));
@@ -363,7 +363,7 @@ class WebModelProvider {
     try {
       decoded = jsonDecode(raw);
     } on FormatException {
-      throw const WebModelException('模型接口没有返回 JSON。');
+      throw const WebModelException('没有收到可用的回答，请检查 AI 设置后重试。');
     }
     if (decoded is! Json) {
       throw const WebModelException('模型接口响应格式有误。');

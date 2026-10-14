@@ -138,7 +138,7 @@ class _SearchPageState extends State<SearchPage> {
     final TextScaler scaler = MediaQuery.textScalerOf(context);
     final double inputHeight = math.max(44, scaler.scale(16) * 1.6 + 10);
     final Segmented tabs = Segmented(
-      labels: const <String>['读到这里', '全书'],
+      labels: const <String>['仅看已读', '搜索全书'],
       index: whole ? 1 : 0,
       onChanged: (int i) {
         whole = i == 1;
@@ -167,7 +167,7 @@ class _SearchPageState extends State<SearchPage> {
       }
       rows.add(
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 3),
           child: Material(
             color: t.paper,
             borderRadius: BorderRadius.circular(10),
@@ -228,36 +228,7 @@ class _SearchPageState extends State<SearchPage> {
       );
     }
     return SheetPage(
-      title: _searching
-          ? '正在搜索…'
-          : query.isEmpty
-          ? '搜索原文'
-          : '找到 ${hits.length} 处',
-      titleWidget: query.isEmpty || _searching
-          ? null
-          : Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
-                  const TextSpan(text: '找到 '),
-                  TextSpan(
-                    text: '${hits.length}',
-                    style: TextStyle(
-                      color: t.zhu,
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: const <FontFeature>[
-                        FontFeature.tabularFigures(),
-                      ],
-                    ),
-                  ),
-                  const TextSpan(text: ' 处'),
-                ],
-              ),
-              style: TextStyle(
-                fontSize: 17,
-                color: t.ink,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+      title: '搜原文',
       headerExtraHeight:
           inputHeight +
           8 +
@@ -321,7 +292,7 @@ class _SearchPageState extends State<SearchPage> {
                   Icon(Icons.warning_amber_rounded, size: 14, color: t.amber),
                   const SizedBox(width: 4),
                   Text(
-                    '会搜到还没读的内容',
+                    '可能剧透 · 将显示后文内容',
                     style: TextStyle(color: t.amber, fontSize: 12, height: 1.4),
                   ),
                 ],
@@ -337,11 +308,11 @@ class _SearchPageState extends State<SearchPage> {
         else if (hits.isEmpty)
           emptyState(
             context,
-            whole ? '全书没有找到' : '读到这里的部分没有找到。要搜全书吗？',
+            whole ? '全书没有找到' : '已读范围没有找到，可搜索全书。',
             action: whole
                 ? null
                 : Pill(
-                    label: '搜全书',
+                    label: '搜索全书',
                     onTap: () {
                       HapticFeedback.lightImpact();
                       whole = true;
@@ -350,6 +321,16 @@ class _SearchPageState extends State<SearchPage> {
                   ),
           )
         else ...<Widget>[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+              child: Text(
+                '${whole ? '全书' : '已读篇幅中'}共找到 ${hits.length} 处',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: t.ink3),
+              ),
+            ),
+          ),
           SliverList.list(children: rows),
           if (_visibleCount < hits.length)
             SliverToBoxAdapter(

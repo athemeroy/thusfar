@@ -27,6 +27,7 @@ import 'local.dart' as local;
 import 'preparation_plan.dart'
     show validatePreparationPlan, preparationBookPrefix;
 import 'provenance.dart';
+import 'request_lifecycle.dart';
 import 'run_lease.dart';
 import 'run_prompts.dart' as prompts;
 
@@ -89,15 +90,6 @@ Object? _clone(Object? v) =>
         ? v.map(_clone).toSet()
         : v;
 Json _read(File file) => jsonDecode(file.readAsStringSync()) as Json;
-String _fmt(String pattern, Json args) {
-  final String sentinelOpen = '\u0001', sentinelClose = '\u0002';
-  String out = pattern
-      .replaceAll('{{', sentinelOpen)
-      .replaceAll('}}', sentinelClose);
-  out = out.replaceAllMapped(RegExp(r'\{([^{}]+)\}'), (m) => pyStr(args[m[1]]));
-  return out.replaceAll(sentinelOpen, '{').replaceAll(sentinelClose, '}');
-}
-
 String _error(Object error) => error is PyException ? error.message : '$error';
 String _typedError(Object error) =>
     error is PyException
@@ -110,6 +102,7 @@ void writeJson(File file, Object? data, {bool compact = true}) {
   try {
     tmp.writeAsStringSync(
       PyJson.encode(data, ensureAscii: false, compact: compact),
+      flush: true,
     );
     tmp.renameSync(file.path);
   } finally {

@@ -1,3 +1,4 @@
+import '../ui/reader_message.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,15 @@ import 'common.dart';
 import 'sheet_host.dart';
 
 final MarginaliaService _readerComments = MarginaliaService();
+
+String _voiceName(Object? voice) => switch (voice) {
+  'empathy' => '知己',
+  'detective' => '侦探',
+  'cold' => '冷眼',
+  'scholar' => '品鉴',
+  'wit' => '趣评',
+  _ => '品读',
+};
 
 /// Comments are verified before display and stored independently of notes.
 class MarginaliaPage extends StatefulWidget {
@@ -129,7 +139,10 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
         setState(
           () => _error = e is PyException
               ? e.message
-              : llm.explain(e) ?? '这次没有完成批注，请稍后重试。',
+              : readerMessage(
+                  llm.explain(e),
+                  fallback: '这次没有完成批注，请检查网络和 AI 设置后重试。',
+                ),
         );
       }
     } finally {
@@ -192,7 +205,7 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
             child: Text(
-              widget.pageMode ? '从眼前的句子出发，听听几种读者视角。' : '选一个角度，给这句话留一句读者评论。',
+              widget.pageMode ? 'AI 从不同角度解读眼前的句子。' : '选一个角度，看看 AI 如何理解这句话。',
               style: TextStyle(color: t.ink2, fontSize: 14, height: 1.6),
             ),
           ),
@@ -232,7 +245,7 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                   children: [
                     for (final entry in personas.entries)
                       ChoiceChip(
-                        label: Text(entry.value[0]),
+                        label: Text(_voiceName(entry.key)),
                         selected: _persona == entry.key,
                         onSelected: _busy
                             ? null
@@ -315,7 +328,7 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
               ),
             ),
           if (_result != null && _showCues && items.isEmpty)
-            emptyState(context, '这一页暂时没有特别适合评论的句子，继续读也很好。'),
+            emptyState(context, '静心独享\n此页适合静读，无需多言。'),
           for (final Json item in items)
             SliverToBoxAdapter(
               child: _showCues
@@ -332,9 +345,7 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                           height: 1.6,
                         ),
                       ),
-                      subtitle: Text(
-                        '${personas[item['persona']]?.first ?? '读者'}视角',
-                      ),
+                      subtitle: Text('${_voiceName(item['persona'])} · AI 视角'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: _busy
                           ? null
@@ -410,14 +421,11 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(
-                  color: t.zhu,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: t.zhu, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               Text(
-                '${personas[item['persona']]?.first ?? '读者'} · 已核对原文',
+                '${_voiceName(item['persona'])} · AI 批注',
                 style: TextStyle(color: t.ink3, fontSize: 12),
               ),
             ],
@@ -438,7 +446,7 @@ class _MarginaliaPageState extends State<MarginaliaPage> {
                     highlight: (item['start']! as int, item['end']! as int),
                   );
                 },
-                child: const Text('回到原句'),
+                child: const Text('翻回原文'),
               ),
               IconButton(
                 tooltip: '复制批注',

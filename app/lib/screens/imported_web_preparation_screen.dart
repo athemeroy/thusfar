@@ -403,12 +403,12 @@ class _ImportedWebPreparationScreenState
                 spacing: 8,
                 children: <Widget>[
                   Text(
-                    '已隐藏 $hidden 段未读整理 · 这些是网页草稿，与安装版核对结果分开',
+                    '已隐藏 $hidden 段未读内容',
                     style: TextStyle(color: t.qing, fontSize: 12),
                   ),
                   if (_invalidDrafts > 0)
                     Text(
-                      '已跳过 $_invalidDrafts 段引文无法核对的草稿',
+                      '有 $_invalidDrafts 段内容暂时无法确认，未显示',
                       style: TextStyle(color: t.amber, fontSize: 12),
                     ),
                   if (_drafts.any((item) => item.$1 == _currentChapter))

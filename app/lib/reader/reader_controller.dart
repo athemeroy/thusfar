@@ -21,7 +21,7 @@ class ReaderController extends ChangeNotifier {
   final BookData book;
   Paginator? pager;
 
-  /// Anchor for the virtual page index; see [pageAt].
+  /// Anchor for the virtual page index; follows the last displayed page.
   static const int base = 1 << 20;
   int _anchorChapter = 0;
   int _anchorPage = 0;
@@ -36,9 +36,11 @@ class ReaderController extends ChangeNotifier {
   (int, int)? flash;
   bool toolbar = false;
   int _generation = 0;
+  int? _listeningCutoff;
   int get generation => _generation;
 
-  int get cutoff => page?.end ?? 0;
+  int get cutoff =>
+      _listeningCutoff?.clamp(start, page?.end ?? 0) ?? page?.end ?? 0;
   int get start => page?.start ?? 0;
   int get chapter => page?.chapter ?? 0;
 
@@ -78,8 +80,14 @@ class ReaderController extends ChangeNotifier {
   void onPage(int index) {
     final PageData? next = pageAt(index);
     if (next == null) return;
+    // Keep virtual indexes stable while making adjacent turns start here.
+    // Walking from the original chapter makes a long reading session quadratic.
+    _anchorChapter = next.chapter;
+    _anchorPage = next.index;
+    _anchorIndex = index;
     currentIndex = index;
     page = next;
+    _listeningCutoff = null;
     selection = null;
     toolbar = false;
     library.saveProgress(
@@ -93,7 +101,12 @@ class ReaderController extends ChangeNotifier {
   }
 
   /// Rebases the virtual index on [offset]; returns the new index to show.
-  int jump(int offset, {bool remember = true, (int, int)? highlight}) {
+  int jump(
+    int offset, {
+    bool remember = true,
+    (int, int)? highlight,
+    int? heardThrough,
+  }) {
     final Paginator p = pager!;
     if (remember && returnTo == null) returnTo = start;
     final int c = book.chapterAt(offset);
@@ -103,17 +116,32 @@ class ReaderController extends ChangeNotifier {
     _anchorIndex = base;
     currentIndex = base;
     page = p.pages(c)[_anchorPage];
+    _listeningCutoff = heardThrough;
     flash = highlight;
     selection = null;
     library.saveProgress(
       book.id,
       page!.start,
-      page!.end,
+      cutoff,
       book.length,
       returnTo: returnTo,
     );
     notifyListeners();
     return base;
+  }
+
+  /// Speech reveals only the words already heard, including within a page.
+  void heardThrough(int offset) {
+    if (_listeningCutoff == null || offset <= cutoff) return;
+    _listeningCutoff = offset.clamp(start, page!.end);
+    library.saveProgress(
+      book.id,
+      start,
+      cutoff,
+      book.length,
+      returnTo: returnTo,
+    );
+    notifyListeners();
   }
 
   void clearReturn() {
@@ -177,7 +205,7 @@ class ReaderController extends ChangeNotifier {
     if (w == null || pg == null) return const <String>[];
     final List<String> ids = <String>[];
     for (final Mention m in book.mentions(pg.chapter)) {
-      if (m.start < pg.start || m.start >= pg.end) continue;
+      if (m.start < pg.start || m.start >= cutoff) continue;
       final String id = w.canon(m.id);
       if (w.people.containsKey(id) && !ids.contains(id)) ids.add(id);
     }
@@ -191,7 +219,7 @@ class ReaderController extends ChangeNotifier {
     if (w == null || pg == null) return const <String>[];
     final Map<String, int> count = <String, int>{};
     for (final Mention m in book.mentions(pg.chapter)) {
-      if (m.start >= pg.end) continue;
+      if (m.start >= cutoff) continue;
       final String id = w.canon(m.id);
       if (w.people.containsKey(id)) count[id] = (count[id] ?? 0) + 1;
     }

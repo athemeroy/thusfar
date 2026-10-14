@@ -83,13 +83,33 @@ void main() {
         app(shelf(<ImportItem>[], onImport: () => imported++)),
       );
       await tester.pumpAndSettle();
-      final Finder importAction = find.textContaining('选择书');
+      final Finder importAction = find.text('添加书籍');
       await tester.ensureVisible(importAction);
       await tester.tap(importAction);
       expect(imported, 1);
-      final Finder modelAction = find.text('去填写');
+      int modelOpened = 0;
+      await tester.pumpWidget(
+        app(
+          SettingsScreen(
+            library: fixture.library,
+            prefs: prefs,
+            settings: ModelSettings(File('${fixture.root.path}/model.env')),
+            onModel: () => modelOpened++,
+            onExportAll: () {},
+            onRestore: () {},
+            onWebDav: () {},
+            onCheckUpdate: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final Finder modelAction = find.text('智能梳理');
+      await tester.scrollUntilVisible(modelAction, 160);
+      await tester.pumpAndSettle();
       await tester.ensureVisible(modelAction);
-      expect(modelAction.hitTestable(), findsOneWidget);
+      await tester.pumpAndSettle();
+      await tester.tap(modelAction);
+      expect(modelOpened, 1);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },

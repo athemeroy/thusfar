@@ -1,0 +1,6 @@
+Compiling lib/main_web.dart for the Web...                      
+Expected to find fonts for (MaterialIcons, packages/cupertino_icons/CupertinoIcons), but found (MaterialIcons). This usually means you are referring to font families in an IconData class but not including them in the assets section of your pubspec.yaml, are missing the package that would include them, or are missing "uses-material-design: true".
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 14944 bytes (99.1% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+Compiling lib/main_web.dart for the Web...                         17.5s
+✓ Built build/web
+Offline shell 9b6d00c968e91e8dde7b: 24 files, 69939918 bytes

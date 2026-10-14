@@ -152,6 +152,7 @@ Map<String, Object?> estimate(
         'free-only',
         'free',
         'free-then-model',
+        'systemone',
       ].contains(environ['JEV_ROUTE'] ?? 'free-only')) {
     final double jevTokens = units * defaultJudgeChars / 1.5 / 1e6;
     lo += jevTokens * judgePrice();
