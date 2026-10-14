@@ -867,9 +867,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
               'protocol': m.settings.protocol,
               'base_url': url,
               'model': model,
-              'jev_route': m.settings.judgeFallbackEnabled
-                  ? 'free-then-model'
-                  : 'free-only',
+              'jev_route': m.settings.judgeRoute,
+              'judge_url': m.settings.judgeUrl,
+              'judge_model': m.settings.judgeModel,
             });
       }
     } on Object {
@@ -887,9 +887,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         key: '',
         clearKey: true,
         protocol: model['protocol']! as String,
-        judgeFallback: model['jev_route'] == null
-            ? null
-            : model['jev_route'] == 'free-then-model',
+        judgeRoute: model['jev_route'] as String?,
+        judgeUrl: model['judge_url'] as String? ?? '',
+        judgeModel: model['judge_model'] as String? ?? '',
+        clearJudgeKey: true,
       );
       if (error != null) return error;
       applyModelEnvironment(m.settings);

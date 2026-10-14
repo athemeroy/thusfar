@@ -58,6 +58,11 @@ class SaveFailingSettings extends ModelSettings {
     bool clearKey = false,
     String? protocol,
     bool? judgeFallback,
+    String? judgeRoute,
+    String? judgeUrl,
+    String? judgeModel,
+    String? judgeKey,
+    bool clearJudgeKey = false,
     String? classifierKey,
     bool clearClassifierKey = false,
     String? jevApiKey,
@@ -71,6 +76,11 @@ class SaveFailingSettings extends ModelSettings {
           clearKey: clearKey,
           protocol: protocol,
           judgeFallback: judgeFallback,
+          judgeRoute: judgeRoute,
+          judgeUrl: judgeUrl,
+          judgeModel: judgeModel,
+          judgeKey: judgeKey,
+          clearJudgeKey: clearJudgeKey,
           classifierKey: classifierKey,
           clearClassifierKey: clearClassifierKey,
           jevApiKey: jevApiKey,
@@ -166,6 +176,40 @@ void main() {
     await tester.tap(find.text(text).first);
     await tester.pump();
   }
+
+  testWidgets(
+    'judging is selectable and does not change the generation model',
+    (tester) async {
+      seed();
+      await open(tester);
+      expect(settings.judgeRoute, 'free-only');
+      await tester.scrollUntilVisible(
+        find.text('免费判断接口'),
+        240,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('免费判断接口').first);
+      await tester.tap(find.text('免费判断接口').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('System One 兼容接口').last);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(field('核对接口地址'));
+      await tester.enterText(
+        field('核对接口地址'),
+        'https://my-model.invalid/v1/systemone',
+      );
+      await tester.ensureVisible(field('核对模型（可选）'));
+      await tester.enterText(field('核对模型（可选）'), 'my-model');
+      expect(settings.judgeRoute, 'free-only');
+      await tap(tester, '仅保存（未验证）');
+      await tester.pumpAndSettle();
+      expect(settings.judgeRoute, 'systemone');
+      expect(settings.judgeModel, 'my-model');
+      expect(settings.judgeUrl, 'https://my-model.invalid/v1/systemone');
+      expect(settings.read().$2, 'saved-model');
+      expect(pending.calls, 0);
+    },
+  );
 
   testWidgets('opening and missing-key validation never request or save', (
     tester,

@@ -30,6 +30,14 @@ class ModelSettings {
   bool get hasKey => read().$3.isNotEmpty;
   bool get judgeFallbackEnabled =>
       _settings.read()['jev_route'] == 'free-then-model';
+  String get judgeRoute => _settings.read()['jev_route']! as String;
+  bool get systemOneEnabled => judgeRoute == 'systemone';
+  String get judgeModel => _settings.read()['judge_model']! as String;
+  bool get hasJudgeKey =>
+      (_settings.read()['judge_api_key']! as String).isNotEmpty;
+  String get judgeKeyLast4 =>
+      _settings.public()['judge_api_key_last4']! as String;
+  String get judgeUrl => _settings.read()['judge_url']! as String;
   bool get hasClassifierKey =>
       (_settings.read()['classifier_key'] as String).isNotEmpty;
   String get classifierKeyLast4 =>
@@ -57,6 +65,11 @@ class ModelSettings {
     required bool clearKey,
     required String protocol,
     bool? judgeFallback,
+    String? judgeRoute,
+    String? judgeUrl,
+    String? judgeModel,
+    String? judgeKey,
+    bool clearJudgeKey = false,
     String? classifierKey,
     bool clearClassifierKey = false,
     String? jevApiKey,
@@ -68,8 +81,14 @@ class ModelSettings {
       'api_key': key.trim(),
       'clear_key': clearKey,
       'protocol': protocol,
-      if (judgeFallback != null)
+      if (judgeRoute != null)
+        'jev_route': judgeRoute
+      else if (judgeFallback != null)
         'jev_route': judgeFallback ? 'free-then-model' : 'free-only',
+      if (judgeUrl != null) 'judge_url': judgeUrl.trim(),
+      if (judgeModel != null) 'judge_model': judgeModel.trim(),
+      if (judgeKey != null) 'judge_api_key': judgeKey.trim(),
+      'clear_judge_api_key': clearJudgeKey,
       if (classifierKey != null) 'classifier_key': classifierKey.trim(),
       'clear_classifier_key': clearClassifierKey,
       if (jevApiKey != null) 'jev_api_key': jevApiKey.trim(),
@@ -84,6 +103,11 @@ class ModelSettings {
     bool clearKey = false,
     String? protocol,
     bool? judgeFallback,
+    String? judgeRoute,
+    String? judgeUrl,
+    String? judgeModel,
+    String? judgeKey,
+    bool clearJudgeKey = false,
     String? classifierKey,
     bool clearClassifierKey = false,
     String? jevApiKey,
@@ -96,8 +120,14 @@ class ModelSettings {
         'api_key': key ?? '',
         'clear_key': clearKey,
         'protocol': protocol ?? this.protocol,
-        if (judgeFallback != null)
+        if (judgeRoute != null)
+          'jev_route': judgeRoute
+        else if (judgeFallback != null)
           'jev_route': judgeFallback ? 'free-then-model' : 'free-only',
+        if (judgeUrl != null) 'judge_url': judgeUrl.trim(),
+        if (judgeModel != null) 'judge_model': judgeModel.trim(),
+        if (judgeKey != null) 'judge_api_key': judgeKey.trim(),
+        'clear_judge_api_key': clearJudgeKey,
         if (classifierKey != null) 'classifier_key': classifierKey.trim(),
         'clear_classifier_key': clearClassifierKey,
         if (jevApiKey != null) 'jev_api_key': jevApiKey.trim(),

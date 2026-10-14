@@ -294,9 +294,14 @@ ChatRequest buildRequest(
       'stream': true,
       'stream_options': <String, Object?>{'include_usage': true},
       if (variant == 'think' || variant == 'nothink')
-        'thinking': <String, Object?>{
-          'type': variant == 'think' ? 'enabled' : 'disabled',
-        },
+        if (model.toLowerCase().contains('qwen'))
+          'chat_template_kwargs': <String, Object?>{
+            'enable_thinking': variant == 'think',
+          }
+        else
+          'thinking': <String, Object?>{
+            'type': variant == 'think' ? 'enabled' : 'disabled',
+          },
     };
     headers['Authorization'] = 'Bearer $key';
   }
