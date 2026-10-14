@@ -477,6 +477,9 @@ class Paginator {
   (int, bool) globalPage(int chapter, int index) {
     double n = 0;
     bool exact = true;
+    // Cached geometry does not change during this estimate. Scan it once,
+    // rather than once per chapter that has not been laid out yet.
+    double? estimatedPageSize;
     for (int c = 0; c < chapter; c++) {
       final List<PageData>? ps = _cache[c];
       if (ps != null) {
@@ -484,7 +487,10 @@ class Paginator {
       } else {
         exact = false;
         final Chapter ch = book.chapters[c];
-        n += math.max(1, ((ch.o1 - ch.o0) / charsPerPage()).ceil());
+        n += math.max(
+          1,
+          ((ch.o1 - ch.o0) / (estimatedPageSize ??= charsPerPage())).ceil(),
+        );
       }
     }
     return (n.round() + index + 1, exact);

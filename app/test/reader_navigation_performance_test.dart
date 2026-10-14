@@ -60,6 +60,28 @@ class _Pager extends Paginator {
   }
 }
 
+class _EstimationPager extends Paginator {
+  _EstimationPager(BookData book)
+    : super(
+        book,
+        const PageSpec(
+          width: 18,
+          height: 30,
+          fontSize: 18,
+          lineHeight: 1.6,
+          fontFamily: null,
+          color: Colors.black,
+          textScaler: TextScaler.noScaling,
+        ),
+      );
+  int scans = 0;
+  @override
+  double charsPerPage() {
+    scans++;
+    return super.charsPerPage();
+  }
+}
+
 void main() {
   late Directory root;
   late BookData book;
@@ -154,6 +176,44 @@ void main() {
       reader.layout(_Pager(book), 17);
       expect(reader.pageAt(ReaderController.base)?.start, 17);
       expect(reader.pageAt(ReaderController.base + 1)?.start, 18);
+    },
+  );
+
+  test(
+    'long-book footer estimates keep their values as chapters become ready',
+    () {
+      final p = _EstimationPager(book);
+      const ready = 500, repeats = 30;
+      int knownPages = 0;
+      for (int c = 0; c < ready; c++) {
+        knownPages += p.pages(c).length;
+      }
+      final size = p.charsPerPage();
+      final estimatedPerChapter = (_pagesPerChapter / size).ceil();
+      final expected = knownPages + (_chapters - ready) * estimatedPerChapter;
+      p.scans = 0;
+      final watch = Stopwatch()..start();
+      for (int i = 0; i < repeats; i++) {
+        expect(p.totalPages(), (expected, false));
+      }
+      watch.stop();
+      // ignore: avoid_print
+      print(
+        'FOOTER_BENCH elapsed_us=${watch.elapsedMicroseconds} '
+        'cache_scans=${p.scans} cached_pages=$knownPages updates=$repeats',
+      );
+      expect(p.scans, lessThanOrEqualTo(repeats * 2));
+      expect(p.globalPage(ready - 1, p.pages(ready - 1).length - 1), (
+        knownPages,
+        true,
+      ));
+      final empty = Paginator(book, _spec);
+      expect(empty.totalPages().$2, isFalse);
+      for (int c = 0; c < _chapters; c++) {
+        empty.pages(c);
+      }
+      expect(empty.totalPages(), (_chapters, true));
+      expect(empty.globalPage(_chapters - 1, 0), (_chapters, true));
     },
   );
 
