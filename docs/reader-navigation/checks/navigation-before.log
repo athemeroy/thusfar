@@ -1,0 +1,5 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart
+00:00 +0: long-book sequential turns preserve virtual indexes and source offsets
+NAVIGATION_BENCH forward_us=2278489 page_lookups=192048000 turns=48000
+00:02 +1: chapter lookup retains exact boundaries and duplicate starts
+00:02 +2: All tests passed!

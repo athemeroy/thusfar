@@ -1,0 +1,33 @@
+00:00 +0: loading test/run_lifecycle/bio_reliability_test.dart
+00:00 +0: test/run_lifecycle/bio_reliability_test.dart: legacy empty cache is retried only when there are candidates
+00:00 +1: test/run_lifecycle/bio_reliability_test.dart: legacy empty cache is retried only when there are candidates
+00:00 +2: test/run_lifecycle/preparation_plan_review_test.dart: shrunk plan skips existing future final jobs, twoPhase=false
+00:00 +3: test/run_lifecycle/preparation_plan_review_test.dart: shrunk plan skips existing future final jobs, twoPhase=false
+00:00 +4: test/run_lifecycle/preparation_plan_test.dart: bounded new book sends no future genre samples or titles
+00:00 +5: test/run_lifecycle/preparation_plan_test.dart: bounded new book sends no future genre samples or titles
+00:00 +6: test/run_lifecycle/preparation_plan_test.dart: bounded new book sends no future genre samples or titles
+00:00 +7: test/run_lifecycle/preparation_plan_test.dart: bounded new book sends no future genre samples or titles
+00:00 +8: test/run_lifecycle/preparation_plan_test.dart: bounded new book sends no future genre samples or titles
+00:00 +9: test/run_lifecycle/preparation_plan_test.dart: bounded new book sends no future genre samples or titles
+00:00 +10: test/run_lifecycle/preparation_plan_test.dart: bounded new book sends no future genre samples or titles
+00:00 +11: test/run_lifecycle/preparation_plan_review_test.dart: early queued biography captures only prefix before future KG replay
+00:00 +12: test/run_lifecycle/bio_reliability_test.dart: guard blocked all bios defers without publishing; partial bio is published
+00:00 +13: test/run_lifecycle/preparation_plan_test.dart: expansion reuses immutable prefix and smaller plan preserves coverage
+00:00 +14: test/run_lifecycle/preparation_plan_test.dart: expansion reuses immutable prefix and smaller plan preserves coverage
+00:00 +15: test/run_lifecycle/bio_reliability_test.dart: preflight failure keeps explicit deferred retry until the job reopens
+00:00 +16: test/run_lifecycle/preparation_plan_test.dart: mid-segment target stops at prior boundary and never sends next text
+00:00 +17: test/run_lifecycle/preparation_plan_test.dart: mid-segment target stops at prior boundary and never sends next text
+00:00 +18: test/run_lifecycle/bio_reliability_test.dart: first-chapter preview does not move a legacy 12k bio milestone
+00:00 +19: test/run_lifecycle/preparation_plan_test.dart: no complete segment fails before any model call
+00:00 +20: test/run_lifecycle/bio_reliability_test.dart: first-chapter preview leaves classic processing unchanged
+00:00 +21: test/run_lifecycle/preparation_plan_test.dart: worker treats selected goal as terminal and resume keeps scope
+00:00 +22: test/run_lifecycle/preparation_plan_test.dart: worker treats selected goal as terminal and resume keeps scope
+00:00 +23: test/run_lifecycle/preparation_plan_test.dart: worker treats selected goal as terminal and resume keeps scope
+00:00 +24: test/run_lifecycle/preparation_plan_test.dart: worker treats selected goal as terminal and resume keeps scope
+00:00 +25: test/run_lifecycle/preparation_plan_test.dart: worker treats selected goal as terminal and resume keeps scope
+00:00 +26: test/run_lifecycle/preparation_plan_test.dart: worker treats selected goal as terminal and resume keeps scope
+00:00 +27: test/run_lifecycle/preparation_plan_test.dart: worker treats selected goal as terminal and resume keeps scope
+00:00 +28: test/run_lifecycle/preparation_plan_test.dart: fully prepared book records a smaller complete goal without enabling work
+00:00 +29: test/run_lifecycle/preparation_plan_test.dart: invalid plan cannot enable worker or widen saved authorization
+00:00 +30: test/run_lifecycle/preparation_plan_test.dart: temporary model prefix clips UTF16 without changing original source
+00:00 +31: All tests passed!

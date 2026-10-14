@@ -1,0 +1,40 @@
+-j/--concurrency was parsed but will be ignored, this option is not supported when running Integration Tests or web tests.
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/browser/web_reader_flows_test.dart
+00:00 +0: test/browser/web_reader_flows_test.dart: narrow large-text tools keep navigation and safe search reachable
+00:00 +1: test/browser/web_reader_flows_test.dart: chapter jumps require consent and preserve position when cancelled
+00:00 +2: test/browser/web_reader_flows_test.dart: saved source restores the same passage when page fraction differs
+00:00 +3: test/browser/web_reader_flows_test.dart: automatic paging survives its controls closing and stops for other panels
+00:01 +4: test/browser/web_reader_flows_test.dart: reflow keeps the same source through repeated resize and type changes
+00:01 +5: test/browser/web_reader_flows_test.dart: bookmark toggle affects only the exact page and keeps adjacent bookmarks
+00:02 +6: test/browser/web_reader_flows_test.dart: 人物 ignores repeated taps during a slow save
+00:02 +7: test/browser/web_reader_flows_test.dart: 人物 does not reopen a reader dismissed during save
+00:02 +8: test/browser/web_reader_flows_test.dart: 人物 cancels stale cutoff after rewind during save
+00:02 +9: test/browser/web_reader_flows_test.dart: 问书 ignores repeated taps during a slow save
+00:02 +10: test/browser/web_reader_flows_test.dart: 问书 does not reopen a reader dismissed during save
+00:02 +11: test/browser/web_reader_flows_test.dart: 问书 cancels stale cutoff after rewind during save
+00:03 +12: test/browser/web_reader_flows_test.dart: citation jump restores the original source and retained Ask draft
+00:03 +13: test/browser/web_reader_flows_test.dart: failed save is visible and panel can be retried
+00:03 +14: loading /Users/athemeroy/projects/books-build/app/test/browser/web_reader_customizations_test.dart
+00:04 +14: test/browser/web_reader_customizations_test.dart: native metadata roundtrips without enabling Web reader transforms
+00:04 +15: test/browser/web_reader_customizations_test.dart: same-book browser merge keeps original native source identity and legacy omission
+00:04 +16: test/browser/web_reader_customizations_test.dart: customization conflict previews and imports leave local metadata untouched
+00:04 +17: test/browser/web_reader_customizations_test.dart: source mismatch, malformed directory, unknown fields and global rule injection are rejected
+00:04 +18: test/browser/web_reader_customizations_test.dart: legacy backups remain readable and do not invent customization metadata
+00:04 +19: test/browser/web_reader_customizations_test.dart: chapter verdict enrichment does not invalidate immutable source metadata
+00:04 +20: test/browser/web_reader_customizations_test.dart: disabled directory sidecar is preserved without becoming enabled
+00:04 +21: test/browser/web_reader_customizations_test.dart: full ZIP preserves global order only after explicit settings consent
+00:04 +22: test/browser/web_reader_customizations_test.dart: full ZIP export removes absent book scope without binding it to new shelf entries
+00:04 +23: test/browser/web_reader_customizations_test.dart: different full-library rule order is reported without overwriting stored data or settings
+00:04 +24: test/browser/web_reader_customizations_test.dart: damaged retained full-library customizations fail export rather than disappearing
+00:04 +25: test/browser/web_reader_customizations_test.dart: direct library restore cannot retain a forged source binding
+00:04 +26: test/browser/web_reader_customizations_test.dart: WebDAV upload and confirmed snapshot merge retain native customizations
+00:05 +27: test/browser/web_reader_customizations_test.dart: full ZIP export rejects a reused native ID with stale retained source policy
+00:05 +28: test/browser/web_reader_customizations_test.dart: removed-book self-export reimports without a false policy conflict
+00:05 +29: loading /Users/athemeroy/projects/books-build/app/test/browser/web_shelf_and_notes_test.dart
+00:05 +29: test/browser/web_shelf_and_notes_test.dart: native highlights keep their category, anchors and shelf labels
+00:05 +30: test/browser/web_shelf_and_notes_test.dart: Web shelf edits replace the embedded native copy when exported
+00:05 +31: test/browser/web_shelf_and_notes_test.dart: preview and invalid shelf references leave browser data unchanged
+00:05 +32: test/browser/web_shelf_and_notes_test.dart: a conflicting personal record cannot overwrite shelf labels
+00:05 +33: test/browser/web_shelf_and_notes_test.dart: precise reading positions survive browser save, merge and export
+00:05 +34: test/browser/web_shelf_and_notes_test.dart: old native projections infer style without changing their revision
+00:05 +35: All tests passed!

@@ -1,0 +1,9 @@
+{
+  "build_host": "mini",
+  "version": "2.1.0",
+  "version_code": 73,
+  "package": "com.yedu.zhupi.v2probe",
+  "signer_sha256": "2228582f6dfcccc2988ad53b8026b7be3d652fe661dd06ac95b119a318a29acc",
+  "sha256": "c0ec5a06ae61b3c2579ec9a7a19e208634e4e84544f4f1a4e9c8ef4e3988e3a9",
+  "apk": "yedu-2.1.0-reading73-arm64.apk"
+}

@@ -1,0 +1,57 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart
+00:00 +0: /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart: long-book sequential turns preserve virtual indexes and source offsets
+NAVIGATION_BENCH forward_us=26880 page_lookups=103998 turns=48000
+00:00 +1: /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart: chapter lookup retains exact boundaries and duplicate starts
+00:01 +2: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: source search enumerates over 500 occurrences with original Unicode offsets
+00:01 +3: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: source selection spans visible paragraphs and rejects ambiguity or hidden gaps
+00:01 +4: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: theme color is part of the pagination paint cache identity
+00:01 +5: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +6: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +7: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +8: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +9: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +10: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +11: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +12: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +13: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +14: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: short pages split long headings and fit illustrations without missing source
+00:01 +15: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration pagination, source quotes, notes and rule changes keep source anchors
+00:01 +16: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:01 +17: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +18: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +19: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +20: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +21: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +22: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:02 +23: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration mapped long press and handle select source, create a book rule and cancel safely
+00:03 +24: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +25: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +26: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +27: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +28: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +29: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +30: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +31: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:03 +32: /Users/athemeroy/projects/books-build/app/test/reading_overhaul_test.dart: search waits for IME commit, reaches result 650, and clips after rewind
+00:04 +33: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:04 +34: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:04 +35: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:04 +36: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration manager is reachable from more menu
+00:04 +37: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: both selection handles adjust exact source bounds and theme repaint keeps anchor
+00:04 +38: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: selection end handle crosses visible paragraphs and shrinks back exactly
+00:04 +39: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:04 +40: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: footnote at next block start does not leak across page boundary
+00:04 +41: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: arrow keys and the mouse wheel turn pages on a computer
+00:04 +42: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: book illustrations retain original alt and explain missing files
+00:04 +43: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: screen reader receives only the visible paragraph slice
+00:04 +44: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: screen reader page actions turn available pages and expose reading tools
+00:05 +45: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: folding and desktop resizing preserve the source anchor
+00:05 +46: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: book drawer notes opens notes and reader back returns in one tap
+00:05 +47: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: closing a sheet restores the reader toolbar before the next Back leaves reading
+00:05 +48: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: page footnotes open through reader without exposing later notes
+00:05 +49: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: read-only search clips snippets within a partially read block
+00:05 +50: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: note modal IME animation preserves reading position and saves original range once
+00:06 +51: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: preview clips trailing context at cutoff
+00:06 +52: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: preview gates crossing range at cutoff
+00:06 +53: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: typography sheet switches font and propagates to reader spec
+00:06 +54: All tests passed!

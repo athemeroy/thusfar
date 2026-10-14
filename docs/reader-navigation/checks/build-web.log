@@ -1,0 +1,21 @@
+Compiling lib/main_web.dart for the Web...                      
+Wasm dry run findings:
+Found incompatibilities with WebAssembly.
+
+package:thusfar_app/web/web_app.dart 7:1 - dart:html unsupported (0)
+package:thusfar_app/web/web_storage.dart 6:1 - dart:html unsupported (0)
+package:thusfar_app/web/web_storage.dart 10:1 - dart:indexed_db unsupported (0)
+package:thusfar_app/web/web_notes_center.dart 3:1 - dart:html unsupported (0)
+package:thusfar_app/web/web_ai_panel.dart 9:1 - dart:html unsupported (0)
+package:thusfar_app/web/web_ask_panel.dart 10:1 - dart:html unsupported (0)
+package:thusfar_app/web/webdav_sync.dart 9:1 - dart:html unsupported (0)
+package:thusfar_app/web/web_model_provider.dart 7:1 - dart:html unsupported (0)
+
+Consider addressing these issues to enable wasm builds. See docs for more info: https://docs.flutter.dev/platform-integration/web/wasm
+
+Use --no-wasm-dry-run to disable these warnings.
+Expected to find fonts for (MaterialIcons, packages/cupertino_icons/CupertinoIcons), but found (MaterialIcons). This usually means you are referring to font families in an IconData class but not including them in the assets section of your pubspec.yaml, are missing the package that would include them, or are missing "uses-material-design: true".
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 14944 bytes (99.1% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+Compiling lib/main_web.dart for the Web...                         15.7s
+✓ Built build/web
+Offline shell 43c9ebcba5758c2665e0: 24 files, 69939921 bytes

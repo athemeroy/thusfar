@@ -1,0 +1,50 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart
+00:00 +0: /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart: long-book sequential turns preserve virtual indexes and source offsets
+NAVIGATION_BENCH forward_us=28784 page_lookups=103998 turns=48000
+00:00 +1: /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart: long-book footer estimates keep their values as chapters become ready
+FOOTER_BENCH elapsed_us=8978 cache_scans=60 cached_pages=6500 updates=30
+00:00 +2: /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart: chapter lookup retains exact boundaries and duplicate starts
+00:01 +3: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: literal deletion preserves original coordinates and emoji boundaries
+00:01 +4: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: shorter and longer replacements cite their complete original match
+00:01 +5: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: overlap priority is deterministic, literal and never cascades
+00:01 +6: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: whole paragraph removal and edge deletions have valid empty mappings
+00:01 +7: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: invalid empty patterns, surrogate halves, multiline and amplification are rejected
+00:01 +8: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: portable storage scope, edit, disable, order and deletion survive reopen
+00:01 +9: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: portable storage export rebinds book rules, retains global scope and skips duplicates
+00:01 +10: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: portable storage corruption is preserved and never silently overwritten
+00:01 +11: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:01 +12: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:01 +13: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:01 +14: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:02 +15: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: opens at chapter 230 and returns there from bookmarks
+00:02 +16: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: unread chapter and page jumps require an explicit choice
+00:02 +17: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration mapped long press and handle select source, create a book rule and cancel safely
+00:02 +18: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: corrected directory opens and returns at the source position
+00:03 +19: /Users/athemeroy/projects/books-build/app/test/toc_position_test.dart: corrected directory opens and returns at the source position
+00:03 +20: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:03 +21: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:03 +22: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: vertical fold keeps text and tools on opposite sides of the hinge
+00:03 +23: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration saving and toggling a rule repaginates live reader without rewriting progress
+00:03 +24: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: horizontal fold keeps text above the hinge and tools below it
+00:03 +25: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration wrapped selection actions stay clear of the selected text at 1.0 scale
+00:03 +26: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:03 +27: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: flat folds stay continuous and selection follows a right reading pane
+00:03 +28: /Users/athemeroy/projects/books-build/app/test/text_purification_test.dart: reader integration manager is reachable from more menu
+00:03 +29: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: both selection handles adjust exact source bounds and theme repaint keeps anchor
+00:03 +30: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: selection end handle crosses visible paragraphs and shrinks back exactly
+00:04 +31: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: source return reopens Ask at original cutoff with the unfinished question
+00:04 +32: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: footnote at next block start does not leak across page boundary
+00:04 +33: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: arrow keys and the mouse wheel turn pages on a computer
+00:04 +34: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: book illustrations retain original alt and explain missing files
+00:04 +35: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: screen reader receives only the visible paragraph slice
+00:04 +36: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: screen reader page actions turn available pages and expose reading tools
+00:04 +37: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: folding and desktop resizing preserve the source anchor
+00:05 +38: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: book drawer notes opens notes and reader back returns in one tap
+00:05 +39: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: closing a sheet restores the reader toolbar before the next Back leaves reading
+00:05 +40: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: page footnotes open through reader without exposing later notes
+00:05 +41: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: read-only search clips snippets within a partially read block
+00:05 +42: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: note modal IME animation preserves reading position and saves original range once
+00:05 +43: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: preview clips trailing context at cutoff
+00:05 +44: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: preview gates crossing range at cutoff
+00:05 +45: /Users/athemeroy/projects/books-build/app/test/reader_regression_test.dart: typography sheet switches font and propagates to reader spec
+00:06 +46: All tests passed!

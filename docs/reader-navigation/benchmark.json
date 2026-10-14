@@ -1,0 +1,39 @@
+{
+  "host": "Mini M4",
+  "chapters": 4000,
+  "pages_per_chapter": 12,
+  "turns": 48000,
+  "before": {
+    "elapsed_us": 2278489,
+    "page_lookups": 192048000
+  },
+  "after": {
+    "elapsed_us": 26880,
+    "page_lookups": 103998
+  },
+  "speedup": 84.76521577380953,
+  "lookup_reduction_pct": 99.94584791302175,
+  "scope": "Cached page lookup; excludes disk persistence, text layout and animation",
+  "tests": {
+    "native": 55,
+    "core": 31,
+    "browser": 35
+  },
+  "footer": {
+    "chapters": 4000,
+    "cached_chapters": 500,
+    "cached_pages": 6500,
+    "updates": 30,
+    "before": {
+      "elapsed_us": 3814887,
+      "cache_scans": 105000
+    },
+    "after": {
+      "elapsed_us": 8978,
+      "cache_scans": 60
+    },
+    "before_per_update_ms": 127.1629,
+    "after_per_update_ms": 0.2992666666666666,
+    "speedup": 424.9150144798396
+  }
+}

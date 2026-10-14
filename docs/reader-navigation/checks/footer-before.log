@@ -1,0 +1,4 @@
+00:00 +0: loading /Users/athemeroy/projects/books-build/app/test/reader_navigation_performance_test.dart
+00:00 +0: long-book footer estimates keep their values as chapters become ready
+FOOTER_BENCH elapsed_us=3814887 cache_scans=105000 cached_pages=6500 updates=30
+00:04 +1: All tests passed!
